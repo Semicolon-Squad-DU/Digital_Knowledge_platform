@@ -231,6 +231,77 @@ router.post(
   })
 );
 
+// PATCH /api/archive/:id — Metadata edit (archivist/admin only)
+router.patch(
+  "/:id",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { title_en, title_bn, description, authors, tags: tagIds, category, access_tier } =
+      req.body as Record<string, unknown>;
+
+    const item = await queryOne<{ item_id: string; version: number; file_url: string }>(
+      "SELECT item_id, version, file_url FROM archive_items WHERE item_id = $1",
+      [req.params.id]
+    );
+    if (!item) throw new AppError(404, "Archive item not found");
+
+    const updated = await withTransaction(async (client) => {
+      const result = await client.query(
+        `UPDATE archive_items SET
+           title_en    = COALESCE($1, title_en),
+           title_bn    = COALESCE($2, title_bn),
+           description = COALESCE($3, description),
+           authors     = COALESCE($4, authors),
+           category    = COALESCE($5, category),
+           access_tier = COALESCE($6, access_tier),
+           version     = version + 1
+         WHERE item_id = $7
+         RETURNING *`,
+        [
+          title_en || null,
+          title_bn !== undefined ? title_bn : null,
+          description !== undefined ? description : null,
+          authors ? (Array.isArray(authors) ? authors : JSON.parse(authors as string)) : null,
+          category || null,
+          access_tier || null,
+          req.params.id,
+        ]
+      );
+
+      const updated = result.rows[0];
+
+      // Replace tags if provided
+      if (Array.isArray(tagIds)) {
+        await client.query("DELETE FROM archive_item_tags WHERE item_id = $1", [req.params.id]);
+        for (const tag_id of tagIds) {
+          await client.query(
+            "INSERT INTO archive_item_tags (item_id, tag_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+            [req.params.id, tag_id]
+          );
+        }
+      }
+
+      // Record new version snapshot
+      await client.query(
+        `INSERT INTO archive_versions (item_id, version_number, file_url, metadata_snapshot, changed_by)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [req.params.id, updated.version, item.file_url, JSON.stringify(updated), req.user!.user_id]
+      );
+
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+         VALUES ($1, 'UPDATE', 'archive_item', $2, $3, $4)`,
+        [req.user!.user_id, req.params.id, JSON.stringify({ title_en, category, access_tier }), req.ip]
+      );
+
+      return updated;
+    });
+
+    res.json({ success: true, data: updated });
+  })
+);
+
 // PATCH /api/archive/:id/status
 router.patch(
   "/:id/status",

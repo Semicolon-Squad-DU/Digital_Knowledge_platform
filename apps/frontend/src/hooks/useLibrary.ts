@@ -126,3 +126,109 @@ export function useMemberFines(memberId: string) {
     enabled: !!memberId,
   });
 }
+
+export function useOverdueItems() {
+  return useQuery({
+    queryKey: ["library", "overdue"],
+    queryFn: async () => {
+      const { data } = await api.get("/library/overdue");
+      return data.data;
+    },
+  });
+}
+
+export function useWaiveFine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (fineId: string) => {
+      const { data } = await api.patch(`/library/fines/${fineId}/waive`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export function useAdjustFine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ fineId, amount, reason }: { fineId: string; amount: number; reason: string }) => {
+      const { data } = await api.patch(`/library/fines/${fineId}/adjust`, { amount, reason });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export function useCreateCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const { data } = await api.post("/library/catalog", payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
+    },
+  });
+}
+
+export function useUpdateCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
+      const { data } = await api.put(`/library/catalog/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["catalog", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["catalog", "search"] });
+    },
+  });
+}
+
+export function useDeleteCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/library/catalog/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
+    },
+  });
+}
+
+export function useSubmitProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const { data } = await api.post("/showcase", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["showcase"] });
+    },
+  });
+}
+
+export function useUpdateResearchOutput() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
+      const { data } = await api.patch(`/research/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["research", "detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["research"] });
+    },
+  });
+}

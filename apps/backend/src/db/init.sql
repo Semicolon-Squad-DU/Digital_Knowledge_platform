@@ -111,7 +111,7 @@ CREATE TABLE archive_item_tags (
 CREATE TABLE archive_versions (
   version_id        UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   item_id           UUID NOT NULL REFERENCES archive_items(item_id) ON DELETE CASCADE,
-  version_number    INTEGER NOT NULL,
+  version_number    INTEGER NOT NULL CHECK (version_number >= 1),
   file_url          TEXT NOT NULL,
   metadata_snapshot JSONB NOT NULL DEFAULT '{}',
   changed_by        UUID NOT NULL REFERENCES users(user_id),
@@ -280,7 +280,8 @@ CREATE TABLE fines (
   reason         TEXT NOT NULL,
   status         fine_status NOT NULL DEFAULT 'pending',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (transaction_id)
 );
 
 -- ============================================================

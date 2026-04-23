@@ -2,8 +2,47 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
+import { Copy, Check, Download } from "lucide-react";
+import toast from "react-hot-toast";
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-primary-600 transition-colors"
+      title="Copy to clipboard"
+    >
+      {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+}
+
+function downloadBib(bibtex: string, identifier: string) {
+  const blob = new Blob([bibtex], { type: "text/plain" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `${identifier}.bib`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ResearchDetailPage() {
   const params = useParams<{ id: string }>();
@@ -78,17 +117,40 @@ export default function ResearchDetailPage() {
       {citation && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">Citations</h2>
-          <div className="space-y-3 text-sm">
+          <div className="space-y-4 text-sm">
+            {/* APA */}
             <div>
-              <p className="font-medium text-slate-800 mb-1">APA</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-medium text-slate-800">APA</p>
+                <CopyButton text={citation.apa} />
+              </div>
               <p className="text-slate-700">{citation.apa}</p>
             </div>
+
+            {/* MLA */}
             <div>
-              <p className="font-medium text-slate-800 mb-1">MLA</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-medium text-slate-800">MLA</p>
+                <CopyButton text={citation.mla} />
+              </div>
               <p className="text-slate-700">{citation.mla}</p>
             </div>
+
+            {/* BibTeX */}
             <div>
-              <p className="font-medium text-slate-800 mb-1">BibTeX</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-medium text-slate-800">BibTeX</p>
+                <div className="flex items-center gap-3">
+                  <CopyButton text={citation.bibtex} />
+                  <button
+                    onClick={() => downloadBib(citation.bibtex, output.dkp_identifier)}
+                    className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-primary-600 transition-colors"
+                    title="Download .bib file"
+                  >
+                    <Download size={13} /> Download .bib
+                  </button>
+                </div>
+              </div>
               <pre className="text-xs text-slate-700 bg-slate-50 rounded p-3 overflow-x-auto">{citation.bibtex}</pre>
             </div>
           </div>
@@ -97,3 +159,4 @@ export default function ResearchDetailPage() {
     </div>
   );
 }
+

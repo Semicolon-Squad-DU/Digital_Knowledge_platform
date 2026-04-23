@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useLibrarianDashboard, useIssueBook, useReturnBook } from "@/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueItems, useWaiveFine, useAdjustFine } from "@/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -16,6 +16,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
+type Tab = "overview" | "overdue";
+
 export default function LibrarianDashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
@@ -26,12 +28,21 @@ export default function LibrarianDashboardPage() {
     }
   }, [isAuthenticated, user, router]);
 
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
+
   const { data: stats, isLoading, refetch } = useLibrarianDashboard();
+  const { data: overdueData, isLoading: overdueLoading, refetch: refetchOverdue } = useOverdueItems();
   const { mutateAsync: issueBook, isPending: isIssuing } = useIssueBook();
   const { mutateAsync: returnBook, isPending: isReturning } = useReturnBook();
+  const { mutateAsync: waiveFine, isPending: isWaiving } = useWaiveFine();
+  const { mutateAsync: adjustFine, isPending: isAdjusting } = useAdjustFine();
 
   const [issueModal, setIssueModal] = useState(false);
   const [returnModal, setReturnModal] = useState(false);
+  const [adjustModal, setAdjustModal] = useState(false);
+  const [adjustFineId, setAdjustFineId] = useState("");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustReason, setAdjustReason] = useState("");
   const [catalogId, setCatalogId] = useState("");
   const [memberId, setMemberId] = useState("");
   const [transactionId, setTransactionId] = useState("");
@@ -76,6 +87,39 @@ export default function LibrarianDashboardPage() {
     }
   };
 
+  const handleWaiveFine = async (fineId: string) => {
+    try {
+      await waiveFine(fineId);
+      toast.success("Fine waived");
+      refetchOverdue();
+    } catch {
+      toast.error("Failed to waive fine");
+    }
+  };
+
+  const openAdjustModal = (fineId: string) => {
+    setAdjustFineId(fineId);
+    setAdjustAmount("");
+    setAdjustReason("");
+    setAdjustModal(true);
+  };
+
+  const handleAdjustFine = async () => {
+    if (!adjustAmount || !adjustReason.trim()) {
+      toast.error("Amount and reason are required");
+      return;
+    }
+    try {
+      await adjustFine({ fineId: adjustFineId, amount: parseFloat(adjustAmount), reason: adjustReason.trim() });
+      toast.success("Fine adjusted");
+      setAdjustModal(false);
+      refetchOverdue();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to adjust fine");
+    }
+  };
+
   const statCards = [
     { label: "On Loan",       value: stats?.on_loan ?? 0,           icon: BookOpen,      iconClass: "bg-blue-50 text-blue-600" },
     { label: "Overdue",       value: stats?.overdue ?? 0,           icon: AlertTriangle, iconClass: (stats?.overdue ?? 0) > 0 ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-400" },
@@ -94,7 +138,7 @@ export default function LibrarianDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetch()}
+              onClick={() => { refetch(); refetchOverdue(); }}
               icon={<RefreshCw size={14} />}
               aria-label="Refresh dashboard"
             >
@@ -134,59 +178,165 @@ export default function LibrarianDashboardPage() {
             ))}
       </div>
 
-      {/* Recent transactions */}
-      <Card padding="none">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <CardTitle>Recent Transactions</CardTitle>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="data-table" aria-label="Recent lending transactions">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Member</th>
-                <th>Book</th>
-                <th>Status</th>
-                <th>Due Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={5} />)
-              ) : !stats?.recent_transactions?.length ? (
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b border-slate-200">
+        {(["overview", "overdue"] as Tab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === tab
+                ? "border-primary-600 text-primary-700"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {tab === "overview" ? "Recent Transactions" : "Overdue & Fines"}
+          </button>
+        ))}
+      </div>
+
+      {/* Overview tab */}
+      {activeTab === "overview" && (
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <CardTitle>Recent Transactions</CardTitle>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table" aria-label="Recent lending transactions">
+              <thead>
                 <tr>
-                  <td colSpan={5}>
-                    <EmptyState
-                      icon={<BookOpen size={22} />}
-                      title="No transactions yet"
-                      className="py-8"
-                    />
-                  </td>
+                  <th>Date</th>
+                  <th>Member</th>
+                  <th>Book</th>
+                  <th>Status</th>
+                  <th>Due Date</th>
                 </tr>
-              ) : (
-                stats.recent_transactions.map((txn: {
-                  transaction_id: string;
-                  created_at: string;
-                  member_name: string;
-                  title: string;
-                  status: string;
-                  due_date: string;
-                }) => (
-                  <tr key={txn.transaction_id}>
-                    <td className="text-slate-500 text-xs">{formatDate(txn.created_at)}</td>
-                    <td className="font-medium text-slate-900">{txn.member_name}</td>
-                    <td className="max-w-xs">
-                      <span className="line-clamp-1 text-slate-700">{txn.title}</span>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={5} />)
+                ) : !stats?.recent_transactions?.length ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={<BookOpen size={22} />}
+                        title="No transactions yet"
+                        className="py-8"
+                      />
                     </td>
-                    <td><StatusBadge status={txn.status} /></td>
-                    <td className="text-slate-500 text-xs">{formatDate(txn.due_date)}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : (
+                  stats.recent_transactions.map((txn: {
+                    transaction_id: string;
+                    created_at: string;
+                    member_name: string;
+                    title: string;
+                    status: string;
+                    due_date: string;
+                  }) => (
+                    <tr key={txn.transaction_id}>
+                      <td className="text-slate-500 text-xs">{formatDate(txn.created_at)}</td>
+                      <td className="font-medium text-slate-900">{txn.member_name}</td>
+                      <td className="max-w-xs">
+                        <span className="line-clamp-1 text-slate-700">{txn.title}</span>
+                      </td>
+                      <td><StatusBadge status={txn.status} /></td>
+                      <td className="text-slate-500 text-xs">{formatDate(txn.due_date)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Overdue & Fines tab */}
+      {activeTab === "overdue" && (
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <CardTitle>Overdue Items &amp; Fines</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => refetchOverdue()} icon={<RefreshCw size={14} />}>
+              Refresh
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table" aria-label="Overdue items and fines">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Book</th>
+                  <th>Due Date</th>
+                  <th>Days Overdue</th>
+                  <th>Fine (Tk)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overdueLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={6} />)
+                ) : !overdueData?.length ? (
+                  <tr>
+                    <td colSpan={6}>
+                      <EmptyState
+                        icon={<AlertTriangle size={22} />}
+                        title="No overdue items"
+                        className="py-8"
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  overdueData.map((item: {
+                    transaction_id: string;
+                    member_name: string;
+                    book_title: string;
+                    due_date: string;
+                    days_overdue: number;
+                    current_fine: number;
+                    fine_id?: string;
+                  }) => (
+                    <tr key={item.transaction_id}>
+                      <td className="font-medium text-slate-900">{item.member_name}</td>
+                      <td className="max-w-xs"><span className="line-clamp-1 text-slate-700">{item.book_title}</span></td>
+                      <td className="text-slate-500 text-xs">{formatDate(item.due_date)}</td>
+                      <td>
+                        <span className="text-red-600 font-semibold">{item.days_overdue}</span>
+                      </td>
+                      <td className="font-medium text-slate-900">
+                        {Number(item.current_fine).toFixed(2)}
+                      </td>
+                      <td>
+                        <div className="flex gap-2">
+                          {item.fine_id && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleWaiveFine(item.fine_id!)}
+                                loading={isWaiving}
+                              >
+                                Waive
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openAdjustModal(item.fine_id!)}
+                                loading={isAdjusting}
+                              >
+                                Adjust
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Issue Modal */}
       <Modal
@@ -243,6 +393,43 @@ export default function LibrarianDashboardPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Adjust Fine Modal */}
+      <Modal
+        isOpen={adjustModal}
+        onClose={() => setAdjustModal(false)}
+        title="Adjust Fine"
+        description="Set a custom fine amount and provide a reason."
+        size="sm"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Amount (Tk)"
+            type="number"
+            min="0"
+            step="0.01"
+            value={adjustAmount}
+            onChange={(e) => setAdjustAmount(e.target.value)}
+            placeholder="e.g. 25.00"
+            required
+          />
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Reason <span className="text-red-500">*</span></label>
+            <textarea
+              value={adjustReason}
+              onChange={(e) => setAdjustReason(e.target.value)}
+              rows={3}
+              placeholder="Reason for adjustment"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setAdjustModal(false)}>Cancel</Button>
+            <Button onClick={handleAdjustFine} loading={isAdjusting}>Save Adjustment</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+

@@ -357,6 +357,53 @@ router.patch(
   })
 );
 
+// PATCH /api/library/fines/:fine_id/adjust
+router.patch(
+  "/fines/:fine_id/adjust",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { amount, reason } = req.body as { amount: number; reason: string };
+
+    if (amount === undefined || isNaN(Number(amount)) || Number(amount) < 0) {
+      throw new AppError(400, "A valid non-negative amount is required");
+    }
+    if (!reason?.trim()) throw new AppError(400, "Reason is required");
+
+    const fine = await queryOne(
+      `UPDATE fines SET amount = $1, reason = $2 WHERE fine_id = $3 AND status = 'pending' RETURNING *`,
+      [Number(amount), reason.trim(), req.params.fine_id]
+    );
+    if (!fine) throw new AppError(404, "Fine not found or already settled");
+
+    res.json({ success: true, data: fine });
+  })
+);
+
+// GET /api/library/overdue
+router.get(
+  "/overdue",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const overdue = await query(
+      `SELECT lt.transaction_id, lt.due_date, lt.fine_amount, lt.status,
+              u.name as member_name, u.email as member_email,
+              ci.title as book_title, ci.isbn,
+              COALESCE(f.amount, 0) as current_fine,
+              CURRENT_DATE - lt.due_date as days_overdue
+       FROM lending_transactions lt
+       JOIN users u          ON lt.member_id = u.user_id
+       JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+       LEFT JOIN fines f     ON f.transaction_id = lt.transaction_id AND f.status = 'pending'
+       WHERE lt.status IN ('active', 'overdue')
+         AND lt.due_date < CURRENT_DATE
+       ORDER BY lt.due_date ASC`
+    );
+    res.json({ success: true, data: overdue });
+  })
+);
+
 // GET /api/library/catalog/:id
 router.get("/catalog/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
   const item = await queryOne(
