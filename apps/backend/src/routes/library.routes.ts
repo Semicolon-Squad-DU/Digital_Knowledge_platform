@@ -391,6 +391,7 @@ router.get(
               u.name as member_name, u.email as member_email,
               ci.title as book_title, ci.isbn,
               COALESCE(f.amount, 0) as current_fine,
+              f.fine_id,
               CURRENT_DATE - lt.due_date as days_overdue
        FROM lending_transactions lt
        JOIN users u          ON lt.member_id = u.user_id

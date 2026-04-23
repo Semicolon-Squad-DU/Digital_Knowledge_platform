@@ -67,8 +67,10 @@ async function withRetry(
 export function startScheduler(): void {
   // Daily at 8 AM: detect overdue and send reminders
   cron.schedule("0 8 * * *", () => {
-    void withRetry("checkOverdueAndSendReminders", checkOverdueAndSendReminders);
-    void withRetry("calculateOverdueFines", calculateOverdueFines);
+    void withRetry("checkOverdueAndSendReminders", async () => {
+      await checkOverdueAndSendReminders();
+      await calculateOverdueFines();
+    });
   });
 
   // Daily at 9 AM: retry any S3 uploads that were queued locally
