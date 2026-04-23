@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-1 bg-[var(--color-canvas-default)]">
+            <main className="flex-1">
               {children}
             </main>
           </div>

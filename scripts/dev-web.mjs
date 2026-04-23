@@ -25,6 +25,7 @@ function run(command, args, cwd) {
       cwd,
       stdio: "inherit",
       env: process.env,
+      shell: process.platform === "win32",
     });
 
     child.on("exit", (code) => {
@@ -43,8 +44,10 @@ async function main() {
   const rootDir = resolve(process.cwd());
   const webDir = resolve(rootDir, "apps/frontend");
   const binDir = resolve(rootDir, "node_modules/.bin");
-  const tailwindBin = resolve(binDir, "tailwindcss");
-  const nextBin = resolve(binDir, "next");
+  const isWindows = process.platform === "win32";
+  const ext = isWindows ? ".cmd" : "";
+  const tailwindBin = resolve(binDir, `tailwindcss${ext}`);
+  const nextBin = resolve(binDir, `next${ext}`);
 
   killPort3000();
 

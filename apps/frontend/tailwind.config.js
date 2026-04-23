@@ -96,6 +96,15 @@ module.exports = {
         "gh-dark":   "0 1px 3px rgba(1,4,9,0.8), 0 8px 24px rgba(1,4,9,0.4)",
         "gh-dark-md":"0 3px 6px rgba(1,4,9,0.4)",
       },
+      backgroundImage: {
+        "gradient-bg":      "var(--gradient-bg)",
+        "gradient-surface": "var(--gradient-surface)",
+        "gradient-header":  "var(--gradient-header)",
+        "gradient-accent":  "var(--gradient-accent)",
+        "gradient-success": "var(--gradient-success)",
+        "gradient-danger":  "var(--gradient-danger)",
+        "gradient-hero":    "var(--gradient-hero)",
+      },
       animation: {
         "fade-in":    "fadeIn 0.15s ease-out",
         "slide-down": "slideDown 0.15s ease-out",
