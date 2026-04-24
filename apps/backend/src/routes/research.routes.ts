@@ -137,6 +137,61 @@ router.get("/:id", asyncHandler(async (req, res: Response) => {
   res.json({ success: true, data: output });
 }));
 
+// PATCH /api/research/:id
+router.patch(
+  "/:id",
+  authenticate,
+  requireRole("researcher", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const existing = await queryOne<{
+      output_id: string;
+      uploaded_by: string;
+    }>("SELECT output_id, uploaded_by FROM research_outputs WHERE output_id = $1", [req.params.id]);
+
+    if (!existing) throw new AppError(404, "Research output not found");
+
+    if (existing.uploaded_by !== req.user!.user_id && req.user!.role !== "admin") {
+      throw new AppError(403, "You can only edit your own research outputs");
+    }
+
+    const {
+      title, abstract, authors, keywords,
+      doi, output_type, lab_id,
+      published_date, journal_name, volume, issue, pages,
+    } = req.body as Record<string, string>;
+
+    // Build SET clause dynamically — only update provided fields
+    const updates: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+
+    if (title !== undefined)          { updates.push(`title = $${idx++}`);          params.push(title); }
+    if (abstract !== undefined)       { updates.push(`abstract = $${idx++}`);       params.push(abstract || null); }
+    if (authors !== undefined)        { updates.push(`authors = $${idx++}`);        params.push(typeof authors === "string" ? JSON.parse(authors) : authors); }
+    if (keywords !== undefined)       { updates.push(`keywords = $${idx++}`);       params.push(typeof keywords === "string" ? JSON.parse(keywords) : keywords); }
+    if (doi !== undefined)            { updates.push(`doi = $${idx++}`);            params.push(doi || null); }
+    if (output_type !== undefined)    { updates.push(`output_type = $${idx++}`);    params.push(output_type); }
+    if (lab_id !== undefined)         { updates.push(`lab_id = $${idx++}`);         params.push(lab_id || null); }
+    if (published_date !== undefined) { updates.push(`published_date = $${idx++}`); params.push(published_date || null); }
+    if (journal_name !== undefined)   { updates.push(`journal_name = $${idx++}`);   params.push(journal_name || null); }
+    if (volume !== undefined)         { updates.push(`volume = $${idx++}`);         params.push(volume || null); }
+    if (issue !== undefined)          { updates.push(`issue = $${idx++}`);          params.push(issue || null); }
+    if (pages !== undefined)          { updates.push(`pages = $${idx++}`);          params.push(pages || null); }
+
+    if (updates.length === 0) throw new AppError(400, "No fields provided to update");
+
+    params.push(req.params.id);
+    const updated = await queryOne(
+      `UPDATE research_outputs SET ${updates.join(", ")}, updated_at = NOW()
+       WHERE output_id = $${idx}
+       RETURNING *`,
+      params
+    );
+
+    res.json({ success: true, data: updated });
+  })
+);
+
 // POST /api/research
 router.post(
   "/",

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { GraduationCap, Search, Users, Calendar } from "lucide-react";
+import { GraduationCap, Search, Users, Calendar, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
+import { useAuthStore } from "@/store/auth.store";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
@@ -30,6 +31,8 @@ function getTechColor(tech: string) {
 export default function ShowcasePage() {
   const [params, setParams] = useState({ department: "", semester: "", q: "", page: 1, limit: 12 });
   const [searchInput, setSearchInput] = useState("");
+  const { user } = useAuthStore();
+  const canSubmit = user?.role === "student_author" || user?.role === "admin";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["showcase", params],
@@ -57,6 +60,13 @@ export default function ShowcasePage() {
         title="Student Showcase"
         subtitle="Explore projects from all departments and semesters"
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Showcase" }]}
+        actions={canSubmit ? (
+          <Link href="/showcase/submit">
+            <Button variant="primary" size="sm" icon={<Plus size={13} />}>
+              Submit Project
+            </Button>
+          </Link>
+        ) : undefined}
       />
 
       {/* Search */}

@@ -48,8 +48,12 @@ export default function RegisterPage() {
       toast.success("Account created successfully!");
       router.push("/dashboard");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg || "Registration failed. Please try again.");
+      const response = (err as { response?: { data?: { message?: string; errors?: { msg: string }[] } } })?.response?.data;
+      if (response?.errors?.length) {
+        setError(response.errors.map((e) => e.msg).join(" · "));
+      } else {
+        setError(response?.message || "Registration failed. Please try again.");
+      }
     }
   };
 
