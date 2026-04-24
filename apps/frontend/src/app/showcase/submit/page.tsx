@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSubmitProject } from "@/hooks/useShowcase";
-import { useLabs } from "@/hooks/useResearch";
+import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { cn, formatFileSize } from "@/lib/utils";
 
@@ -45,7 +46,12 @@ type FormValues = z.infer<typeof schema>;
 // ---------------------------------------------------------------------------
 
 const DEPARTMENTS = ["CSE", "EEE", "ME", "CE", "BBA", "English", "Physics", "Mathematics", "Chemistry"];
-const SEMESTERS   = ["Spring 2024", "Summer 2024", "Fall 2024", "Spring 2025", "Summer 2025", "Fall 2025"];
+const SEMESTERS   = [
+  "4th Year 1st Semester 2026",
+  "3rd Year 2nd Semester 2026",
+  "2nd Year 2nd Semester 2026",
+  "1st Year 2nd Semester 2026",
+];
 const MAX_PDF_MB  = 20;
 const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024;
 
@@ -61,11 +67,17 @@ export default function SubmitProjectPage() {
   const [pdfFile, setPdfFile]   = useState<File | null>(null);
   const [pdfError, setPdfError] = useState<string>("");
 
-  const { data: labsData } = useLabs();
+  const { data: advisorData } = useQuery({
+    queryKey: ["advisors"],
+    queryFn: async () => {
+      const { data } = await api.get("/auth/advisors");
+      return data.data as { user_id: string; name: string; department: string }[];
+    },
+  });
   const advisors: { value: string; label: string }[] =
-    (labsData ?? []).map((l: { head_researcher_id: string; head_name: string }) => ({
-      value: l.head_researcher_id,
-      label: l.head_name,
+    (advisorData ?? []).map((u) => ({
+      value: u.user_id,
+      label: u.department ? `${u.name} (${u.department})` : u.name,
     }));
 
   const {
@@ -121,8 +133,12 @@ export default function SubmitProjectPage() {
       const project = await submitProject.mutateAsync(fd);
       toast.success("Project submitted for advisor review!");
       router.push(`/showcase/${(project as { project_id: string }).project_id}`);
-    } catch {
-      toast.error("Submission failed. Please try again.");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || "Submission failed. Please try again.";
+      toast.error(msg);
+      console.error("Submission error:", err);
     }
   };
 

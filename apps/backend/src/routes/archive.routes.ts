@@ -54,6 +54,14 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
   });
 }));
 
+// GET /api/archive/download-url?key=... — generate presigned URL for any S3 key
+router.get("/download-url", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { key } = req.query as { key: string };
+  if (!key) throw new AppError(400, "key is required");
+  const url = await getPresignedUrl(key, 300); // 5 min expiry
+  res.json({ success: true, data: { url } });
+}));
+
 // GET /api/archive/meta/tags
 router.get("/meta/tags", asyncHandler(async (_req, res: Response) => {
   const tags = await query("SELECT * FROM tags ORDER BY name_en");

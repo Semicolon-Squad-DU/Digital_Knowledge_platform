@@ -184,7 +184,7 @@ CREATE TABLE student_projects (
   abstract         TEXT NOT NULL,
   team_members     JSONB NOT NULL DEFAULT '[]',
   advisor_id       UUID NOT NULL REFERENCES users(user_id),
-  semester         VARCHAR(20) NOT NULL,
+  semester         VARCHAR(100) NOT NULL,
   department       VARCHAR(255) NOT NULL,
   technologies     TEXT[] NOT NULL DEFAULT '{}',
   report_url       TEXT,
