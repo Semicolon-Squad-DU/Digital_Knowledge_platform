@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { query } from "../db/pool";
 import { config } from "../config";
 import { sendEmail, dueDateReminderEmail } from "../services/email.service";
+import { retryQueuedUploads } from "../services/s3.service";
 import { logger } from "../config/logger";
 
 // ---------------------------------------------------------------------------
@@ -86,8 +87,10 @@ export function startScheduler(): void {
     await withRetry("calculateOverdueFines", calculateOverdueFines);
   });
 
-  // Daily at 9 AM: retry all previously failed jobs
+  // Daily at 9 AM: retry all previously failed jobs + queued S3 uploads
   cron.schedule("0 9 * * *", async () => {
+    await withRetry("retryQueuedUploads", retryQueuedUploads);
+
     if (failedJobsLog.length === 0) {
       logger.info("No failed jobs to retry");
       return;

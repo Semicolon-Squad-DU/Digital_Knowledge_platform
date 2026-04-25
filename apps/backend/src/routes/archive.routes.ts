@@ -239,6 +239,64 @@ router.post(
   })
 );
 
+// PATCH /api/archive/:id — metadata edit (archivist/admin only)
+router.patch(
+  "/:id",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { title_en, title_bn, description, authors, category, access_tier, tags: tagIds } =
+      req.body as {
+        title_en?: string; title_bn?: string; description?: string;
+        authors?: string[]; category?: string; access_tier?: string; tags?: string[];
+      };
+
+    const item = await queryOne<{ item_id: string }>(
+      "SELECT item_id FROM archive_items WHERE item_id = $1",
+      [req.params.id]
+    );
+    if (!item) throw new AppError(404, "Archive item not found");
+
+    const updated = await withTransaction(async (client) => {
+      const result = await client.query(
+        `UPDATE archive_items SET
+           title_en    = COALESCE($1, title_en),
+           title_bn    = COALESCE($2, title_bn),
+           description = COALESCE($3, description),
+           authors     = COALESCE($4, authors),
+           category    = COALESCE($5, category),
+           access_tier = COALESCE($6, access_tier),
+           updated_at  = NOW()
+         WHERE item_id = $7
+         RETURNING *`,
+        [title_en ?? null, title_bn ?? null, description ?? null,
+         authors ? JSON.stringify(authors) : null,
+         category ?? null, access_tier ?? null, req.params.id]
+      );
+
+      if (tagIds !== undefined) {
+        await client.query("DELETE FROM archive_item_tags WHERE item_id = $1", [req.params.id]);
+        for (const tag_id of tagIds) {
+          await client.query(
+            "INSERT INTO archive_item_tags (item_id, tag_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+            [req.params.id, tag_id]
+          );
+        }
+      }
+
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+         VALUES ($1,'UPDATE','archive_item',$2,$3,$4)`,
+        [req.user!.user_id, req.params.id, JSON.stringify({ title_en, category, access_tier }), req.ip]
+      );
+
+      return result.rows[0];
+    });
+
+    res.json({ success: true, data: updated });
+  })
+);
+
 // PATCH /api/archive/:id/status
 router.patch(
   "/:id/status",

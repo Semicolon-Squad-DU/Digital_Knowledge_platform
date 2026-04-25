@@ -50,6 +50,20 @@ export function useUploadArchiveItem() {
   });
 }
 
+export function useUpdateArchiveItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string; title_en?: string; title_bn?: string; description?: string; authors?: string[]; category?: string; access_tier?: string; tags?: string[] }) => {
+      const { data } = await api.patch(`/archive/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["archive", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["archive", "search"] });
+    },
+  });
+}
+
 export function useUpdateArchiveStatus() {
   const queryClient = useQueryClient();
   return useMutation({

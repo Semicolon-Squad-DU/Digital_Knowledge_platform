@@ -10,6 +10,8 @@ import { config } from "../config";
 import { logger } from "../config/logger";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
+import fs from "fs";
+import fsPromises from "fs/promises";
 
 export const s3Client = new S3Client({
   endpoint: config.s3.endpoint,
@@ -73,21 +75,95 @@ function mimeToExt(mime: string): string {
   return map[mime] || "";
 }
 
+const DKP_QUEUE_DIR = path.resolve(process.cwd(), "dkp-queue");
+
+function ensureQueueDir() {
+  if (!fs.existsSync(DKP_QUEUE_DIR)) {
+    fs.mkdirSync(DKP_QUEUE_DIR, { recursive: true });
+  }
+}
+
 export async function uploadToS3(
   key: string,
   body: Buffer,
   contentType: string
 ): Promise<string> {
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: config.s3.bucket,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
-    })
-  );
-  logger.debug("File uploaded to S3", { key });
-  return key;
+  try {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: config.s3.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      })
+    );
+    logger.debug("File uploaded to S3", { key });
+    return key;
+  } catch (err) {
+    logger.warn("S3 upload failed, saving to local queue", {
+      key,
+      error: (err as Error).message,
+    });
+
+    ensureQueueDir();
+    const safeFilename = key.replace(/\//g, "_");
+    const filePath = path.join(DKP_QUEUE_DIR, safeFilename);
+    const metaPath = path.join(DKP_QUEUE_DIR, `${safeFilename}.meta.json`);
+
+    await fsPromises.writeFile(filePath, body);
+    await fsPromises.writeFile(
+      metaPath,
+      JSON.stringify({ key, contentType, queuedAt: new Date().toISOString() }, null, 2)
+    );
+
+    logger.info("File saved to local queue", { localPath: filePath });
+    return `local://${key}`;
+  }
+}
+
+export async function retryQueuedUploads(): Promise<void> {
+  ensureQueueDir();
+  const files = await fsPromises.readdir(DKP_QUEUE_DIR);
+  const metaFiles = files.filter((f) => f.endsWith(".meta.json"));
+
+  if (metaFiles.length === 0) {
+    logger.info("No queued uploads to retry");
+    return;
+  }
+
+  logger.info(`Retrying ${metaFiles.length} queued upload(s)`);
+
+  for (const metaFile of metaFiles) {
+    const metaPath = path.join(DKP_QUEUE_DIR, metaFile);
+    const dataFile = metaFile.replace(".meta.json", "");
+    const dataPath = path.join(DKP_QUEUE_DIR, dataFile);
+
+    try {
+      const meta = JSON.parse(await fsPromises.readFile(metaPath, "utf-8")) as {
+        key: string;
+        contentType: string;
+      };
+      const body = await fsPromises.readFile(dataPath);
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: config.s3.bucket,
+          Key: meta.key,
+          Body: body,
+          ContentType: meta.contentType,
+        })
+      );
+
+      await fsPromises.unlink(dataPath);
+      await fsPromises.unlink(metaPath);
+      logger.info("Queued upload retried successfully", { key: meta.key });
+    } catch (err) {
+      logger.error("Failed to retry queued upload", {
+        file: metaFile,
+        error: (err as Error).message,
+      });
+    }
+  }
 }
 
 export async function getPresignedUrl(
