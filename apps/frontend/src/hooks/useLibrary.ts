@@ -126,3 +126,112 @@ export function useMemberFines(memberId: string) {
     enabled: !!memberId,
   });
 }
+
+export function useOverdueTransactions() {
+  return useQuery({
+    queryKey: ["library", "overdue"],
+    queryFn: async () => {
+      const { data } = await api.get("/library/overdue");
+      return data.data;
+    },
+  });
+}
+
+export function useAdjustFine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { fine_id: string; amount: number; reason: string }) => {
+      const { data } = await api.patch(`/library/fines/${payload.fine_id}/adjust`, {
+        amount: payload.amount,
+        reason: payload.reason,
+      });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", "overdue"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "fines"] });
+    },
+  });
+}
+
+export function useWaiveFine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (fine_id: string) => {
+      const { data } = await api.patch(`/library/fines/${fine_id}/waive`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", "overdue"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "fines"] });
+    },
+  });
+}
+
+export function useCreateCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      title: string;
+      isbn?: string;
+      authors?: string[];
+      publisher?: string;
+      edition?: string;
+      year?: number;
+      category?: string;
+      total_copies: number;
+      shelf_location?: string;
+      description?: string;
+    }) => {
+      const { data } = await api.post("/library/catalog", payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export function useUpdateCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      catalog_id: string;
+      title?: string;
+      isbn?: string;
+      authors?: string[];
+      publisher?: string;
+      edition?: string;
+      year?: number;
+      category?: string;
+      total_copies?: number;
+      shelf_location?: string;
+      description?: string;
+    }) => {
+      const { catalog_id, ...data } = payload;
+      const response = await api.put(`/library/catalog/${catalog_id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export function useDeleteCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (catalog_id: string) => {
+      const { data } = await api.delete(`/library/catalog/${catalog_id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+

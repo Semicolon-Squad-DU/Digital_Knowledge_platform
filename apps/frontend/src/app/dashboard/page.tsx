@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Clock, AlertTriangle, Bell, BookMarked, ArrowRight } from "lucide-react";
+import { BookOpen, Clock, AlertTriangle, Bell, BookMarked, ArrowRight, Banknote } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useBorrowingHistory, useMemberFines } from "@/hooks/useLibrary";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -127,60 +127,127 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="gh-box overflow-hidden">
-          <div
-            className="flex items-center justify-between px-4 py-3"
-            style={{ background: "var(--color-canvas-subtle)", borderBottom: "1px solid var(--color-border-default)" }}
-          >
-            <div className="flex items-center gap-2">
-              <Bell size={15} style={{ color: "var(--color-fg-muted)" }} />
-              <span className="text-sm font-semibold" style={{ color: "var(--color-fg-default)" }}>Notifications</span>
-              {(notifData?.unread_count ?? 0) > 0 && (
-                <span
-                  className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white"
-                  style={{ background: "var(--color-accent-emphasis)" }}
-                >
-                  {notifData?.unread_count}
-                </span>
+        <div className="grid grid-cols-1 gap-4">
+          {/* Pending Fines */}
+          <div className="gh-box overflow-hidden">
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{ background: "var(--color-canvas-subtle)", borderBottom: "1px solid var(--color-border-default)" }}
+            >
+              <div className="flex items-center gap-2">
+                <Banknote size={15} style={{ color: "var(--color-fg-muted)" }} />
+                <span className="text-sm font-semibold" style={{ color: "var(--color-fg-default)" }}>Pending Fines</span>
+              </div>
+            </div>
+
+            <div className="p-3">
+              {historyLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              ) : !fineData?.fines || fineData.fines.length === 0 ? (
+                <EmptyState
+                  icon={<Banknote size={20} />}
+                  title="No pending fines"
+                  description="Keep up the great reading!"
+                  className="py-8"
+                />
+              ) : (
+                <div>
+                  <div className="mb-3 pb-3" style={{ borderBottom: "1px solid var(--color-border-muted)" }}>
+                    <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>Total Outstanding</p>
+                    <p className="text-2xl font-bold" style={{ color: "var(--color-danger-fg)" }}>
+                      Tk {(fineData.total_pending ?? 0).toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div>
+                    {fineData.fines.slice(0, 4).map((fine: { fine_id: string; book_title: string; amount: number; reason: string; status: string }, i: number) => (
+                      <div
+                        key={fine.fine_id}
+                        className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-[var(--color-canvas-subtle)] transition-colors"
+                        style={{ borderBottom: i < Math.min(3, (fineData.fines?.length ?? 0) - 1) ? "1px solid var(--color-border-muted)" : "none" }}
+                      >
+                        <div className="min-w-0 flex-1 mr-3">
+                          <p className="text-sm font-medium line-clamp-1" style={{ color: "var(--color-fg-default)" }}>
+                            {fine.book_title}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--color-fg-muted)" }}>
+                            {fine.reason}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold" style={{ color: "var(--color-danger-fg)" }}>
+                          Tk {fine.amount.toFixed(2)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {(fineData.fines?.length ?? 0) > 4 && (
+                    <Link href="/dashboard/history" className="text-xs flex items-center justify-center gap-1 mt-3 pt-2" style={{ color: "var(--color-accent-fg)", borderTop: "1px solid var(--color-border-muted)" }}>
+                      View all fines <ArrowRight size={11} />
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
-            <Link href="/notifications" className="text-xs flex items-center gap-1" style={{ color: "var(--color-accent-fg)" }}>
-              View all <ArrowRight size={11} />
-            </Link>
           </div>
 
-          <div className="p-3">
-            {recentNotifs.length === 0 ? (
-              <EmptyState
-                icon={<Bell size={20} />}
-                title="All caught up"
-                description="No new notifications."
-                className="py-8"
-              />
-            ) : (
-              <div>
-                {recentNotifs.map((notif: { notification_id: string; title: string; message: string; read: boolean; created_at: string }, i: number) => (
-                  <div
-                    key={notif.notification_id}
-                    className="flex gap-3 py-2 px-2 rounded-md hover:bg-[var(--color-canvas-subtle)] transition-colors"
-                    style={{ borderBottom: i < recentNotifs.length - 1 ? "1px solid var(--color-border-muted)" : "none" }}
+          {/* Notifications */}
+          <div className="gh-box overflow-hidden">
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{ background: "var(--color-canvas-subtle)", borderBottom: "1px solid var(--color-border-default)" }}
+            >
+              <div className="flex items-center gap-2">
+                <Bell size={15} style={{ color: "var(--color-fg-muted)" }} />
+                <span className="text-sm font-semibold" style={{ color: "var(--color-fg-default)" }}>Notifications</span>
+                {(notifData?.unread_count ?? 0) > 0 && (
+                  <span
+                    className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white"
+                    style={{ background: "var(--color-accent-emphasis)" }}
                   >
-                    {!notif.read && (
-                      <div
-                        className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                        style={{ background: "var(--color-accent-fg)" }}
-                      />
-                    )}
-                    <div className={!notif.read ? "" : "ml-5"}>
-                      <p className="text-sm font-medium" style={{ color: "var(--color-fg-default)" }}>{notif.title}</p>
-                      <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--color-fg-muted)" }}>{notif.message}</p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--color-fg-subtle)" }}>{timeAgo(notif.created_at)}</p>
-                    </div>
-                  </div>
-                ))}
+                    {notifData?.unread_count}
+                  </span>
+                )}
               </div>
-            )}
+              <Link href="/notifications" className="text-xs flex items-center gap-1" style={{ color: "var(--color-accent-fg)" }}>
+                View all <ArrowRight size={11} />
+              </Link>
+            </div>
+
+            <div className="p-3">
+              {recentNotifs.length === 0 ? (
+                <EmptyState
+                  icon={<Bell size={20} />}
+                  title="All caught up"
+                  description="No new notifications."
+                  className="py-8"
+                />
+              ) : (
+                <div>
+                  {recentNotifs.map((notif: { notification_id: string; title: string; message: string; read: boolean; created_at: string }, i: number) => (
+                    <div
+                      key={notif.notification_id}
+                      className="flex gap-3 py-2 px-2 rounded-md hover:bg-[var(--color-canvas-subtle)] transition-colors"
+                      style={{ borderBottom: i < recentNotifs.length - 1 ? "1px solid var(--color-border-muted)" : "none" }}
+                    >
+                      {!notif.read && (
+                        <div
+                          className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                          style={{ background: "var(--color-accent-fg)" }}
+                        />
+                      )}
+                      <div className={!notif.read ? "" : "ml-5"}>
+                        <p className="text-sm font-medium" style={{ color: "var(--color-fg-default)" }}>{notif.title}</p>
+                        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--color-fg-muted)" }}>{notif.message}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--color-fg-subtle)" }}>{timeAgo(notif.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

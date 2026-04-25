@@ -73,6 +73,42 @@ router.get(
   })
 );
 
+// GET /api/library/overdue
+router.get(
+  "/overdue",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const overdueTransactions = await query(
+      `SELECT 
+         lt.transaction_id,
+         lt.member_id,
+         u.name as member_name,
+         u.email as member_email,
+         ci.catalog_id,
+         ci.title,
+         ci.isbn,
+         lt.due_date,
+         CURRENT_DATE - lt.due_date as days_overdue,
+         COALESCE(f.amount, 0) as fine_amount,
+         f.fine_id,
+         f.status as fine_status,
+         lt.status
+       FROM lending_transactions lt
+       JOIN users u ON lt.member_id = u.user_id
+       JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+       LEFT JOIN fines f ON lt.transaction_id = f.transaction_id
+       WHERE lt.status = 'active' AND lt.due_date < CURRENT_DATE
+       ORDER BY days_overdue DESC`
+    );
+
+    res.json({
+      success: true,
+      data: overdueTransactions,
+    });
+  })
+);
+
 // GET /api/library/wishlist
 router.get("/wishlist", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const items = await query(
@@ -353,6 +389,47 @@ router.patch(
       [req.params.fine_id]
     );
     if (!fine) throw new AppError(404, "Fine not found");
+    res.json({ success: true, data: fine });
+  })
+);
+
+// PATCH /api/library/fines/:fine_id/adjust
+router.patch(
+  "/fines/:fine_id/adjust",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { amount, reason } = req.body as { amount: number; reason: string };
+
+    if (amount === undefined || amount === null) {
+      throw new AppError(400, "Amount is required");
+    }
+
+    if (amount < 0) {
+      throw new AppError(400, "Amount must be non-negative");
+    }
+
+    if (!reason || typeof reason !== "string" || !reason.trim()) {
+      throw new AppError(400, "Reason is required");
+    }
+
+    const fine = await queryOne(
+      `UPDATE fines
+       SET amount = $1, reason = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE fine_id = $3
+       RETURNING *`,
+      [amount, reason.trim(), req.params.fine_id]
+    );
+
+    if (!fine) throw new AppError(404, "Fine not found");
+
+    // Log the adjustment in audit logs
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+       VALUES ($1, 'UPDATE', 'fine', $2, $3, $4)`,
+      [req.user!.user_id, req.params.fine_id, JSON.stringify({ amount, reason }), req.ip]
+    );
+
     res.json({ success: true, data: fine });
   })
 );
