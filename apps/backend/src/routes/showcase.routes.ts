@@ -93,13 +93,35 @@ router.post(
   requireRole("student_author", "admin"),
   uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const {
-      title, abstract, team_members, advisor_id, semester,
-      department, technologies, source_code_url,
-    } = req.body as Record<string, string>;
+    const body = req.body as Record<string, unknown>;
+
+    const title          = body.title as string;
+    const abstract       = body.abstract as string;
+    const advisor_id     = body.advisor_id as string;
+    const semester       = body.semester as string;
+    const department     = body.department as string;
+    const source_code_url = body.source_code_url as string | undefined;
 
     if (!title || !abstract || !advisor_id || !semester || !department) {
       throw new AppError(400, "title, abstract, advisor_id, semester, department are required");
+    }
+
+    // Safely parse JSON fields — multer sends them as strings
+    let team_members: unknown[] = [];
+    let technologies: string[]  = [];
+
+    try {
+      const tm = body.team_members;
+      team_members = typeof tm === "string" ? JSON.parse(tm) : Array.isArray(tm) ? tm : [];
+    } catch {
+      throw new AppError(400, "Invalid team_members format");
+    }
+
+    try {
+      const tech = body.technologies;
+      technologies = typeof tech === "string" ? JSON.parse(tech) : Array.isArray(tech) ? tech : [];
+    } catch {
+      throw new AppError(400, "Invalid technologies format");
     }
 
     let report_url: string | null = null;
@@ -116,9 +138,9 @@ router.post(
        RETURNING *`,
       [
         title, abstract,
-        team_members ? JSON.parse(team_members) : [],
+        JSON.stringify(team_members),   // JSONB column
         advisor_id, semester, department,
-        technologies ? JSON.parse(technologies) : [],
+        technologies,                   // TEXT[] column — pass array directly
         report_url, source_code_url || null,
         req.user!.user_id,
       ]

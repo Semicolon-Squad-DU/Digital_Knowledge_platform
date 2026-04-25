@@ -149,6 +149,17 @@ router.post("/logout", authenticate, asyncHandler(async (req: AuthRequest, res: 
   res.json({ success: true, message: "Logged out successfully" });
 }));
 
+// GET /api/auth/advisors — public list of all researchers (faculty/advisors)
+router.get("/advisors", asyncHandler(async (_req: Request, res: Response) => {
+  const advisors = await query(
+    `SELECT user_id, name, department
+     FROM users
+     WHERE role = 'researcher' AND deleted_at IS NULL
+     ORDER BY name ASC`
+  );
+  res.json({ success: true, data: advisors });
+}));
+
 // GET /api/auth/me
 router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = await queryOne(

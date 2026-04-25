@@ -1,9 +1,44 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { FileText, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "@/lib/api";
+
+function DownloadReportButton({ reportKey }: { reportKey: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDownload = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/archive/download-url", {
+        params: { key: reportKey },
+      });
+      window.open(data.data.url, "_blank");
+    } catch {
+      // Fallback: try direct MinIO URL
+      const minioUrl = `http://localhost:9000/dkp-files/${reportKey}`;
+      window.open(minioUrl, "_blank");
+      toast("Opening report via direct link");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleDownload}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-[var(--color-accent-fg)] hover:underline text-sm disabled:opacity-60"
+    >
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
+      View Report
+    </button>
+  );
+}
 
 export default function ShowcaseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -68,9 +103,7 @@ export default function ShowcaseDetailPage() {
             </a>
           )}
           {project.report_url && (
-            <a href={project.report_url} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-              Report
-            </a>
+            <DownloadReportButton reportKey={project.report_url} />
           )}
           {(project.status === "pending_review" || project.status === "changes_requested") && (
             <Link href={`/showcase/review/${project.project_id}`} className="text-primary-600 hover:underline">
