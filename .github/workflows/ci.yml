@@ -7,7 +7,23 @@ on:
     branches: ["**"]
 
 jobs:
+  block-bot-commits:
+    name: Block automated bot commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject commits from copilot-swe-agent or other bots
+        run: |
+          ACTOR="${{ github.actor }}"
+          echo "Triggered by: $ACTOR"
+          if [[ "$ACTOR" == *"[bot]"* ]] || [[ "$ACTOR" == "copilot-swe-agent" ]]; then
+            echo "❌ ERROR: Automated bot '$ACTOR' is not allowed to push to this repository."
+            echo "This is an assessed academic project. All commits must be made by human team members."
+            exit 1
+          fi
+          echo "✅ Human actor confirmed: $ACTOR"
+
   backend:
+    needs: block-bot-commits
     name: Backend — lint & build
     runs-on: ubuntu-latest
     defaults:
@@ -42,6 +58,7 @@ jobs:
           echo "seed.ts OK ($(wc -l < src/db/seed.ts) lines)"
 
   frontend:
+    needs: block-bot-commits
     name: Frontend — lint & build
     runs-on: ubuntu-latest
     defaults:
