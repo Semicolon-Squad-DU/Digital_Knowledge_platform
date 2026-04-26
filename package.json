@@ -1,0 +1,27 @@
+{
+  "name": "digital-knowledge-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "node ./scripts/dev-web.mjs",
+    "dev:frontend": "node ./scripts/dev-web.mjs",
+    "dev:backend": "npm --prefix ./apps/backend run dev",
+    "dev:web": "node ./scripts/dev-web.mjs",
+    "dev:api": "npm --prefix ./apps/backend run dev",
+    "dev:full": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=apps/backend && npm run build --workspace=apps/frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
