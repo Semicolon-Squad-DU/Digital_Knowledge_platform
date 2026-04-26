@@ -58,17 +58,32 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-600 text-white mb-4 shadow-lg shadow-primary-600/30">
-            <BookOpen size={28} />
+    <div
+      className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12"
+      style={{ background: "var(--color-canvas-subtle)" }}
+    >
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <div
+            className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
+            style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)" }}
+          >
+            <BookOpen size={22} style={{ color: "var(--color-fg-default)" }} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-          <p className="text-slate-600 mt-1">Join the Digital Knowledge Platform</p>
+          <h1 className="text-xl font-semibold" style={{ color: "var(--color-fg-default)" }}>
+            Create your account
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
+            Join the Digital Knowledge Platform
+          </p>
         </div>
 
-        <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5 p-8">
+        {/* Form card */}
+        <div
+          className="rounded-md border p-5"
+          style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)" }}
+        >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               label="Full Name"
@@ -101,22 +116,30 @@ export default function RegisterPage() {
             />
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
+              <div className="alert alert-danger" role="alert">{error}</div>
             )}
 
-            <Button type="submit" className="w-full" size="lg" loading={isSubmitting}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              size="lg"
+              loading={isSubmitting}
+            >
               Create Account
             </Button>
           </form>
+        </div>
 
-          <p className="text-center text-sm text-slate-600 mt-6">
-            Already have an account?{" "}
-            <Link href="/login" className="text-primary-600 font-medium hover:underline">
-              Sign in
-            </Link>
-          </p>
+        {/* Sign in link */}
+        <div
+          className="mt-3 text-center text-sm py-4 rounded-md border"
+          style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)", color: "var(--color-fg-muted)" }}
+        >
+          Already have an account?{" "}
+          <Link href="/login" className="font-semibold" style={{ color: "var(--color-accent-fg)" }}>
+            Sign in
+          </Link>
         </div>
       </div>
     </div>
