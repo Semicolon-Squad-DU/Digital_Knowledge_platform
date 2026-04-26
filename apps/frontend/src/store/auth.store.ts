@@ -11,6 +11,8 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
   setUser: (user: User) => void;
+  updateProfile: (payload: { name?: string; bio?: string; department?: string; avatar_url?: string }) => Promise<void>;
+  changePassword: (current_password: string, new_password: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -57,6 +59,20 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user) => set({ user, isAuthenticated: true }),
+
+      updateProfile: async (payload) => {
+        const { data } = await api.patch("/auth/profile", payload);
+        const updatedUser = data.data as User;
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updatedUser } : updatedUser,
+        }));
+      },
+
+      changePassword: async (current_password, new_password) => {
+        await api.patch("/auth/password", { current_password, new_password });
+        // After password change the server revokes all refresh tokens
+        localStorage.removeItem("refresh_token");
+      },
     }),
     {
       name: "dkp-auth",
@@ -64,3 +80,4 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+

@@ -170,6 +170,89 @@ router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Respo
   res.json({ success: true, data: user });
 }));
 
+// PATCH /api/auth/profile
+router.patch(
+  "/profile",
+  authenticate,
+  [
+    body("name").optional().trim().notEmpty().withMessage("Name cannot be empty"),
+    body("bio").optional().trim(),
+    body("department").optional().trim(),
+    body("avatar_url").optional().isURL().withMessage("avatar_url must be a valid URL"),
+  ],
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { name, bio, department, avatar_url } = req.body as {
+      name?: string;
+      bio?: string;
+      department?: string;
+      avatar_url?: string;
+    };
+
+    const updated = await queryOne(
+      `UPDATE users SET
+         name        = COALESCE($1, name),
+         bio         = COALESCE($2, bio),
+         department  = COALESCE($3, department),
+         avatar_url  = COALESCE($4, avatar_url)
+       WHERE user_id = $5
+       RETURNING user_id, name, email, role, department, bio, avatar_url, membership_status, created_at`,
+      [name ?? null, bio ?? null, department ?? null, avatar_url ?? null, req.user!.user_id]
+    );
+
+    logger.info("User updated profile", { user_id: req.user!.user_id });
+    res.json({ success: true, data: updated });
+  })
+);
+
+// PATCH /api/auth/password
+router.patch(
+  "/password",
+  authenticate,
+  [
+    body("current_password").notEmpty().withMessage("Current password is required"),
+    body("new_password")
+      .isLength({ min: 8 })
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+      .withMessage("New password must be 8+ chars with uppercase, lowercase, digit, and special char"),
+  ],
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { current_password, new_password } = req.body as {
+      current_password: string;
+      new_password: string;
+    };
+
+    const user = await queryOne<{ password_hash: string }>(
+      "SELECT password_hash FROM users WHERE user_id = $1",
+      [req.user!.user_id]
+    );
+    if (!user) throw new AppError(404, "User not found");
+
+    const valid = await bcrypt.compare(current_password, user.password_hash);
+    if (!valid) throw new AppError(400, "Current password is incorrect");
+
+    const new_hash = await bcrypt.hash(new_password, 12);
+    await query("UPDATE users SET password_hash = $1 WHERE user_id = $2", [new_hash, req.user!.user_id]);
+
+    // Revoke all existing refresh tokens so other sessions are logged out
+    await query("DELETE FROM refresh_tokens WHERE user_id = $1", [req.user!.user_id]);
+
+    logger.info("User changed password", { user_id: req.user!.user_id });
+    res.json({ success: true, message: "Password updated successfully" });
+  })
+);
+
 function generateTokens(user_id: string, email: string, role: string) {
   const access_token = jwt.sign(
     { user_id, email, role },
