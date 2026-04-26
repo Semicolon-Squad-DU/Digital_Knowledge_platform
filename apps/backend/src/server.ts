@@ -25,9 +25,23 @@ const app = express();
 
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet());
+const allowedOrigins = [
+  config.frontendUrl,
+  "http://localhost:3000",
+  "http://0.0.0.0:3000",
+  "http://127.0.0.1:3000",
+];
+
 app.use(
   cors({
-    origin: config.frontendUrl,
+    origin: (origin, callback) => {
+      // allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // allow any request from the same subnet (LAN access)
+      if (/^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return callback(null, true);
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -100,7 +114,7 @@ async function bootstrap(): Promise<void> {
       startScheduler();
     }
 
-    app.listen(config.port, () => {
+    app.listen(config.port, "0.0.0.0", () => {
       logger.info(`DKP API running on port ${config.port}`, {
         env: config.env,
         port: config.port,

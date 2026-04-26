@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "styles:build": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css",
-    "dev": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next dev -p ${PORT:-3000}",
+    "dev": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next dev -H 0.0.0.0 -p ${PORT:-3000}",
     "build": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next build",
     "start": "next start",
     "lint": "next lint"
