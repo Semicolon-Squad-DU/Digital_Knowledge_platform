@@ -2,6 +2,37 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { CatalogSearchParams } from "@dkp/shared";
 
+export function useAddCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: FormData | Record<string, unknown>) => {
+      const isFormData = payload instanceof FormData;
+      const { data } = await api.post("/library/catalog", payload, {
+        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
+      });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
+}
+
+export function useDeleteCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (catalogId: string) => {
+      const { data } = await api.delete(`/library/catalog/${catalogId}`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
+    },
+  });
+}
+
 export function useCatalogSearch(params: CatalogSearchParams) {
   return useQuery({
     queryKey: ["catalog", "search", params],
@@ -168,31 +199,6 @@ export function useWaiveFine() {
   });
 }
 
-export function useCreateCatalogItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: {
-      title: string;
-      isbn?: string;
-      authors?: string[];
-      publisher?: string;
-      edition?: string;
-      year?: number;
-      category?: string;
-      total_copies: number;
-      shelf_location?: string;
-      description?: string;
-    }) => {
-      const { data } = await api.post("/library/catalog", payload);
-      return data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog"] });
-      queryClient.invalidateQueries({ queryKey: ["library"] });
-    },
-  });
-}
-
 export function useUpdateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -219,19 +225,3 @@ export function useUpdateCatalogItem() {
     },
   });
 }
-
-export function useDeleteCatalogItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (catalog_id: string) => {
-      const { data } = await api.delete(`/library/catalog/${catalog_id}`);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog"] });
-      queryClient.invalidateQueries({ queryKey: ["library"] });
-    },
-  });
-}
-
-

@@ -152,7 +152,7 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.file) throw new AppError(400, "No file provided");
 
-    const { title_en, title_bn, description, authors, category, language, access_tier } =
+    const { title_en, title_bn, description, authors, category, language, access_tier, status, tags } =
       req.body as Record<string, string>;
 
     if (!title_en) throw new AppError(400, "English title is required");
@@ -160,16 +160,20 @@ router.post(
     const key = generateS3Key("archive", req.file.originalname, req.file.mimetype);
     await uploadToS3(key, req.file.buffer, req.file.mimetype);
 
+    const initialStatus = status && ["draft","review","published","archived"].includes(status)
+      ? status : "draft";
+
     const item = await withTransaction(async (client) => {
       const result = await client.query(
         `INSERT INTO archive_items
-           (title_en, title_bn, description, authors, category, language, access_tier, file_url, file_type, file_size, uploaded_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+           (title_en, title_bn, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
          RETURNING *`,
         [
           title_en, title_bn || null, description || null,
           authors ? JSON.parse(authors) : [],
-          category || "General", language || "en", access_tier || "public",
+          category || "General", language || "en",
+          access_tier || "public", initialStatus,
           key, req.file!.mimetype, req.file!.size, req.user!.user_id,
         ]
       );
@@ -179,6 +183,27 @@ router.post(
          VALUES ($1, 1, $2, $3, $4)`,
         [result.rows[0].item_id, key, JSON.stringify(result.rows[0]), req.user!.user_id]
       );
+
+      // Handle tags
+      if (tags) {
+        const tagNames: string[] = typeof tags === "string" ? JSON.parse(tags) : tags;
+        for (const tagName of tagNames) {
+          const trimmed = tagName.trim();
+          if (!trimmed) continue;
+          // Upsert tag
+          const tagResult = await client.query(
+            `INSERT INTO tags (name_en) VALUES ($1)
+             ON CONFLICT (name_en) DO UPDATE SET name_en = EXCLUDED.name_en
+             RETURNING tag_id`,
+            [trimmed]
+          );
+          // Link to item
+          await client.query(
+            `INSERT INTO archive_item_tags (item_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [result.rows[0].item_id, tagResult.rows[0].tag_id]
+          );
+        }
+      }
 
       await client.query(
         `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)

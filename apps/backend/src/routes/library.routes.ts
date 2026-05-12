@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
+import { uploadSingle } from "../middleware/upload.middleware";
 import { searchCatalog } from "../services/elasticsearch.service";
 import { config } from "../config";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../services/email.service";
@@ -449,20 +450,39 @@ router.post(
   "/catalog",
   authenticate,
   requireRole("librarian", "admin"),
+  uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description } =
-      req.body as Record<string, unknown>;
+    const body = req.body as Record<string, string>;
+    const { title, isbn, publisher, edition, year, category,
+            total_copies, shelf_location, description } = body;
 
     if (!title) throw new AppError(400, "Title is required");
-    if (!total_copies || (total_copies as number) < 1) throw new AppError(400, "At least 1 copy required");
+    if (!total_copies || parseInt(total_copies) < 1) throw new AppError(400, "At least 1 copy required");
+
+    const authors = body.authors
+      ? (typeof body.authors === "string" && body.authors.startsWith("[")
+          ? JSON.parse(body.authors)
+          : body.authors.split(",").map((a: string) => a.trim()).filter(Boolean))
+      : [];
+
+    // Upload PDF to S3 if provided
+    let file_url: string | null = null;
+    if (req.file) {
+      const { generateS3Key, uploadToS3 } = await import("../services/s3.service");
+      const key = generateS3Key("library/books", req.file.originalname, req.file.mimetype);
+      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+      file_url = key;
+    }
 
     const item = await queryOne(
       `INSERT INTO catalog_items
-         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10)
+         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, cover_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
        RETURNING *`,
-      [title, isbn || null, authors || [], publisher || null, edition || null, year || null,
-       category || "General", total_copies, shelf_location || null, description || null]
+      [title, isbn || null, authors, publisher || null, edition || null,
+       year ? parseInt(year) : null, category || "General",
+       parseInt(total_copies), shelf_location || null, description || null,
+       file_url]
     );
 
     res.status(201).json({ success: true, data: item });

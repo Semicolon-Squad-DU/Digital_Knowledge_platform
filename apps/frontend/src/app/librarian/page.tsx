@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine } from "@/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useAddCatalogItem } from "@/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -39,12 +39,47 @@ export default function LibrarianDashboardPage() {
   const [issueModal, setIssueModal] = useState(false);
   const [returnModal, setReturnModal] = useState(false);
   const [adjustModal, setAdjustModal] = useState(false);
+  const [addBookModal, setAddBookModal] = useState(false);
   const [catalogId, setCatalogId] = useState("");
   const [memberId, setMemberId] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [selectedFineId, setSelectedFineId] = useState<string | null>(null);
   const [newAmount, setNewAmount] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
+
+  // Add book form state
+  const [bookForm, setBookForm] = useState({
+    title: "", isbn: "", authors: "", publisher: "",
+    edition: "", year: "", category: "General",
+    total_copies: "1", shelf_location: "", description: "",
+  });
+  const { mutateAsync: addCatalogItem, isPending: isAddingBook } = useAddCatalogItem();
+
+  const handleAddBook = async () => {
+    if (!bookForm.title.trim()) { toast.error("Title is required"); return; }
+    if (!bookForm.total_copies || parseInt(bookForm.total_copies) < 1) { toast.error("At least 1 copy required"); return; }
+    try {
+      await addCatalogItem({
+        title: bookForm.title.trim(),
+        isbn: bookForm.isbn.trim() || undefined,
+        authors: bookForm.authors ? bookForm.authors.split(",").map(a => a.trim()).filter(Boolean) : [],
+        publisher: bookForm.publisher.trim() || undefined,
+        edition: bookForm.edition.trim() || undefined,
+        year: bookForm.year ? parseInt(bookForm.year) : undefined,
+        category: bookForm.category,
+        total_copies: parseInt(bookForm.total_copies),
+        shelf_location: bookForm.shelf_location.trim() || undefined,
+        description: bookForm.description.trim() || undefined,
+      });
+      toast.success("Book added to catalog!");
+      setAddBookModal(false);
+      setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: "General", total_copies: "1", shelf_location: "", description: "" });
+      refetch();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to add book");
+    }
+  };
 
   const handleIssue = async () => {
     if (!catalogId.trim() || !memberId.trim()) {
@@ -146,10 +181,7 @@ export default function LibrarianDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                refetch();
-                refetchOverdue();
-              }}
+              onClick={() => { refetch(); refetchOverdue(); }}
               icon={<RefreshCw size={14} />}
               aria-label="Refresh dashboard"
             >
@@ -161,6 +193,13 @@ export default function LibrarianDashboardPage() {
               icon={<RotateCcw size={15} />}
             >
               Process Return
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setAddBookModal(true)}
+              icon={<BookMarked size={15} />}
+            >
+              Add Book
             </Button>
             <Button
               onClick={() => setIssueModal(true)}
@@ -363,6 +402,104 @@ export default function LibrarianDashboardPage() {
         </Card>
       )}
 
+
+      {/* Add Book Modal */}
+      <Modal
+        isOpen={addBookModal}
+        onClose={() => setAddBookModal(false)}
+        title="Add Book to Catalog"
+        description="Fill in the book details to add it to the library catalog."
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Title"
+              required
+              value={bookForm.title}
+              onChange={(e) => setBookForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="e.g. Introduction to Algorithms"
+            />
+            <Input
+              label="ISBN"
+              value={bookForm.isbn}
+              onChange={(e) => setBookForm(f => ({ ...f, isbn: e.target.value }))}
+              placeholder="e.g. 978-0-262-03384-8"
+            />
+          </div>
+          <Input
+            label="Authors"
+            value={bookForm.authors}
+            onChange={(e) => setBookForm(f => ({ ...f, authors: e.target.value }))}
+            placeholder="Author 1, Author 2, ..."
+            hint="Comma-separated"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Publisher"
+              value={bookForm.publisher}
+              onChange={(e) => setBookForm(f => ({ ...f, publisher: e.target.value }))}
+              placeholder="e.g. MIT Press"
+            />
+            <Input
+              label="Edition"
+              value={bookForm.edition}
+              onChange={(e) => setBookForm(f => ({ ...f, edition: e.target.value }))}
+              placeholder="e.g. 3rd"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input
+              label="Year"
+              type="number"
+              value={bookForm.year}
+              onChange={(e) => setBookForm(f => ({ ...f, year: e.target.value }))}
+              placeholder="e.g. 2023"
+            />
+            <div className="space-y-1.5">
+              <label className="form-label">Category</label>
+              <select
+                value={bookForm.category}
+                onChange={(e) => setBookForm(f => ({ ...f, category: e.target.value }))}
+                className="form-select"
+              >
+                {["General","Textbook","Reference","Fiction","Non-Fiction","Science","Technology","Mathematics","History","Other"]
+                  .map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <Input
+              label="Total Copies"
+              type="number"
+              required
+              min="1"
+              value={bookForm.total_copies}
+              onChange={(e) => setBookForm(f => ({ ...f, total_copies: e.target.value }))}
+            />
+          </div>
+          <Input
+            label="Shelf Location"
+            value={bookForm.shelf_location}
+            onChange={(e) => setBookForm(f => ({ ...f, shelf_location: e.target.value }))}
+            placeholder="e.g. A-12, Floor 2"
+          />
+          <div className="space-y-1.5">
+            <label className="form-label">Description</label>
+            <textarea
+              value={bookForm.description}
+              onChange={(e) => setBookForm(f => ({ ...f, description: e.target.value }))}
+              rows={3}
+              className="form-textarea"
+              placeholder="Brief description of the book..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setAddBookModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleAddBook} loading={isAddingBook} icon={<BookMarked size={14} />}>
+              Add to Catalog
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Issue Modal */}
       <Modal

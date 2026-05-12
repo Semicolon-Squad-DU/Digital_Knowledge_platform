@@ -167,6 +167,28 @@ export function Navbar() {
                         <div className="px-4 py-3 border-b" style={{ borderColor: "var(--color-border-default)" }}>
                           <p className="text-xs font-semibold" style={{ color: "var(--color-fg-muted)" }}>Signed in as</p>
                           <p className="text-sm font-semibold truncate mt-0.5" style={{ color: "var(--color-fg-default)" }}>{user?.name}</p>
+                          <p className="text-xs truncate mt-0.5" style={{ color: "var(--color-fg-muted)" }}>{user?.email}</p>
+                          <span className={cn(
+                            "inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-semibold",
+                            {
+                              "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300": user?.role === "admin",
+                              "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300": user?.role === "librarian",
+                              "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300": user?.role === "researcher",
+                              "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300": user?.role === "archivist",
+                              "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300": user?.role === "student_author",
+                              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300": user?.role === "member" || user?.role === "guest",
+                            }
+                          )}>
+                            {{
+                              admin:          "Admin",
+                              librarian:      "Librarian",
+                              researcher:     "Researcher",
+                              archivist:      "Archivist",
+                              student_author: "Student Author",
+                              member:         "Member",
+                              guest:          "Guest",
+                            }[user?.role ?? "guest"] ?? user?.role}
+                          </span>
                         </div>
 
                         <div className="py-1">

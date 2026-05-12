@@ -12,12 +12,14 @@ const router = Router();
 
 const registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
-  body("email").isEmail().normalizeEmail().withMessage("Valid email required"),
+  body("email").isEmail().toLowerCase().withMessage("Valid email required"),
   body("password")
     .isLength({ min: 8 })
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .withMessage("Password must be 8+ chars with uppercase, lowercase, digit, and special char"),
   body("department").optional().trim(),
+  body("role").optional().isIn(["member", "student_author", "researcher", "archivist", "librarian"])
+    .withMessage("Invalid role selected"),
 ];
 
 // POST /api/auth/register
@@ -28,11 +30,12 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
     return;
   }
 
-  const { name, email, password, department } = req.body as {
+  const { name, email, password, department, role } = req.body as {
     name: string;
     email: string;
     password: string;
     department?: string;
+    role?: string;
   };
 
   const existing = await queryOne("SELECT user_id FROM users WHERE email = $1", [email]);
@@ -41,16 +44,21 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
   }
 
   const password_hash = await bcrypt.hash(password, 12);
+
+  // Allow role selection but never allow admin via registration
+  const allowedRoles = ["member", "student_author", "researcher", "archivist", "librarian"];
+  const assignedRole = role && allowedRoles.includes(role) ? role : "member";
+
   const user = await queryOne<{
     user_id: string;
     name: string;
     email: string;
     role: string;
   }>(
-    `INSERT INTO users (name, email, password_hash, department)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO users (name, email, password_hash, department, role)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING user_id, name, email, role, department, membership_status, created_at`,
-    [name, email, password_hash, department ?? null]
+    [name, email, password_hash, department ?? null, assignedRole]
   );
 
   const tokens = generateTokens(user!.user_id, user!.email, user!.role as never);
@@ -64,7 +72,7 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
 router.post(
   "/login",
   [
-    body("email").isEmail().normalizeEmail(),
+    body("email").isEmail().toLowerCase(),
     body("password").notEmpty(),
   ],
   asyncHandler(async (req: Request, res: Response) => {

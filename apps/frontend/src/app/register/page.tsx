@@ -13,10 +13,48 @@ import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
+// ---------------------------------------------------------------------------
+// Role options
+// ---------------------------------------------------------------------------
+
+const ROLES = [
+  {
+    value: "member",
+    label: "Member",
+    description: "Browse and access published content",
+  },
+  {
+    value: "student_author",
+    label: "Student Author",
+    description: "Submit projects to the showcase",
+  },
+  {
+    value: "researcher",
+    label: "Researcher",
+    description: "Publish research outputs and manage labs",
+  },
+  {
+    value: "archivist",
+    label: "Archivist",
+    description: "Upload and manage archive documents",
+  },
+  {
+    value: "librarian",
+    label: "Librarian",
+    description: "Manage library catalog and lending",
+  },
+] as const;
+
+type RoleValue = typeof ROLES[number]["value"];
+
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+
 const schema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Valid email required"),
-  password: z
+  name:       z.string().min(2, "Name must be at least 2 characters"),
+  email:      z.string().email("Valid email required"),
+  password:   z
     .string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Must contain uppercase letter")
@@ -28,10 +66,15 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser } = useAuthStore();
-  const [error, setError] = useState("");
+  const [error, setError]       = useState("");
+  const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -40,7 +83,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setError("");
     try {
-      const res = await api.post("/auth/register", data);
+      const res = await api.post("/auth/register", { ...data, role: selectedRole });
       const { access_token, refresh_token, user } = res.data.data;
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
@@ -50,7 +93,7 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const response = (err as { response?: { data?: { message?: string; errors?: { msg: string }[] } } })?.response?.data;
       if (response?.errors?.length) {
-        setError(response.errors.map((e) => e.msg).join(" · "));
+        setError(response.errors.map((e: { msg: string }) => e.msg).join(" · "));
       } else {
         setError(response?.message || "Registration failed. Please try again.");
       }
@@ -62,7 +105,8 @@ export default function RegisterPage() {
       className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12"
       style={{ background: "var(--color-canvas-subtle)" }}
     >
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-lg">
+
         {/* Logo */}
         <div className="text-center mb-6">
           <div
@@ -81,10 +125,12 @@ export default function RegisterPage() {
 
         {/* Form card */}
         <div
-          className="rounded-md border p-5"
+          className="rounded-md border p-5 space-y-4"
           style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)" }}
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+            {/* Basic fields */}
             <Input
               label="Full Name"
               required
@@ -102,7 +148,7 @@ export default function RegisterPage() {
             />
             <Input
               label="Department"
-              placeholder="e.g. Computer Science and Engineering"
+              placeholder="e.g. Computer Science & Engineering"
               {...register("department")}
             />
             <Input
@@ -112,8 +158,26 @@ export default function RegisterPage() {
               autoComplete="new-password"
               {...register("password")}
               error={errors.password?.message}
-              hint="8+ chars with uppercase, lowercase, digit, and special character"
+              hint="8+ chars with uppercase, lowercase, digit, and special character (@$!%*?&)"
             />
+
+            {/* Role selector */}
+            <div>
+              <label className="form-label">
+                I am registering as <span className="text-[var(--color-danger-fg)]">*</span>
+              </label>
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
+                className="form-select"
+              >
+                {ROLES.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label} — {role.description}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {error && (
               <div className="alert alert-danger" role="alert">{error}</div>
