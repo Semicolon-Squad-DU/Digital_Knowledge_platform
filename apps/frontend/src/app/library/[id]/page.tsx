@@ -1,28 +1,91 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  BookOpen, Heart, BookMarked, ArrowLeft,
+  Heart, BookMarked, ArrowLeft,
   Building2, Calendar, Hash, Layers,
-  MapPin, Copy, CheckCircle, Clock,
+  MapPin, Copy, CheckCircle, Clock, FileText,
 } from "lucide-react";
 import { useCatalogItem, useAddToWishlist, usePlaceHold } from "@/hooks/useLibrary";
 import { useAuthStore } from "@/store/auth.store";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
+// ---------------------------------------------------------------------------
+// PDF Preview — fetches presigned URL then embeds in iframe
+// ---------------------------------------------------------------------------
+function PdfPreview({ pdfKey }: { pdfKey: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+
+    api.get("/archive/download-url", { params: { key: pdfKey } })
+      .then(({ data }) => {
+        if (!cancelled) setUrl(data.data.url);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          // Fallback to direct MinIO URL
+          setUrl(`http://localhost:9000/dkp-files/${pdfKey}`);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [pdfKey]);
+
+  if (loading) {
+    return (
+      <div className="h-96 rounded-xl bg-[var(--color-canvas-subtle)] border border-[var(--color-border-default)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[var(--color-accent-fg)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-xs text-[var(--color-fg-muted)]">Loading preview…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !url) {
+    return (
+      <div className="h-40 rounded-xl bg-[var(--color-canvas-subtle)] border border-[var(--color-border-default)] flex items-center justify-center">
+        <p className="text-sm text-[var(--color-fg-muted)]">Preview unavailable</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
+      <iframe
+        src={`${url}#page=1&view=FitH&toolbar=0`}
+        className="w-full"
+        style={{ height: "480px" }}
+        title="PDF Preview"
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+}
+
 export default function LibraryItemPage() {
-  const params   = useParams<{ id: string }>();
-  const router   = useRouter();
-  const itemId   = params?.id ?? "";
+  const params  = useParams<{ id: string }>();
+  const router  = useRouter();
+  const itemId  = params?.id ?? "";
 
   const { data: item, isLoading } = useCatalogItem(itemId);
   const { isAuthenticated, user } = useAuthStore();
   const { mutateAsync: addToWishlist, isPending: wishlistPending } = useAddToWishlist();
   const { mutateAsync: placeHold,    isPending: holdPending }      = usePlaceHold();
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const handleWishlist = async () => {
     if (!isAuthenticated) { toast.error("Please sign in to use wishlist"); return; }
@@ -42,6 +105,19 @@ export default function LibraryItemPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || "Could not place hold");
+    }
+  };
+
+  const handleReadPdf = async (pdfKey: string) => {
+    setPdfLoading(true);
+    try {
+      const { data } = await api.get("/archive/download-url", { params: { key: pdfKey } });
+      window.open(data.data.url, "_blank");
+    } catch {
+      window.open(`http://localhost:9000/dkp-files/${pdfKey}`, "_blank");
+      toast("Opening via direct link");
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -65,11 +141,11 @@ export default function LibraryItemPage() {
     );
   }
 
-  const isAvailable   = item.available_copies > 0;
-  const isLibrarian   = ["librarian", "admin"].includes(user?.role ?? "");
-  const availPercent  = Math.round((item.available_copies / item.total_copies) * 100);
+  const isAvailable  = item.available_copies > 0;
+  const isLibrarian  = ["librarian", "admin"].includes(user?.role ?? "");
+  const availPercent = Math.round((item.available_copies / item.total_copies) * 100);
+  const pdfKey       = item.cover_url; // PDF S3 key stored in cover_url column
 
-  // Generate a deterministic gradient from title
   const gradients = [
     "from-blue-500 to-indigo-600",
     "from-purple-500 to-pink-600",
@@ -91,31 +167,17 @@ export default function LibraryItemPage() {
       />
 
       <div className="gh-box overflow-hidden">
-        {/* Hero section */}
+        {/* Hero */}
         <div className={cn("bg-gradient-to-br p-8 flex items-end gap-6", gradient)}>
-          {/* Book cover */}
-          <div className="w-28 h-36 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0 shadow-lg border border-white/30">
-            {item.cover_url ? (
-              <img src={item.cover_url} alt={item.title} className="w-full h-full object-cover rounded-xl" />
-            ) : (
-              <BookOpen size={40} className="text-white/80" />
-            )}
-          </div>
-
-          {/* Title block */}
           <div className="flex-1 min-w-0 pb-1">
             <h1 className="text-2xl font-bold text-white leading-tight">{item.title}</h1>
             {item.authors?.length > 0 && (
-              <p className="text-white/80 text-sm mt-1">
-                {item.authors.join(", ")}
-              </p>
+              <p className="text-white/80 text-sm mt-1">{item.authors.join(", ")}</p>
             )}
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold",
-                isAvailable
-                  ? "bg-green-500/90 text-white"
-                  : "bg-red-500/90 text-white"
+                isAvailable ? "bg-green-500/90 text-white" : "bg-red-500/90 text-white"
               )}>
                 {isAvailable ? <CheckCircle size={12} /> : <Clock size={12} />}
                 {isAvailable
@@ -125,6 +187,11 @@ export default function LibraryItemPage() {
               {item.category && (
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
                   {item.category}
+                </span>
+              )}
+              {pdfKey && (
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white flex items-center gap-1">
+                  <FileText size={11} /> PDF Available
                 </span>
               )}
             </div>
@@ -148,8 +215,7 @@ export default function LibraryItemPage() {
             </div>
           </div>
 
-          {/* Description */}
-          {item.description && (
+          {/* Description */}          {item.description && (
             <div>
               <h2 className="text-sm font-semibold text-[var(--color-fg-default)] mb-2">About this book</h2>
               <p className="text-sm text-[var(--color-fg-muted)] leading-relaxed">{item.description}</p>
@@ -166,10 +232,7 @@ export default function LibraryItemPage() {
               { icon: MapPin,    label: "Shelf Location", value: item.shelf_location },
               { icon: Copy,      label: "Total Copies",   value: item.total_copies?.toString() },
             ].filter(m => m.value).map((meta) => (
-              <div
-                key={meta.label}
-                className="flex items-start gap-2.5 p-3 rounded-xl bg-[var(--color-canvas-subtle)] border border-[var(--color-border-muted)]"
-              >
+              <div key={meta.label} className="flex items-start gap-2.5 p-3 rounded-xl bg-[var(--color-canvas-subtle)] border border-[var(--color-border-muted)]">
                 <meta.icon size={14} className="mt-0.5 flex-shrink-0 text-[var(--color-accent-fg)]" />
                 <div>
                   <p className="text-xs text-[var(--color-fg-muted)]">{meta.label}</p>
@@ -179,8 +242,30 @@ export default function LibraryItemPage() {
             ))}
           </div>
 
+          {/* PDF Preview — shown after metadata */}
+          {pdfKey && (
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--color-fg-default)] mb-2 flex items-center gap-1.5">
+                <FileText size={14} className="text-[var(--color-accent-fg)]" />
+                PDF Preview
+              </h2>
+              <PdfPreview pdfKey={pdfKey} />
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[var(--color-border-muted)]">
+            {pdfKey && (
+              <Button
+                variant="primary"
+                onClick={() => handleReadPdf(pdfKey)}
+                loading={pdfLoading}
+                icon={<FileText size={14} />}
+              >
+                {pdfLoading ? "Opening…" : "Read PDF"}
+              </Button>
+            )}
+
             <Button
               variant="outline"
               onClick={handleWishlist}
@@ -192,7 +277,7 @@ export default function LibraryItemPage() {
 
             {!isAvailable && (
               <Button
-                variant="primary"
+                variant="outline"
                 onClick={handleHold}
                 loading={holdPending}
                 icon={<BookMarked size={14} />}
@@ -203,10 +288,10 @@ export default function LibraryItemPage() {
 
             {isAvailable && isAuthenticated && !isLibrarian && (
               <Button
-                variant="primary"
+                variant="outline"
                 onClick={handleHold}
-                icon={<BookMarked size={14} />}
                 loading={holdPending}
+                icon={<BookMarked size={14} />}
               >
                 Reserve
               </Button>

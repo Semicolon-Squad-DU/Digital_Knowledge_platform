@@ -459,6 +459,15 @@ router.post(
     if (!title) throw new AppError(400, "Title is required");
     if (!total_copies || parseInt(total_copies) < 1) throw new AppError(400, "At least 1 copy required");
 
+    // Check for duplicate ISBN BEFORE uploading file
+    if (isbn && isbn.trim()) {
+      const existing = await queryOne(
+        "SELECT catalog_id FROM catalog_items WHERE isbn = $1 AND deleted_at IS NULL",
+        [isbn.trim()]
+      );
+      if (existing) throw new AppError(409, `A book with ISBN "${isbn}" already exists. Leave ISBN blank to add another copy.`);
+    }
+
     const authors = body.authors
       ? (typeof body.authors === "string" && body.authors.startsWith("[")
           ? JSON.parse(body.authors)
@@ -479,7 +488,7 @@ router.post(
          (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, cover_url)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
        RETURNING *`,
-      [title, isbn || null, authors, publisher || null, edition || null,
+      [title, isbn?.trim() || null, authors, publisher || null, edition || null,
        year ? parseInt(year) : null, category || "General",
        parseInt(total_copies), shelf_location || null, description || null,
        file_url]
