@@ -75,7 +75,7 @@ export default function HomePage() {
       {/* Stats bar */}
       <div style={{ borderBottom: "1px solid var(--color-border-default)" }}>
         <div className="page-container">
-          <div className="flex flex-wrap divide-x" style={{ divideColor: "var(--color-border-default)" }}>
+          <div className="flex flex-wrap divide-x divide-[var(--color-border-default)]">
             {[
               { value: "10,000+", label: "Archive documents" },
               { value: "500+",    label: "Research papers" },

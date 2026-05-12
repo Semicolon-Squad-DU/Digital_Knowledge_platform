@@ -38,54 +38,65 @@ export function CatalogCard({ item }: CatalogCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-      <div className="flex gap-4">
-        {/* Cover placeholder */}
-        <div className="flex-shrink-0 w-16 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center">
-          <BookOpen className="text-primary-600" size={24} />
+    <div className="bg-[#FFF8E7] rounded-md border border-[#D4C4B7] p-5 shadow-[0_4px_10px_rgba(122,40,40,0.05),0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(122,40,40,0.1),0_4px_8px_rgba(0,0,0,0.04)] relative overflow-hidden group">
+      {/* Book spine accent */}
+      <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-[#7A2828] to-[#5E1F1F] opacity-90 border-r border-[#4A1717] z-10" />
+      <div className="absolute left-2.5 top-0 bottom-0 w-[1px] bg-white/20 z-10" />
+      
+      <div className="flex gap-5 pl-3">
+        {/* Cover placeholder - like a sophisticated book cover */}
+        <div className="flex-shrink-0 w-[72px] h-[100px] bg-[#EAE0D5] border border-[#D4C4B7] flex items-center justify-center relative overflow-hidden shadow-inner uppercase tracking-widest text-[#8B7355] text-[10px] font-serif writing-vertical">
+          Vol. {item.catalog_id?.substring(0, 2) || "I"}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <Link
-            href={`/library/${item.catalog_id}`}
-            className="font-semibold text-gray-900 hover:text-primary-700 line-clamp-2 transition-colors"
-          >
-            {item.title}
-          </Link>
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <Link
+              href={`/library/${item.catalog_id}`}
+              className="font-heading font-medium text-lg text-[#2c1e16] hover:text-[#7A2828] line-clamp-2 transition-colors leading-tight"
+            >
+              {item.title}
+            </Link>
 
-          {item.authors?.length > 0 && (
-            <p className="text-sm text-gray-600 mt-0.5">
-              {item.authors.slice(0, 2).join(", ")}
-            </p>
-          )}
+            {item.authors?.length > 0 && (
+              <p className="text-xs uppercase tracking-wider text-[#8B7355] mt-1.5 font-serif pt-1 border-t border-[#D4C4B7]/40 w-fit">
+                {item.authors.slice(0, 2).join(", ")}
+              </p>
+            )}
 
-          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-            {item.year && <span>{item.year}</span>}
-            {item.category && <span>• {item.category}</span>}
-            {item.isbn && <span>• ISBN: {item.isbn}</span>}
+            <div className="flex flex-wrap items-center gap-2 mt-2 font-serif text-[#8B7355] text-[11px] uppercase tracking-wide">
+              {item.year && <span>{item.year}</span>}
+              {item.category && <span className="opacity-50">•</span>}
+              {item.category && <span>{item.category}</span>}
+              {item.isbn && <span className="opacity-50">•</span>}
+              {item.isbn && <span>ISBN {item.isbn}</span>}
+              {/* Optional mock shelf for aesthetic */}
+              <span className="opacity-50">•</span>
+              <span>Shelf {item.catalog_id?.substring(0, 3)?.toUpperCase() || "A1"}</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-end justify-between mt-4">
             <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+              className={`text-[11px] uppercase tracking-wide font-medium px-2.5 py-1 ${
                 isAvailable
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
+                  ? "bg-[#2C5530]/10 border border-[#2C5530]/20 text-[#2C5530]"
+                  : "bg-[#8B7355]/10 border border-[#8B7355]/20 text-[#8B7355]"
               }`}
             >
               {isAvailable
                 ? `${item.available_copies} of ${item.total_copies} available`
-                : "All copies on loan"}
+                : "On Loan"}
             </span>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={handleWishlist}
                 disabled={wishlistPending}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                className="p-2 text-[#8B7355] hover:text-[#7A2828] hover:bg-[#7A2828]/5 transition-colors border border-transparent hover:border-[#7A2828]/10"
                 aria-label="Add to wishlist"
               >
-                <Heart size={16} />
+                <Heart size={16} className="transition-transform group-hover:scale-110" />
               </button>
               {!isAvailable && (
                 <Button
@@ -93,8 +104,9 @@ export function CatalogCard({ item }: CatalogCardProps) {
                   size="sm"
                   onClick={handleHold}
                   loading={holdPending}
+                  className="font-serif border-[#D4C4B7] text-[#5a4634] hover:bg-[#7A2828]/5 hover:text-[#7A2828] hover:border-[#7A2828]/30 h-8"
                 >
-                  <BookMarked size={14} /> Hold
+                  <BookMarked size={14} className="mr-1.5" /> Hold
                 </Button>
               )}
             </div>

@@ -2,7 +2,7 @@ import { ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "default" | "danger" | "outline" | "invisible" | "link";
+  variant?: "primary" | "default" | "danger" | "outline" | "invisible" | "ghost" | "link";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
   icon?: React.ReactNode;
@@ -35,6 +35,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "bg-transparent text-[var(--color-accent-fg)] border border-[var(--color-accent-fg)] hover:bg-[var(--color-accent-subtle)] active:bg-[var(--color-accent-subtle)]",
       // Invisible / ghost
       invisible:
+        "bg-transparent text-[var(--color-fg-default)] border border-transparent hover:bg-[var(--color-canvas-subtle)] hover:border-[var(--color-border-default)]",
+      ghost:
         "bg-transparent text-[var(--color-fg-default)] border border-transparent hover:bg-[var(--color-canvas-subtle)] hover:border-[var(--color-border-default)]",
       // Link style
       link:

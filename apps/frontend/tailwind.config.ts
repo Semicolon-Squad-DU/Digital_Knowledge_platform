@@ -20,6 +20,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "Noto Sans Bengali", "sans-serif"],
+        serif: ["var(--font-serif)", "Lora", "serif"],
+        heading: ["var(--font-heading)", "Crimson Pro", "serif"],
       },
     },
   },

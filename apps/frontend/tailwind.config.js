@@ -69,6 +69,8 @@ module.exports = {
       fontFamily: {
         sans: ["-apple-system", "BlinkMacSystemFont", "\"Segoe UI\"", "\"Noto Sans\"", "Helvetica", "Arial", "sans-serif", "\"Apple Color Emoji\"", "\"Segoe UI Emoji\""],
         mono: ["ui-monospace", "SFMono-Regular", "\"SF Mono\"", "Menlo", "Consolas", "\"Liberation Mono\"", "monospace"],
+        serif: ["var(--font-serif)", "Lora", "serif"],
+        heading: ["var(--font-heading)", "\"Crimson Pro\"", "serif"],
       },
       fontSize: {
         "gh-xs":   ["11px", { lineHeight: "16px" }],

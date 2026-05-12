@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import { Plus, Trash2, Upload, FileText, X, GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
@@ -95,7 +95,7 @@ export default function SubmitProjectPage() {
   const { fields, append, remove } = useFieldArray({ control, name: "team_members" });
 
   // PDF dropzone
-  const onDrop = useCallback((accepted: File[], rejected: { errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((accepted: File[], rejected: FileRejection[]) => {
     setPdfError("");
     if (rejected.length > 0) {
       setPdfError(rejected[0].errors[0]?.message ?? "Invalid file");

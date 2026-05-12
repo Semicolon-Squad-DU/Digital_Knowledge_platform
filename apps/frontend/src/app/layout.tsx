@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Bengali } from "next/font/google";
+import { Crimson_Pro, Inter, Lora, Noto_Sans_Bengali } from "next/font/google";
 import "./tailwind.generated.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/layout/Navbar";
@@ -11,6 +11,12 @@ const notoSansBengali = Noto_Sans_Bengali({
   weight: ["400", "500", "600"],
   display: "swap",
 });
+const crimsonPro = Crimson_Pro({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-heading",
+});
+const lora = Lora({ subsets: ["latin"], display: "swap", variable: "--font-serif" });
 
 export const metadata: Metadata = {
   title: "DKP — Digital Knowledge Platform",
@@ -20,7 +26,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} ${notoSansBengali.className} min-h-screen`}>
+      <body
+        className={`${inter.className} ${notoSansBengali.className} ${lora.variable} ${crimsonPro.variable} min-h-screen`}
+      >
         <Providers>
           <div className="flex flex-col min-h-screen">
             <Navbar />
