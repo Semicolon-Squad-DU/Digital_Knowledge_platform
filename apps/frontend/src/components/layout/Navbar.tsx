@@ -70,7 +70,7 @@ export function Navbar() {
       {/* GitHub-style dark header */}
       <header className="gh-navbar sticky top-0 z-40" role="banner">
         <div className="page-container">
-          <div className="flex items-center gap-4 h-14">
+          <div className="flex items-center gap-3 sm:gap-4 h-14">
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="DKP Home">
@@ -205,16 +205,16 @@ export function Navbar() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <Link
                     href="/login"
-                    className="px-3 py-1.5 rounded-md text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-100"
+                    className="inline-flex items-center justify-center h-8 px-2.5 sm:px-3 rounded-md text-xs sm:text-sm text-white/85 hover:text-white hover:bg-white/10 transition-colors duration-100 whitespace-nowrap"
                   >
                     Sign in
                   </Link>
                   <Link
                     href="/register"
-                    className="px-3 py-1.5 rounded-md text-sm font-medium text-[#1f2328] bg-white hover:bg-white/90 transition-colors duration-100"
+                    className="inline-flex items-center justify-center h-8 px-2.5 sm:px-3 rounded-md text-xs sm:text-sm font-semibold text-[#1f2328] bg-white hover:bg-white/90 transition-colors duration-100 whitespace-nowrap shadow-sm"
                   >
                     Sign up
                   </Link>
