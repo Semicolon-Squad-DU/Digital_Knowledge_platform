@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { BookOpen, MapPin, Bookmark, QrCode } from "lucide-react";
-import { useCatalogItem, useAddToWishlist, usePlaceHold } from "@/hooks/useLibrary";
+import { useCatalogItem, useAddToWishlist, usePlaceHold } from "@/features/library/hooks/useLibrary";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";

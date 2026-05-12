@@ -1,7 +1,7 @@
 import { Client } from "@elastic/elasticsearch";
-import { config } from "../config";
-import { logger } from "../config/logger";
-import { query as dbQuery } from "../db/pool";
+import { config } from "../core/config";
+import { logger } from "../core/config/logger";
+import { query as dbQuery } from "../core/db/pool";
 
 export const esClient = new Client({ node: config.elasticsearch.url });
 

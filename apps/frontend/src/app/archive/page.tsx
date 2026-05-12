@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Search, Upload, SlidersHorizontal, X, Archive } from "lucide-react";
-import { useArchiveSearch, useDownloadArchiveItem } from "@/hooks/useArchive";
+import { useArchiveSearch, useDownloadArchiveItem } from "@/features/archive/hooks/useArchive";
 import { useAuthStore } from "@/store/auth.store";
-import { ArchiveCard } from "@/components/archive/ArchiveCard";
-import { UploadModal } from "@/components/archive/UploadModal";
+import { ArchiveCard } from "@/features/archive/components/ArchiveCard";
+import { UploadModal } from "@/features/archive/components/UploadModal";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Input";
 import { SkeletonCard } from "@/components/ui/Skeleton";

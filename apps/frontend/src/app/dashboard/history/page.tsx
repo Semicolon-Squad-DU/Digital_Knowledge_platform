@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
-import { useBorrowingHistory } from "@/hooks/useLibrary";
+import { useBorrowingHistory } from "@/features/library/hooks/useLibrary";
 import { getStatusBadge, formatDate } from "@/lib/utils";
 
 export default function DashboardHistoryPage() {

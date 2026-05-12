@@ -1,9 +1,9 @@
 import cron from "node-cron";
-import { query } from "../db/pool";
-import { config } from "../config";
-import { sendEmail, dueDateReminderEmail } from "../services/email.service";
-import { retryQueuedUploads } from "../services/s3.service";
-import { logger } from "../config/logger";
+import { query } from "../core/db/pool";
+import { config } from "../core/config";
+import { sendEmail, dueDateReminderEmail } from "../infrastructure/email.service";
+import { retryQueuedUploads } from "../infrastructure/s3.service";
+import { logger } from "../core/config/logger";
 
 // ---------------------------------------------------------------------------
 // Types

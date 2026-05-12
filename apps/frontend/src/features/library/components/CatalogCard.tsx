@@ -3,7 +3,7 @@ import { BookOpen, Heart, BookMarked } from "lucide-react";
 import { CatalogItem } from "@dkp/shared";
 import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/store/auth.store";
-import { useAddToWishlist, usePlaceHold } from "@/hooks/useLibrary";
+import { useAddToWishlist, usePlaceHold } from "@/features/library/hooks/useLibrary";
 import toast from "react-hot-toast";
 
 interface CatalogCardProps {

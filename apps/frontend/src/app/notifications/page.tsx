@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/hooks/useNotifications";
+import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/features/notifications/hooks/useNotifications";
 import { Button } from "@/components/ui/Button";
 import { timeAgo } from "@/lib/utils";
 

@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useUploadArchiveItem } from "@/hooks/useArchive";
+import { useUploadArchiveItem } from "@/features/archive/hooks/useArchive";
 import { formatFileSize } from "@/lib/utils";
 
 const ACCEPTED_TYPES = {

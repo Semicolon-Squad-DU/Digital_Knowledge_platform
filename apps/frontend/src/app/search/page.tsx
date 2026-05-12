@@ -4,8 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, Archive, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
-import { useArchiveSearch } from "@/hooks/useArchive";
-import { useCatalogSearch } from "@/hooks/useLibrary";
+import { useArchiveSearch } from "@/features/archive/hooks/useArchive";
+import { useCatalogSearch } from "@/features/library/hooks/useLibrary";
 
 function SearchResults({ q }: { q: string }) {
   const archive = useArchiveSearch({ query: q, page: 1, limit: 8 });

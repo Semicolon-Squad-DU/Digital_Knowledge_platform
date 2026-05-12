@@ -2,11 +2,11 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
-import { query, queryOne } from "../db/pool";
-import { config } from "../config";
-import { authenticate, AuthRequest } from "../middleware/auth.middleware";
-import { AppError, asyncHandler } from "../middleware/error.middleware";
-import { logger } from "../config/logger";
+import { query, queryOne } from "../../core/db/pool";
+import { config } from "../../core/config";
+import { authenticate, AuthRequest } from "../../core/middleware/auth.middleware";
+import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { logger } from "../../core/config/logger";
 
 const router = Router();
 

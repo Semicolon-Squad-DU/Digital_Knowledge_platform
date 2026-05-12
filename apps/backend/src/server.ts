@@ -6,20 +6,20 @@ import compression from "compression";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 
-import { config } from "./config";
-import { logger } from "./config/logger";
-import { pool } from "./db/pool";
-import { initializeElasticsearch } from "./services/elasticsearch.service";
+import { config } from "./core/config";
+import { logger } from "./core/config/logger";
+import { pool } from "./core/db/pool";
+import { initializeElasticsearch } from "./infrastructure/elasticsearch.service";
 import { startScheduler } from "./jobs/scheduler";
-import { errorHandler, notFound } from "./middleware/error.middleware";
+import { errorHandler, notFound } from "./core/middleware/error.middleware";
 
 // Routes
-import authRoutes from "./routes/auth.routes";
-import archiveRoutes from "./routes/archive.routes";
-import libraryRoutes from "./routes/library.routes";
-import showcaseRoutes from "./routes/showcase.routes";
-import researchRoutes from "./routes/research.routes";
-import notificationRoutes from "./routes/notifications.routes";
+import authRoutes from "./features/auth/auth.routes";
+import archiveRoutes from "./features/archive/archive.routes";
+import libraryRoutes from "./features/library/library.routes";
+import showcaseRoutes from "./features/showcase/showcase.routes";
+import researchRoutes from "./features/research/research.routes";
+import notificationRoutes from "./features/notifications/notifications.routes";
 
 const app = express();
 

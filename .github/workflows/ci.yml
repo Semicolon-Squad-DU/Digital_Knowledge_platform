@@ -55,11 +55,11 @@ jobs:
 
       - name: Check seed file is not empty
         run: |
-          if [ ! -s src/db/seed.ts ]; then
+          if [ ! -s src/core/db/seed.ts ]; then
             echo "ERROR: seed.ts is empty!"
             exit 1
           fi
-          echo "seed.ts OK ($(wc -l < src/db/seed.ts) lines)"
+          echo "seed.ts OK ($(wc -l < src/core/db/seed.ts) lines)"
 
   frontend:
     needs: block-bot-commits

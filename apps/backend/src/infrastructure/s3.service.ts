@@ -6,8 +6,8 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { config } from "../config";
-import { logger } from "../config/logger";
+import { config } from "../core/config";
+import { logger } from "../core/config/logger";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";

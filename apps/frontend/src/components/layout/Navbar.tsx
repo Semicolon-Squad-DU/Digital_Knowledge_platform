@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Bell, BookOpen, User, LogOut, Menu, X, LayoutDashboard, Library, Search, Moon, Sun } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 

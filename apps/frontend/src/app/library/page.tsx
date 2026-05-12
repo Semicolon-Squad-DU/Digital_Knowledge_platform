@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Search, BookOpen, SlidersHorizontal } from "lucide-react";
-import { useCatalogSearch } from "@/hooks/useLibrary";
-import { CatalogCard } from "@/components/library/CatalogCard";
+import { useCatalogSearch } from "@/features/library/hooks/useLibrary";
+import { CatalogCard } from "@/features/library/components/CatalogCard";
 import { Button } from "@/components/ui/Button";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";

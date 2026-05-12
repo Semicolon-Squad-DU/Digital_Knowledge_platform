@@ -1,10 +1,10 @@
 import { Router, Response } from "express";
-import { query, queryOne, withTransaction } from "../db/pool";
-import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
-import { AppError, asyncHandler } from "../middleware/error.middleware";
-import { searchCatalog } from "../services/elasticsearch.service";
-import { config } from "../config";
-import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../services/email.service";
+import { query, queryOne, withTransaction } from "../../core/db/pool";
+import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
+import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { searchCatalog } from "../../infrastructure/elasticsearch.service";
+import { config } from "../../core/config";
+import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
 
 const router = Router();
 

@@ -119,18 +119,19 @@ Always keep database passwords private.
 
 ## Backend Architecture
 
-- `src/db/pool.ts` — database connection pool
-- `src/db/init.sql` — schema (applied via `npm run db:migrate`)
-- `src/db/seed.ts` — demo data (applied via `npm run db:seed`)
-- `src/routes/` — API endpoints
-- `src/services/` — business logic (S3, Email, Elasticsearch)
-- `src/middleware/` — auth, error handling, audit logging
+- `src/core/db/pool.ts` — database connection pool
+- `src/core/db/init.sql` — schema (applied via `npm run db:migrate`)
+- `src/core/db/seed.ts` — demo data (applied via `npm run db:seed`)
+- `src/features/*/` — API routes per domain (auth, archive, library, etc.)
+- `src/infrastructure/` — external integrations (S3, Email, Elasticsearch)
+- `src/core/middleware/` — auth, error handling, audit logging, uploads
 
 ## Frontend Architecture
 
-- `apps/frontend/src/app/` — Next.js pages and layouts
-- `apps/frontend/src/components/` — React UI components
-- `apps/frontend/src/hooks/` — custom React hooks (API calls)
+- `apps/frontend/src/app/` — Next.js App Router pages and layouts
+- `apps/frontend/src/features/<domain>/` — domain hooks and components (archive, library, showcase, research, notifications)
+- `apps/frontend/src/components/ui/` — shared UI primitives
+- `apps/frontend/src/components/layout/` — layout (e.g. Navbar)
 - `apps/frontend/src/lib/api.ts` — axios client to backend
 
 ## Questions?

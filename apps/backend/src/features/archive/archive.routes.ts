@@ -1,11 +1,11 @@
 import { Router, Response } from "express";
-import { query, queryOne, withTransaction } from "../db/pool";
-import { authenticate, optionalAuth, requireRole, AuthRequest } from "../middleware/auth.middleware";
-import { uploadSingle, uploadMultiple } from "../middleware/upload.middleware";
-import { AppError, asyncHandler } from "../middleware/error.middleware";
-import { uploadToS3, getPresignedUrl, generateS3Key } from "../services/s3.service";
-import { indexArchiveItem, searchArchive } from "../services/elasticsearch.service";
-import { logger } from "../config/logger";
+import { query, queryOne, withTransaction } from "../../core/db/pool";
+import { authenticate, optionalAuth, requireRole, AuthRequest } from "../../core/middleware/auth.middleware";
+import { uploadSingle, uploadMultiple } from "../../core/middleware/upload.middleware";
+import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
+import { indexArchiveItem, searchArchive } from "../../infrastructure/elasticsearch.service";
+import { logger } from "../../core/config/logger";
 import { AccessTier } from "@dkp/shared";
 
 const router = Router();

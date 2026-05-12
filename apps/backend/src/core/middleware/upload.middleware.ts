@@ -1,6 +1,6 @@
 import multer from "multer";
 import { Request, Response, NextFunction } from "express";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from "../services/s3.service";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from "../../infrastructure/s3.service";
 import { query } from "../db/pool";
 import { AppError } from "./error.middleware";
 import { AuthRequest } from "./auth.middleware";

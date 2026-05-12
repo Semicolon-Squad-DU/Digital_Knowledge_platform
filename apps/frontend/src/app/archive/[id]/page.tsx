@@ -2,7 +2,7 @@
 
 import { Download, FileText } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem } from "@/hooks/useArchive";
+import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem } from "@/features/archive/hooks/useArchive";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "@/lib/utils";
 import toast from "react-hot-toast";

@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useSubmitProject } from "@/hooks/useShowcase";
+import { useSubmitProject } from "@/features/showcase/hooks/useShowcase";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { cn, formatFileSize } from "@/lib/utils";
