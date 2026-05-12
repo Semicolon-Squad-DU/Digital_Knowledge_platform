@@ -6,7 +6,8 @@ export const pool = new Pool({
   connectionString: config.db.url,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
+  ssl: config.db.url.includes("supabase.com") ? { rejectUnauthorized: false } : false,
 });
 
 pool.on("error", (err) => {
