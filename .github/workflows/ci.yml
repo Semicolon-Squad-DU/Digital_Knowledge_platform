@@ -1,10 +1,14 @@
+# GitHub Actions — optional checks (manual only)
+#
+# Previously this ran on every push/PR and emailed on failure. It is now
+# disabled for automatic runs. Run from: Actions → CI → Run workflow.
+#
+# Jobs: block-bot check (manual), backend lint/build, frontend lint/build.
+
 name: CI
 
 on:
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: ["**"]
+  workflow_dispatch:
 
 jobs:
   block-bot-commits:
