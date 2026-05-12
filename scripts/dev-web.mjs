@@ -1,5 +1,25 @@
 import { execSync, spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+
+/** Read PORT from apps/backend/.env so the frontend API base matches dev:full + custom backend ports. */
+function readBackendPort(rootDir) {
+  if (process.env.BACKEND_PORT) return process.env.BACKEND_PORT;
+  const envPath = resolve(rootDir, "apps/backend/.env");
+  if (!existsSync(envPath)) return "4000";
+  try {
+    const text = readFileSync(envPath, "utf8");
+    for (const line of text.split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      const m = t.match(/^PORT\s*=\s*(\d+)\s*$/i);
+      if (m) return m[1];
+    }
+  } catch {
+    // ignore
+  }
+  return "4000";
+}
 
 function killPort3000() {
   try {
@@ -19,12 +39,12 @@ function killPort3000() {
   }
 }
 
-function run(command, args, cwd) {
+function run(command, args, cwd, env = process.env) {
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(command, args, {
       cwd,
       stdio: "inherit",
-      env: process.env,
+      env,
       shell: process.platform === "win32",
     });
 
@@ -54,7 +74,12 @@ async function main() {
   await run(tailwindBin, ["-c", "tailwind.config.js", "-i", "./src/app/globals.css", "-o", "./src/app/tailwind.generated.css"], webDir);
 
   const port = process.env.PORT || "3000";
-  await run(nextBin, ["dev", "-p", port], webDir);
+  const nextEnv = { ...process.env };
+  if (!nextEnv.NEXT_PUBLIC_API_URL) {
+    const backendPort = readBackendPort(rootDir);
+    nextEnv.NEXT_PUBLIC_API_URL = `http://127.0.0.1:${backendPort}/api`;
+  }
+  await run(nextBin, ["dev", "-p", port], webDir, nextEnv);
 }
 
 main().catch((err) => {
