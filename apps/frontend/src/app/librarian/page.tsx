@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useAddCatalogItem } from "@/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -14,7 +14,176 @@ import { SkeletonStatCard, SkeletonTableRow } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { formatDate } from "@/lib/utils";
+import api from "@/lib/api";
 import toast from "react-hot-toast";
+
+// ---------------------------------------------------------------------------
+// Issue Book Form — searchable member + book
+// ---------------------------------------------------------------------------
+function IssueBookForm({
+  onIssue, isIssuing, onCancel,
+}: {
+  onIssue: (catalogId: string, memberId: string) => Promise<void>;
+  isIssuing: boolean;
+  onCancel: () => void;
+}) {
+  const [memberSearch, setMemberSearch] = useState("");
+  const [bookSearch,   setBookSearch]   = useState("");
+  const [members,      setMembers]      = useState<{ user_id: string; name: string; email: string }[]>([]);
+  const [books,        setBooks]        = useState<{ catalog_id: string; title: string; available_copies: number; authors: string[] }[]>([]);
+  const [selectedMember, setSelectedMember] = useState<{ user_id: string; name: string; email: string } | null>(null);
+  const [selectedBook,   setSelectedBook]   = useState<{ catalog_id: string; title: string; available_copies: number } | null>(null);
+  const [searching, setSearching] = useState({ member: false, book: false });
+
+  const loanDays = 14;
+  const dueDate  = new Date();
+  dueDate.setDate(dueDate.getDate() + loanDays);
+
+  const searchMembers = async (q: string) => {
+    if (!q.trim()) { setMembers([]); return; }
+    setSearching(s => ({ ...s, member: true }));
+    try {
+      const { data } = await api.get("/auth/members/search", { params: { q } });
+      setMembers(data.data ?? []);
+    } catch { setMembers([]); }
+    finally { setSearching(s => ({ ...s, member: false })); }
+  };
+
+  const searchBooks = async (q: string) => {
+    if (!q.trim()) { setBooks([]); return; }
+    setSearching(s => ({ ...s, book: true }));
+    try {
+      const { data } = await api.get("/library/catalog/search", { params: { q, availability: "available" } });
+      setBooks(data.data?.items ?? []);
+    } catch { setBooks([]); }
+    finally { setSearching(s => ({ ...s, book: false })); }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedMember) { toast.error("Please select a member"); return; }
+    if (!selectedBook)   { toast.error("Please select a book");   return; }
+    await onIssue(selectedBook.catalog_id, selectedMember.user_id);
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Member search */}
+      <div>
+        <label className="form-label flex items-center gap-1.5"><User size={13} /> Member</label>
+        {selectedMember ? (
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
+            <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedMember.name}</p>
+              <p className="text-xs text-[var(--color-fg-muted)]">{selectedMember.email}</p>
+            </div>
+            <button onClick={() => { setSelectedMember(null); setMemberSearch(""); setMembers([]); }}
+              className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]">
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <div className="search-bar">
+              <Search className="search-bar-icon" size={14} />
+              <input
+                type="text"
+                value={memberSearch}
+                onChange={e => { setMemberSearch(e.target.value); searchMembers(e.target.value); }}
+                placeholder="Search by name or email…"
+                className="form-input pl-9"
+              />
+            </div>
+            {members.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
+                {members.map(m => (
+                  <button key={m.user_id} onClick={() => { setSelectedMember(m); setMembers([]); setMemberSearch(""); }}
+                    className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-fg-default)]">{m.name}</p>
+                      <p className="text-xs text-[var(--color-fg-muted)]">{m.email}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searching.member && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Book search */}
+      <div>
+        <label className="form-label flex items-center gap-1.5"><BookOpen size={13} /> Book</label>
+        {selectedBook ? (
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
+            <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedBook.title}</p>
+              <p className="text-xs text-[var(--color-fg-muted)]">{selectedBook.available_copies} copies available</p>
+            </div>
+            <button onClick={() => { setSelectedBook(null); setBookSearch(""); setBooks([]); }}
+              className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]">
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <div className="search-bar">
+              <Search className="search-bar-icon" size={14} />
+              <input
+                type="text"
+                value={bookSearch}
+                onChange={e => { setBookSearch(e.target.value); searchBooks(e.target.value); }}
+                placeholder="Search by title…"
+                className="form-input pl-9"
+              />
+            </div>
+            {books.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
+                {books.map(b => (
+                  <button key={b.catalog_id} onClick={() => { setSelectedBook(b); setBooks([]); setBookSearch(""); }}
+                    className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-fg-default)]">{b.title}</p>
+                      <p className="text-xs text-[var(--color-fg-muted)]">{b.authors?.join(", ")} · {b.available_copies} available</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searching.book && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Summary */}
+      {selectedMember && selectedBook && (
+        <div className="p-4 rounded-xl bg-[var(--color-accent-subtle)] border border-[var(--color-accent-fg)] space-y-1.5 text-sm">
+          <p className="font-semibold text-[var(--color-accent-fg)]">Issue Summary</p>
+          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Member:</span> {selectedMember.name}</p>
+          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Book:</span> {selectedBook.title}</p>
+          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Issue Date:</span> {new Date().toDateString()}</p>
+          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Due Date:</span> {dueDate.toDateString()} ({loanDays} days)</p>
+          <p className="text-xs text-[var(--color-fg-muted)] mt-1">Member will receive an email notification.</p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
+        <Button variant="invisible" onClick={onCancel}>Cancel</Button>
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          loading={isIssuing}
+          disabled={!selectedMember || !selectedBook}
+          icon={<BookOpen size={14} />}
+        >
+          Issue Book
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 type Tab = "overview" | "overdue";
 
@@ -504,33 +673,22 @@ export default function LibrarianDashboardPage() {
       {/* Issue Modal */}
       <Modal
         isOpen={issueModal}
-        onClose={() => setIssueModal(false)}
-        title="Issue Book"
-        description="Enter the catalog item ID and member ID to issue a book."
-        size="sm"
+        onClose={() => { setIssueModal(false); setCatalogId(""); setMemberId(""); }}
+        title="Issue Book to Member"
+        description="Search for a member and book, then issue."
+        size="md"
       >
-        <div className="space-y-4">
-          <Input
-            label="Catalog ID"
-            value={catalogId}
-            onChange={(e) => setCatalogId(e.target.value)}
-            placeholder="e.g. 3f2a1b4c-…"
-            required
-            hint="The UUID of the catalog item"
-          />
-          <Input
-            label="Member ID"
-            value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-            placeholder="e.g. a1b2c3d4-…"
-            required
-            hint="The UUID of the member's user account"
-          />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setIssueModal(false)}>Cancel</Button>
-            <Button onClick={handleIssue} loading={isIssuing}>Issue Book</Button>
-          </div>
-        </div>
+        <IssueBookForm
+          onIssue={async (cid, mid) => {
+            await issueBook({ catalog_id: cid, member_id: mid });
+            toast.success("Book issued successfully! Member notified via email.");
+            setIssueModal(false);
+            setCatalogId(""); setMemberId("");
+            refetch();
+          }}
+          isIssuing={isIssuing}
+          onCancel={() => setIssueModal(false)}
+        />
       </Modal>
 
       {/* Return Modal */}

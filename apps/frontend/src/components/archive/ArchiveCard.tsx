@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { Download, Eye, FileText } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { ArchiveItem } from "@dkp/shared";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge, getFileIcon } from "@/lib/utils";
 
@@ -11,13 +10,16 @@ interface ArchiveCardProps {
 }
 
 export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
-  const tierBadge = getAccessTierBadge(item.access_tier);
+  const tierBadge   = getAccessTierBadge(item.access_tier);
   const statusBadge = getStatusBadge(item.status);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow group">
+    <div className="surface p-5 hover:shadow-md transition-shadow group">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center text-xl">
+        <div
+          className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+          style={{ background: "var(--color-canvas-subtle)", border: "1px solid var(--color-border-default)" }}
+        >
           {getFileIcon(item.file_type)}
         </div>
 
@@ -26,12 +28,13 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
             <div>
               <Link
                 href={`/archive/${item.item_id}`}
-                className="font-semibold text-gray-900 hover:text-primary-700 line-clamp-2 transition-colors"
+                className="font-semibold line-clamp-2 transition-colors hover:underline"
+                style={{ color: "var(--color-fg-default)" }}
               >
                 {item.title_en}
               </Link>
               {item.title_bn && (
-                <p className="text-sm text-gray-500 mt-0.5">{item.title_bn}</p>
+                <p className="text-sm mt-0.5" style={{ color: "var(--color-fg-muted)" }}>{item.title_bn}</p>
               )}
             </div>
             <div className="flex-shrink-0 flex gap-1">
@@ -42,7 +45,7 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
           </div>
 
           {item.authors?.length > 0 && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
               {item.authors.slice(0, 3).join(", ")}
               {item.authors.length > 3 && ` +${item.authors.length - 3} more`}
             </p>
@@ -51,7 +54,11 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
           {item.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {item.tags.slice(0, 4).map((tag) => (
-                <span key={tag.tag_id} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                <span
+                  key={tag.tag_id}
+                  className="px-2 py-0.5 rounded text-xs"
+                  style={{ background: "var(--color-canvas-subtle)", color: "var(--color-fg-muted)" }}
+                >
                   {tag.name_en}
                 </span>
               ))}
@@ -59,7 +66,7 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
           )}
 
           <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-3 text-xs" style={{ color: "var(--color-fg-subtle)" }}>
               <span>{formatDate(item.created_at)}</span>
               <span>{formatFileSize(item.file_size)}</span>
               <span className={`px-2 py-0.5 rounded-full font-medium ${statusBadge.color}`}>
@@ -69,16 +76,10 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
 
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Link href={`/archive/${item.item_id}`}>
-                <Button variant="ghost" size="sm">
-                  <Eye size={14} /> View
-                </Button>
+                <Button variant="ghost" size="sm"><Eye size={14} /> View</Button>
               </Link>
               {item.status === "published" && onDownload && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDownload(item.item_id)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => onDownload(item.item_id)}>
                   <Download size={14} /> Download
                 </Button>
               )}

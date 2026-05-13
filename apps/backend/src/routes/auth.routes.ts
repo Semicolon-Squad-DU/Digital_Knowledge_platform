@@ -168,6 +168,24 @@ router.get("/advisors", asyncHandler(async (_req: Request, res: Response) => {
   res.json({ success: true, data: advisors });
 }));
 
+// GET /api/auth/members/search — search members by name or email (librarian use)
+router.get("/members/search", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { q } = req.query as { q: string };
+  if (!q?.trim()) { res.json({ success: true, data: [] }); return; }
+
+  const members = await query(
+    `SELECT user_id, name, email, department, membership_status
+     FROM users
+     WHERE deleted_at IS NULL
+       AND membership_status = 'active'
+       AND (name ILIKE $1 OR email ILIKE $1)
+     ORDER BY name ASC
+     LIMIT 10`,
+    [`%${q.trim()}%`]
+  );
+  res.json({ success: true, data: members });
+}));
+
 // GET /api/auth/me
 router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = await queryOne(

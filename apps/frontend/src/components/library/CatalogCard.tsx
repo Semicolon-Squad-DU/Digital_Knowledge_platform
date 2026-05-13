@@ -38,28 +38,32 @@ export function CatalogCard({ item }: CatalogCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+    <div className="surface p-5 hover:shadow-md transition-shadow">
       <div className="flex gap-4">
         {/* Cover placeholder */}
-        <div className="flex-shrink-0 w-16 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center">
-          <BookOpen className="text-primary-600" size={24} />
+        <div
+          className="flex-shrink-0 w-16 h-20 rounded-lg flex items-center justify-center"
+          style={{ background: "var(--gradient-accent)" }}
+        >
+          <BookOpen className="text-white" size={24} />
         </div>
 
         <div className="flex-1 min-w-0">
           <Link
             href={`/library/${item.catalog_id}`}
-            className="font-semibold text-gray-900 hover:text-primary-700 line-clamp-2 transition-colors"
+            className="font-semibold line-clamp-2 transition-colors hover:underline"
+            style={{ color: "var(--color-fg-default)" }}
           >
             {item.title}
           </Link>
 
           {item.authors?.length > 0 && (
-            <p className="text-sm text-gray-600 mt-0.5">
+            <p className="text-sm mt-0.5" style={{ color: "var(--color-fg-muted)" }}>
               {item.authors.slice(0, 2).join(", ")}
             </p>
           )}
 
-          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+          <div className="flex items-center gap-2 mt-1 text-xs" style={{ color: "var(--color-fg-subtle)" }}>
             {item.year && <span>{item.year}</span>}
             {item.category && <span>• {item.category}</span>}
             {item.isbn && <span>• ISBN: {item.isbn}</span>}
@@ -67,11 +71,11 @@ export function CatalogCard({ item }: CatalogCardProps) {
 
           <div className="flex items-center justify-between mt-3">
             <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                isAvailable
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
+              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{
+                background: isAvailable ? "var(--color-success-subtle)" : "var(--color-danger-subtle)",
+                color:      isAvailable ? "var(--color-success-fg)"     : "var(--color-danger-fg)",
+              }}
             >
               {isAvailable
                 ? `${item.available_copies} of ${item.total_copies} available`
@@ -82,18 +86,16 @@ export function CatalogCard({ item }: CatalogCardProps) {
               <button
                 onClick={handleWishlist}
                 disabled={wishlistPending}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: "var(--color-fg-subtle)" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--color-danger-fg)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--color-fg-subtle)")}
                 aria-label="Add to wishlist"
               >
                 <Heart size={16} />
               </button>
               {!isAvailable && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleHold}
-                  loading={holdPending}
-                >
+                <Button variant="outline" size="sm" onClick={handleHold} loading={holdPending}>
                   <BookMarked size={14} /> Hold
                 </Button>
               )}

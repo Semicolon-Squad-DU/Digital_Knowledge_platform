@@ -13,16 +13,16 @@ export function PageHeader({ title, subtitle, actions, breadcrumb, className }: 
     <div className={cn("page-header", className)}>
       <div>
         {breadcrumb && breadcrumb.length > 0 && (
-          <nav className="flex items-center gap-1.5 text-xs text-slate-500 mb-2" aria-label="Breadcrumb">
+          <nav className="flex items-center gap-1.5 text-xs mb-2" style={{ color: "var(--color-fg-muted)" }} aria-label="Breadcrumb">
             {breadcrumb.map((crumb, i) => (
               <span key={i} className="flex items-center gap-1.5">
                 {i > 0 && <span aria-hidden="true">/</span>}
                 {crumb.href ? (
-                  <a href={crumb.href} className="hover:text-slate-700 transition-colors">
+                  <a href={crumb.href} className="transition-colors hover:underline" style={{ color: "var(--color-fg-muted)" }}>
                     {crumb.label}
                   </a>
                 ) : (
-                  <span className="text-slate-700 font-medium">{crumb.label}</span>
+                  <span className="font-medium" style={{ color: "var(--color-fg-default)" }}>{crumb.label}</span>
                 )}
               </span>
             ))}

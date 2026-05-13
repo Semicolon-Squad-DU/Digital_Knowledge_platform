@@ -63,22 +63,22 @@ export default function ShowcaseDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <h1 className="text-2xl font-bold text-slate-900">{project.title}</h1>
-        <p className="text-sm text-slate-600 mt-1">{project.department} · {project.semester}</p>
+      <div className="gh-box p-6">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--color-fg-default)" }}>{project.title}</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>{project.department} · {project.semester}</p>
 
-        <p className="text-sm text-slate-700 mt-4">{project.abstract}</p>
+        <p className="text-sm mt-4" style={{ color: "var(--color-fg-default)" }}>{project.abstract}</p>
 
-        <div className="mt-4 text-sm text-slate-700 space-y-1">
-          <p><span className="font-medium text-slate-800">Advisor:</span> {project.advisor_name}</p>
-          {project.submitted_by_name && <p><span className="font-medium text-slate-800">Submitted by:</span> {project.submitted_by_name}</p>}
-          {project.status && <p><span className="font-medium text-slate-800">Status:</span> {project.status}</p>}
+        <div className="mt-4 text-sm space-y-1" style={{ color: "var(--color-fg-default)" }}>
+          <p><span className="font-medium">Advisor:</span> {project.advisor_name}</p>
+          {project.submitted_by_name && <p><span className="font-medium">Submitted by:</span> {project.submitted_by_name}</p>}
+          {project.status && <p><span className="font-medium">Status:</span> {project.status}</p>}
         </div>
 
         {!!project.team_members?.length && (
           <div className="mt-4">
-            <p className="font-medium text-slate-800 text-sm mb-1">Team Members</p>
-            <ul className="list-disc list-inside text-sm text-slate-700">
+            <p className="font-medium text-sm mb-1" style={{ color: "var(--color-fg-default)" }}>Team Members</p>
+            <ul className="list-disc list-inside text-sm" style={{ color: "var(--color-fg-muted)" }}>
               {project.team_members.map((member: { name: string }, index: number) => (
                 <li key={`${member.name}-${index}`}>{member.name}</li>
               ))}
@@ -89,7 +89,11 @@ export default function ShowcaseDetailPage() {
         {!!project.technologies?.length && (
           <div className="flex flex-wrap gap-2 mt-4">
             {project.technologies.map((technology: string) => (
-              <span key={technology} className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs">
+              <span
+                key={technology}
+                className="px-2 py-0.5 rounded text-xs"
+                style={{ background: "var(--color-canvas-subtle)", color: "var(--color-fg-muted)" }}
+              >
                 {technology}
               </span>
             ))}
@@ -98,7 +102,7 @@ export default function ShowcaseDetailPage() {
 
         <div className="mt-5 flex items-center gap-3 text-sm">
           {project.source_code_url && (
-            <a href={project.source_code_url} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
+            <a href={project.source_code_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-fg)] hover:underline">
               Source Code
             </a>
           )}
@@ -106,7 +110,7 @@ export default function ShowcaseDetailPage() {
             <DownloadReportButton reportKey={project.report_url} />
           )}
           {(project.status === "pending_review" || project.status === "changes_requested") && (
-            <Link href={`/showcase/review/${project.project_id}`} className="text-primary-600 hover:underline">
+            <Link href={`/showcase/review/${project.project_id}`} className="text-[var(--color-accent-fg)] hover:underline">
               Review Page
             </Link>
           )}
