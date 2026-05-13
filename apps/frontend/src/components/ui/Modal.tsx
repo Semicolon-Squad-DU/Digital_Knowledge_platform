@@ -44,17 +44,18 @@ export function Modal({ isOpen, onClose, title, description, children, size = "m
       aria-labelledby={title ? "modal-title" : undefined}
     >
       <div
-        className={cn("w-full rounded-md border animate-scale-in overflow-hidden", sizes[size])}
+        className={cn("w-full rounded-md border animate-scale-in overflow-hidden flex flex-col", sizes[size])}
         style={{
           background: "var(--color-canvas-default)",
           borderColor: "var(--color-border-default)",
           boxShadow: "0 1px 3px rgba(31,35,40,0.12), 0 8px 24px rgba(66,74,83,0.12)",
+          maxHeight: "90vh",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
           <div
-            className="flex items-center justify-between px-4 py-3 border-b"
+            className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
             style={{ borderColor: "var(--color-border-default)", background: "var(--color-canvas-subtle)" }}
           >
             <div>
@@ -75,7 +76,7 @@ export function Modal({ isOpen, onClose, title, description, children, size = "m
             </button>
           </div>
         )}
-        <div className="p-4">{children}</div>
+        <div className="p-4 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

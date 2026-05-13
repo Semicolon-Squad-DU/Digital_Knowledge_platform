@@ -11,24 +11,76 @@ const router = Router();
 
 // GET /api/library/catalog/search
 router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { q, author, isbn, category, availability, year_from, year_to, page, limit } =
+  const { q, author, isbn, category, availability, year_from, year_to, page = "1", limit = "20" } =
     req.query as Record<string, string>;
 
-  const result = await searchCatalog({
-    query: q, author, isbn, category,
-    availability: availability as "available" | "on_loan" | "all",
-    year_from: year_from ? parseInt(year_from) : undefined,
-    year_to: year_to ? parseInt(year_to) : undefined,
-    page: page ? parseInt(page) : 1,
-    limit: limit ? parseInt(limit) : 20,
-  });
+  const pageNum  = parseInt(page);
+  const limitNum = parseInt(limit);
+  const offset   = (pageNum - 1) * limitNum;
+
+  const where: string[] = ["deleted_at IS NULL"];
+  const values: unknown[] = [];
+  let i = 1;
+
+  if (q) {
+    where.push(`title ILIKE $${i}`);
+    values.push(`%${q}%`);
+    i++;
+  }
+  if (author) {
+    where.push(`array_to_string(authors, ' ') ILIKE $${i}`);
+    values.push(`%${author}%`);
+    i++;
+  }
+  if (isbn) {
+    where.push(`isbn ILIKE $${i}`);
+    values.push(`%${isbn}%`);
+    i++;
+  }
+  if (category) {
+    where.push(`category = $${i}`);
+    values.push(category);
+    i++;
+  }
+  if (availability === "available") {
+    where.push("available_copies > 0");
+  } else if (availability === "on_loan") {
+    where.push("available_copies = 0");
+  }
+  if (year_from) {
+    where.push(`year >= $${i}`);
+    values.push(parseInt(year_from));
+    i++;
+  }
+  if (year_to) {
+    where.push(`year <= $${i}`);
+    values.push(parseInt(year_to));
+    i++;
+  }
+
+  const whereClause = where.join(" AND ");
+
+  const [{ total }] = await query<{ total: string }>(
+    `SELECT COUNT(*)::text as total FROM catalog_items WHERE ${whereClause}`,
+    values
+  );
+
+  const items = await query(
+    `SELECT * FROM catalog_items
+     WHERE ${whereClause}
+     ORDER BY title ASC
+     LIMIT $${i} OFFSET $${i + 1}`,
+    [...values, limitNum, offset]
+  );
 
   res.json({
     success: true,
     data: {
-      items: result.hits, total: result.total,
-      page: page ? parseInt(page) : 1, limit: limit ? parseInt(limit) : 20,
-      total_pages: Math.ceil(result.total / (limit ? parseInt(limit) : 20)),
+      items,
+      total: parseInt(total),
+      page: pageNum,
+      limit: limitNum,
+      total_pages: Math.ceil(parseInt(total) / limitNum),
     },
   });
 }));

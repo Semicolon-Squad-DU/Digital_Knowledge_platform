@@ -37,7 +37,10 @@ export function useCatalogSearch(params: CatalogSearchParams) {
   return useQuery({
     queryKey: ["catalog", "search", params],
     queryFn: async () => {
-      const { data } = await api.get("/library/catalog/search", { params });
+      // Backend uses 'q' for title search
+      const { query, ...rest } = params;
+      const apiParams = { ...rest, ...(query ? { q: query } : {}) };
+      const { data } = await api.get("/library/catalog/search", { params: apiParams });
       return data.data;
     },
     staleTime: 30_000,

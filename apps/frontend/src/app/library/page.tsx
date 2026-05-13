@@ -31,8 +31,9 @@ export default function LibraryPage() {
   const isLibrarian = isAuthenticated && ["librarian", "admin"].includes(user?.role ?? "");
 
   const [searchInput, setSearchInput] = useState("");
+  const [searchType, setSearchType] = useState<"query" | "author" | "isbn">("query");
   const [params, setParams] = useState({
-    query: "", category: "",
+    query: "", author: "", isbn: "", category: "",
     availability: "all" as "all" | "available" | "on_loan",
     page: 1, limit: 20,
   });
@@ -45,6 +46,8 @@ export default function LibraryPage() {
     edition: "", year: "", category: "General",
     total_copies: "1", shelf_location: "", description: "",
   });
+
+  const isThesisMode = bookForm.category === "Thesis";
 
   const onDrop = useCallback((accepted: File[]) => {
     if (accepted[0]) setPdfFile(accepted[0]);
@@ -68,7 +71,13 @@ export default function LibraryPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams((p) => ({ ...p, query: searchInput, page: 1 }));
+    setParams((p) => ({
+      ...p,
+      query:  searchType === "query"  ? searchInput : "",
+      author: searchType === "author" ? searchInput : "",
+      isbn:   searchType === "isbn"   ? searchInput : "",
+      page: 1,
+    }));
   };
 
   const handleAddBook = async () => {
@@ -112,6 +121,11 @@ export default function LibraryPage() {
     }
   };
 
+  // Dynamic button label based on active category
+  const addLabel = params.category && params.category !== "All"
+    ? `Add ${params.category}`
+    : "Add Book";
+
   return (
     <div className="page-container py-8">
       <PageHeader
@@ -123,22 +137,41 @@ export default function LibraryPage() {
             variant="primary"
             size="sm"
             icon={<Plus size={14} />}
-            onClick={() => setAddModal(true)}
+            onClick={() => {
+              const cat = (params.category && params.category !== "All") ? params.category : "General";
+              setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: cat, total_copies: "1", shelf_location: "", description: "" });
+              setAddModal(true);
+            }}
           >
-            Add Book
+            {addLabel}
           </Button>
         ) : undefined}
       />
 
       {/* Search */}
       <form onSubmit={handleSearch} className="flex gap-2 mb-5">
+        {/* Search type selector */}
+        <select
+          value={searchType}
+          onChange={(e) => setSearchType(e.target.value as "query" | "author" | "isbn")}
+          className="form-select w-32 flex-shrink-0"
+          aria-label="Search by"
+        >
+          <option value="query">Title</option>
+          <option value="author">Author</option>
+          <option value="isbn">ISBN</option>
+        </select>
         <div className="search-bar flex-1">
           <Search className="search-bar-icon" size={17} aria-hidden="true" />
           <input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by title, author, or ISBN…"
+            placeholder={
+              searchType === "author" ? "Search by author name…" :
+              searchType === "isbn"   ? "Search by ISBN…" :
+              "Search by title…"
+            }
             className="form-input pl-10"
             aria-label="Search library catalog"
           />
@@ -204,11 +237,11 @@ export default function LibraryPage() {
       {!isLoading && !isError && data?.items?.length === 0 && (
         <EmptyState
           icon={<BookOpen size={26} />}
-          title="No books found"
-          description={isLibrarian ? "Add books using the \"Add Book\" button above." : "Try different search terms or clear the filters."}
-          action={isLibrarian ? { label: "Add Book", onClick: () => setAddModal(true), variant: "primary" } : {
+          title={`No ${params.category && params.category !== "All" ? params.category.toLowerCase() + "s" : "books"} found`}
+          description={isLibrarian ? `Add ${params.category && params.category !== "All" ? params.category.toLowerCase() + "s" : "books"} using the "${addLabel}" button above.` : "Try different search terms or clear the filters."}
+          action={isLibrarian ? { label: addLabel, onClick: () => setAddModal(true), variant: "primary" } : {
             label: "Clear filters",
-            onClick: () => { setParams({ query: "", category: "", availability: "all", page: 1, limit: 20 }); setSearchInput(""); },
+            onClick: () => { setParams({ query: "", author: "", isbn: "", category: "", availability: "all", page: 1, limit: 20 }); setSearchInput(""); },
             variant: "outline",
           }}
         />
@@ -250,26 +283,35 @@ export default function LibraryPage() {
       <Modal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
-        title="Add Book to Catalog"
-        description="Fill in the book details to add it to the library catalog."
-        size="lg"
+        title={`Add ${isThesisMode ? "Thesis" : "Book"} to Catalog`}
+        description={isThesisMode
+          ? "Upload a thesis with title, authors and abstract."
+          : "Fill in the book details to add it to the library catalog."}
+        size={isThesisMode ? "md" : "lg"}
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Title"
-              required
-              value={bookForm.title}
-              onChange={(e) => setBookForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Introduction to Algorithms"
-            />
-            <Input
-              label="ISBN"
-              value={bookForm.isbn}
-              onChange={(e) => setBookForm(f => ({ ...f, isbn: e.target.value }))}
-              placeholder="e.g. 978-0-262-03384-8"
-            />
+          {/* Category selector — always shown so user can switch */}
+          <div className="space-y-1.5">
+            <label className="form-label">Category</label>
+            <select
+              value={bookForm.category}
+              onChange={(e) => setBookForm(f => ({ ...f, category: e.target.value }))}
+              className="form-select"
+            >
+              {BOOK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
+
+          {/* Title — always shown */}
+          <Input
+            label="Title"
+            required
+            value={bookForm.title}
+            onChange={(e) => setBookForm(f => ({ ...f, title: e.target.value }))}
+            placeholder={isThesisMode ? "e.g. Deep Learning for NLP" : "e.g. Introduction to Algorithms"}
+          />
+
+          {/* Authors — always shown */}
           <Input
             label="Authors"
             value={bookForm.authors}
@@ -277,66 +319,76 @@ export default function LibraryPage() {
             placeholder="Author 1, Author 2, ..."
             hint="Comma-separated"
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Publisher"
-              value={bookForm.publisher}
-              onChange={(e) => setBookForm(f => ({ ...f, publisher: e.target.value }))}
-              placeholder="e.g. MIT Press"
-            />
-            <Input
-              label="Edition"
-              value={bookForm.edition}
-              onChange={(e) => setBookForm(f => ({ ...f, edition: e.target.value }))}
-              placeholder="e.g. 3rd"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <Input
-              label="Year"
-              type="number"
-              value={bookForm.year}
-              onChange={(e) => setBookForm(f => ({ ...f, year: e.target.value }))}
-              placeholder="e.g. 2023"
-            />
-            <div className="space-y-1.5">
-              <label className="form-label">Category</label>
-              <select
-                value={bookForm.category}
-                onChange={(e) => setBookForm(f => ({ ...f, category: e.target.value }))}
-                className="form-select"
-              >
-                {BOOK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <Input
-              label="Total Copies"
-              type="number"
-              required
-              min="1"
-              value={bookForm.total_copies}
-              onChange={(e) => setBookForm(f => ({ ...f, total_copies: e.target.value }))}
-            />
-          </div>
-          <Input
-            label="Shelf Location"
-            value={bookForm.shelf_location}
-            onChange={(e) => setBookForm(f => ({ ...f, shelf_location: e.target.value }))}
-            placeholder="e.g. A-12, Floor 2"
-          />
+
+          {/* Abstract / Description — always shown */}
           <div className="space-y-1.5">
-            <label className="form-label">Description</label>
+            <label className="form-label">{isThesisMode ? "Abstract" : "Description"}</label>
             <textarea
               value={bookForm.description}
               onChange={(e) => setBookForm(f => ({ ...f, description: e.target.value }))}
-              rows={3}
+              rows={isThesisMode ? 4 : 3}
               className="form-textarea"
-              placeholder="Brief description of the book..."
+              placeholder={isThesisMode
+                ? "Brief summary of the thesis research, objectives and findings…"
+                : "Brief description of the book..."}
             />
           </div>
+
+          {/* Extra fields — hidden for Thesis */}
+          {!isThesisMode && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="ISBN"
+                  value={bookForm.isbn}
+                  onChange={(e) => setBookForm(f => ({ ...f, isbn: e.target.value }))}
+                  placeholder="e.g. 978-0-262-03384-8"
+                />
+                <Input
+                  label="Publisher"
+                  value={bookForm.publisher}
+                  onChange={(e) => setBookForm(f => ({ ...f, publisher: e.target.value }))}
+                  placeholder="e.g. MIT Press"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Input
+                  label="Edition"
+                  value={bookForm.edition}
+                  onChange={(e) => setBookForm(f => ({ ...f, edition: e.target.value }))}
+                  placeholder="e.g. 3rd"
+                />
+                <Input
+                  label="Year"
+                  type="number"
+                  value={bookForm.year}
+                  onChange={(e) => setBookForm(f => ({ ...f, year: e.target.value }))}
+                  placeholder="e.g. 2023"
+                />
+                <Input
+                  label="Total Copies"
+                  type="number"
+                  required
+                  min="1"
+                  value={bookForm.total_copies}
+                  onChange={(e) => setBookForm(f => ({ ...f, total_copies: e.target.value }))}
+                />
+              </div>
+              <Input
+                label="Shelf Location"
+                value={bookForm.shelf_location}
+                onChange={(e) => setBookForm(f => ({ ...f, shelf_location: e.target.value }))}
+                placeholder="e.g. A-12, Floor 2"
+              />
+            </>
+          )}
+
           {/* PDF Upload */}
           <div>
-            <label className="form-label">Book PDF <span className="text-[var(--color-fg-muted)] font-normal">(optional)</span></label>
+            <label className="form-label">
+              {isThesisMode ? "Thesis PDF" : "Book PDF"}
+              <span className="text-[var(--color-fg-muted)] font-normal ml-1">(optional)</span>
+            </label>
             {pdfFile ? (
               <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
                 <FileText size={18} className="text-[var(--color-accent-fg)] flex-shrink-0" />
@@ -359,7 +411,7 @@ export default function LibraryPage() {
                 <input {...getInputProps()} />
                 <Upload size={20} className="mx-auto mb-1.5 text-[var(--color-fg-muted)]" />
                 <p className="text-sm text-[var(--color-fg-default)]">
-                  {isDragActive ? "Drop PDF here" : "Drag & drop book PDF or click to browse"}
+                  {isDragActive ? "Drop PDF here" : "Drag & drop PDF or click to browse"}
                 </p>
                 <p className="text-xs text-[var(--color-fg-muted)] mt-0.5">PDF only · max 500 MB</p>
               </div>
@@ -369,7 +421,7 @@ export default function LibraryPage() {
           <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
             <Button variant="invisible" onClick={() => setAddModal(false)}>Cancel</Button>
             <Button variant="primary" onClick={handleAddBook} loading={isAdding} icon={<BookMarked size={14} />}>
-              Add to Catalog
+              {isThesisMode ? "Add Thesis" : "Add to Catalog"}
             </Button>
           </div>
         </div>
