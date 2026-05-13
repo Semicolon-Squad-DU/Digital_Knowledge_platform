@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -15,6 +15,71 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 
 type CitationFormat = "apa" | "mla" | "bibtex";
+
+// ---------------------------------------------------------------------------
+// Open file button — generates presigned URL then opens PDF
+// ---------------------------------------------------------------------------
+function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleOpen = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/research/${outputId}/download-url`);
+      window.open(data.data.url, "_blank");
+    } catch {
+      window.open(`http://localhost:9000/dkp-files/${fileKey}`, "_blank");
+      toast("Opening via direct link");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleOpen} loading={loading} icon={<ExternalLink size={13} />}>
+      {loading ? "Opening…" : "Open Attached File"}
+    </Button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PDF Preview — inline iframe
+// ---------------------------------------------------------------------------
+function PdfPreview({ fileKey, outputId }: { fileKey: string; outputId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/research/${outputId}/download-url`)
+      .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
+      .catch(() => { if (!cancelled) setUrl(`http://localhost:9000/dkp-files/${fileKey}`); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [fileKey]);
+
+  if (loading) return (
+    <div className="h-96 rounded-xl bg-[var(--color-canvas-subtle)] border border-[var(--color-border-default)] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-[var(--color-accent-fg)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <p className="text-xs text-[var(--color-fg-muted)]">Loading preview…</p>
+      </div>
+    </div>
+  );
+
+  if (!url) return null;
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)]">
+      <iframe
+        src={`${url}#page=1&view=FitH&toolbar=0`}
+        className="w-full"
+        style={{ height: "520px" }}
+        title="PDF Preview"
+      />
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Copy button with transient ✓ feedback
@@ -56,9 +121,9 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 function BibDownloadButton({ bibtex, title }: { bibtex: string; title: string }) {
   const handleDownload = () => {
     const blob = new Blob([bibtex], { type: "text/plain;charset=utf-8" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
     a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.bib`;
     a.click();
     URL.revokeObjectURL(url);
@@ -123,9 +188,10 @@ function CitationBlock({
 // Page
 // ---------------------------------------------------------------------------
 export default function ResearchDetailPage() {
-  const params   = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
   const outputId = params?.id ?? "";
   const [activeTab, setActiveTab] = useState<CitationFormat>("apa");
+  const [showPdf, setShowPdf] = useState(false);
 
   const { data: output, isLoading } = useQuery({
     queryKey: ["research", "detail", outputId],
@@ -163,8 +229,8 @@ export default function ResearchDetailPage() {
   }
 
   const tabs: { key: CitationFormat; label: string }[] = [
-    { key: "apa",    label: "APA" },
-    { key: "mla",    label: "MLA" },
+    { key: "apa", label: "APA" },
+    { key: "mla", label: "MLA" },
     { key: "bibtex", label: "BibTeX" },
   ];
 
@@ -217,7 +283,7 @@ export default function ResearchDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[var(--color-border-muted)] text-sm">
             <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
               <span className="font-medium text-[var(--color-fg-default)]">Type:</span>
-              {output.output_type?.replaceAll("_", " ")}
+              <span className="capitalize">{output.output_type}</span>
             </div>
             <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
               <span className="font-medium text-[var(--color-fg-default)]">ID:</span>
@@ -258,14 +324,40 @@ export default function ResearchDetailPage() {
             )}
           </div>
 
-          {/* File */}
+          {/* File Viewer Section */}
           {output.file_url && (
-            <div className="pt-2">
-              <a href={output.file_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" icon={<ExternalLink size={13} />}>
-                  Open Attached File
+            <div className="pt-4 border-t border-[var(--color-border-muted)]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText size={18} className="text-[var(--color-accent-fg)]" />
+                  <h3 className="text-sm font-semibold text-[var(--color-fg-default)]">Research Document</h3>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowPdf(v => !v)}
+                  icon={showPdf ? <Check size={13} /> : <BookOpen size={13} />}
+                >
+                  {showPdf ? "Close Reader" : "Read PDF Inline"}
                 </Button>
-              </a>
+              </div>
+
+              {showPdf ? (
+                <div className="animate-fade-in">
+                  <PdfPreview fileKey={output.file_url} outputId={outputId} />
+                  <div className="mt-3 flex justify-end">
+                    <OpenFileButton fileKey={output.file_url} outputId={outputId} />
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[var(--color-canvas-subtle)] rounded-xl p-6 text-center border border-dashed border-[var(--color-border-default)]">
+                  <FileText size={32} className="mx-auto mb-2 text-[var(--color-fg-muted)] opacity-50" />
+                  <p className="text-sm text-[var(--color-fg-muted)] mb-3">PDF document is available for this research.</p>
+                  <Button variant="outline" size="sm" onClick={() => setShowPdf(true)}>
+                    Open PDF Reader
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -319,8 +411,8 @@ export default function ResearchDetailPage() {
               {/* Quick-copy all formats */}
               <div className="flex items-center gap-2 pt-1 border-t border-[var(--color-border-muted)]">
                 <span className="text-xs text-[var(--color-fg-muted)]">Quick copy:</span>
-                <CopyButton text={citation.apa}    label="APA" />
-                <CopyButton text={citation.mla}    label="MLA" />
+                <CopyButton text={citation.apa} label="APA" />
+                <CopyButton text={citation.mla} label="MLA" />
                 <CopyButton text={citation.bibtex} label="BibTeX" />
                 <BibDownloadButton bibtex={citation.bibtex} title={output.title} />
               </div>

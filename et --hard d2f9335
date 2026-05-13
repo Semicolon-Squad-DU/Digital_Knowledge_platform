@@ -1,0 +1,22 @@
+[33m88c4740[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/scheduler-retry-db-constraints-gradient-theme[m[33m, [m[1;31morigin/feat/scheduler-retry-db-constraints-gradient-theme[m[33m)[m HEAD@{0}: reset: moving to 88c4740
+[33m88c4740[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/scheduler-retry-db-constraints-gradient-theme[m[33m, [m[1;31morigin/feat/scheduler-retry-db-constraints-gradient-theme[m[33m)[m HEAD@{1}: reset: moving to 88c4740
+[33m1c5631a[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{2}: checkout: moving from feat/scheduler-retry-db-constraints-gradient-theme to feat/scheduler-retry-db-constraints-gradient-theme
+[33m1c5631a[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{3}: reset: moving to 1c5631a
+[33m1c5631a[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{4}: reset: moving to 1c5631a
+[33mf9e8b30[m HEAD@{5}: commit (merge): merge: sync main into feature branch
+[33md2f9335[m HEAD@{6}: commit: feat(librarian): issue book UI, book detail actions, copy stats, and dark mode CSS variable fixes
+[33m6a74ca3[m HEAD@{7}: commit: updated filter issue in search bar, fixed thesis catalog, uploading books and some thesis paper
+[33mdd47ecc[m HEAD@{8}: commit: feat: library book detail with PDF preview and inline reader
+[33m5bb0608[m HEAD@{9}: commit: feat: library catalog management, book PDF upload, and role-based access
+[33m19fe41c[m HEAD@{10}: checkout: moving from main to feat/scheduler-retry-db-constraints-gradient-theme
+[33mdfe2459[m[33m ([m[1;32mmain[m[33m)[m HEAD@{11}: checkout: moving from main to main
+[33mdfe2459[m[33m ([m[1;32mmain[m[33m)[m HEAD@{12}: pull origin main: Fast-forward
+[33m88c4740[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/scheduler-retry-db-constraints-gradient-theme[m[33m, [m[1;31morigin/feat/scheduler-retry-db-constraints-gradient-theme[m[33m)[m HEAD@{13}: checkout: moving from feat/scheduler-retry-db-constraints-gradient-theme to main
+[33m19fe41c[m HEAD@{14}: commit: pool.ts updated
+[33mdfe2459[m[33m ([m[1;32mmain[m[33m)[m HEAD@{15}: pull origin main: Fast-forward
+[33m6c71d19[m HEAD@{16}: commit: fix: resolve project submission errors and report download
+[33me75e7d0[m HEAD@{17}: commit: feat:Citation tools
+[33mdfeb913[m HEAD@{18}: commit: fix: correct API base URL and registration error handling
+[33m88c4740[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/scheduler-retry-db-constraints-gradient-theme[m[33m, [m[1;31morigin/feat/scheduler-retry-db-constraints-gradient-theme[m[33m)[m HEAD@{19}: checkout: moving from main to feat/scheduler-retry-db-constraints-gradient-theme
+[33m88c4740[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/scheduler-retry-db-constraints-gradient-theme[m[33m, [m[1;31morigin/feat/scheduler-retry-db-constraints-gradient-theme[m[33m)[m HEAD@{20}: commit: feat: scheduler retry/recovery, db constraints, gradient theme, dev fixes
+[33m67e9549[m[33m ([m[1;31morigin/copilot/run-project-in-vscode[m[33m)[m HEAD@{21}: clone: from https://github.com/enol5423/Digital_Knowledge_platform

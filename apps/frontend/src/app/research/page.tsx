@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { FlaskConical, Search, ExternalLink, Calendar, Tag } from "lucide-react";
+import { FlaskConical, Search, ExternalLink, Calendar, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -12,27 +12,31 @@ import { Pagination } from "@/components/ui/Pagination";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { cn, formatDate } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
 
 const OUTPUT_TYPES = [
-  { value: "",                  label: "All Types" },
-  { value: "journal_article",   label: "Journal" },
-  { value: "conference_paper",  label: "Conference" },
-  { value: "thesis",            label: "Thesis" },
-  { value: "dataset",           label: "Dataset" },
-  { value: "technical_report",  label: "Report" },
+  { value: "", label: "All Types" },
+  { value: "journal", label: "Journal" },
+  { value: "conference", label: "Conference" },
+  { value: "thesis", label: "Thesis" },
+  { value: "dataset", label: "Dataset" },
+  { value: "report", label: "Report" },
 ];
 
 const TYPE_BADGE: Record<string, { label: string; className: string }> = {
-  journal_article:  { label: "Journal",    className: "bg-violet-50 text-violet-700 border-violet-200" },
-  conference_paper: { label: "Conference", className: "bg-blue-50 text-blue-700 border-blue-200" },
-  thesis:           { label: "Thesis",     className: "bg-amber-50 text-amber-700 border-amber-200" },
-  dataset:          { label: "Dataset",    className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  technical_report: { label: "Report",     className: "bg-slate-100 text-slate-700 border-slate-200" },
+  journal: { label: "Journal", className: "bg-violet-50 text-violet-700 border-violet-200" },
+  conference: { label: "Conference", className: "bg-blue-50 text-blue-700 border-blue-200" },
+  thesis: { label: "Thesis", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  dataset: { label: "Dataset", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  report: { label: "Report", className: "bg-slate-100 text-slate-700 border-slate-200" },
 };
+
 
 export default function ResearchPage() {
   const [params, setParams] = useState({ q: "", output_type: "", page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState("");
+  const { user, isAuthenticated } = useAuthStore();
+  const canUpload = isAuthenticated && ["researcher", "admin"].includes(user?.role ?? "");
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["research", params],
@@ -53,6 +57,13 @@ export default function ResearchPage() {
         title="Research Repository"
         subtitle="Discover faculty research, publications, and datasets"
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Research" }]}
+        actions={canUpload ? (
+          <Link href="/research/upload">
+            <Button variant="primary" size="sm" icon={<Plus size={13} />}>
+              Upload Research
+            </Button>
+          </Link>
+        ) : undefined}
       />
 
       {/* Search + type filter */}
@@ -166,18 +177,6 @@ export default function ResearchPage() {
                         <p className="text-sm text-slate-500 mt-2 line-clamp-2 leading-relaxed">
                           {output.abstract}
                         </p>
-                      )}
-
-                      {/* Keywords */}
-                      {output.keywords?.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          <Tag size={11} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                          {output.keywords.slice(0, 5).map((kw) => (
-                            <span key={kw} className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
-                              {kw}
-                            </span>
-                          ))}
-                        </div>
                       )}
                     </div>
 

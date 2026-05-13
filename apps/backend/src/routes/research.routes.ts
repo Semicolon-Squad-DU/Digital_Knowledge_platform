@@ -3,7 +3,7 @@ import { query, queryOne } from "../db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
 import { uploadSingle } from "../middleware/upload.middleware";
-import { uploadToS3, generateS3Key } from "../services/s3.service";
+import { uploadToS3, getPresignedUrl, generateS3Key } from "../services/s3.service";
 
 const router = Router();
 
@@ -123,6 +123,18 @@ router.get("/:id/cite", asyncHandler(async (req, res: Response) => {
   });
 }));
 
+// GET /api/research/:id/download-url
+router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const output = await queryOne<{ file_url: string }>(
+    "SELECT file_url FROM research_outputs WHERE output_id = $1",
+    [req.params.id]
+  );
+  if (!output || !output.file_url) throw new AppError(404, "File not found");
+
+  const url = await getPresignedUrl(output.file_url);
+  res.json({ success: true, data: { url } });
+}));
+
 // GET /api/research/:id
 router.get("/:id", asyncHandler(async (req, res: Response) => {
   const output = await queryOne(
@@ -136,6 +148,8 @@ router.get("/:id", asyncHandler(async (req, res: Response) => {
   if (!output) throw new AppError(404, "Research output not found");
   res.json({ success: true, data: output });
 }));
+
+
 
 // PATCH /api/research/:id
 router.patch(
@@ -165,18 +179,18 @@ router.patch(
     const params: unknown[] = [];
     let idx = 1;
 
-    if (title !== undefined)          { updates.push(`title = $${idx++}`);          params.push(title); }
-    if (abstract !== undefined)       { updates.push(`abstract = $${idx++}`);       params.push(abstract || null); }
-    if (authors !== undefined)        { updates.push(`authors = $${idx++}`);        params.push(typeof authors === "string" ? JSON.parse(authors) : authors); }
-    if (keywords !== undefined)       { updates.push(`keywords = $${idx++}`);       params.push(typeof keywords === "string" ? JSON.parse(keywords) : keywords); }
-    if (doi !== undefined)            { updates.push(`doi = $${idx++}`);            params.push(doi || null); }
-    if (output_type !== undefined)    { updates.push(`output_type = $${idx++}`);    params.push(output_type); }
-    if (lab_id !== undefined)         { updates.push(`lab_id = $${idx++}`);         params.push(lab_id || null); }
+    if (title !== undefined) { updates.push(`title = $${idx++}`); params.push(title); }
+    if (abstract !== undefined) { updates.push(`abstract = $${idx++}`); params.push(abstract || null); }
+    if (authors !== undefined) { updates.push(`authors = $${idx++}`); params.push(typeof authors === "string" ? JSON.parse(authors) : authors); }
+    if (keywords !== undefined) { updates.push(`keywords = $${idx++}`); params.push(typeof keywords === "string" ? JSON.parse(keywords) : keywords); }
+    if (doi !== undefined) { updates.push(`doi = $${idx++}`); params.push(doi || null); }
+    if (output_type !== undefined) { updates.push(`output_type = $${idx++}`); params.push(output_type); }
+    if (lab_id !== undefined) { updates.push(`lab_id = $${idx++}`); params.push(lab_id || null); }
     if (published_date !== undefined) { updates.push(`published_date = $${idx++}`); params.push(published_date || null); }
-    if (journal_name !== undefined)   { updates.push(`journal_name = $${idx++}`);   params.push(journal_name || null); }
-    if (volume !== undefined)         { updates.push(`volume = $${idx++}`);         params.push(volume || null); }
-    if (issue !== undefined)          { updates.push(`issue = $${idx++}`);          params.push(issue || null); }
-    if (pages !== undefined)          { updates.push(`pages = $${idx++}`);          params.push(pages || null); }
+    if (journal_name !== undefined) { updates.push(`journal_name = $${idx++}`); params.push(journal_name || null); }
+    if (volume !== undefined) { updates.push(`volume = $${idx++}`); params.push(volume || null); }
+    if (issue !== undefined) { updates.push(`issue = $${idx++}`); params.push(issue || null); }
+    if (pages !== undefined) { updates.push(`pages = $${idx++}`); params.push(pages || null); }
 
     if (updates.length === 0) throw new AppError(400, "No fields provided to update");
 
@@ -199,10 +213,24 @@ router.post(
   requireRole("researcher", "admin"),
   uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title, abstract, authors, keywords, doi, output_type, lab_id, published_date, journal_name } =
-      req.body as Record<string, string>;
+    const body = req.body as Record<string, string>;
+    const { title, abstract, doi, output_type, lab_id, published_date, journal_name } = body;
 
     if (!title) throw new AppError(400, "Title is required");
+
+    // Safely parse JSON fields from multipart FormData
+    let authors: unknown[] = [];
+    let keywords: string[] = [];
+
+    try {
+      const a = body.authors;
+      authors = typeof a === "string" ? JSON.parse(a) : Array.isArray(a) ? a : [];
+    } catch { authors = []; }
+
+    try {
+      const k = body.keywords;
+      keywords = typeof k === "string" ? JSON.parse(k) : Array.isArray(k) ? k : [];
+    } catch { keywords = []; }
 
     let file_url: string | null = null;
     if (req.file) {
@@ -220,10 +248,10 @@ router.post(
        RETURNING *`,
       [
         title, abstract || null,
-        authors ? JSON.parse(authors) : [],
-        keywords ? JSON.parse(keywords) : [],
+        JSON.stringify(authors),   // JSONB — must be a JSON string
+        keywords,                  // TEXT[] — pass array directly
         doi || null, dkp_identifier, file_url,
-        output_type || "journal_article",
+        output_type || "journal",
         lab_id || null, published_date || null, journal_name || null,
         req.user!.user_id,
       ]
