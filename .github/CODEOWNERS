@@ -1,0 +1,14 @@
+# CODEOWNERS — only human team members may approve changes
+# Copilot bot / automated agents are not listed and cannot approve PRs
+
+# Backend — Hasibul, Nuruzzaman, Yuki
+/apps/backend/src/features/archive/archive.routes.ts    @Semicolon-Squad-DU
+/apps/backend/src/features/auth/auth.routes.ts          @Semicolon-Squad-DU
+/apps/backend/src/features/library/library.routes.ts    @Semicolon-Squad-DU
+/apps/backend/src/features/research/research.routes.ts  @Semicolon-Squad-DU
+/apps/backend/src/core/db/seed.ts                       @Semicolon-Squad-DU
+/apps/backend/src/infrastructure/s3.service.ts          @Semicolon-Squad-DU
+/apps/backend/src/jobs/scheduler.ts                     @Semicolon-Squad-DU
+
+# Frontend — all members
+/apps/frontend/src/                           @Semicolon-Squad-DU
