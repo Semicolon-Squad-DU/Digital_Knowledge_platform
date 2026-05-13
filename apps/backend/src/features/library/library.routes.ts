@@ -5,6 +5,7 @@ import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { searchCatalog } from "../../infrastructure/elasticsearch.service";
 import { config } from "../../core/config";
 import { BorrowService } from "./borrow.service";
+import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
 
 const router = Router();
 

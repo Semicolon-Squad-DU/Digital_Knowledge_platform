@@ -1,5 +1,4 @@
-export type BorrowStatus = "active" | "returned" | "overdue" | "pending";
-export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type LendingStatus = "active" | "returned" | "overdue";
 export type HoldStatus = "pending" | "available" | "fulfilled" | "cancelled";
 export type FineStatus = "pending" | "paid" | "waived";
 
@@ -14,9 +13,6 @@ export interface CatalogItem {
   category: string;
   total_copies: number;
   available_copies: number;
-  borrowed_copies: number;
-  reservation_count: number;
-  availability_status: "available" | "unavailable" | string;
   shelf_location?: string;
   barcode?: string;
   cover_url?: string;
@@ -26,19 +22,17 @@ export interface CatalogItem {
   deleted_at?: string;
 }
 
-export interface Borrow {
-  id: string;
-  user_id: string;
-  resource_id: string;
-  borrow_date: string;
+export interface LendingTransaction {
+  transaction_id: string;
+  catalog_id: string;
+  catalog_item?: CatalogItem;
+  member_id: string;
+  issue_date: string;
   due_date: string;
   return_date?: string;
-  borrow_status: BorrowStatus;
-  approval_status: ApprovalStatus;
   fine_amount: number;
-  renewal_count: number;
+  status: LendingStatus;
   created_at: string;
-  updated_at: string;
 }
 
 export interface HoldRequest {
@@ -62,7 +56,7 @@ export interface Wishlist {
 export interface Fine {
   fine_id: string;
   member_id: string;
-  borrow_id: string;
+  transaction_id: string;
   amount: number;
   reason: string;
   status: FineStatus;
@@ -98,11 +92,6 @@ export interface IssueBookRequest {
 export interface ReturnBookRequest {
   transaction_id: string;
 }
-
-// Aliases for frontend backward compatibility
-export type LendingStatus = BorrowStatus;
-export type LendingTransaction = Borrow;
-
 
 export interface LibrarianDashboardStats {
   on_loan: number;
