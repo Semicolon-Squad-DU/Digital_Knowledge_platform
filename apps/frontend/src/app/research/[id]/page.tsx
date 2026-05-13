@@ -147,17 +147,21 @@ export default function ResearchDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="page-container py-8 max-w-4xl">
-        <SkeletonCard />
+      <div className="min-h-screen bg-background">
+        <div className="page-container py-8 max-w-4xl">
+          <SkeletonCard />
+        </div>
       </div>
     );
   }
 
   if (!output) {
     return (
-      <div className="page-container py-16 text-center">
-        <FileText size={36} className="mx-auto mb-3 text-[var(--color-fg-muted)]" />
-        <p className="font-semibold text-[var(--color-fg-default)]">Research output not found.</p>
+      <div className="min-h-screen bg-background">
+        <div className="page-container py-16 text-center max-w-4xl">
+          <FileText size={36} className="mx-auto mb-3 text-on-surface-variant" />
+          <p className="font-semibold text-on-surface">Research output not found.</p>
+        </div>
       </div>
     );
   }
@@ -169,7 +173,8 @@ export default function ResearchDetailPage() {
   ];
 
   return (
-    <div className="page-container py-8 max-w-4xl">
+    <div className="min-h-screen bg-background">
+      <div className="page-container py-8 max-w-4xl">
       <PageHeader
         title={output.title}
         breadcrumb={[
@@ -180,8 +185,8 @@ export default function ResearchDetailPage() {
       />
 
       {/* ── Main info card ─────────────────────────────── */}
-      <div className="gh-box mb-5">
-        <div className="gh-box-body space-y-4">
+      <div className="rounded-xl border border-outline-variant bg-surface-container mb-5 overflow-hidden">
+        <div className="p-4 space-y-4">
 
           {/* Authors */}
           <div className="flex items-start gap-2">
@@ -272,9 +277,9 @@ export default function ResearchDetailPage() {
       </div>
 
       {/* ── Citation tools ─────────────────────────────── */}
-      <div className="gh-box">
-        <div className="gh-box-header flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">
+      <div className="rounded-xl border border-outline-variant bg-surface-container overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant bg-surface-container-high">
+          <h2 className="text-sm font-semibold text-on-surface">
             Cite This Work
           </h2>
           {/* Tab switcher */}
@@ -298,7 +303,7 @@ export default function ResearchDetailPage() {
           )}
         </div>
 
-        <div className="gh-box-body">
+        <div className="p-4">
           {citationLoading && (
             <div className="h-24 rounded-xl bg-[var(--color-canvas-subtle)] animate-pulse" />
           )}
@@ -331,6 +336,7 @@ export default function ResearchDetailPage() {
             <p className="text-sm text-[var(--color-fg-muted)]">Citation data unavailable.</p>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

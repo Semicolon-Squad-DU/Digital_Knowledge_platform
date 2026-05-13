@@ -1,33 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Upload, SlidersHorizontal, X, Archive } from "lucide-react";
-import { useArchiveSearch, useDownloadArchiveItem } from "@/features/archive/hooks/useArchive";
+import { Upload, SlidersHorizontal, X, Archive } from "lucide-react";
+import { useArchiveSearch } from "@/features/archive/hooks/useArchive";
 import { useAuthStore } from "@/store/auth.store";
-import { ArchiveCard } from "@/features/archive/components/ArchiveCard";
+import { ArchiveVaultCard } from "@/features/archive/components/ArchiveVaultCard";
 import { UploadModal } from "@/features/archive/components/UploadModal";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Input";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
-import { PageHeader } from "@/components/ui/PageHeader";
-import toast from "react-hot-toast";
+import type { ArchiveItem } from "@dkp/shared";
 
 const CATEGORY_OPTIONS = [
-  { value: "", label: "All Categories" },
-  ...["General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other"]
-    .map((c) => ({ value: c, label: c })),
+  { value: "", label: "All categories" },
+  ...["General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other"].map((c) => ({
+    value: c,
+    label: c,
+  })),
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: "", label: "All Languages" },
+  { value: "", label: "All languages" },
   { value: "en", label: "English" },
   { value: "bn", label: "Bangla" },
 ];
 
 const FILE_TYPE_OPTIONS = [
-  { value: "", label: "All Types" },
+  { value: "", label: "All types" },
   { value: "application/pdf", label: "PDF" },
   { value: "image/jpeg", label: "Image" },
   { value: "audio/mpeg", label: "Audio" },
@@ -40,14 +41,18 @@ export default function ArchivePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [params, setParams] = useState({
-    query: "", category: "", language: "", file_type: "", page: 1, limit: 20,
+    query: "",
+    category: "",
+    language: "",
+    file_type: "",
+    page: 1,
+    limit: 12,
   });
 
   const { data, isLoading, isError } = useArchiveSearch(params);
-  const { mutateAsync: download } = useDownloadArchiveItem();
 
   const canUpload = isAuthenticated && ["archivist", "librarian", "admin"].includes(user?.role ?? "");
-  const hasFilters = params.query || params.category || params.language || params.file_type;
+  const hasFilters = Boolean(params.query || params.category || params.language || params.file_type);
   const activeFilterCount = [params.category, params.language, params.file_type].filter(Boolean).length;
 
   const handleSearch = (e: React.FormEvent) => {
@@ -55,160 +60,162 @@ export default function ArchivePage() {
     setParams((p) => ({ ...p, query: searchInput, page: 1 }));
   };
 
-  const handleDownload = async (id: string) => {
-    try {
-      const url = await download(id);
-      window.open(url, "_blank");
-    } catch {
-      toast.error("Download failed or access denied");
-    }
-  };
-
   const clearFilters = () => {
-    setParams({ query: "", category: "", language: "", file_type: "", page: 1, limit: 20 });
+    setParams({ query: "", category: "", language: "", file_type: "", page: 1, limit: 12 });
     setSearchInput("");
   };
 
   return (
-    <div className="page-container py-8">
-      <PageHeader
-        title="Digital Archive"
-        subtitle="Search and browse institutional documents and media"
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Archive" }]}
-        actions={
-          canUpload ? (
-            <Button onClick={() => setUploadOpen(true)} icon={<Upload size={15} />}>
-              Upload Document
-            </Button>
-          ) : undefined
-        }
-      />
-
-      {/* Search bar */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-        <div className="search-bar flex-1">
-          <Search className="search-bar-icon" size={17} aria-hidden="true" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search in Bangla or English…"
-            className="form-input pl-10"
-            aria-label="Search archive"
-          />
-        </div>
-        <Button type="submit">Search</Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setShowFilters((v) => !v)}
-          aria-expanded={showFilters}
-          aria-controls="filter-panel"
-        >
-          <SlidersHorizontal size={15} />
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="ml-0.5 w-5 h-5 rounded-full bg-primary-600 text-white text-xs flex items-center justify-center font-bold">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
-      </form>
-
-      {/* Filter panel */}
-      {showFilters && (
-        <div
-          id="filter-panel"
-          className="surface p-4 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-4 animate-slide-down"
-        >
-          <Select
-            label="Category"
-            value={params.category}
-            onChange={(e) => setParams((p) => ({ ...p, category: e.target.value, page: 1 }))}
-            options={CATEGORY_OPTIONS}
-          />
-          <Select
-            label="Language"
-            value={params.language}
-            onChange={(e) => setParams((p) => ({ ...p, language: e.target.value, page: 1 }))}
-            options={LANGUAGE_OPTIONS}
-          />
-          <Select
-            label="File Type"
-            value={params.file_type}
-            onChange={(e) => setParams((p) => ({ ...p, file_type: e.target.value, page: 1 }))}
-            options={FILE_TYPE_OPTIONS}
-          />
-          <div className="flex items-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              disabled={!hasFilters}
-              className="w-full"
-              icon={<X size={14} />}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Results header */}
-      <div className="flex items-center justify-between mb-4 min-h-[1.5rem]">
-        <p className="text-sm text-slate-500">
-          {isLoading
-            ? "Searching…"
-            : data
-            ? `${data.total.toLocaleString()} result${data.total !== 1 ? "s" : ""}`
-            : ""}
+    <div className="bg-surface-container-lowest min-h-full">
+      <header className="w-full border-b-2 border-outline-variant py-10 md:py-12 px-4 sm:px-6 flex flex-col items-center justify-center bg-surface relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-primary" aria-hidden />
+        <p className="text-xs font-mono tracking-widest text-on-surface-variant uppercase mb-3 border-b border-outline-variant pb-2 inline-block">
+          Daily digest · University archive · Open catalog
         </p>
-      </div>
-
-      {/* Loading */}
-      {isLoading && (
-        <div className="space-y-3" aria-busy="true" aria-label="Loading results">
-          {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-black tracking-tighter text-on-surface uppercase text-center mb-6 leading-none">
+          The Archive Gazette
+        </h1>
+        <div className="flex items-center gap-2 sm:gap-3 bg-surface-container px-3 sm:px-4 py-2 border border-outline-variant shadow-[2px_2px_0_0_#27272a]">
+          <span className="material-symbols-outlined text-tertiary text-xl">fork_right</span>
+          <span className="text-xs sm:text-sm font-mono text-on-surface-variant">branch:</span>
+          <select
+            className="bg-transparent border-none text-on-surface font-bold text-xs sm:text-sm focus:ring-0 cursor-pointer appearance-none pr-6 font-mono max-w-[12rem] sm:max-w-none"
+            aria-label="Archive branch"
+            defaultValue="main"
+          >
+            <option value="main">main</option>
+            <option value="v1-legacy">v1-legacy</option>
+            <option value="theses">theses</option>
+          </select>
         </div>
-      )}
+      </header>
 
-      {/* Error */}
-      {isError && (
-        <div className="alert alert-danger" role="alert">
-          Failed to load results. Please try again.
-        </div>
-      )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col lg:flex-row gap-8 lg:gap-10">
+        <aside className={`w-full lg:w-64 shrink-0 space-y-8 ${showFilters ? "" : "hidden lg:block"}`}>
+          <div>
+            <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider mb-3 border-b border-outline-variant pb-2">
+              Quick filters
+            </h3>
+            <p className="text-xs text-on-surface-variant mb-4">Narrow results by classification metadata.</p>
+            <div className="space-y-4">
+              <Select
+                label="Category"
+                value={params.category}
+                onChange={(e) => setParams((p) => ({ ...p, category: e.target.value, page: 1 }))}
+                options={CATEGORY_OPTIONS}
+              />
+              <Select
+                label="Language"
+                value={params.language}
+                onChange={(e) => setParams((p) => ({ ...p, language: e.target.value, page: 1 }))}
+                options={LANGUAGE_OPTIONS}
+              />
+              <Select
+                label="File type"
+                value={params.file_type}
+                onChange={(e) => setParams((p) => ({ ...p, file_type: e.target.value, page: 1 }))}
+                options={FILE_TYPE_OPTIONS}
+              />
+              <Button type="button" variant="ghost" size="sm" onClick={clearFilters} disabled={!hasFilters} icon={<X size={14} />}>
+                Clear filters
+              </Button>
+            </div>
+          </div>
+        </aside>
 
-      {/* Empty */}
-      {!isLoading && !isError && data?.items?.length === 0 && (
-        <EmptyState
-          icon={<Archive size={28} />}
-          title="No documents found"
-          description={hasFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
-          action={hasFilters ? { label: "Clear filters", onClick: clearFilters, variant: "outline" } : undefined}
-        />
-      )}
-
-      {/* Results */}
-      {!isLoading && data?.items && data.items.length > 0 && (
-        <>
-          <div className="space-y-3">
-            {data.items.map((item: Parameters<typeof ArchiveCard>[0]["item"]) => (
-              <ArchiveCard key={item.item_id} item={item} onDownload={handleDownload} />
-            ))}
+        <div className="flex-1 min-w-0 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-outline-variant pb-4">
+            <div>
+              <h2 className="text-2xl font-display font-bold text-on-surface tracking-tight">Archive index</h2>
+              <p className="text-sm text-on-surface-variant mt-1 font-mono">
+                {isLoading ? "Searching…" : data ? `${data.total.toLocaleString()} entr${data.total !== 1 ? "ies" : "y"}` : ""}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {canUpload && (
+                <Button onClick={() => setUploadOpen(true)} icon={<Upload size={15} />} className="bg-primary text-on-primary border-primary hover:opacity-90">
+                  New entry
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                className="border-outline-variant text-on-surface lg:hidden"
+                onClick={() => setShowFilters((v) => !v)}
+              >
+                <SlidersHorizontal size={15} />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-primary text-on-primary text-xs flex items-center justify-center font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
 
-          <div className="mt-6">
-            <Pagination
-              page={params.page}
-              totalPages={data.total_pages}
-              total={data.total}
-              limit={params.limit}
-              onPageChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">
+                search
+              </span>
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search in Bangla or English…"
+                className="w-full bg-surface-container border border-outline-variant rounded-md py-2.5 pl-11 pr-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                aria-label="Search archive"
+              />
+            </div>
+            <Button type="submit" className="shrink-0 bg-primary text-on-primary border-primary hover:opacity-90">
+              Search
+            </Button>
+          </form>
+
+          {isError && (
+            <div className="rounded-lg border border-error/40 bg-error-container/20 px-4 py-3 text-sm text-error" role="alert">
+              Failed to load results. Please try again.
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="space-y-3" aria-busy="true" aria-label="Loading results">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && !isError && data?.items?.length === 0 && (
+            <EmptyState
+              icon={<Archive size={28} />}
+              title="No documents found"
+              description={hasFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
+              action={hasFilters ? { label: "Clear filters", onClick: clearFilters, variant: "outline" } : undefined}
             />
-          </div>
-        </>
-      )}
+          )}
+
+          {!isLoading && data?.items && data.items.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
+                {data.items.map((item: ArchiveItem) => (
+                  <ArchiveVaultCard key={item.item_id} item={item} />
+                ))}
+              </div>
+              <div className="pt-4">
+                <Pagination
+                  page={params.page}
+                  totalPages={data.total_pages}
+                  total={data.total}
+                  limit={params.limit}
+                  onPageChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
       <UploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
     </div>

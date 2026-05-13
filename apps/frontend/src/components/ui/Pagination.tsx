@@ -32,12 +32,12 @@ export function Pagination({ page, totalPages, onPageChange, className, total, l
   }
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4 font-serif", className)}>
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4 font-body", className)}>
       {/* Count */}
       {total != null && start != null && end != null ? (
-        <p className="text-sm text-[#8B7355] uppercase tracking-wider">
-          Volumes <span className="font-medium text-[#2c1e16]">{start}–{end}</span> of{" "}
-          <span className="font-medium text-[#2c1e16]">{total.toLocaleString()}</span>
+        <p className="text-sm text-on-surface-variant uppercase tracking-wider">
+          Volumes <span className="font-medium text-on-surface">{start}–{end}</span> of{" "}
+          <span className="font-medium text-on-surface">{total.toLocaleString()}</span>
         </p>
       ) : (
         <span />
@@ -48,7 +48,7 @@ export function Pagination({ page, totalPages, onPageChange, className, total, l
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="p-2 text-[#8B7355] hover:text-[#7A2828] disabled:opacity-40 disabled:hover:text-[#8B7355] transition-colors"
+          className="p-2 text-on-surface-variant hover:text-primary disabled:opacity-40 disabled:hover:text-on-surface-variant transition-colors"
           aria-label="Previous page"
         >
           <ChevronLeft size={18} />
@@ -56,7 +56,7 @@ export function Pagination({ page, totalPages, onPageChange, className, total, l
 
         {pages.map((p, i) =>
           p === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-[#D4C4B7] text-sm select-none">❧</span>
+            <span key={`ellipsis-${i}`} className="px-2 text-outline text-sm select-none">…</span>
           ) : (
             <button
               key={p}
@@ -65,8 +65,8 @@ export function Pagination({ page, totalPages, onPageChange, className, total, l
               className={cn(
                 "min-w-[2.5rem] h-9 px-2 text-sm transition-all duration-300 flex items-center justify-center font-medium",
                 p === page
-                  ? "text-[#7A2828] font-bold text-lg relative before:absolute before:bottom-0 before:left-1/2 before:-translate-x-1/2 before:w-4 before:h-0.5 before:bg-[#E69900]"
-                  : "text-[#5a4634] hover:text-[#7A2828] hover:bg-[#7A2828]/5 rounded-sm"
+                  ? "text-primary font-bold text-lg relative before:absolute before:bottom-0 before:left-1/2 before:-translate-x-1/2 before:w-4 before:h-0.5 before:bg-primary"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-sm"
               )}
             >
               {p}
@@ -77,7 +77,7 @@ export function Pagination({ page, totalPages, onPageChange, className, total, l
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="p-2 text-[#8B7355] hover:text-[#7A2828] disabled:opacity-40 disabled:hover:text-[#8B7355] transition-colors"
+          className="p-2 text-on-surface-variant hover:text-primary disabled:opacity-40 disabled:hover:text-on-surface-variant transition-colors"
           aria-label="Next page"
         >
           <ChevronRight size={16} />

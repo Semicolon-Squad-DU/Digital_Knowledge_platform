@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { BookOpen } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
@@ -58,40 +57,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12"
-      style={{ background: "var(--color-canvas-subtle)" }}
-    >
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-background">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-6">
-          <div
-            className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
-            style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)" }}
-          >
-            <BookOpen size={22} style={{ color: "var(--color-fg-default)" }} />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4 bg-surface-container border border-outline-variant">
+            <span className="material-symbols-outlined text-2xl text-tertiary">person_add</span>
           </div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--color-fg-default)" }}>
-            Create your account
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
-            Join the Digital Knowledge Platform
-          </p>
+          <h1 className="text-xl font-display font-bold text-on-surface">Create your account</h1>
+          <p className="text-sm text-on-surface-variant mt-1">Join the Digital Knowledge Platform</p>
         </div>
 
-        {/* Form card */}
-        <div
-          className="rounded-md border p-5"
-          style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)" }}
-        >
+        <div className="rounded-lg border border-outline-variant bg-surface-container p-5 shadow-[4px_4px_0_0_#27272a]">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Full Name"
-              required
-              autoComplete="name"
-              {...register("name")}
-              error={errors.name?.message}
-            />
+            <Input label="Full Name" required autoComplete="name" {...register("name")} error={errors.name?.message} />
             <Input
               label="Email address"
               type="email"
@@ -116,28 +94,26 @@ export default function RegisterPage() {
             />
 
             {error && (
-              <div className="alert alert-danger" role="alert">{error}</div>
+              <div className="rounded-md border border-error/40 bg-error-container/20 px-3 py-2 text-sm text-error" role="alert">
+                {error}
+              </div>
             )}
 
             <Button
               type="submit"
               variant="primary"
-              className="w-full"
+              className="w-full bg-primary text-on-primary border-primary hover:opacity-90 shadow-none"
               size="lg"
               loading={isSubmitting}
             >
-              Create Account
+              Create account
             </Button>
           </form>
         </div>
 
-        {/* Sign in link */}
-        <div
-          className="mt-3 text-center text-sm py-4 rounded-md border"
-          style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)", color: "var(--color-fg-muted)" }}
-        >
+        <div className="mt-4 text-center text-sm py-4 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface-variant">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold" style={{ color: "var(--color-accent-fg)" }}>
+          <Link href="/login" className="font-semibold text-primary hover:text-primary-fixed transition-colors">
             Sign in
           </Link>
         </div>

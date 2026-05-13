@@ -129,15 +129,31 @@ export default function LibrarianDashboardPage() {
 
 
   const statCards = [
-    { label: "On Loan",       value: stats?.on_loan ?? 0,           icon: BookOpen,      iconClass: "bg-blue-50 text-blue-600" },
-    { label: "Overdue",       value: stats?.overdue ?? 0,           icon: AlertTriangle, iconClass: (stats?.overdue ?? 0) > 0 ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-400" },
-    { label: "Returns Today", value: stats?.returns_today ?? 0,     icon: RotateCcw,     iconClass: "bg-green-50 text-green-600" },
-    { label: "Holds Pending", value: stats?.holds_pending ?? 0,     icon: Clock,         iconClass: "bg-amber-50 text-amber-600" },
-    { label: "Fines (Tk)",    value: (stats?.total_fines_amount ?? 0).toFixed(0), icon: Banknote, iconClass: "bg-orange-50 text-orange-600" },
+    { label: "On Loan", value: stats?.on_loan ?? 0, icon: BookOpen, iconClass: "bg-primary/15 text-primary" },
+    {
+      label: "Overdue",
+      value: stats?.overdue ?? 0,
+      icon: AlertTriangle,
+      iconClass: (stats?.overdue ?? 0) > 0 ? "bg-error/15 text-error" : "bg-surface-container-high text-on-surface-variant",
+    },
+    { label: "Returns Today", value: stats?.returns_today ?? 0, icon: RotateCcw, iconClass: "bg-tertiary/15 text-tertiary" },
+    {
+      label: "Holds Pending",
+      value: stats?.holds_pending ?? 0,
+      icon: Clock,
+      iconClass: "bg-secondary-container text-on-secondary-container",
+    },
+    {
+      label: "Fines (Tk)",
+      value: (stats?.total_fines_amount ?? 0).toFixed(0),
+      icon: Banknote,
+      iconClass: "bg-error/10 text-error",
+    },
   ];
 
   return (
-    <div className="page-container py-8">
+    <div className="min-h-screen bg-background">
+      <div className="page-container py-8">
       <PageHeader
         title="Librarian Dashboard"
         subtitle="Manage lending, returns, and catalog operations"
@@ -173,13 +189,13 @@ export default function LibrarianDashboardPage() {
       />
 
       {/* Tab Navigation */}
-      <div className="flex gap-4 mb-6 border-b border-slate-200">
+      <div className="flex gap-4 mb-6 border-b border-outline-variant">
         <button
           onClick={() => setActiveTab("overview")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "overview"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-600 hover:text-slate-900"
+              ? "border-primary text-primary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
           }`}
         >
           Overview
@@ -188,8 +204,8 @@ export default function LibrarianDashboardPage() {
           onClick={() => setActiveTab("overdue")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "overdue"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-600 hover:text-slate-900"
+              ? "border-primary text-primary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
           }`}
         >
           Overdue & Fines
@@ -218,7 +234,7 @@ export default function LibrarianDashboardPage() {
 
           {/* Recent transactions */}
           <Card padding="none">
-            <div className="px-6 py-4 border-b border-slate-100">
+            <div className="px-6 py-4 border-b border-outline-variant">
               <CardTitle>Recent Transactions</CardTitle>
             </div>
             <div className="overflow-x-auto">
@@ -255,13 +271,13 @@ export default function LibrarianDashboardPage() {
                       due_date: string;
                     }) => (
                       <tr key={txn.transaction_id}>
-                        <td className="text-slate-500 text-xs">{formatDate(txn.created_at)}</td>
-                        <td className="font-medium text-slate-900">{txn.member_name}</td>
+                        <td className="text-on-surface-variant text-xs">{formatDate(txn.created_at)}</td>
+                        <td className="font-medium text-on-surface">{txn.member_name}</td>
                         <td className="max-w-xs">
-                          <span className="line-clamp-1 text-slate-700">{txn.title}</span>
+                          <span className="line-clamp-1 text-on-surface">{txn.title}</span>
                         </td>
                         <td><StatusBadge status={txn.status} /></td>
-                        <td className="text-slate-500 text-xs">{formatDate(txn.due_date)}</td>
+                        <td className="text-on-surface-variant text-xs">{formatDate(txn.due_date)}</td>
                       </tr>
                     ))
                   )}
@@ -275,7 +291,7 @@ export default function LibrarianDashboardPage() {
       {/* Overdue & Fines Tab */}
       {activeTab === "overdue" && (
         <Card padding="none">
-          <div className="px-6 py-4 border-b border-slate-100">
+          <div className="px-6 py-4 border-b border-outline-variant">
             <CardTitle>Overdue Items & Fines</CardTitle>
           </div>
           <div className="overflow-x-auto">
@@ -317,11 +333,11 @@ export default function LibrarianDashboardPage() {
                     fine_status: string;
                   }) => (
                     <tr key={`${item.transaction_id}-${item.fine_id}`}>
-                      <td className="font-medium text-slate-900">{item.member_name}</td>
+                      <td className="font-medium text-on-surface">{item.member_name}</td>
                       <td className="max-w-xs">
-                        <span className="line-clamp-1 text-slate-700">{item.title}</span>
+                        <span className="line-clamp-1 text-on-surface">{item.title}</span>
                       </td>
-                      <td className="text-slate-500 text-sm">{formatDate(item.due_date)}</td>
+                      <td className="text-on-surface-variant text-sm">{formatDate(item.due_date)}</td>
                       <td className="text-red-600 font-medium">{item.days_overdue} days</td>
                       <td className="text-orange-600 font-medium">{item.fine_amount.toFixed(2)}</td>
                       <td><StatusBadge status={item.fine_status} /></td>
@@ -445,14 +461,14 @@ export default function LibrarianDashboardPage() {
             required
           />
           <div>
-            <label className="block text-sm font-medium text-slate-900 mb-1">Reason for Adjustment</label>
+            <label className="block text-sm font-medium text-on-surface mb-1">Reason for Adjustment</label>
             <textarea
               value={adjustReason}
               onChange={(e) => setAdjustReason(e.target.value)}
               placeholder="e.g. Waived due to hardship, Adjusted due to error..."
               required
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-outline-variant rounded-md text-sm bg-surface-container text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex justify-end gap-3 pt-2">
@@ -473,6 +489,7 @@ export default function LibrarianDashboardPage() {
           </div>
         </div>
       </Modal>
+      </div>
     </div>
   );
 }

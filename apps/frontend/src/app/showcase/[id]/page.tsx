@@ -19,7 +19,6 @@ function DownloadReportButton({ reportKey }: { reportKey: string }) {
       });
       window.open(data.data.url, "_blank");
     } catch {
-      // Fallback: try direct MinIO URL
       const minioUrl = `http://localhost:9000/dkp-files/${reportKey}`;
       window.open(minioUrl, "_blank");
       toast("Opening report via direct link");
@@ -32,7 +31,7 @@ function DownloadReportButton({ reportKey }: { reportKey: string }) {
     <button
       onClick={handleDownload}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 text-[var(--color-accent-fg)] hover:underline text-sm disabled:opacity-60"
+      className="inline-flex items-center gap-1.5 text-primary hover:text-primary-fixed text-sm disabled:opacity-60"
     >
       {loading ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
       View Report
@@ -54,62 +53,90 @@ export default function ShowcaseDetailPage() {
   });
 
   if (isLoading) {
-    return <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">Loading project...</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-on-surface-variant">Loading project...</div>
+      </div>
+    );
   }
 
   if (!project) {
-    return <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">Project not found.</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-on-surface-variant">Project not found.</div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <h1 className="text-2xl font-bold text-slate-900">{project.title}</h1>
-        <p className="text-sm text-slate-600 mt-1">{project.department} · {project.semester}</p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="rounded-xl border border-outline-variant bg-surface-container p-6">
+          <h1 className="font-display text-2xl font-medium text-on-surface tracking-tight">{project.title}</h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            {project.department} · {project.semester}
+          </p>
 
-        <p className="text-sm text-slate-700 mt-4">{project.abstract}</p>
+          <p className="text-sm text-on-surface-variant mt-4 leading-relaxed">{project.abstract}</p>
 
-        <div className="mt-4 text-sm text-slate-700 space-y-1">
-          <p><span className="font-medium text-slate-800">Advisor:</span> {project.advisor_name}</p>
-          {project.submitted_by_name && <p><span className="font-medium text-slate-800">Submitted by:</span> {project.submitted_by_name}</p>}
-          {project.status && <p><span className="font-medium text-slate-800">Status:</span> {project.status}</p>}
-        </div>
+          <div className="mt-4 text-sm text-on-surface-variant space-y-1">
+            <p>
+              <span className="font-medium text-on-surface">Advisor:</span> {project.advisor_name}
+            </p>
+            {project.submitted_by_name && (
+              <p>
+                <span className="font-medium text-on-surface">Submitted by:</span> {project.submitted_by_name}
+              </p>
+            )}
+            {project.status && (
+              <p>
+                <span className="font-medium text-on-surface">Status:</span> {project.status}
+              </p>
+            )}
+          </div>
 
-        {!!project.team_members?.length && (
-          <div className="mt-4">
-            <p className="font-medium text-slate-800 text-sm mb-1">Team Members</p>
-            <ul className="list-disc list-inside text-sm text-slate-700">
-              {project.team_members.map((member: { name: string }, index: number) => (
-                <li key={`${member.name}-${index}`}>{member.name}</li>
+          {!!project.team_members?.length && (
+            <div className="mt-4">
+              <p className="font-medium text-on-surface text-sm mb-1">Team Members</p>
+              <ul className="list-disc list-inside text-sm text-on-surface-variant">
+                {project.team_members.map((member: { name: string }, index: number) => (
+                  <li key={`${member.name}-${index}`}>{member.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!!project.technologies?.length && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {project.technologies.map((technology: string) => (
+                <span
+                  key={technology}
+                  className="px-2 py-0.5 bg-surface-container-high text-on-surface-variant border border-outline-variant rounded text-xs"
+                >
+                  {technology}
+                </span>
               ))}
-            </ul>
-          </div>
-        )}
+            </div>
+          )}
 
-        {!!project.technologies?.length && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {project.technologies.map((technology: string) => (
-              <span key={technology} className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs">
-                {technology}
-              </span>
-            ))}
+          <div className="mt-5 flex items-center gap-3 text-sm flex-wrap">
+            {project.source_code_url && (
+              <a
+                href={project.source_code_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-fixed hover:underline"
+              >
+                Source Code
+              </a>
+            )}
+            {project.report_url && <DownloadReportButton reportKey={project.report_url} />}
+            {(project.status === "pending_review" || project.status === "changes_requested") && (
+              <Link href={`/showcase/review/${project.project_id}`} className="text-primary hover:text-primary-fixed hover:underline">
+                Review Page
+              </Link>
+            )}
           </div>
-        )}
-
-        <div className="mt-5 flex items-center gap-3 text-sm">
-          {project.source_code_url && (
-            <a href={project.source_code_url} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-              Source Code
-            </a>
-          )}
-          {project.report_url && (
-            <DownloadReportButton reportKey={project.report_url} />
-          )}
-          {(project.status === "pending_review" || project.status === "changes_requested") && (
-            <Link href={`/showcase/review/${project.project_id}`} className="text-primary-600 hover:underline">
-              Review Page
-            </Link>
-          )}
         </div>
       </div>
     </div>

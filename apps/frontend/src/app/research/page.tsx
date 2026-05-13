@@ -10,7 +10,6 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Badge } from "@/components/ui/Badge";
 import { cn, formatDate } from "@/lib/utils";
 
 const OUTPUT_TYPES = [
@@ -23,11 +22,11 @@ const OUTPUT_TYPES = [
 ];
 
 const TYPE_BADGE: Record<string, { label: string; className: string }> = {
-  journal_article:  { label: "Journal",    className: "bg-violet-50 text-violet-700 border-violet-200" },
-  conference_paper: { label: "Conference", className: "bg-blue-50 text-blue-700 border-blue-200" },
-  thesis:           { label: "Thesis",     className: "bg-amber-50 text-amber-700 border-amber-200" },
-  dataset:          { label: "Dataset",    className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  technical_report: { label: "Report",     className: "bg-slate-100 text-slate-700 border-slate-200" },
+  journal_article:  { label: "Journal",    className: "bg-primary/15 text-primary border-primary/30" },
+  conference_paper: { label: "Conference", className: "bg-tertiary/15 text-tertiary border-tertiary/30" },
+  thesis:           { label: "Thesis",     className: "bg-primary-container/40 text-primary-fixed border-primary/25" },
+  dataset:          { label: "Dataset",    className: "bg-tertiary-container/30 text-tertiary-fixed border-tertiary/30" },
+  technical_report: { label: "Report",     className: "bg-surface-container-high text-on-surface-variant border-outline-variant" },
 };
 
 export default function ResearchPage() {
@@ -48,9 +47,10 @@ export default function ResearchPage() {
   };
 
   return (
+    <div className="bg-background min-h-full">
     <div className="page-container py-8">
       <PageHeader
-        title="Research Repository"
+        title="Research"
         subtitle="Discover faculty research, publications, and datasets"
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Research" }]}
       />
@@ -68,7 +68,7 @@ export default function ResearchPage() {
             aria-label="Search research outputs"
           />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit" className="bg-primary text-on-primary border-primary hover:opacity-90">Search</Button>
       </form>
 
       {/* Type filter chips */}
@@ -91,14 +91,18 @@ export default function ResearchPage() {
       {/* Count */}
       <div className="mb-4 min-h-[1.5rem]">
         {!isLoading && data && (
-          <p className="text-sm text-slate-500">
-            <span className="font-medium text-slate-700">{data.total}</span> outputs
+          <p className="text-sm text-on-surface-variant">
+            <span className="font-medium text-on-surface">{data.total.toLocaleString()}</span> outputs
           </p>
         )}
-        {isLoading && <p className="text-sm text-slate-400">Searching…</p>}
+        {isLoading && <p className="text-sm text-on-surface-variant">Searching…</p>}
       </div>
 
-      {isError && <div className="alert alert-danger mb-4" role="alert">Failed to load research outputs.</div>}
+      {isError && (
+        <div className="rounded-lg border border-error/40 bg-error-container/20 text-error px-4 py-3 mb-4 text-sm" role="alert">
+          Failed to load research outputs.
+        </div>
+      )}
 
       {isLoading && (
         <div className="space-y-4" aria-busy="true">
@@ -130,11 +134,14 @@ export default function ResearchPage() {
               dkp_identifier: string;
               lab_name: string;
             }) => {
-              const typeMeta = TYPE_BADGE[output.output_type] ?? { label: output.output_type, className: "bg-slate-100 text-slate-600 border-slate-200" };
+              const typeMeta = TYPE_BADGE[output.output_type] ?? {
+                label: output.output_type,
+                className: "bg-surface-container-high text-on-surface-variant border-outline-variant",
+              };
               return (
                 <div
                   key={output.output_id}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-5 hover:shadow-md hover:border-slate-300/80 transition-all duration-200"
+                  className="bg-surface-container border border-outline-variant rounded-xl p-5 hover:border-primary/40 transition-all duration-200"
                 >
                   <div className="flex items-start gap-4">
                     {/* Left */}
@@ -144,7 +151,7 @@ export default function ResearchPage() {
                           {typeMeta.label}
                         </span>
                         {output.published_date && (
-                          <span className="flex items-center gap-1 text-xs text-slate-400">
+                          <span className="flex items-center gap-1 text-xs text-on-surface-variant">
                             <Calendar size={11} />
                             {formatDate(output.published_date)}
                           </span>
@@ -153,17 +160,17 @@ export default function ResearchPage() {
 
                       <Link
                         href={`/research/${output.output_id}`}
-                        className="font-semibold text-slate-900 hover:text-primary-700 transition-colors leading-snug block mt-1"
+                        className="font-semibold text-on-surface hover:text-primary transition-colors leading-snug block mt-1"
                       >
                         {output.title}
                       </Link>
 
-                      <p className="text-sm text-slate-500 mt-1">
+                      <p className="text-sm text-on-surface-variant mt-1">
                         {output.authors?.map((a) => a.name).join(", ")}
                       </p>
 
                       {output.abstract && (
-                        <p className="text-sm text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                        <p className="text-sm text-on-surface-variant mt-2 line-clamp-2 leading-relaxed">
                           {output.abstract}
                         </p>
                       )}
@@ -171,9 +178,9 @@ export default function ResearchPage() {
                       {/* Keywords */}
                       {output.keywords?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-3">
-                          <Tag size={11} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                          <Tag size={11} className="text-on-surface-variant mt-0.5 flex-shrink-0" />
                           {output.keywords.slice(0, 5).map((kw) => (
-                            <span key={kw} className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                            <span key={kw} className="text-xs text-on-surface-variant bg-surface-container-high border border-outline-variant px-2 py-0.5 rounded-md">
                               {kw}
                             </span>
                           ))}
@@ -188,14 +195,14 @@ export default function ResearchPage() {
                           href={`https://doi.org/${output.doi}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-fixed font-medium"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink size={11} /> DOI
                         </a>
                       )}
                       {output.journal_name && (
-                        <p className="text-xs text-slate-400 max-w-[140px] text-right line-clamp-2">
+                        <p className="text-xs text-on-surface-variant max-w-[140px] text-right line-clamp-2">
                           {output.journal_name}
                         </p>
                       )}
@@ -203,7 +210,7 @@ export default function ResearchPage() {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400">
+                  <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant text-xs text-on-surface-variant">
                     <span className="font-mono">{output.dkp_identifier}</span>
                     {output.lab_name && (
                       <>
@@ -228,6 +235,7 @@ export default function ResearchPage() {
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

@@ -12,7 +12,7 @@ interface CommandPaletteProps {
 
 const QUICK_LINKS = [
   { icon: Archive,       label: "Digital Archive",     href: "/archive",  desc: "Browse documents & media" },
-  { icon: FlaskConical,  label: "Research Repository", href: "/research", desc: "Papers & publications" },
+  { icon: FlaskConical,  label: "Research", href: "/research", desc: "Papers & publications" },
   { icon: GraduationCap, label: "Student Showcase",    href: "/showcase", desc: "Student projects gallery" },
   { icon: BookOpen,      label: "Library Catalog",     href: "/library",  desc: "Books & borrowing" },
 ];

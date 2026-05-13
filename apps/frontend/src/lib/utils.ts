@@ -40,25 +40,25 @@ export function getFileIcon(mimeType: string): string {
 
 export function getAccessTierBadge(tier: string): { label: string; color: string } {
   const map: Record<string, { label: string; color: string }> = {
-    public: { label: "Public", color: "bg-green-100 text-green-800" },
-    member: { label: "Members", color: "bg-blue-100 text-blue-800" },
-    staff: { label: "Staff", color: "bg-purple-100 text-purple-800" },
-    restricted: { label: "Restricted", color: "bg-red-100 text-red-800" },
+    public: { label: "Public", color: "bg-tertiary/15 text-tertiary border border-tertiary/30" },
+    member: { label: "Members", color: "bg-primary/15 text-primary border border-primary/30" },
+    staff: { label: "Staff", color: "bg-primary-container/40 text-primary-fixed border border-primary/25" },
+    restricted: { label: "Restricted", color: "bg-error/15 text-error border border-error/30" },
   };
-  return map[tier] ?? { label: tier, color: "bg-gray-100 text-gray-800" };
+  return map[tier] ?? { label: tier, color: "bg-surface-container-high text-on-surface-variant border border-outline-variant" };
 }
 
 export function getStatusBadge(status: string): { label: string; color: string } {
   const map: Record<string, { label: string; color: string }> = {
-    draft: { label: "Draft", color: "bg-gray-100 text-gray-700" },
-    review: { label: "In Review", color: "bg-yellow-100 text-yellow-800" },
-    published: { label: "Published", color: "bg-green-100 text-green-800" },
-    archived: { label: "Archived", color: "bg-slate-100 text-slate-700" },
-    pending_review: { label: "Pending Review", color: "bg-yellow-100 text-yellow-800" },
-    changes_requested: { label: "Changes Requested", color: "bg-orange-100 text-orange-800" },
-    active: { label: "Active", color: "bg-green-100 text-green-800" },
-    returned: { label: "Returned", color: "bg-gray-100 text-gray-700" },
-    overdue: { label: "Overdue", color: "bg-red-100 text-red-800" },
+    draft: { label: "Draft", color: "bg-surface-container-high text-on-surface-variant border border-outline-variant" },
+    review: { label: "In Review", color: "bg-primary/15 text-primary border border-primary/25" },
+    published: { label: "Published", color: "bg-tertiary/15 text-tertiary border border-tertiary/30" },
+    archived: { label: "Archived", color: "bg-surface-container-high text-on-surface-variant border border-outline-variant" },
+    pending_review: { label: "Pending Review", color: "bg-primary/15 text-primary border border-primary/25" },
+    changes_requested: { label: "Changes Requested", color: "bg-error/15 text-error border border-error/25" },
+    active: { label: "Active", color: "bg-tertiary/15 text-tertiary border border-tertiary/30" },
+    returned: { label: "Returned", color: "bg-surface-container-high text-on-surface-variant border border-outline-variant" },
+    overdue: { label: "Overdue", color: "bg-error/15 text-error border border-error/30" },
   };
-  return map[status] ?? { label: status, color: "bg-gray-100 text-gray-800" };
+  return map[status] ?? { label: status, color: "bg-surface-container-high text-on-surface-variant border border-outline-variant" };
 }
