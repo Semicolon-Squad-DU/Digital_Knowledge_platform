@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BookOpen } from "lucide-react";
+import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+
+// Dynamically import Player to avoid SSR issues
+const Player = dynamic(
+  () => import("@lottiefiles/react-lottie-player").then((m) => m.Player),
+  { ssr: false }
+);
 
 // ---------------------------------------------------------------------------
 // Role options
@@ -75,6 +82,11 @@ export default function RegisterPage() {
   const { setUser } = useAuthStore();
   const [error, setError]       = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -102,109 +114,125 @@ export default function RegisterPage() {
 
   return (
     <div
-      className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12"
-      style={{ background: "#ffffff" }}
+      className="min-h-screen w-full flex items-center justify-center"
+      style={{ background: "linear-gradient(to right, #A8D5A8 0%, #A8D5A8 50%, #ffffff 50%, #ffffff 100%)", padding: "0", margin: "0", overflow: "hidden" }}
     >
-      <div className="w-full max-w-lg">
+      <div className="w-full flex items-center justify-between gap-8" style={{ maxWidth: "1200px", height: "100%", paddingX: "1rem", paddingY: "3rem" }}>
+        {/* Left — Form */}
+        <div style={{ flex: "0 0 auto", width: "100%", maxWidth: "450px" }}>
 
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <div
-            className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
-            style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)" }}
-          >
-            <BookOpen size={22} style={{ color: "var(--color-fg-default)" }} />
-          </div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--color-fg-default)" }}>
-            Create your account
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
-            Join the Digital Knowledge Platform
-          </p>
-        </div>
-
-        {/* Form card */}
-        <div
-          className="rounded-md border p-5 space-y-4"
-          style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)" }}
-        >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
-            {/* Basic fields */}
-            <Input
-              label="Full Name"
-              required
-              autoComplete="name"
-              {...register("name")}
-              error={errors.name?.message}
-            />
-            <Input
-              label="Email address"
-              type="email"
-              required
-              autoComplete="email"
-              {...register("email")}
-              error={errors.email?.message}
-            />
-            <Input
-              label="Department"
-              placeholder="e.g. Computer Science & Engineering"
-              {...register("department")}
-            />
-            <Input
-              label="Password"
-              type="password"
-              required
-              autoComplete="new-password"
-              {...register("password")}
-              error={errors.password?.message}
-              hint="8+ chars with uppercase, lowercase, digit, and special character (@$!%*?&)"
-            />
-
-            {/* Role selector */}
-            <div>
-              <label className="form-label">
-                I am registering as <span className="text-[var(--color-danger-fg)]">*</span>
-              </label>
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
-                className="form-select"
-              >
-                {ROLES.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label} — {role.description}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {error && (
-              <div className="alert alert-danger" role="alert">{error}</div>
-            )}
-
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full"
-              size="lg"
-              loading={isSubmitting}
+          {/* Logo */}
+          <div className="text-center mb-6">
+            <div
+              className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
+              style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)" }}
             >
-              Create Account
-            </Button>
-          </form>
+              <BookOpen size={22} style={{ color: "var(--color-fg-default)" }} />
+            </div>
+            <h1 className="text-xl font-semibold" style={{ color: "var(--color-fg-default)" }}>
+              Create your account
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
+              Join the Digital Knowledge Platform
+            </p>
+          </div>
+
+          {/* Form card */}
+          <div
+            className="rounded-md border p-5 space-y-4"
+            style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)" }}
+          >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+              {/* Basic fields */}
+              <Input
+                label="Full Name"
+                required
+                autoComplete="name"
+                {...register("name")}
+                error={errors.name?.message}
+              />
+              <Input
+                label="Email address"
+                type="email"
+                required
+                autoComplete="email"
+                {...register("email")}
+                error={errors.email?.message}
+              />
+              <Input
+                label="Department"
+                placeholder="e.g. Computer Science & Engineering"
+                {...register("department")}
+              />
+              <Input
+                label="Password"
+                type="password"
+                required
+                autoComplete="new-password"
+                {...register("password")}
+                error={errors.password?.message}
+                hint="8+ chars with uppercase, lowercase, digit, and special character (@$!%*?&)"
+              />
+
+              {/* Role selector */}
+              <div>
+                <label className="form-label">
+                  I am registering as <span className="text-[var(--color-danger-fg)]">*</span>
+                </label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
+                  className="form-select"
+                >
+                  {ROLES.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label} — {role.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {error && (
+                <div className="alert alert-danger" role="alert">{error}</div>
+              )}
+
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full"
+                size="lg"
+                loading={isSubmitting}
+                style={{ background: "#1a7f5a", borderColor: "#1a7f5a" }}
+              >
+                Create Account
+              </Button>
+            </form>
+          </div>
+
+          {/* Sign in link */}
+          <div
+            className="mt-3 text-center text-sm py-4 rounded-md border"
+            style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)", color: "var(--color-fg-muted)" }}
+          >
+            Already have an account?{" "}
+            <Link href="/login" className="font-semibold" style={{ color: "#1a7f5a" }}>
+              Sign in
+            </Link>
+          </div>
         </div>
 
-        {/* Sign in link */}
-        <div
-          className="mt-3 text-center text-sm py-4 rounded-md border"
-          style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)", color: "var(--color-fg-muted)" }}
-        >
-          Already have an account?{" "}
-          <Link href="/login" className="font-semibold" style={{ color: "var(--color-accent-fg)" }}>
-            Sign in
-          </Link>
-        </div>
+        {/* Right — Animation */}
+        {isClient && (
+          <div style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", minWidth: "400px", paddingRight: "40px" }}>
+            <Player
+              autoplay
+              loop
+              src="/green notes.json"
+              style={{ height: "600px", width: "600px", transform: "translateX(200px)" }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
