@@ -103,7 +103,7 @@ export default function RegisterPage() {
   return (
     <div
       className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12"
-      style={{ background: "var(--color-canvas-subtle)" }}
+      style={{ background: "#ffffff" }}
     >
       <div className="w-full max-w-lg">
 

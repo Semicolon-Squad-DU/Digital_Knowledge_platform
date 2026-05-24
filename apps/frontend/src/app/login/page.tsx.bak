@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -11,7 +11,12 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import dynamic from "next/dynamic";
 
+const Player = dynamic(
+  () => import("@lottiefiles/react-lottie-player").then((m) => m.Player),
+  { ssr: false }
+);
 const schema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(1, "Password required"),
@@ -40,13 +45,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12"
-      style={{ background: "#ffffff" }}
-    >
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-6">
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 w-full" style={{ background: "#ffffff" }}>
+      <style dangerouslySetInnerHTML={{ __html: "header.gh-navbar { display: none !important; } main { margin-top: 0 !important; }" }} />
+      
+      {/* Left - Form */}
+      <div className="flex items-center justify-start px-8 md:px-16 lg:px-24 py-12 w-full">
+        <div className="w-full max-w-sm">
+          {/* Logo */}
+          <div className="text-left mb-6">
           <div
             className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
             style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)" }}
@@ -101,7 +107,7 @@ export default function LoginPage() {
 
         {/* Register link */}
         <div
-          className="mt-3 text-center text-sm py-4 rounded-md border"
+          className="mt-3 text-left text-sm py-4 px-5 rounded-md border"
           style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)", color: "var(--color-fg-muted)" }}
         >
           New to DKP?{" "}
@@ -109,6 +115,16 @@ export default function LoginPage() {
             Create an account
           </Link>
         </div>
+        </div>
+
+      {/* Right - Animation */}
+      <div className="hidden md:flex items-center justify-center w-full">
+        <Player
+          autoplay
+          loop
+          src="/green-notes.json"
+          style={{ width: "100%", maxWidth: "520px" }}
+        />
       </div>
     </div>
   );
