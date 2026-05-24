@@ -5,6 +5,7 @@ import { AppError, asyncHandler } from "../middleware/error.middleware";
 import { uploadSingle } from "../middleware/upload.middleware";
 import { uploadToS3, generateS3Key } from "../services/s3.service";
 import { sendEmail, projectApprovalEmail } from "../services/email.service";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -188,6 +189,37 @@ router.patch(
       "UPDATE student_projects SET status = $1, advisor_comments = $2 WHERE project_id = $3 RETURNING *",
       [newStatus, comments || null, req.params.id]
     );
+
+    // Auto-archive: Create archive item when project is published
+    if (action === "approve") {
+      try {
+        const archiveTitle = `${project.title} - Student Project`;
+        const teamMemberNames = Array.isArray(project.team_members as unknown[])
+          ? (project.team_members as unknown[]).map((m: unknown) =>
+              typeof m === "object" && m !== null && "name" in m ? (m as { name: string }).name : String(m)
+            )
+          : [];
+        const archiveDescription = project.abstract || `Student project: ${project.title}`;
+        
+        await query(
+          `INSERT INTO archive_items
+             (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            archiveTitle, archiveDescription,
+            teamMemberNames, "Student Project", "en",
+            "member", "published", project.report_url || null, "application/pdf", 0,
+            req.user!.user_id, "showcase", project.project_id
+          ]
+        );
+      } catch (archiveErr) {
+        logger.warn("Failed to auto-archive published project", {
+          project_id: project.project_id,
+          error: (archiveErr as Error).message,
+        });
+        // Continue despite archive failure
+      }
+    }
 
     const student = await queryOne<{ name: string; email: string }>(
       "SELECT name, email FROM users WHERE user_id = $1",

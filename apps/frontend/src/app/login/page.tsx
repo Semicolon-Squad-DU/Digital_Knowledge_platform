@@ -132,7 +132,7 @@ export default function LoginPage() {
             <Player
               autoplay
               loop
-              src="/green notes.json"
+              src="/Little bit Of Reading.json"
               style={{ height: "600px", width: "600px", transform: "translateX(200px)" }}
             />
           </div>

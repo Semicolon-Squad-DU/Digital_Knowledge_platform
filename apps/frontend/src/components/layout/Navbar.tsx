@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, BookOpen, User, LogOut, Menu, X, LayoutDashboard, Library, Search, Moon, Sun } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
@@ -35,6 +35,7 @@ function useDarkMode() {
 }
 
 export function Navbar() {
+  const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -218,7 +219,11 @@ export function Navbar() {
                         <div className="py-1 border-t" style={{ borderColor: "var(--color-border-default)" }}>
                           <button
                             role="menuitem"
-                            onClick={() => { logout(); setDropdownOpen(false); }}
+                            onClick={async () => {
+                              await logout();
+                              setDropdownOpen(false);
+                              router.push("/");
+                            }}
                             className="w-full flex items-center gap-2 px-4 py-1.5 text-sm transition-colors duration-100 hover:bg-[var(--color-danger-emphasis)] hover:text-white text-left"
                             style={{ color: "var(--color-fg-default)" }}
                           >

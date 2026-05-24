@@ -4,6 +4,7 @@ import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middlew
 import { AppError, asyncHandler } from "../middleware/error.middleware";
 import { uploadSingle } from "../middleware/upload.middleware";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../services/s3.service";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -256,6 +257,32 @@ router.post(
         req.user!.user_id,
       ]
     );
+
+    // Auto-archive: Create archive item from research output
+    try {
+      const authorNames = Array.isArray(authors)
+        ? authors.map((a: unknown) => (typeof a === "object" && a !== null && "name" in a ? (a as { name: string }).name : String(a)))
+        : [];
+      const archiveDescription = abstract || `Research output: ${title}`;
+      
+      await query(
+        `INSERT INTO archive_items
+           (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [
+          title, archiveDescription,
+          authorNames, "Research", "en",
+          "member", "published", file_url, "application/pdf", 0,
+          req.user!.user_id, "research", (output as Record<string, string>).output_id
+        ]
+      );
+    } catch (archiveErr) {
+      logger.warn("Failed to auto-archive research output", {
+        output_id: (output as Record<string, string>).output_id,
+        error: (archiveErr as Error).message,
+      });
+      // Continue despite archive failure
+    }
 
     res.status(201).json({ success: true, data: output });
   })

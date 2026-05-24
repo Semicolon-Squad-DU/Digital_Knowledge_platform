@@ -132,9 +132,6 @@ export default function RegisterPage() {
             <h1 className="text-xl font-semibold" style={{ color: "var(--color-fg-default)" }}>
               Create your account
             </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
-              Join the Digital Knowledge Platform
-            </p>
           </div>
 
           {/* Form card */}
@@ -228,7 +225,7 @@ export default function RegisterPage() {
             <Player
               autoplay
               loop
-              src="/green notes.json"
+              src="/Little bit Of Reading.json"
               style={{ height: "600px", width: "600px", transform: "translateX(200px)" }}
             />
           </div>
