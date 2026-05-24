@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Clock, AlertTriangle, Bell, BookMarked, ArrowRight, Banknote } from "lucide-react";
+import { BookOpen, Clock, AlertTriangle, Bell, BookMarked, ArrowRight, Banknote, Heart } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useBorrowingHistory, useMemberFines } from "@/hooks/useLibrary";
+import { useBorrowingHistory, useMemberFines, useWishlist } from "@/hooks/useLibrary";
 import { useNotifications } from "@/hooks/useNotifications";
 import { StatusBadge } from "@/components/ui/Badge";
 import { SkeletonStatCard, SkeletonCard } from "@/components/ui/Skeleton";
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const { data: history, isLoading: historyLoading } = useBorrowingHistory(user?.user_id ?? "");
   const { data: fineData } = useMemberFines(user?.user_id ?? "");
   const { data: notifData } = useNotifications(1, false, isAuthenticated);
+  const { data: wishlist } = useWishlist();
 
   if (!user) return null;
 
@@ -32,10 +33,10 @@ export default function DashboardPage() {
   const totalFines   = fineData?.total_pending ?? 0;
 
   const stats = [
-    { label: "Active Borrows",     value: activeLoans.length,          icon: BookOpen,      href: "/dashboard/history" },
-    { label: "Overdue",            value: overdueLoans.length,         icon: AlertTriangle, href: "/dashboard/history" },
-    { label: "Outstanding Fines",  value: `Tk ${totalFines.toFixed(0)}`, icon: Clock,       href: "/dashboard/history" },
-    { label: "Unread Notifications", value: notifData?.unread_count ?? 0, icon: Bell,       href: "/notifications" },
+    { label: "Active Borrows",       value: activeLoans.length,            icon: BookOpen,      href: "/dashboard/history" },
+    { label: "Overdue",              value: overdueLoans.length,           icon: AlertTriangle, href: "/dashboard/history" },
+    { label: "Wishlist",             value: wishlist?.length ?? 0,         icon: Heart,         href: "/library/wishlist" },
+    { label: "Unread Notifications", value: notifData?.unread_count ?? 0,  icon: Bell,          href: "/notifications" },
   ];
 
   return (

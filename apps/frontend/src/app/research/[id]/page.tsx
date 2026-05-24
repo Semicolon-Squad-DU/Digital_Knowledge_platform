@@ -43,45 +43,6 @@ function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: stri
 }
 
 // ---------------------------------------------------------------------------
-// PDF Preview — inline iframe
-// ---------------------------------------------------------------------------
-function PdfPreview({ fileKey, outputId }: { fileKey: string; outputId: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    api.get(`/research/${outputId}/download-url`)
-      .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
-      .catch(() => { if (!cancelled) setUrl(`http://localhost:9000/dkp-files/${fileKey}`); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [fileKey]);
-
-  if (loading) return (
-    <div className="h-96 rounded-xl bg-[var(--color-canvas-subtle)] border border-[var(--color-border-default)] flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-8 h-8 border-2 border-[var(--color-accent-fg)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-        <p className="text-xs text-[var(--color-fg-muted)]">Loading preview…</p>
-      </div>
-    </div>
-  );
-
-  if (!url) return null;
-
-  return (
-    <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)]">
-      <iframe
-        src={`${url}#page=1&view=FitH&toolbar=0`}
-        className="w-full"
-        style={{ height: "520px" }}
-        title="PDF Preview"
-      />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Copy button with transient ✓ feedback
 // ---------------------------------------------------------------------------
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -180,6 +141,18 @@ function CitationBlock({
           {text}
         </p>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PDF Preview — direct MinIO URL (avoids presigned URL clock skew)
+// ---------------------------------------------------------------------------
+function PdfPreview({ fileKey }: { fileKey: string }) {
+  const url = `http://localhost:9000/dkp-files/${fileKey}`;
+  return (
+    <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)]">
+      <iframe src={url} className="w-full" style={{ height: "520px" }} title="PDF Preview" />
     </div>
   );
 }

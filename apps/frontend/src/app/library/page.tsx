@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Search, BookOpen, Plus, Trash2, BookMarked, Upload, FileText, X } from "lucide-react";
+import Link from "next/link";
+import { Search, BookOpen, Plus, Trash2, BookMarked, Upload, FileText, X, Heart } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem } from "@/hooks/useLibrary";
 import { useAuthStore } from "@/store/auth.store";
@@ -16,7 +17,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { cn, formatFileSize } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-const CATEGORIES = ["All", "Textbook", "Reference", "Novel", "Journal", "Magazine", "Thesis", "General"];
+const CATEGORIES = ["All", "Textbook", "Novel", "Magazine", "General"];
 
 const AVAILABILITY_OPTIONS = [
   { value: "all",       label: "All" },
@@ -24,7 +25,7 @@ const AVAILABILITY_OPTIONS = [
   { value: "on_loan",   label: "On Loan" },
 ] as const;
 
-const BOOK_CATEGORIES = ["General","Textbook","Reference","Fiction","Non-Fiction","Novel","Journal","Magazine","Thesis","Science","Technology","Mathematics","History","Other"];
+const BOOK_CATEGORIES = ["General","Textbook","Fiction","Non-Fiction","Novel","Magazine","Science","Technology","Mathematics","History","Other"];
 
 export default function LibraryPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -133,18 +134,29 @@ export default function LibraryPage() {
         subtitle="Search books, check availability, and manage your borrowing"
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Library" }]}
         actions={isLibrarian ? (
-          <Button
-            variant="primary"
-            size="sm"
-            icon={<Plus size={14} />}
-            onClick={() => {
-              const cat = (params.category && params.category !== "All") ? params.category : "General";
-              setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: cat, total_copies: "1", shelf_location: "", description: "" });
-              setAddModal(true);
-            }}
-          >
-            {addLabel}
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAuthenticated && !isLibrarian && (
+              <Link href="/library/wishlist">
+                <Button variant="outline" size="sm" icon={<Heart size={14} />}>Wishlist</Button>
+              </Link>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Plus size={14} />}
+              onClick={() => {
+                const cat = (params.category && params.category !== "All") ? params.category : "General";
+                setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: cat, total_copies: "1", shelf_location: "", description: "" });
+                setAddModal(true);
+              }}
+            >
+              {addLabel}
+            </Button>
+          </div>
+        ) : isAuthenticated ? (
+          <Link href="/library/wishlist">
+            <Button variant="outline" size="sm" icon={<Heart size={14} />}>My Wishlist</Button>
+          </Link>
         ) : undefined}
       />
 
