@@ -1,134 +1,123 @@
-import Link from "next/link";
-import { Archive, BookOpen, GraduationCap, FlaskConical, ArrowRight } from "lucide-react";
+"use client";
 
-const modules = [
-  {
-    icon: Archive,
-    title: "Digital Archive",
-    description: "Browse and search archived documents, media files, and institutional records in Bangla and English.",
-    href: "/archive",
-    count: "10,000+",
-    countLabel: "documents",
-  },
-  {
-    icon: FlaskConical,
-    title: "Research Repository",
-    description: "Discover faculty research outputs, lab portfolios, and academic publications with citation export.",
-    href: "/research",
-    count: "500+",
-    countLabel: "papers",
-  },
-  {
-    icon: GraduationCap,
-    title: "Student Showcase",
-    description: "Explore student projects from all departments, filtered by semester, technology, and advisor.",
-    href: "/showcase",
-    count: "1,200+",
-    countLabel: "projects",
-  },
-  {
-    icon: BookOpen,
-    title: "Library Catalog",
-    description: "Search the physical library catalog, check availability, borrow books, and manage your reading list.",
-    href: "/library",
-    count: "50,000+",
-    countLabel: "books",
-  },
-];
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import { useAuthStore } from "@/store/auth.store";
+
+// Dynamically import Player to avoid SSR issues
+const Player = dynamic(
+  () => import("@lottiefiles/react-lottie-player").then((m) => m.Player),
+  { ssr: false }
+);
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
-    <div>
-      {/* Hero — GitHub-style muted banner */}
-      <div style={{ background: "var(--color-canvas-subtle)", borderBottom: "1px solid var(--color-border-default)" }}>
-        <div className="page-container py-12 sm:py-16">
-          <div className="max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight" style={{ color: "var(--color-fg-default)" }}>
-              Digital Knowledge Platform
+    <>
+      {/* Hide navbar on landing page */}
+      <style>{`
+        header.gh-navbar { display: none !important; }
+        main { margin-top: 0 !important; }
+      `}</style>
+
+      <div
+        className="min-h-screen flex items-center"
+        style={{
+          background: "#ffffff",
+        }}
+      >
+        <div className="w-full flex items-center justify-between px-10 sm:px-16 lg:px-24 py-16">
+
+          {/* Left — text content */}
+          <div className="max-w-lg">
+            <h1
+              style={{
+                fontFamily: "'Georgia', 'Palatino Linotype', 'Book Antiqua', serif",
+                fontSize: "clamp(3rem, 8vw, 6rem)",
+                fontWeight: 300,
+                lineHeight: 1.1,
+                letterSpacing: "-0.01em",
+                color: "#1a1a18",
+                margin: 0,
+              }}
+            >
+              Digital
+              <br />
+              Knowledge
+              <br />
+              Platform
             </h1>
-            <p className="mt-3 text-base" style={{ color: "var(--color-fg-muted)" }}>
-              University of Dhaka · Department of Computer Science &amp; Engineering
+
+            <p
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "0.875rem",
+                lineHeight: 1.6,
+                color: "#4a4a46",
+                marginTop: "1.5rem",
+                maxWidth: "22rem",
+              }}
+            >
+              Ready to get started? Sign in with your university
+              credentials and access the full knowledge
             </p>
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--color-fg-muted)" }}>
-              One platform for all institutional knowledge — archives, research, student projects, and library catalog. Search in Bangla or English.
-            </p>
-            <div className="flex flex-wrap gap-2 mt-6">
-              <Link
-                href="/archive"
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium text-white border border-transparent transition-colors"
-                style={{ background: "#1f883d", borderColor: "rgba(31,35,40,0.15)" }}
-              >
-                Explore Archive
-              </Link>
-              <Link
-                href="/library"
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium border transition-colors hover:bg-[var(--color-canvas-inset)]"
-                style={{ color: "var(--color-fg-default)", borderColor: "var(--color-border-default)", background: "var(--color-canvas-default)" }}
-              >
-                Browse Library
-              </Link>
+
+            <div style={{ marginTop: "2rem" }}>
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "0.75rem 2rem",
+                    borderRadius: "6px",
+                    fontSize: "0.875rem",
+                    fontFamily: "'Georgia', serif",
+                    fontWeight: 400,
+                    color: "#ffffff",
+                    background: "#1a7f5a",
+                    textDecoration: "none",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "0.75rem 2rem",
+                    borderRadius: "6px",
+                    fontSize: "0.875rem",
+                    fontFamily: "'Georgia', serif",
+                    fontWeight: 400,
+                    color: "#ffffff",
+                    background: "#1a7f5a",
+                    textDecoration: "none",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Stats bar */}
-      <div style={{ borderBottom: "1px solid var(--color-border-default)" }}>
-        <div className="page-container">
-          <div className="flex flex-wrap divide-x" style={{ divideColor: "var(--color-border-default)" }}>
-            {[
-              { value: "10,000+", label: "Archive documents" },
-              { value: "500+",    label: "Research papers" },
-              { value: "1,200+", label: "Student projects" },
-              { value: "50,000+",label: "Library books" },
-              { value: "2,400+", label: "Active members" },
-            ].map((s) => (
-              <div key={s.label} className="px-6 py-4 first:pl-0">
-                <span className="text-base font-semibold" style={{ color: "var(--color-fg-default)" }}>{s.value}</span>
-                <span className="text-sm ml-1.5" style={{ color: "var(--color-fg-muted)" }}>{s.label}</span>
-              </div>
-            ))}
+          {/* Right — Lottie animation */}
+          <div className="flex items-center justify-center flex-1 max-w-xl">
+            <Player
+              autoplay
+              loop
+              src="/animation.json"
+              style={{ width: "100%", maxWidth: "520px" }}
+            />
           </div>
+
         </div>
       </div>
-
-      {/* Module cards */}
-      <div className="page-container py-8">
-        <h2 className="text-base font-semibold mb-4" style={{ color: "var(--color-fg-default)" }}>
-          Explore the Platform
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {modules.map((mod) => (
-            <Link
-              key={mod.href}
-              href={mod.href}
-              className="group gh-box p-4 hover:border-[var(--color-accent-fg)] transition-colors duration-100 block"
-            >
-              <div
-                className="w-8 h-8 rounded-md flex items-center justify-center mb-3"
-                style={{ background: "var(--color-canvas-subtle)", border: "1px solid var(--color-border-default)", color: "var(--color-fg-muted)" }}
-              >
-                <mod.icon size={16} />
-              </div>
-
-              <h3 className="text-sm font-semibold mb-1 group-hover:text-[var(--color-accent-fg)] transition-colors" style={{ color: "var(--color-fg-default)" }}>
-                {mod.title}
-              </h3>
-              <p className="text-xs leading-relaxed line-clamp-3" style={{ color: "var(--color-fg-muted)" }}>
-                {mod.description}
-              </p>
-
-              <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: "1px solid var(--color-border-muted)" }}>
-                <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
-                  <span className="font-semibold" style={{ color: "var(--color-fg-default)" }}>{mod.count}</span>
-                  {" "}{mod.countLabel}
-                </span>
-                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" style={{ color: "var(--color-fg-muted)" }} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
