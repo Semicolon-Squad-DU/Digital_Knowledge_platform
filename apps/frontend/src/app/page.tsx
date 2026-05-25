@@ -1,21 +1,18 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard } from "lucide-react";
 
 const PARTNERS = [
-  { id: 1, name: "MIT" }, { id: 2, name: "Oxford" }, { id: 3, name: "Stanford" },
-  { id: 4, name: "ETH" }, { id: 5, name: "NUS" }, { id: 6, name: "BUET" },
-  { id: 7, name: "Harvard" }, { id: 8, name: "Cambridge" },
+  { id: 1, name: "CSE" }, { id: 2, name: "EEE" }, { id: 3, name: "IIT" },
+  { id: 4, name: "RME" }, { id: 5, name: "GEB" }, { id: 6, name: "PHR" },
+  { id: 7, name: "NE" }, { id: 8, name: "ACCE" },
 ];
 
-const FEATURES = [
-  { icon: "auto_awesome", title: "Intelligent Discovery", desc: "Our AI-driven taxonomy engine maps relationships between disparate data sets to reveal hidden insights." },
-  { icon: "security", title: "Secure Collaboration", desc: "Encrypted workspaces allow institutional teams to collaborate on sensitive research with granular permissions." },
-  { icon: "database", title: "Metadata Enrichment", desc: "Automatic cross-referencing and citation generation for all uploaded materials." },
-];
+
 
 const QUICK_LINKS = [
   { label: "Browse Archive", href: "/archive", icon: Archive, bg: "#f0fdf4", color: "#16a34a", desc: "Search institutional documents" },
@@ -24,9 +21,52 @@ const QUICK_LINKS = [
   { label: "Showcase Gallery", href: "/showcase", icon: Star, bg: "#fff7ed", color: "#ea580c", desc: "Student project highlights" },
 ];
 
+const TYPEWRITER_HEADING = "Empowering Research, Learning & Innovation";
+const TYPEWRITER_BODY = "Discover academic resources, explore student research projects, browse digital archives, and connect with university knowledge systems from a single intelligent platform.";
+
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuthStore();
+  const [headingText, setHeadingText] = useState("");
+  const [bodyText, setBodyText] = useState("");
+  const [phase, setPhase] = useState<"heading" | "body" | "done">("heading");
+
+  useEffect(() => {
+    let idx = 0;
+    let timer: NodeJS.Timeout;
+    let pauseTimer: NodeJS.Timeout;
+
+    if (phase === "heading") {
+      timer = setInterval(() => {
+        idx++;
+        setHeadingText(TYPEWRITER_HEADING.slice(0, idx));
+        if (idx >= TYPEWRITER_HEADING.length) {
+          clearInterval(timer);
+          setTimeout(() => setPhase("body"), 300);
+        }
+      }, 35);
+    } else if (phase === "body") {
+      timer = setInterval(() => {
+        idx++;
+        setBodyText(TYPEWRITER_BODY.slice(0, idx));
+        if (idx >= TYPEWRITER_BODY.length) {
+          clearInterval(timer);
+          setPhase("done");
+        }
+      }, 18);
+    } else if (phase === "done") {
+      pauseTimer = setTimeout(() => {
+        setHeadingText("");
+        setBodyText("");
+        setPhase("heading");
+      }, 5000);
+    }
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(pauseTimer);
+    };
+  }, [phase]);
 
   const handleLogout = async () => {
     await logout();
@@ -35,10 +75,12 @@ export default function HomePage() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
         .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-weight:normal; font-style:normal; font-size:24px; line-height:1; letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap; direction:ltr; -webkit-font-smoothing:antialiased; }
-      `}</style>
+        @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}} />
 
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
 
@@ -54,7 +96,7 @@ export default function HomePage() {
                 { label: "Archive", href: "/archive", protected: true },
                 { label: "Library", href: "/library", protected: true },
                 { label: "Research", href: "/research", protected: true },
-                { label: "About", href: "/", protected: false },
+                { label: "About", href: "/about", protected: false },
               ].map((item) => (
                 <Link
                   key={item.label}
@@ -154,7 +196,7 @@ export default function HomePage() {
                   }}>
                     The Digital<br />Knowledge Platform
                   </h1>
-                  <button 
+                  <button
                     onClick={() => {
                       const nextSection = document.getElementById('network-section');
                       if (nextSection) {
@@ -163,12 +205,12 @@ export default function HomePage() {
                         window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
                       }
                     }}
-                    style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "6px", 
-                      marginTop: "12px", 
-                      color: "#000", 
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      marginTop: "12px",
+                      color: "#000",
                       flexShrink: 0,
                       background: "none",
                       border: "none",
@@ -187,42 +229,73 @@ export default function HomePage() {
                   {/* Horizontal line behind the graphic, stretching full width */}
                   <div style={{ position: "absolute", bottom: "2px", left: "-5vw", right: "-5vw", height: "3px", background: "#000", zIndex: 0 }}></div>
                 </div>
+
+                {/* ── TYPEWRITER TEXT ── */}
+                <div style={{
+                  width: "100%",
+                  maxWidth: "720px",
+                  padding: "48px 0 12px",
+                  textAlign: "left",
+                }}
+                >
+                  <h2 style={{
+                    fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)",
+                    fontWeight: 700,
+                    color: "#1a1a2e",
+                    lineHeight: 1.3,
+                    letterSpacing: "-0.02em",
+                    margin: "0 0 16px",
+                    minHeight: "2.3em",
+                  }}>
+                    {headingText}
+                    {phase === "heading" && (
+                      <span style={{
+                        display: "inline-block",
+                        width: "2px",
+                        height: "1em",
+                        background: "#1a1a2e",
+                        marginLeft: "2px",
+                        verticalAlign: "text-bottom",
+                        animation: "cursorBlink 0.7s steps(1) infinite",
+                      }} />
+                    )}
+                  </h2>
+                  <p style={{
+                    fontSize: "clamp(0.875rem, 1.4vw, 1.05rem)",
+                    color: "#495057",
+                    lineHeight: 1.75,
+                    margin: 0,
+                    minHeight: "4.5em",
+                  }}>
+                    {bodyText}
+                    {(phase === "body") && (
+                      <span style={{
+                        display: "inline-block",
+                        width: "2px",
+                        height: "1em",
+                        background: "#495057",
+                        marginLeft: "2px",
+                        verticalAlign: "text-bottom",
+                        animation: "cursorBlink 0.7s steps(1) infinite",
+                      }} />
+                    )}
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </section>
 
         {/* ── PARTNER NETWORK ────────────────────────────────────────────────── */}
-        <section id="network-section" style={{ background: "#f8f9fa", padding: "72px 32px", borderTop: "1px solid #e9ecef" }}>
+        <section id="network-section" style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%)", padding: "72px 32px" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "40px" }}>
-              <div>
-                <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a2e", marginBottom: "6px" }}>
-                  Our Network
-                </h2>
-                <p style={{ fontSize: "14px", color: "#6c757d", margin: 0 }}>
-                  Powering Research for the World&apos;s Leading Institutions
-                </p>
-              </div>
-              <Link
-                href="/institutions"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "#1a1a2e",
-                  textDecoration: "none",
-                  padding: "8px 16px",
-                  border: "1px solid #dee2e6",
-                  borderRadius: "6px",
-                  background: "#ffffff",
-                }}
-              >
-                View all partners
-                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_forward</span>
-              </Link>
+            <div style={{ marginBottom: "40px" }}>
+              <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#ffffff", marginBottom: "6px" }}>
+                Our Faculty Network
+              </h2>
+              <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", margin: 0 }}>
+                Powering Innovation and Engineering Research at the University of Dhaka
+              </p>
             </div>
 
             {/* Partner logo grid */}
@@ -231,8 +304,9 @@ export default function HomePage() {
                 <div
                   key={p.id}
                   style={{
-                    background: "#ffffff",
-                    border: "1px solid #e9ecef",
+                    background: "rgba(255,255,255,0.15)",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.25)",
                     borderRadius: "10px",
                     padding: "28px 20px",
                     display: "flex",
@@ -241,7 +315,7 @@ export default function HomePage() {
                     minHeight: "80px",
                   }}
                 >
-                  <span style={{ fontSize: "15px", fontWeight: 700, color: "#adb5bd", letterSpacing: "0.05em" }}>
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: "0.05em" }}>
                     {p.name}
                   </span>
                 </div>
@@ -250,73 +324,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── FEATURES ───────────────────────────────────────────────────────── */}
-        <section style={{ background: "#ffffff", padding: "80px 32px", borderTop: "1px solid #e9ecef" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: "52px" }}>
-              <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a2e", marginBottom: "8px" }}>
-                Designed for the Modern Scholar
-              </h2>
-            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "28px" }}>
-              {FEATURES.map((f) => (
-                <div
-                  key={f.title}
-                  style={{
-                    background: "#f8f9fa",
-                    border: "1px solid #e9ecef",
-                    borderRadius: "12px",
-                    padding: "32px 28px",
-                  }}
-                >
-                  <div style={{
-                    width: "48px",
-                    height: "48px",
-                    background: "#1a1a2e",
-                    borderRadius: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "20px",
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: "24px", color: "#ffffff" }}>
-                      {f.icon}
-                    </span>
-                  </div>
-                  <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a2e", marginBottom: "10px" }}>
-                    {f.title}
-                  </h3>
-                  <p style={{ fontSize: "13px", color: "#6c757d", lineHeight: 1.65, margin: 0 }}>
-                    {f.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA BANNER — only shown to guests ── */}
-        {!isAuthenticated && (
-          <section style={{ background: "#1a1a2e", padding: "80px 32px" }}>
-            <div style={{ maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
-              <h2 style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 700, color: "#ffffff", lineHeight: 1.25, marginBottom: "16px" }}>
-                Secure Your Access to the Future of Research
-              </h2>
-              <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.65)", lineHeight: 1.7, marginBottom: "36px" }}>
-                Join over 400 global institutions currently leveraging our platform for data-driven academic advancement.
-              </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/register?type=institution" style={{ padding: "12px 28px", fontSize: "14px", fontWeight: 600, color: "#1a1a2e", background: "#ffffff", borderRadius: "8px", textDecoration: "none", border: "2px solid #ffffff" }}>
-                  Request Institutional Access
-                </Link>
-                <Link href="/register" style={{ padding: "12px 28px", fontSize: "14px", fontWeight: 600, color: "#ffffff", background: "transparent", borderRadius: "8px", textDecoration: "none", border: "2px solid rgba(255,255,255,0.4)" }}>
-                  Individual Signup
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
         <footer style={{ background: "#f1f3f5", borderTop: "1px solid #dee2e6" }}>
@@ -342,7 +350,7 @@ export default function HomePage() {
             {/* Links */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
               <div style={{ display: "flex", gap: "24px" }}>
-                {["Privacy Policy", "Terms of Service", "Institutional Access"].map((l) => (
+                {["Privacy Policy", "Terms of Service", "Contact Us"].map((l) => (
                   <Link key={l} href="#" style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
                     onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                     onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
@@ -355,7 +363,7 @@ export default function HomePage() {
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
               >
-                Contact Support
+               
               </Link>
             </div>
 
