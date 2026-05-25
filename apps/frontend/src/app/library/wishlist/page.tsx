@@ -413,7 +413,8 @@ export default function WishlistPage() {
               <Heart size={18} color="#2563eb" />
             </Link>
             {/* Avatar */}
-            <div
+            <Link
+              href="/profile"
               style={{
                 width: 34,
                 height: 34,
@@ -427,10 +428,11 @@ export default function WishlistPage() {
                 color: "#fff",
                 cursor: "pointer",
                 overflow: "hidden",
+                textDecoration: "none",
               }}
             >
               {user.name?.[0]?.toUpperCase()}
-            </div>
+            </Link>
           </div>
         </header>
 

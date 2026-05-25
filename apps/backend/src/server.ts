@@ -20,6 +20,7 @@ import libraryRoutes from "./routes/library.routes";
 import showcaseRoutes from "./routes/showcase.routes";
 import researchRoutes from "./routes/research.routes";
 import notificationRoutes from "./routes/notifications.routes";
+import adminRoutes from "./routes/admin.routes";
 
 const app = express();
 
@@ -92,6 +93,7 @@ app.get("/health", async (_req, res) => {
 
 // ── API Routes ────────────────────────────────────────────────
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/archive", archiveRoutes);
 app.use("/api/library", libraryRoutes);
 app.use("/api/showcase", showcaseRoutes);

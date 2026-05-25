@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Noto_Sans_Bengali } from "next/font/google";
 import "./tailwind.generated.css";
 import { Providers } from "./providers";
-import { Navbar } from "@/components/layout/Navbar";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
@@ -23,7 +22,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} ${notoSansBengali.className} min-h-screen`}>
         <Providers>
           <div className="flex flex-col min-h-screen">
-            <Navbar />
             <main className="flex-1">
               {children}
             </main>

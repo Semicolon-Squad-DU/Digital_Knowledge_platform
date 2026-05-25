@@ -30,7 +30,7 @@ const NAV = [
   { label: "Archive",     href: "/archive",   icon: Archive },
   { label: "Submissions", href: "/showcase",  icon: Send },
   { label: "Library",     href: "/library",   icon: BookOpen },
-  { label: "Admin",       href: "/librarian", icon: ShieldCheck },
+  { label: "Admin",       href: "/admin", icon: ShieldCheck },
 ];
 
 // ── Status pill ───────────────────────────────────────────────────────────────
@@ -271,15 +271,16 @@ export default function DashboardPage() {
               <Heart size={18} color="#6b7280" />
             </Link>
             {/* Avatar */}
-            <div style={{
+            <Link href="/profile" style={{
               width:34, height:34, borderRadius:"50%",
               background:"#4b5563",
               display:"flex", alignItems:"center", justifyContent:"center",
               fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer",
               overflow:"hidden",
+              textDecoration:"none",
             }}>
               {user.name?.[0]?.toUpperCase()}
-            </div>
+            </Link>
           </div>
         </header>
 
