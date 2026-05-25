@@ -74,7 +74,7 @@ export default function LoginPage() {
         <Link
           href="/"
           className="inline-flex items-center gap-1 hover:underline"
-          style={{ fontSize: "13px", color: "#374151", fontWeight: 500 }}
+          style={{ fontSize: "13px", color: "#000000", fontWeight: 700 }}
         >
           <ArrowLeft size={13} strokeWidth={2} />
           Back to Portal
@@ -130,7 +130,7 @@ export default function LoginPage() {
                     fontWeight: 700,
                     textTransform: "uppercase",
                     letterSpacing: "0.09em",
-                    color: "#6b7280",
+                    color: "#000000",
                     marginBottom: "6px",
                   }}
                 >
@@ -185,7 +185,7 @@ export default function LoginPage() {
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.09em",
-                      color: "#6b7280",
+                      color: "#000000",
                     }}
                   >
                     Password

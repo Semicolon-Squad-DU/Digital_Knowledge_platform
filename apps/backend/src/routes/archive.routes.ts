@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../middleware/auth.middleware";
-import { uploadSingle, uploadMultiple } from "../middleware/upload.middleware";
+import { uploadSingle, uploadMultiple, checkUploadQuota } from "../middleware/upload.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../services/s3.service";
 import { indexArchiveItem, searchArchive } from "../services/elasticsearch.service";
@@ -148,6 +148,7 @@ router.post(
   "/upload",
   authenticate,
   requireRole("archivist", "admin"),
+  checkUploadQuota,
   uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.file) throw new AppError(400, "No file provided");
@@ -230,6 +231,7 @@ router.post(
   "/bulk-upload",
   authenticate,
   requireRole("archivist", "admin"),
+  checkUploadQuota,
   uploadMultiple,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const files = req.files as Express.Multer.File[];

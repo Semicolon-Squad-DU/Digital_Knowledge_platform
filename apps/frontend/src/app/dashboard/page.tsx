@@ -186,15 +186,15 @@ export default function DashboardPage() {
 
       {/* ════════════════ SIDEBAR ════════════════ */}
       <aside style={{
-        width:200, flexShrink:0, background:"#ffffff",
-        borderRight:"1px solid #e5e7eb",
+        width:200, flexShrink:0, background:"linear-gradient(135deg, #000000 0%, #2d2533 100%)",
+        borderRight:"1px solid rgba(255,255,255,0.1)",
         display:"flex", flexDirection:"column",
         position:"sticky", top:0, height:"100vh", overflowY:"auto",
       }}>
         {/* Logo */}
-        <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid #f3f4f6" }}>
-          <p style={{ fontSize:15, fontWeight:700, color:"#111827", lineHeight:1.3 }}>Digital Knowledge</p>
-          <p style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>Academic Portal</p>
+        <div style={{ height:60, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px", borderBottom:"1px solid #e5e7eb" }}>
+          <p style={{ fontSize:15, fontWeight:700, color:"#ffffff", lineHeight:1.3, margin:0 }}>Digital Knowledge</p>
+          <p style={{ fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:4, margin:"4px 0 0 0" }}>Academic Portal</p>
         </div>
 
         {/* Nav */}
@@ -207,9 +207,9 @@ export default function DashboardPage() {
                   display:"flex", alignItems:"center", gap:10,
                   padding:"9px 12px", borderRadius:6, marginBottom:2,
                   fontSize:13, fontWeight: active ? 600 : 500,
-                  color: active ? "#111827" : "#6b7280",
+                  color: active ? "#000000" : "rgba(255,255,255,0.7)",
                   background: active ? "#f3f4f6" : "transparent",
-                  borderLeft: active ? "3px solid #111827" : "3px solid transparent",
+                  borderLeft: active ? "3px solid #f3f4f6" : "3px solid transparent",
                   transition:"all 0.1s",
                 }}>
                   <Icon size={15} />

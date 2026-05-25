@@ -95,7 +95,11 @@ const inputStyle = (hasError?: boolean): React.CSSProperties => ({
   border: `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
   borderRadius: "6px",
   outline: "none",
+  boxShadow: "none",
   boxSizing: "border-box",
+  // Suppress browser default blue focus ring on select elements
+  WebkitAppearance: "none",
+  MozAppearance: "none",
 });
 
 const labelStyle: React.CSSProperties = {
@@ -104,7 +108,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: "0.09em",
-  color: "#6b7280",
+  color: "#111827",
   marginBottom: "6px",
 };
 
@@ -146,6 +150,7 @@ export default function RegisterPage() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#eef0f3", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      
 
       {/* ── Navbar ── */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
@@ -155,10 +160,10 @@ export default function RegisterPage() {
           </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             {[
-              { label: "Collections", href: "/archive" },
-              { label: "Institutions", href: "/library" },
+              { label: "Archive", href: "/archive" },
+              { label: "Library", href: "/library" },
               { label: "Research", href: "/research" },
-              { label: "About", href: "/" },
+              { label: "About", href: "/about" },
             ].map((item) => (
               <Link key={item.label} href={item.href} style={{ padding: "6px 13px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px" }}>
                 {item.label}
@@ -190,49 +195,49 @@ export default function RegisterPage() {
             </p>
 
             {/* Role selector card */}
-            <div style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px" }}>
-              <label style={{ ...labelStyle, marginBottom: "10px" }}>
-                I am registering as <span style={{ color: "#ef4444" }}>*</span>
+            <div style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px" }}>
+              <label style={{ ...labelStyle, marginBottom: "12px", color: "#ffffff" }}>
+                I am registering as <span style={{ color: "#ef4444" }}></span>
               </label>
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
-                style={{
-                  ...inputStyle(),
-                  background: "#ffffff",
-                  appearance: "none",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 10px center",
-                  paddingRight: "36px",
-                  cursor: "pointer",
-                }}
-              >
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label} — {r.desc}
-                  </option>
+                  <label key={r.value} style={{ display: "flex", alignItems: "flex-start", gap: "12px", cursor: "pointer", padding: "8px 12px", borderRadius: "6px", transition: "background 0.2s", background: selectedRole === r.value ? "rgba(255,255,255,0.15)" : "transparent" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = selectedRole === r.value ? "rgba(255,255,255,0.15)" : "transparent")}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value={r.value}
+                      checked={selectedRole === r.value}
+                      onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
+                      style={{ marginTop: "3px", accentColor: "#ffffff", cursor: "pointer" }}
+                    />
+                    <div>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#ffffff", margin: "0 0 2px 0" }}>{r.label}</p>
+                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: 0 }}>{r.desc}</p>
+                    </div>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
 
-            {/* Feature tiles */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "18px 16px" }}>
-                <ShieldCheck size={20} style={{ color: "#374151", marginBottom: "10px" }} />
-                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151", marginBottom: "6px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px" }}>
+                <ShieldCheck size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
                   Institutional Access
                 </p>
-                <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.5, margin: 0 }}>
+                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", lineHeight: 1.5, margin: 0 }}>
                   SSO integration for participating universities.
                 </p>
               </div>
-              <div style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "18px 16px" }}>
-                <BookCopy size={20} style={{ color: "#374151", marginBottom: "10px" }} />
-                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151", marginBottom: "6px" }}>
+              <div style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px" }}>
+                <BookCopy size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
                   Research Vaults
                 </p>
-                <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.5, margin: 0 }}>
+                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", lineHeight: 1.5, margin: 0 }}>
                   High-fidelity digitized primary sources.
                 </p>
               </div>
@@ -273,46 +278,27 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Row 2: Department + Academic Role */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "18px" }}>
-                <div>
-                  <label style={labelStyle}>Department / Faculty</label>
-                  <select
-                    style={{
-                      ...inputStyle(),
-                      appearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 10px center",
-                      paddingRight: "36px",
-                      cursor: "pointer",
-                      color: "#6b7280",
-                    }}
-                    {...register("department")}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Select Department</option>
-                    {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Academic Role</label>
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
-                    style={{
-                      ...inputStyle(),
-                      appearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 10px center",
-                      paddingRight: "36px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <option value="" disabled>Select Role</option>
-                    {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                  </select>
+              {/* Row 2: Department */}
+              <div style={{ marginBottom: "18px" }}>
+                <label style={labelStyle}>Department / Faculty</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", maxHeight: "220px", overflowY: "auto", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", background: "#f9fafb" }}>
+                  {DEPARTMENTS.map((d) => {
+                    const dept = watch("department") || "";
+                    return (
+                      <label key={d} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "8px 10px", borderRadius: "4px", background: dept === d ? "#000000" : "transparent", transition: "all 0.2s" }}
+                        onMouseEnter={(e) => !dept || dept !== d ? (e.currentTarget.style.background = "#e5e5e5") : null}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = dept === d ? "#000000" : "transparent")}
+                      >
+                        <input
+                          type="radio"
+                          {...register("department")}
+                          value={d}
+                          style={{ accentColor: "#111827", cursor: "pointer" }}
+                        />
+                        <span style={{ fontSize: "12px", fontWeight: 500, color: dept === d ? "#ffffff" : "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -439,6 +425,15 @@ export default function RegisterPage() {
         </div>
       </footer>
 
+      <style>{`
+        input[type="radio"] {
+          accent-color: #000000 !important;
+          cursor: pointer;
+        }
+        input[type="checkbox"] {
+          accent-color: #000000 !important;
+        }
+      `}</style>
     </div>
   );
 }

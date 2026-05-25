@@ -4,27 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Archive, Send, BookOpen, ShieldCheck,
-  Bell, Heart, Search, Plus, FileText, RefreshCw,
+  Plus, FileText, RefreshCw,
   Pencil, Trash2, Eye, EyeOff, Filter, ChevronLeft, ChevronRight,
-  BookMarked, Users, HardDrive, AlertCircle,
+  BookMarked, Users, HardDrive, AlertCircle, Bell, Heart, Search,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import { useAdminStats, useCatalogDocuments, useResearcherSubmissions } from "@/hooks/useAdmin";
+import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
+import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { timeAgo, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
-
-// ── Sidebar nav ───────────────────────────────────────────────────────────────
-const NAV = [
-  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },
-  { label: "Research",    href: "/research",  icon: Archive },
-  { label: "Submissions", href: "/showcase",  icon: Send },
-  { label: "Library",     href: "/library",   icon: BookOpen },
-  { label: "Admin",       href: "/admin", icon: ShieldCheck },
-];
 
 // ── Status pill colors ────────────────────────────────────────────────────────
 const PILL: Record<string, {bg:string; color:string}> = {
@@ -179,84 +170,11 @@ export default function AdminPage() {
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "#f9fafb" }}>
-      {/* ── SIDEBAR ── */}
-      <aside style={{
-        width: 200,
-        background: "#fff",
-        borderRight: "1px solid #e5e7eb",
-        padding: "16px",
-        overflowY: "auto",
-        position: "sticky",
-        top: 0,
-      }}>
-        <div style={{
-          fontSize: 11,
-          fontWeight: 700,
-          color: "#9ca3af",
-          letterSpacing: "1.5px",
-          marginBottom: 20,
-          padding: "0 8px",
-        }}>
-          NAVIGATION
-        </div>
-        {NAV.map((item) => {
-          const isActive = item.href === "/admin";
-          const Icon = item.icon;
-          return (
-            <Link key={item.label} href={item.href} style={{ textDecoration: "none" }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
-                borderRadius: 6,
-                marginBottom: 4,
-                background: isActive ? "#f3f4f6" : "transparent",
-                cursor: "pointer",
-                borderLeft: isActive ? "3px solid #2563eb" : "3px solid transparent",
-              }}>
-                <Icon size={16} color={isActive ? "#2563eb" : "#6b7280"} />
-                <span style={{
-                  fontSize: 13,
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive ? "#1f2937" : "#6b7280",
-                }}>
-                  {item.label}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </aside>
+      <DashboardSidebar />
 
       {/* ── MAIN ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* ── HEADER ── */}
-        <header style={{
-          height: 60,
-          background: "#fff",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex",
-          alignItems: "center",
-          paddingLeft: 32,
-          paddingRight: 32,
-          gap: 16,
-        }}>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
-            <Search size={16} color="#9ca3af" />
-            <input
-              type="text"
-              placeholder="Quick search..."
-              style={{
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                fontSize: 13,
-                color: "#1f2937",
-                width: "100%",
-              }}
-            />
-          </div>
+      <div style={{ marginLeft: 200, flex: 1, display: "flex", flexDirection: "column" }}>
+        <DashboardHeader showSearch={false} />
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
             <Link href="/notifications" style={{
               position: "relative", width: 36, height: 36, borderRadius: 8,
@@ -284,7 +202,6 @@ export default function AdminPage() {
               {user?.name?.[0]?.toUpperCase()}
             </Link>
           </div>
-        </header>
 
         {/* ── CONTENT ── */}
         <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>
