@@ -148,22 +148,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           position: "sticky", top: 0, zIndex: 30,
         }}>
           {/* Search slot */}
-          {topbarSearch ?? (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: "#f9fafb", border: "1px solid #e5e7eb",
-              borderRadius: 8, padding: "7px 14px",
-              flex: 1, maxWidth: 340,
-            }}>
-              <Search size={14} color="#9ca3af" />
-              <span style={{ fontSize: 13, color: "#9ca3af" }}>Search knowledge base...</span>
-              <span style={{
-                marginLeft: "auto", fontSize: 11, color: "#9ca3af",
-                background: "#f3f4f6", border: "1px solid #e5e7eb",
-                borderRadius: 4, padding: "1px 6px", fontFamily: "monospace",
-              }}>⌘K</span>
-            </div>
-          )}
+          {topbarSearch}
 
           {/* Extra actions slot */}
           {topbarActions && (
@@ -206,14 +191,16 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             </Link>
 
             {/* Avatar */}
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "#1a1a2e",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
-            }}>
-              {user?.name?.[0]?.toUpperCase() ?? "U"}
-            </div>
+            <Link href="/profile" title="View Profile" style={{ textDecoration: "none", display: "flex" }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "#1a1a2e",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
+              }}>
+                {user?.name?.[0]?.toUpperCase() ?? "U"}
+              </div>
+            </Link>
           </div>
         </header>
 

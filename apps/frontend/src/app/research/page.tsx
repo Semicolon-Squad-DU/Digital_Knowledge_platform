@@ -237,7 +237,7 @@ export default function ResearchPage() {
 
           {/* Loading */}
           {isLoading && (
-            <div style={{ space:"16px" }}>
+            <div>
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} style={{ marginBottom:12 }}>
                   <Skeleton className="h-24 w-full" />

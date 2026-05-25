@@ -317,7 +317,7 @@ export default function ResearchDetailPage() {
 
               {showPdf ? (
                 <div className="animate-fade-in">
-                  <PdfPreview fileKey={output.file_url} outputId={outputId} />
+                  <PdfPreview fileKey={output.file_url} />
                   <div className="mt-3 flex justify-end">
                     <OpenFileButton fileKey={output.file_url} outputId={outputId} />
                   </div>

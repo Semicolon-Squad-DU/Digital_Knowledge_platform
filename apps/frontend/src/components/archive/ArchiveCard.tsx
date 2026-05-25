@@ -76,10 +76,10 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
 
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Link href={`/archive/${item.item_id}`}>
-                <Button variant="ghost" size="sm"><Eye size={14} /> View</Button>
+                <Button variant="invisible" size="sm"><Eye size={14} /> View</Button>
               </Link>
               {item.status === "published" && onDownload && (
-                <Button variant="ghost" size="sm" onClick={() => onDownload(item.item_id)}>
+                <Button variant="invisible" size="sm" onClick={() => onDownload(item.item_id)}>
                   <Download size={14} /> Download
                 </Button>
               )}

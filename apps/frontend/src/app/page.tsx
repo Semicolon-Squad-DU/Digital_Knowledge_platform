@@ -157,6 +157,24 @@ export default function HomePage() {
               {isAuthenticated ? (
                 <>
                   {/* Signed-in: show avatar circle + sign out */}
+                  {/* Dashboard button for logged in users */}
+                  <Link 
+                    href="/dashboard" 
+                    style={{ 
+                      padding: "7px 16px", 
+                      fontSize: "13px", 
+                      fontWeight: 600, 
+                      color: "#ffffff", 
+                      background: "#1a1a2e", 
+                      borderRadius: "6px", 
+                      textDecoration: "none",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#2a2a3a"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#1a1a2e"; }}
+                  >
+                    Dashboard
+                  </Link>
                   <button 
                     onClick={() => router.push("/profile")}
                     style={{ 

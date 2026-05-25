@@ -37,7 +37,7 @@ export default function ProfilePage() {
         {/* Page Header */}
         <PageHeader
           title="Profile"
-          description="Manage your account information"
+          subtitle="Manage your account information"
         />
 
         {/* Profile Card */}

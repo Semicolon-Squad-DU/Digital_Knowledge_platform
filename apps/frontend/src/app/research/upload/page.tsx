@@ -113,9 +113,12 @@ export default function UploadResearchPage() {
   const removeAuthor = (i: number) => setValue("authors", authors.filter((_, idx) => idx !== i));
 
   // Dropzone
-  const onDrop = useCallback((accepted: File[], rejected: { errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((accepted: File[], rejected: any[]) => {
     setPdfError("");
-    if (rejected.length > 0) { setPdfError(rejected[0].errors[0]?.message ?? "Invalid file"); return; }
+    if (rejected.length > 0) {
+      setPdfError(rejected[0].errors[0]?.message ?? "Invalid file");
+      return;
+    }
     if (accepted[0]) setPdfFile(accepted[0]);
   }, []);
 

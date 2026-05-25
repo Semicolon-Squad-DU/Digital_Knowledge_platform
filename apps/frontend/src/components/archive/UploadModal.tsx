@@ -150,7 +150,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const currentStatus = watch("status");
 
   // Dropzone
-  const onDrop = useCallback((accepted: File[], rejected: { errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((accepted: File[], rejected: any[]) => {
     setFileError("");
     if (rejected.length > 0) {
       const msg = rejected[0].errors[0]?.message ?? "Invalid file";

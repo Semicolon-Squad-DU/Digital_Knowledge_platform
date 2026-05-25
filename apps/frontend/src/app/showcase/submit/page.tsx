@@ -95,7 +95,7 @@ export default function SubmitProjectPage() {
   const { fields, append, remove } = useFieldArray({ control, name: "team_members" });
 
   // PDF dropzone
-  const onDrop = useCallback((accepted: File[], rejected: { errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((accepted: File[], rejected: any[]) => {
     setPdfError("");
     if (rejected.length > 0) {
       setPdfError(rejected[0].errors[0]?.message ?? "Invalid file");
