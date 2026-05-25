@@ -15,10 +15,10 @@ const PARTNERS = [
 
 
 const QUICK_LINKS = [
-  { label: "Browse Archive", href: "/archive", icon: Archive, bg: "#f0fdf4", color: "#16a34a", desc: "Search institutional documents" },
-  { label: "Library Catalog", href: "/library", icon: BookOpen, bg: "#eff6ff", color: "#2563eb", desc: "Books, journals & more" },
-  { label: "Research Repository", href: "/research", icon: FlaskConical, bg: "#fdf4ff", color: "#9333ea", desc: "Faculty publications & datasets" },
-  { label: "Showcase Gallery", href: "/showcase", icon: Star, bg: "#fff7ed", color: "#ea580c", desc: "Student project highlights" },
+  { label: "Browse Archive", href: "/archive", icon: Archive, bg: "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)", color: "#ffffff", desc: "Search institutional documents" },
+  { label: "Library Catalog", href: "/library", icon: BookOpen, bg: "linear-gradient(135deg, #3a3a3a 0%, #1f1f1f 100%)", color: "#ffffff", desc: "Books, journals & more" },
+  { label: "Research Repository", href: "/research", icon: FlaskConical, bg: "linear-gradient(135deg, #2f2f2f 0%, #1a1a1a 100%)", color: "#ffffff", desc: "Faculty publications & datasets" },
+  { label: "Showcase Gallery", href: "/showcase", icon: Star, bg: "linear-gradient(135deg, #353535 0%, #1e1e1e 100%)", color: "#ffffff", desc: "Student project highlights" },
 ];
 
 const TYPEWRITER_HEADING = "Empowering Research, Learning & Innovation";
@@ -30,6 +30,12 @@ export default function HomePage() {
   const [headingText, setHeadingText] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [phase, setPhase] = useState<"heading" | "body" | "done">("heading");
+  const [line1Text, setLine1Text] = useState("");
+  const [line2Text, setLine2Text] = useState("");
+  const [authPhase, setAuthPhase] = useState<"line1" | "line2" | "done">("line1");
+
+  const AUTH_LINE_1 = "Yuki-2,";
+  const AUTH_LINE_2 = "your research workspace is ready.";
 
   useEffect(() => {
     let idx = 0;
@@ -68,6 +74,45 @@ export default function HomePage() {
     };
   }, [phase]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let idx = 0;
+    let timer: NodeJS.Timeout;
+    let pauseTimer: NodeJS.Timeout;
+
+    if (authPhase === "line1") {
+      timer = setInterval(() => {
+        idx++;
+        setLine1Text(AUTH_LINE_1.slice(0, idx));
+        if (idx >= AUTH_LINE_1.length) {
+          clearInterval(timer);
+          setTimeout(() => setAuthPhase("line2"), 300);
+        }
+      }, 80);
+    } else if (authPhase === "line2") {
+      timer = setInterval(() => {
+        idx++;
+        setLine2Text(AUTH_LINE_2.slice(0, idx));
+        if (idx >= AUTH_LINE_2.length) {
+          clearInterval(timer);
+          setAuthPhase("done");
+        }
+      }, 50);
+    } else if (authPhase === "done") {
+      pauseTimer = setTimeout(() => {
+        setLine1Text("");
+        setLine2Text("");
+        setAuthPhase("line1");
+      }, 3000);
+    }
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(pauseTimer);
+    };
+  }, [authPhase, isAuthenticated]);
+
   const handleLogout = async () => {
     await logout();
     router.push("/");
@@ -84,10 +129,9 @@ export default function HomePage() {
 
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
 
-        {/* ── NAVBAR ── */}
-        <header style={{ background: "#ffffff", borderBottom: "1px solid #e9ecef", position: "sticky", top: 0, zIndex: 50 }}>
+        <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
-            <span style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.01em" }}>
+            <span style={{ fontSize: "15px", fontWeight: 700, color: "#111827", letterSpacing: "-0.01em" }}>
               Digital Knowledge Platform
             </span>
 
@@ -101,40 +145,108 @@ export default function HomePage() {
                 <Link
                   key={item.label}
                   href={item.protected && !isAuthenticated ? `/login?redirect=${item.href}` : item.href}
-                  style={{ padding: "6px 14px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#f1f3f5")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  style={{ padding: "6px 14px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
                 >{item.label}</Link>
               ))}
             </nav>
 
             {/* ── AUTH AREA: different for guest vs signed-in ── */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               {isAuthenticated ? (
                 <>
-                  {/* Signed-in: show avatar + name + dashboard + sign out */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "6px", border: "1px solid #e9ecef", background: "#f8f9fa" }}>
-                    <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#1a1a2e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>
-                      {user?.name?.[0]?.toUpperCase()}
-                    </div>
-                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#374151", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {user?.name?.split(" ")[0]}
-                    </span>
-                  </div>
-                  <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: "13px", fontWeight: 600, color: "#fff", background: "#1a1a2e", borderRadius: "6px", textDecoration: "none" }}>
-                    <LayoutDashboard size={13} /> Dashboard
-                  </Link>
-                  <button onClick={handleLogout} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 12px", fontSize: "13px", fontWeight: 500, color: "#6b7280", background: "transparent", border: "1px solid #e9ecef", borderRadius: "6px", cursor: "pointer" }}>
+                  {/* Signed-in: show avatar circle + sign out */}
+                  <button 
+                    onClick={() => router.push("/profile")}
+                    style={{ 
+                      width: 48, 
+                      height: 48, 
+                      borderRadius: "50%", 
+                      background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      fontSize: 16, 
+                      fontWeight: 700, 
+                      color: "#111827", 
+                      border: "2px solid #d1d5db",
+                      cursor: "pointer", 
+                      transition: "all 0.3s ease",
+                      outline: "none",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                      position: "relative"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                    title="View Profile"
+                  >
+                    {user?.name?.[0]?.toUpperCase()}
+                  </button>
+                  <button 
+                    onClick={handleLogout} 
+                    style={{ 
+                      display: "inline-flex", 
+                      alignItems: "center", 
+                      gap: 5, 
+                      padding: "7px 12px", 
+                      fontSize: "13px", 
+                      fontWeight: 500, 
+                      color: "#4b5563", 
+                      background: "transparent", 
+                      border: "1px solid #dee2e6", 
+                      borderRadius: "6px", 
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#dee2e6"; }}
+                  >
                     <LogOut size={13} /> Sign Out
                   </button>
                 </>
               ) : (
                 <>
                   {/* Guest: sign in + register */}
-                  <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px", border: "1px solid #dee2e6", background: "#ffffff" }}>
+                  <Link 
+                    href="/login" 
+                    style={{ 
+                      padding: "7px 16px", 
+                      fontSize: "13px", 
+                      fontWeight: 500, 
+                      color: "#495057", 
+                      textDecoration: "none", 
+                      borderRadius: "6px", 
+                      border: "1px solid #dee2e6", 
+                      background: "#ffffff",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; }}
+                  >
                     Sign In
                   </Link>
-                  <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "#1a1a2e", borderRadius: "6px", textDecoration: "none" }}>
+                  <Link 
+                    href="/register" 
+                    style={{ 
+                      padding: "7px 16px", 
+                      fontSize: "13px", 
+                      fontWeight: 600, 
+                      color: "#ffffff", 
+                      background: "#1a1a2e", 
+                      borderRadius: "6px", 
+                      textDecoration: "none",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#2a2a3a"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#1a1a2e"; }}
+                  >
                     Register
                   </Link>
                 </>
@@ -152,8 +264,35 @@ export default function HomePage() {
                 <p style={{ fontSize: "13px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>
                   WELCOME BACK
                 </p>
-                <h1 style={{ fontSize: "clamp(2.5rem,5vw,3.5rem)", fontWeight: 800, color: "#111827", lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 16 }}>
-                  {user?.name?.split(" ")[0]}, your research workspace is ready.
+                <h1 style={{ fontSize: "clamp(2.5rem,5vw,3.5rem)", fontWeight: 800, color: "#111827", lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "3.5em" }}>
+                  <div style={{ whiteSpace: "nowrap", minHeight: "1.2em", display: "flex", alignItems: "center" }}>
+                    {line1Text}
+                    {authPhase === "line1" && (
+                      <span style={{
+                        display: "inline-block",
+                        width: "2px",
+                        height: "1em",
+                        background: "#111827",
+                        marginLeft: "2px",
+                        verticalAlign: "text-bottom",
+                        animation: "cursorBlink 0.7s steps(1) infinite",
+                      }} />
+                    )}
+                  </div>
+                  <div style={{ whiteSpace: "nowrap", minHeight: "1.2em", display: "flex", alignItems: "center" }}>
+                    {line2Text}
+                    {authPhase === "line2" && (
+                      <span style={{
+                        display: "inline-block",
+                        width: "2px",
+                        height: "1em",
+                        background: "#111827",
+                        marginLeft: "2px",
+                        verticalAlign: "text-bottom",
+                        animation: "cursorBlink 0.7s steps(1) infinite",
+                      }} />
+                    )}
+                  </div>
                 </h1>
                 <p style={{ fontSize: "16px", color: "#6b7280", lineHeight: 1.7, maxWidth: "600px", margin: "0 auto 48px" }}>
                   {user?.department ? `${user.department} · ` : ""}
@@ -161,40 +300,43 @@ export default function HomePage() {
                   {" "}— pick up where you left off.
                 </p>
                 {/* Quick access grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 20, maxWidth: 700, margin: "0 auto 40px", textAlign: "left" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 20, maxWidth: 700, margin: "0 auto 40px", textAlign: "center" }}>
                   {QUICK_LINKS.map(ql => (
                     <Link key={ql.href} href={ql.href} style={{ 
                       display: "flex", 
                       flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
                       gap: 16, 
                       padding: "32px 28px", 
                       borderRadius: 12, 
                       background: ql.bg, 
                       textDecoration: "none", 
-                      border: `2px solid transparent`,
-                      transition: "all 0.2s"
+                      border: `2px solid #444444`,
+                      transition: "all 0.3s",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.3)"
                     }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.borderColor = ql.color;
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.08)";
+                        e.currentTarget.style.borderColor = "#ffffff";
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = "0 12px 48px rgba(0,0,0,0.5)";
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.borderColor = "transparent";
+                        e.currentTarget.style.borderColor = "#444444";
                         e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
+                        e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.3)";
                       }}
                     >
                       <div style={{
                         width: 48,
                         height: 48,
                         borderRadius: 10,
-                        background: ql.color,
+                        background: "#ffffff",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}>
-                        <ql.icon size={24} style={{ color: "#fff" }} />
+                        <ql.icon size={24} style={{ color: "#000" }} />
                       </div>
                       <div>
                         <p style={{ fontSize: 18, fontWeight: 700, color: ql.color, margin: "0 0 6px 0" }}>{ql.label}</p>

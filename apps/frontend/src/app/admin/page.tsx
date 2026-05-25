@@ -37,7 +37,7 @@ interface StatCardProps {
   label: string;
   value: string | number;
   sub?: string;
-  icon: React.ComponentType<{size?: number}>;
+  icon: React.ComponentType<{size?: string | number; color?: string}>;
   color?: string;
   loading?: boolean;
 }
@@ -150,23 +150,23 @@ export default function AdminPage() {
 
   if (!isAuthenticated) return null;
 
-  const roleTitle = {
+  const roleTitle = ({
     librarian: "Librarian Oversight",
     admin: "Platform Administration",
     researcher: "My Submissions",
     member: "Member Dashboard",
     student: "Student Portal",
     archivist: "Archive Management",
-  }[user?.role ?? "librarian"] || "Admin Panel";
+  } as Record<string, string>)[user?.role ?? "librarian"] || "Admin Panel";
 
-  const roleDescription = {
+  const roleDescription = ({
     librarian: "Manage academic documents, verify metadata, and control platform access permissions.",
     admin: "Monitor platform activity, manage users, and system configuration.",
     researcher: "View and manage your research submissions under review.",
     member: "Manage your contributions and submissions.",
     student: "View your learning resources and submissions.",
     archivist: "Oversee digital archives and preservation tasks.",
-  }[user?.role ?? "librarian"] || "Admin panel for platform management";
+  } as Record<string, string>)[user?.role ?? "librarian"] || "Admin panel for platform management";
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "#f9fafb" }}>
@@ -175,33 +175,6 @@ export default function AdminPage() {
       {/* ── MAIN ── */}
       <div style={{ marginLeft: 200, flex: 1, display: "flex", flexDirection: "column" }}>
         <DashboardHeader showSearch={false} />
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-            <Link href="/notifications" style={{
-              position: "relative", width: 36, height: 36, borderRadius: 8,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "transparent", border: "none", cursor: "pointer",
-              textDecoration: "none",
-            }}>
-              <Bell size={18} color="#6b7280" />
-            </Link>
-            <Link href="/library/wishlist" style={{
-              width: 36, height: 36, borderRadius: 8,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none",
-            }}>
-              <Heart size={18} color="#6b7280" />
-            </Link>
-            <Link href="/profile" style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "#4b5563",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
-              overflow: "hidden",
-              textDecoration: "none",
-            }}>
-              {user?.name?.[0]?.toUpperCase()}
-            </Link>
-          </div>
 
         {/* ── CONTENT ── */}
         <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>
