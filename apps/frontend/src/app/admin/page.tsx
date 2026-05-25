@@ -9,6 +9,7 @@ import {
   Pencil, Trash2, Eye, EyeOff, Filter, ChevronLeft, ChevronRight,
   BookMarked, Users, HardDrive, AlertCircle,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import { useAdminStats, useCatalogDocuments, useResearcherSubmissions } from "@/hooks/useAdmin";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -19,6 +20,7 @@ import toast from "react-hot-toast";
 const NAV = [
   { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
   { label: "Archive",     href: "/archive",   icon: Archive },
+  { label: "Research",    href: "/research",  icon: Archive },
   { label: "Submissions", href: "/showcase",  icon: Send },
   { label: "Library",     href: "/library",   icon: BookOpen },
   { label: "Admin",       href: "/admin", icon: ShieldCheck },
@@ -102,6 +104,7 @@ function StatCard({ label, value, sub, icon: Icon, color = "#2563eb", loading = 
 // ── Admin Page ────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -140,7 +143,8 @@ export default function AdminPage() {
   }, [isAuthenticated, user, router]);
 
   const handleRefresh = () => {
-    // Data will refetch automatically
+    queryClient.invalidateQueries({ queryKey: ["admin"] });
+    toast.success("Data refreshed");
   };
 
   const handleDelete = (id: string) => {
@@ -371,21 +375,28 @@ export default function AdminPage() {
                 }}
               />
             </div>
-            <button style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "10px 14px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#6b7280",
-            }}>
+            <button
+              onClick={() => {
+                setFilterStatus("all");
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 14px",
+                background: (filterStatus !== "all" || searchQuery) ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+                color: (filterStatus !== "all" || searchQuery) ? "#fff" : "#6b7280",
+              }}
+            >
               <Filter size={14} />
-              Filter
+              {(filterStatus !== "all" || searchQuery) ? "Clear" : "Filter"}
             </button>
             <button
               onClick={handleRefresh}
@@ -641,8 +652,8 @@ export default function AdminPage() {
                       width: 32,
                       height: 32,
                       borderRadius: 4,
-                      border: page === currentPage ? "1px solid #2563eb" : "1px solid #e5e7eb",
-                      background: page === currentPage ? "#2563eb" : "#fff",
+                      border: page === currentPage ? "none" : "1px solid #e5e7eb",
+                      background: page === currentPage ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
                       cursor: "pointer",
                       fontSize: 12,
                       fontWeight: 600,

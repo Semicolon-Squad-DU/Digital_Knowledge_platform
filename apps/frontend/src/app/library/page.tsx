@@ -39,10 +39,9 @@ interface CatalogItem {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const NAV = [
   { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },
-  { label: "Submissions", href: "/showcase",  icon: Send },
+  { label: "Archive",     href: "/archive",   icon: Archive },  { label: "Research",    href: "/research",  icon: Archive },  { label: "Submissions", href: "/showcase",  icon: Send },
   { label: "Library",     href: "/library",   icon: Library },
-  { label: "Admin",       href: "/librarian", icon: ShieldCheck },
+  { label: "Admin",       href: "/admin", icon: ShieldCheck },
 ];
 
 const CATEGORIES = [

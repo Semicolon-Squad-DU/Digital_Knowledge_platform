@@ -28,6 +28,7 @@ interface Showcase   { project_id: string; title: string; status: string; submit
 const NAV = [
   { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
   { label: "Archive",     href: "/archive",   icon: Archive },
+  { label: "Research",    href: "/research",  icon: Archive },
   { label: "Submissions", href: "/showcase",  icon: Send },
   { label: "Library",     href: "/library",   icon: BookOpen },
   { label: "Admin",       href: "/admin", icon: ShieldCheck },
