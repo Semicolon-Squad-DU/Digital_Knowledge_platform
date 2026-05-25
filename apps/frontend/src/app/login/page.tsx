@@ -31,7 +31,7 @@ function GoogleIcon() {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  const redirectTo = searchParams.get("redirect") ?? "/admin";
   const { login } = useAuthStore();
   const [error, setError] = useState("");
 

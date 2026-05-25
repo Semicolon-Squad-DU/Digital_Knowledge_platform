@@ -54,6 +54,23 @@ async function main() {
   await run(tailwindBin, ["-c", "tailwind.config.js", "-i", "./src/app/globals.css", "-o", "./src/app/tailwind.generated.css"], webDir);
 
   const port = process.env.PORT || "3000";
+  
+  // Automatically open the landing page in the default browser
+  setTimeout(() => {
+    const url = `http://localhost:${port}`;
+    try {
+      if (process.platform === 'win32') {
+        execSync(`start ${url}`);
+      } else if (process.platform === 'darwin') {
+        execSync(`open ${url}`);
+      } else {
+        execSync(`xdg-open ${url}`);
+      }
+    } catch {
+      // Ignore if browser fails to open
+    }
+  }, 3000);
+
   await run(nextBin, ["dev", "-p", port], webDir);
 }
 

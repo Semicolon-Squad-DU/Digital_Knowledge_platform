@@ -161,22 +161,9 @@ export default function DashboardPage() {
 
   const actLoading = archLoading || resLoading || showLoading;
 
-  const topbarActions = (
-    <Link href="/archive" style={{
-      display:"inline-flex", alignItems:"center", gap:8,
-      padding:"8px 16px", borderRadius:8,
-      fontSize:13, fontWeight:600, color:"#fff",
-      background:"linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", textDecoration:"none",
-      whiteSpace:"nowrap",
-    }}>
-      <Plus size={14} />
-      New Submission
-    </Link>
-  );
-
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <AppLayout topbarActions={topbarActions}>
+    <AppLayout>
       <div style={{ padding:"28px 32px" }}>
 
           {/* Page heading row */}

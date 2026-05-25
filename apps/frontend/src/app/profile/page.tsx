@@ -25,19 +25,19 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const fields = [
-    { icon: User,      label: "Full Name",  value: user.name },
-    { icon: Mail,      label: "Email",      value: user.email },
+    { icon: User, label: "Full Name", value: user.name },
+    { icon: Mail, label: "Email", value: user.email },
     { icon: Building2, label: "Department", value: user.department || "Not specified" },
-    { icon: Shield,    label: "Role",       value: user.role?.replace("_", " ") },
+    { icon: Shield, label: "Role", value: user.role?.replace("_", " ") },
   ];
 
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <PageHeader 
-          title="Profile" 
-          subtitle="Manage your account information" 
+        <PageHeader
+          title="Profile"
+          description="Manage your account information"
         />
 
         {/* Profile Card */}
@@ -65,12 +65,12 @@ export default function ProfilePage() {
                     <Icon size={14} /> {label}
                   </label>
                   <div style={{
-                    padding: "12px 14px", 
-                    background: "var(--color-canvas-subtle)", 
+                    padding: "12px 14px",
+                    background: "var(--color-canvas-subtle)",
                     borderRadius: "8px",
                     border: "1px solid var(--color-border-default)",
-                    fontSize: 14, 
-                    fontWeight: 500, 
+                    fontSize: 14,
+                    fontWeight: 500,
                     color: "var(--color-fg-default)"
                   }}>
                     {value}

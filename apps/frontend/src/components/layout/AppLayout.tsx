@@ -16,7 +16,7 @@ export const APP_NAV = [
   { label: "Research",    href: "/research",  icon: FlaskConical },
   { label: "Submissions", href: "/showcase",  icon: Send },
   { label: "Library",     href: "/library",   icon: BookOpen },
-  { label: "Admin",       href: "/librarian", icon: ShieldCheck },
+  { label: "Admin",       href: "/admin",     icon: ShieldCheck },
 ];
 
 interface AppLayoutProps {
@@ -49,17 +49,25 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       {/* ════════ SIDEBAR ════════ */}
       <aside style={{
         width: 200, flexShrink: 0,
-        background: "#ffffff",
-        borderRight: "1px solid #e5e7eb",
+        background: "linear-gradient(135deg, #111116 0%, #1a1a2e 100%)",
+        borderRight: "1px solid rgba(255,255,255,0.05)",
         display: "flex", flexDirection: "column",
         position: "sticky", top: 0, height: "100vh", overflowY: "auto",
       }}>
         {/* Logo */}
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #f3f4f6" }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3, margin: 0 }}>
+        <div style={{
+          padding: "0 20px",
+          height: 60,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          flexShrink: 0,
+        }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>
             Digital Knowledge
           </p>
-          <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, marginBottom: 0 }}>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2, marginBottom: 0 }}>
             Academic Portal
           </p>
         </div>
@@ -75,13 +83,12 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
                   padding: "9px 12px", borderRadius: 6, marginBottom: 2,
                   fontSize: 13,
                   fontWeight: active ? 600 : 500,
-                  color: active ? "#111827" : "#6b7280",
-                  background: active ? "#f3f4f6" : "transparent",
-                  borderLeft: active ? "3px solid #111827" : "3px solid transparent",
+                  color: active ? "#111827" : "rgba(255,255,255,0.7)",
+                  background: active ? "#ffffff" : "transparent",
                   transition: "all 0.1s",
                 }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.color = "#374151"; } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; } }}
+                  onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; } }}
+                  onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; } }}
                 >
                   <Icon size={15} />
                   {label}
@@ -93,21 +100,21 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
 
         {/* User info + sign out */}
         {user && (
-          <div style={{ padding: "12px 12px 16px", borderTop: "1px solid #f3f4f6" }}>
+          <div style={{ padding: "12px 12px 16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <div style={{
                 width: 30, height: 30, borderRadius: "50%",
-                background: "#1a1a2e", flexShrink: 0,
+                background: "#ffffff", flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: "#fff",
+                fontSize: 12, fontWeight: 700, color: "#111827",
               }}>
                 {user.name?.[0]?.toUpperCase()}
               </div>
               <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "#ffffff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {user.name?.split(" ")[0]}
                 </p>
-                <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, textTransform: "capitalize" }}>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0, textTransform: "capitalize" }}>
                   {user.role?.replace("_", " ")}
                 </p>
               </div>
@@ -116,12 +123,12 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
               onClick={handleLogout}
               style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 7,
-                padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb",
+                padding: "7px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
                 background: "transparent", cursor: "pointer",
-                fontSize: 12, fontWeight: 500, color: "#6b7280",
+                fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.7)",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
             >
               <LogOut size={13} /> Sign Out
             </button>

@@ -137,7 +137,7 @@ export default function RegisterPage() {
       localStorage.setItem("refresh_token", refresh_token);
       setUser(user);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      router.push("/admin");
     } catch (err: unknown) {
       const response = (err as { response?: { data?: { message?: string; errors?: { msg: string }[] } } })?.response?.data;
       if (response?.errors?.length) {
