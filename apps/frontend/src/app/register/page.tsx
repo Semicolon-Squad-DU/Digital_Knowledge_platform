@@ -154,9 +154,14 @@ export default function RegisterPage() {
             Digital Knowledge Platform
           </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            {["Collections", "Institutions", "Research", "About"].map((item) => (
-              <Link key={item} href={`/${item.toLowerCase()}`} style={{ padding: "6px 13px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px" }}>
-                {item}
+            {[
+              { label: "Collections", href: "/archive" },
+              { label: "Institutions", href: "/library" },
+              { label: "Research", href: "/research" },
+              { label: "About", href: "/" },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} style={{ padding: "6px 13px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px" }}>
+                {item.label}
               </Link>
             ))}
           </nav>

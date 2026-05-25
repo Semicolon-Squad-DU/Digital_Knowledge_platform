@@ -4,13 +4,13 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Search, Bookmark, BookOpen, Quote, Eye,
+  Search, Heart, BookOpen, Quote, Eye,
   LayoutDashboard, Archive, Send, Library, ShieldCheck,
-  Bell, Settings, ChevronDown, X, Plus, Trash2,
+  Bell, ChevronDown, X, Plus, Trash2,
   FileText, Upload,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem } from "@/hooks/useLibrary";
+import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem, useAddToWishlist } from "@/hooks/useLibrary";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuthStore } from "@/store/auth.store";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
@@ -86,20 +86,28 @@ function AccessBadge({ tier, copies }: { tier?: string; copies: number }) {
 }
 
 // ── Result card ───────────────────────────────────────────────────────────────
-function ResultCard({ item, onDelete, isLibrarian }: {
-  item: CatalogItem; onDelete?: () => void; isLibrarian: boolean;
+function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenticated }: {
+  item: CatalogItem; onDelete?: () => void;
+  onWishlist?: () => void; isLibrarian: boolean; isAuthenticated: boolean;
 }) {
+  const [wishlisted, setWishlisted] = useState(false);
   const typeLabel = item.category ?? "Article";
   const dateStr   = item.year ? String(item.year) : (item.created_at ? formatDate(item.created_at) : "");
   const citations = item.total_copies ?? 0;
   const views     = item.available_copies * 47 + (item.catalog_id.charCodeAt(0) * 13);
+
+  const handleWishlist = () => {
+    if (!isAuthenticated) { toast.error("Sign in to add to wishlist"); return; }
+    setWishlisted(true);
+    onWishlist?.();
+  };
 
   return (
     <div style={{
       background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
       padding: "20px 24px", position: "relative",
     }}>
-      {/* Top row: badge + type/date + bookmark */}
+      {/* Top row: badge + type/date + actions */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <AccessBadge tier={item.access_tier} copies={item.available_copies} />
@@ -107,17 +115,34 @@ function ResultCard({ item, onDelete, isLibrarian }: {
             {typeLabel} • {dateStr}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {/* Wishlist heart button */}
+          <button
+            onClick={handleWishlist}
+            title={wishlisted ? "Added to wishlist" : "Add to wishlist"}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              padding: 4, display: "flex", alignItems: "center",
+              color: wishlisted ? "#ef4444" : "#9ca3af",
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={e => { if (!wishlisted) e.currentTarget.style.color = "#ef4444"; }}
+            onMouseLeave={e => { if (!wishlisted) e.currentTarget.style.color = "#9ca3af"; }}
+          >
+            <Heart size={16} fill={wishlisted ? "#ef4444" : "none"} />
+          </button>
+          {/* Delete — librarians only */}
           {isLibrarian && onDelete && (
-            <button onClick={onDelete} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9ca3af" }}
-              title="Remove from catalog">
+            <button
+              onClick={onDelete}
+              title="Remove from catalog"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9ca3af" }}
+              onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#9ca3af")}
+            >
               <Trash2 size={14} />
             </button>
           )}
-          <button style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9ca3af" }}
-            title="Bookmark">
-            <Bookmark size={16} />
-          </button>
         </div>
       </div>
 
@@ -248,8 +273,9 @@ export default function LibraryPage() {
   });
 
   const { data, isLoading, isError, refetch } = useCatalogSearch(params);
-  const { mutateAsync: addBook, isPending: isAdding }     = useAddCatalogItem();
+  const { mutateAsync: addBook, isPending: isAdding }      = useAddCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
+  const { mutateAsync: addToWishlist }                     = useAddToWishlist();
 
   const applyYear = (val: string) => {
     const y = parseInt(val);
@@ -386,8 +412,8 @@ export default function LibraryPage() {
               <Bell size={17} color="#6b7280" />
               {unreadCount > 0 && <span style={{ position:"absolute", top:6, right:6, width:7, height:7, borderRadius:"50%", background:"#ef4444" }} />}
             </Link>
-            <Link href="/profile" style={{ width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
-              <Settings size={17} color="#6b7280" />
+            <Link href="/library/wishlist" title="My Wishlist" style={{ width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
+              <Heart size={17} color="#6b7280" />
             </Link>
             <div style={{ width:32, height:32, borderRadius:"50%", background:"#4b5563", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff" }}>
               {user?.name?.[0]?.toUpperCase() ?? "U"}
@@ -502,8 +528,18 @@ export default function LibraryPage() {
             <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
               {items.map(item => (
                 <ResultCard
-                  key={item.catalog_id} item={item}
+                  key={item.catalog_id}
+                  item={item}
                   isLibrarian={isLibrarian}
+                  isAuthenticated={isAuthenticated}
+                  onWishlist={async () => {
+                    try {
+                      await addToWishlist(item.catalog_id);
+                      toast.success("Added to wishlist");
+                    } catch {
+                      toast.error("Already in wishlist");
+                    }
+                  }}
                   onDelete={() => { setDeleteId(item.catalog_id); setDeleteTitle(item.title); }}
                 />
               ))}

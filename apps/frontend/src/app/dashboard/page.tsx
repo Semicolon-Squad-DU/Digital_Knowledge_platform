@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Archive, Send, BookOpen, ShieldCheck,
-  Bell, Settings, Search, Plus, FileText, RefreshCw,
+  Bell, Heart, Search, Plus, FileText, RefreshCw,
   PenLine, AlertTriangle, FolderOpen, HardDrive, Lock, Database,
   ArrowRight, TrendingUp, CheckCircle,
 } from "lucide-react";
@@ -263,12 +263,12 @@ export default function DashboardPage() {
                 }} />
               )}
             </Link>
-            <Link href="/profile" style={{
+            <Link href="/library/wishlist" style={{
               width:36, height:36, borderRadius:8,
               display:"flex", alignItems:"center", justifyContent:"center",
               textDecoration:"none",
             }}>
-              <Settings size={18} color="#6b7280" />
+              <Heart size={18} color="#6b7280" />
             </Link>
             {/* Avatar */}
             <div style={{
@@ -300,11 +300,11 @@ export default function DashboardPage() {
               display:"inline-flex", alignItems:"center", gap:8,
               padding:"10px 20px", borderRadius:8,
               fontSize:13, fontWeight:600, color:"#fff",
-              background:"#111827", textDecoration:"none",
+              background:"linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", textDecoration:"none",
               whiteSpace:"nowrap",
             }}>
               <Plus size={14} />
-              + New Submission
+              New Submission
             </Link>
           </div>
 
