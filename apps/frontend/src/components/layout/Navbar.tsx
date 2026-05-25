@@ -66,9 +66,13 @@ export function Navbar() {
 
   const isLibrarianOrAdmin = ["librarian", "admin"].includes(user?.role ?? "");
 
-  // Hide navbar completely on authentication pages (placed after all hooks)
-  const authRoutes = ["/login", "/register", "/forgot-password"];
-  if (authRoutes.includes(pathname)) return null;
+  // Hide navbar on pages that have their own navigation
+  const hiddenExact   = ["/", "/login", "/register", "/forgot-password"];
+  const hiddenPrefixes = ["/dashboard"];
+  if (
+    hiddenExact.includes(pathname) ||
+    hiddenPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))
+  ) return null;
 
   return (
     <>

@@ -143,7 +143,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       access_tier: "public",
       language: "en",
       category: "General",
-      status: "draft",
+      status: "published",
     },
   });
 

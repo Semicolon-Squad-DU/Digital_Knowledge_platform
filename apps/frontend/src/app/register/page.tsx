@@ -1,98 +1,130 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { BookOpen } from "lucide-react";
-import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
+import { Eye, EyeOff, ShieldCheck, BookCopy } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 
-// Dynamically import Player to avoid SSR issues
-const Player = dynamic(
-  () => import("@lottiefiles/react-lottie-player").then((m) => m.Player),
-  { ssr: false }
-);
-
-// ---------------------------------------------------------------------------
-// Role options
-// ---------------------------------------------------------------------------
-
+// ── Role options ──────────────────────────────────────────────────────────────
 const ROLES = [
-  {
-    value: "member",
-    label: "Member",
-    description: "Browse and access published content",
-  },
-  {
-    value: "student_author",
-    label: "Student Author",
-    description: "Submit projects to the showcase",
-  },
-  {
-    value: "researcher",
-    label: "Researcher",
-    description: "Publish research outputs and manage labs",
-  },
-  {
-    value: "archivist",
-    label: "Archivist",
-    description: "Upload and manage archive documents",
-  },
-  {
-    value: "librarian",
-    label: "Librarian",
-    description: "Manage library catalog and lending",
-  },
+  { value: "member",         label: "Member",         desc: "Browse and access published content" },
+  { value: "student_author", label: "Student Author", desc: "Submit projects to the showcase" },
+  { value: "researcher",     label: "Researcher",     desc: "Publish research outputs and manage labs" },
+  { value: "archivist",      label: "Archivist",      desc: "Upload and manage archive documents" },
+  { value: "librarian",      label: "Librarian",      desc: "Manage library catalog and lending" },
 ] as const;
-
 type RoleValue = typeof ROLES[number]["value"];
 
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
+const DEPARTMENTS = [
+  "Computer Science & Engineering",
+  "Electrical & Electronic Engineering",
+  "Civil Engineering",
+  "Mechanical Engineering",
+  "Business Administration",
+  "Economics",
+  "English",
+  "Physics",
+  "Chemistry",
+  "Mathematics",
+  "Law",
+  "Medicine",
+  "Other",
+];
 
+// ── Zod schema ────────────────────────────────────────────────────────────────
 const schema = z.object({
   name:       z.string().min(2, "Name must be at least 2 characters"),
   email:      z.string().email("Valid email required"),
+  department: z.string().optional(),
   password:   z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Must contain uppercase letter")
-    .regex(/[a-z]/, "Must contain lowercase letter")
-    .regex(/\d/, "Must contain a digit")
-    .regex(/[@$!%*?&]/, "Must contain a special character"),
-  department: z.string().optional(),
+    .min(8, "At least 8 characters")
+    .regex(/[A-Z]/, "Uppercase letter required")
+    .regex(/[a-z]/, "Lowercase letter required")
+    .regex(/\d/, "Digit required")
+    .regex(/[@$!%*?&]/, "Special character required"),
 });
-
 type FormData = z.infer<typeof schema>;
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+// ── Password strength checker ─────────────────────────────────────────────────
+function PasswordChecklist({ password }: { password: string }) {
+  const checks = [
+    { label: "8+ characters",       ok: password.length >= 8 },
+    { label: "Uppercase letter",     ok: /[A-Z]/.test(password) },
+    { label: "Lowercase letter",     ok: /[a-z]/.test(password) },
+    { label: "One digit (0-9)",      ok: /\d/.test(password) },
+    { label: "Special (@$!%*?&)",    ok: /[@$!%*?&]/.test(password) },
+  ];
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", marginTop: "10px" }}>
+      {checks.map((c) => (
+        <label key={c.label} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12px", color: "#6b7280", cursor: "default" }}>
+          <span style={{
+            width: "14px", height: "14px", borderRadius: "50%",
+            border: `1.5px solid ${c.ok ? "#1a1a2e" : "#d1d5db"}`,
+            background: c.ok ? "#1a1a2e" : "transparent",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            {c.ok && (
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                <path d="M1.5 4L3.2 5.7L6.5 2.3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+          {c.label}
+        </label>
+      ))}
+    </div>
+  );
+}
 
+// ── Shared input style ────────────────────────────────────────────────────────
+const inputStyle = (hasError?: boolean): React.CSSProperties => ({
+  display: "block",
+  width: "100%",
+  padding: "10px 12px",
+  fontSize: "13px",
+  color: "#111827",
+  background: "#ffffff",
+  border: `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
+  borderRadius: "6px",
+  outline: "none",
+  boxSizing: "border-box",
+});
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.09em",
+  color: "#6b7280",
+  marginBottom: "6px",
+};
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser } = useAuthStore();
-  const [error, setError]       = useState("");
+  const [error, setError]             = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
-  const [isClient, setIsClient] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [agreed, setAgreed]           = useState(false);
+  const [passwordValue, setPasswordValue] = useState("");
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const { register, handleSubmit, formState: { errors, isSubmitting }, watch } =
+    useForm<FormData>({ resolver: zodResolver(schema) });
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+  const watchedPassword = watch("password", "");
 
   const onSubmit = async (data: FormData) => {
+    if (!agreed) { setError("You must agree to the Terms of Service to continue."); return; }
     setError("");
     try {
       const res = await api.post("/auth/register", { ...data, role: selectedRole });
@@ -113,124 +145,295 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      className="min-h-screen w-full flex items-center justify-center"
-      style={{ background: "linear-gradient(to right, #A8D5A8 0%, #A8D5A8 50%, #ffffff 50%, #ffffff 100%)", padding: "0", margin: "0", overflow: "hidden" }}
-    >
-      <div className="w-full flex items-center justify-between gap-8" style={{ maxWidth: "1200px", height: "100%", paddingX: "1rem", paddingY: "3rem" }}>
-        {/* Left — Form */}
-        <div style={{ flex: "0 0 auto", width: "100%", maxWidth: "450px" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#eef0f3", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
 
-          {/* Logo */}
-          <div className="text-center mb-6">
-            <div
-              className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
-              style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)" }}
-            >
-              <BookOpen size={22} style={{ color: "var(--color-fg-default)" }} />
-            </div>
-            <h1 className="text-xl font-semibold" style={{ color: "var(--color-fg-default)" }}>
-              Create your account
-            </h1>
-          </div>
-
-          {/* Form card */}
-          <div
-            className="rounded-md border p-5 space-y-4"
-            style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)" }}
-          >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
-              {/* Basic fields */}
-              <Input
-                label="Full Name"
-                required
-                autoComplete="name"
-                {...register("name")}
-                error={errors.name?.message}
-              />
-              <Input
-                label="Email address"
-                type="email"
-                required
-                autoComplete="email"
-                {...register("email")}
-                error={errors.email?.message}
-              />
-              <Input
-                label="Department"
-                placeholder="e.g. Computer Science & Engineering"
-                {...register("department")}
-              />
-              <Input
-                label="Password"
-                type="password"
-                required
-                autoComplete="new-password"
-                {...register("password")}
-                error={errors.password?.message}
-                hint="8+ chars with uppercase, lowercase, digit, and special character (@$!%*?&)"
-              />
-
-              {/* Role selector */}
-              <div>
-                <label className="form-label">
-                  I am registering as <span className="text-[var(--color-danger-fg)]">*</span>
-                </label>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
-                  className="form-select"
-                >
-                  {ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label} — {role.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {error && (
-                <div className="alert alert-danger" role="alert">{error}</div>
-              )}
-
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full"
-                size="lg"
-                loading={isSubmitting}
-                style={{ background: "#1a7f5a", borderColor: "#1a7f5a" }}
-              >
-                Create Account
-              </Button>
-            </form>
-          </div>
-
-          {/* Sign in link */}
-          <div
-            className="mt-3 text-center text-sm py-4 rounded-md border"
-            style={{ background: "var(--color-canvas-default)", borderColor: "var(--color-border-default)", color: "var(--color-fg-muted)" }}
-          >
-            Already have an account?{" "}
-            <Link href="/login" className="font-semibold" style={{ color: "#1a7f5a" }}>
-              Sign in
+      {/* ── Navbar ── */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px" }}>
+          <Link href="/" style={{ fontSize: "14px", fontWeight: 700, color: "#111827", textDecoration: "none", letterSpacing: "-0.01em" }}>
+            Digital Knowledge Platform
+          </Link>
+          <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            {["Collections", "Institutions", "Research", "About"].map((item) => (
+              <Link key={item} href={`/${item.toLowerCase()}`} style={{ padding: "6px 13px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px" }}>
+                {item}
+              </Link>
+            ))}
+          </nav>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#374151", textDecoration: "none", border: "1px solid #d1d5db", borderRadius: "6px", background: "#fff" }}>
+              Sign In
+            </Link>
+            <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "#111827", borderRadius: "6px", textDecoration: "none" }}>
+              Register
             </Link>
           </div>
         </div>
+      </header>
 
-        {/* Right — Animation */}
-        {isClient && (
-          <div style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", minWidth: "400px", paddingRight: "40px" }}>
-            <Player
-              autoplay
-              loop
-              src="/Little bit Of Reading.json"
-              style={{ height: "600px", width: "600px", transform: "translateX(200px)" }}
-            />
+      {/* ── Main ── */}
+      <main style={{ flex: 1, padding: "48px 32px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "340px 1fr", gap: "40px", alignItems: "start" }}>
+
+          {/* ── LEFT COLUMN ── */}
+          <div>
+            <h1 style={{ fontSize: "36px", fontWeight: 800, color: "#111827", lineHeight: 1.15, marginBottom: "16px", letterSpacing: "-0.02em" }}>
+              Join the Archive.
+            </h1>
+            <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: 1.7, marginBottom: "28px" }}>
+              Establish your scholarly presence within the Digital Knowledge Platform. Access exclusive research repositories, contribute to peer-reviewed collections, and collaborate with global academic institutions.
+            </p>
+
+            {/* Role selector card */}
+            <div style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px" }}>
+              <label style={{ ...labelStyle, marginBottom: "10px" }}>
+                I am registering as <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
+                style={{
+                  ...inputStyle(),
+                  background: "#ffffff",
+                  appearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                  paddingRight: "36px",
+                  cursor: "pointer",
+                }}
+              >
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label} — {r.desc}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Feature tiles */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "18px 16px" }}>
+                <ShieldCheck size={20} style={{ color: "#374151", marginBottom: "10px" }} />
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151", marginBottom: "6px" }}>
+                  Institutional Access
+                </p>
+                <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.5, margin: 0 }}>
+                  SSO integration for participating universities.
+                </p>
+              </div>
+              <div style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "18px 16px" }}>
+                <BookCopy size={20} style={{ color: "#374151", marginBottom: "10px" }} />
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151", marginBottom: "6px" }}>
+                  Research Vaults
+                </p>
+                <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.5, margin: 0 }}>
+                  High-fidelity digitized primary sources.
+                </p>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* ── RIGHT COLUMN — Form card ── */}
+          <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "36px 36px 32px", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+
+              {/* Row 1: Full Name + Email */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "18px" }}>
+                <div>
+                  <label style={labelStyle}>Full Name</label>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Dr. Julian Archer"
+                    aria-invalid={!!errors.name}
+                    style={inputStyle(!!errors.name)}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
+                    {...register("name", { onBlur: (e) => { e.currentTarget.style.borderColor = errors.name ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; } })}
+                  />
+                  {errors.name && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errors.name.message}</p>}
+                </div>
+                <div>
+                  <label style={labelStyle}>Email Address</label>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="j.archer@institution.edu"
+                    aria-invalid={!!errors.email}
+                    style={inputStyle(!!errors.email)}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
+                    {...register("email", { onBlur: (e) => { e.currentTarget.style.borderColor = errors.email ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; } })}
+                  />
+                  {errors.email && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errors.email.message}</p>}
+                </div>
+              </div>
+
+              {/* Row 2: Department + Academic Role */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "18px" }}>
+                <div>
+                  <label style={labelStyle}>Department / Faculty</label>
+                  <select
+                    style={{
+                      ...inputStyle(),
+                      appearance: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 10px center",
+                      paddingRight: "36px",
+                      cursor: "pointer",
+                      color: "#6b7280",
+                    }}
+                    {...register("department")}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Select Department</option>
+                    {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Academic Role</label>
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
+                    style={{
+                      ...inputStyle(),
+                      appearance: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 10px center",
+                      paddingRight: "36px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="" disabled>Select Role</option>
+                    {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Password */}
+              <div style={{ marginBottom: "18px" }}>
+                <label style={labelStyle}>Password</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="••••••••••••"
+                    aria-invalid={!!errors.password}
+                    style={{ ...inputStyle(!!errors.password), paddingRight: "42px" }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
+                    {...register("password", {
+                      onChange: (e) => setPasswordValue(e.target.value),
+                      onBlur: (e) => { e.currentTarget.style.borderColor = errors.password ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af", display: "flex", alignItems: "center" }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <PasswordChecklist password={watchedPassword || passwordValue} />
+              </div>
+
+              {/* Terms checkbox */}
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    style={{ marginTop: "2px", width: "14px", height: "14px", flexShrink: 0, accentColor: "#111827", cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6 }}>
+                    I agree to the{" "}
+                    <Link href="/terms" style={{ color: "#374151", fontWeight: 600, textDecoration: "underline" }}>Terms of Service</Link>
+                    {" "}and acknowledge the{" "}
+                    <Link href="/privacy" style={{ color: "#374151", fontWeight: 600, textDecoration: "underline" }}>Privacy Policy</Link>
+                    {" "}concerning intellectual property and data archival.
+                  </span>
+                </label>
+              </div>
+
+              {/* Server error */}
+              {error && (
+                <div style={{ marginBottom: "16px", padding: "10px 12px", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", color: "#dc2626" }} role="alert">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                style={{
+                  width: "100%",
+                  padding: "13px 16px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  background: "#111827",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.6 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  marginBottom: "16px",
+                }}
+              >
+                {isSubmitting && (
+                  <svg className="animate-spin" width="14" height="14" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                )}
+                Create Academic Profile
+              </button>
+
+              {/* Sign in link */}
+              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                Already registered?{" "}
+                <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                >
+                  Sign In here.
+                </Link>
+              </p>
+            </form>
+          </div>
+
+        </div>
+      </main>
+
+      {/* ── Footer ── */}
+      <footer style={{ background: "#e9ebee", borderTop: "1px solid #d1d5db" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px 32px", display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "center", gap: "16px" }}>
+          <div>
+            <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", margin: "0 0 3px" }}>Digital Knowledge Platform</p>
+            <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>© 2024 Digital Knowledge Platform. All rights reserved.</p>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "24px" }}>
+            {["Privacy Policy", "Terms of Service", "Institutional Access", "Contact Support"].map((l) => (
+              <Link key={l} href="#" style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
+                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+              >
+                {l}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 }

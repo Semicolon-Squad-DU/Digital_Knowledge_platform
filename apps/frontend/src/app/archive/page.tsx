@@ -46,7 +46,7 @@ export default function ArchivePage() {
   const { data, isLoading, isError } = useArchiveSearch(params);
   const { mutateAsync: download } = useDownloadArchiveItem();
 
-  const canUpload = isAuthenticated && ["archivist", "librarian", "admin"].includes(user?.role ?? "");
+  const canUpload = isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
   const hasFilters = params.query || params.category || params.language || params.file_type;
   const activeFilterCount = [params.category, params.language, params.file_type].filter(Boolean).length;
 

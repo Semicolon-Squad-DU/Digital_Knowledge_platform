@@ -147,7 +147,7 @@ router.get("/:id/download", optionalAuth, asyncHandler(async (req: AuthRequest, 
 router.post(
   "/upload",
   authenticate,
-  requireRole("archivist", "librarian", "admin"),
+  requireRole("archivist", "admin"),
   uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.file) throw new AppError(400, "No file provided");
@@ -161,7 +161,7 @@ router.post(
     await uploadToS3(key, req.file.buffer, req.file.mimetype);
 
     const initialStatus = status && ["draft","review","published","archived"].includes(status)
-      ? status : "draft";
+      ? status : "published";
 
     const item = await withTransaction(async (client) => {
       const result = await client.query(

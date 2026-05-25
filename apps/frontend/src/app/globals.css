@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Hide ALL browser-native password reveal buttons ─────── */
+
+/* Edge / IE */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}
+
+/* Chrome / Edge (Chromium) */
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-textfield-decoration-container {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Firefox — the eye icon lives on the inner wrapper */
+input[type="password"] {
+  -moz-appearance: none;
+}
+input[type="password"]::-moz-reveal {
+  display: none !important;
+}
+
 /* ── GitHub-style design tokens ─────────────────────────── */
 @layer base {
   :root {
