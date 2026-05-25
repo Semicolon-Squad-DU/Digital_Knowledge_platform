@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useBorrowingHistory } from "@/hooks/useLibrary";
 import { getStatusBadge, formatDate } from "@/lib/utils";
 
 export default function DashboardHistoryPage() {
-  const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
-
+  const { user, ready } = useAuthGuard();
   const { data, isLoading } = useBorrowingHistory(user?.user_id ?? "");
 
-  if (!user) return null;
+  if (!ready) return null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

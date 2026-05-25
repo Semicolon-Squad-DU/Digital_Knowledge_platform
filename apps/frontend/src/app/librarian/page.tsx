@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User } from "lucide-react";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useAddCatalogItem } from "@/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -189,13 +190,7 @@ type Tab = "overview" | "overdue";
 
 export default function LibrarianDashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated || !["librarian", "admin"].includes(user?.role ?? "")) {
-      router.push("/");
-    }
-  }, [isAuthenticated, user, router]);
+  const { user, ready } = useAuthGuard();
 
   const { data: stats, isLoading, refetch } = useLibrarianDashboard();
   const { data: overdueData, isLoading: overdueLoading, refetch: refetchOverdue } = useOverdueTransactions();
@@ -340,8 +335,14 @@ export default function LibrarianDashboardPage() {
     { label: "Fines (Tk)",    value: (stats?.total_fines_amount ?? 0).toFixed(0), icon: Banknote, iconClass: "bg-orange-50 text-orange-600" },
   ];
 
+  if (!ready || !["librarian", "admin"].includes(user?.role ?? "")) {
+    if (ready) router.push("/");
+    return null;
+  }
+
   return (
-    <div className="page-container py-8">
+    <AppLayout>
+      <div className="page-container py-8">
       <PageHeader
         title="Librarian Dashboard"
         subtitle="Manage lending, returns, and catalog operations"
@@ -769,6 +770,7 @@ export default function LibrarianDashboardPage() {
         </div>
       </Modal>
     </div>
+    </AppLayout>
   );
 }
 

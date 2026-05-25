@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Archive, Send, BookOpen, ShieldCheck,
-  Bell, Heart, Search, Plus, FileText, RefreshCw,
+  Search, Plus, FileText, RefreshCw,
   PenLine, AlertTriangle, FolderOpen, HardDrive, Lock, Database,
   ArrowRight, TrendingUp, CheckCircle,
 } from "lucide-react";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useBorrowingHistory, useMemberFines, useWishlist } from "@/hooks/useLibrary";
-import { useNotifications } from "@/hooks/useNotifications";
 import { useArchiveSearch } from "@/hooks/useArchive";
 import { useResearchList } from "@/hooks/useResearch";
 import { useShowcaseGallery } from "@/hooks/useShowcase";
@@ -23,16 +21,6 @@ interface Loan       { transaction_id: string; title: string; due_date: string; 
 interface ArchiveItem{ item_id: string; title_en: string; category: string; created_at: string; uploader_name?: string; }
 interface Research   { output_id: string; title: string; output_type: string; published_date: string; authors?: {name:string}[]; }
 interface Showcase   { project_id: string; title: string; status: string; submitted_at: string; author_name?: string; }
-
-// ── Sidebar nav ───────────────────────────────────────────────────────────────
-const NAV = [
-  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },
-  { label: "Research",    href: "/research",  icon: Archive },
-  { label: "Submissions", href: "/showcase",  icon: Send },
-  { label: "Library",     href: "/library",   icon: BookOpen },
-  { label: "Admin",       href: "/admin", icon: ShieldCheck },
-];
 
 // ── Status pill ───────────────────────────────────────────────────────────────
 const PILL: Record<string, {bg:string; color:string}> = {
@@ -119,27 +107,20 @@ function StatCard({ label, value, sub, subIcon, subColor, loading }:{
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const router   = useRouter();
-  const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const router = useRouter();
+  const { user, ready } = useAuthGuard();
 
   const { data: history,     isLoading: histLoading  } = useBorrowingHistory(user?.user_id ?? "");
   const { data: fineData                              } = useMemberFines(user?.user_id ?? "");
-  const { data: notifData                             } = useNotifications(1, false, isAuthenticated);
   const { data: wishlist                              } = useWishlist();
   const { data: archiveData, isLoading: archLoading  } = useArchiveSearch({ query:"", page:1, limit:5 });
   const { data: researchData,isLoading: resLoading   } = useResearchList({ page:1, limit:5 });
   const { data: showcaseData,isLoading: showLoading  } = useShowcaseGallery({ page:1, limit:5 });
 
-  if (!user) return null;
+  if (!ready) return null;
 
   const overdueLoans   = (history ?? []).filter((t:Loan) => t.status === "overdue");
   const returnedLoans  = (history ?? []).filter((t:Loan) => t.status === "returned");
-  const unreadCount    = notifData?.unread_count ?? 0;
   const totalDocs      = archiveData?.total ?? 0;
   const publishedItems = researchData?.total ?? 0;
   const pendingReviews = (showcaseData?.items ?? []).filter((p:Showcase) =>
@@ -180,113 +161,23 @@ export default function DashboardPage() {
 
   const actLoading = archLoading || resLoading || showLoading;
 
+  const topbarActions = (
+    <Link href="/archive" style={{
+      display:"inline-flex", alignItems:"center", gap:8,
+      padding:"8px 16px", borderRadius:8,
+      fontSize:13, fontWeight:600, color:"#fff",
+      background:"linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", textDecoration:"none",
+      whiteSpace:"nowrap",
+    }}>
+      <Plus size={14} />
+      New Submission
+    </Link>
+  );
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:"#f0f2f5", fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-
-      {/* ════════════════ SIDEBAR ════════════════ */}
-      <aside style={{
-        width:200, flexShrink:0, background:"linear-gradient(135deg, #000000 0%, #2d2533 100%)",
-        borderRight:"1px solid rgba(255,255,255,0.1)",
-        display:"flex", flexDirection:"column",
-        position:"sticky", top:0, height:"100vh", overflowY:"auto",
-      }}>
-        {/* Logo */}
-        <div style={{ height:60, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px", borderBottom:"1px solid #e5e7eb" }}>
-          <p style={{ fontSize:15, fontWeight:700, color:"#ffffff", lineHeight:1.3, margin:0 }}>Digital Knowledge</p>
-          <p style={{ fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:4, margin:"4px 0 0 0" }}>Academic Portal</p>
-        </div>
-
-        {/* Nav */}
-        <nav style={{ flex:1, padding:"12px 8px" }}>
-          {NAV.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link key={href} href={href} style={{ textDecoration:"none" }}>
-                <div style={{
-                  display:"flex", alignItems:"center", gap:10,
-                  padding:"9px 12px", borderRadius:6, marginBottom:2,
-                  fontSize:13, fontWeight: active ? 600 : 500,
-                  color: active ? "#000000" : "rgba(255,255,255,0.7)",
-                  background: active ? "#f3f4f6" : "transparent",
-                  borderLeft: active ? "3px solid #f3f4f6" : "3px solid transparent",
-                  transition:"all 0.1s",
-                }}>
-                  <Icon size={15} />
-                  {label}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-
-      {/* ════════════════ MAIN COLUMN ════════════════ */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
-
-        {/* ── TOP BAR ── */}
-        <header style={{
-          height:60, background:"#ffffff",
-          borderBottom:"1px solid #e5e7eb",
-          display:"flex", alignItems:"center",
-          padding:"0 28px", gap:16, flexShrink:0,
-        }}>
-          {/* Search */}
-          <div style={{
-            display:"flex", alignItems:"center", gap:8,
-            background:"#f9fafb", border:"1px solid #e5e7eb",
-            borderRadius:8, padding:"7px 14px",
-            flex:1, maxWidth:340,
-          }}>
-            <Search size={14} color="#9ca3af" />
-            <span style={{ fontSize:13, color:"#9ca3af" }}>Search knowledge base...</span>
-            <span style={{
-              marginLeft:"auto", fontSize:11, color:"#9ca3af",
-              background:"#f3f4f6", border:"1px solid #e5e7eb",
-              borderRadius:4, padding:"1px 6px", fontFamily:"monospace",
-            }}>⌘K</span>
-          </div>
-
-          {/* Right icons */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginLeft:"auto" }}>
-            <Link href="/notifications" style={{
-              position:"relative", width:36, height:36, borderRadius:8,
-              display:"flex", alignItems:"center", justifyContent:"center",
-              background:"transparent", border:"none", cursor:"pointer",
-              textDecoration:"none",
-            }}>
-              <Bell size={18} color="#6b7280" />
-              {unreadCount > 0 && (
-                <span style={{
-                  position:"absolute", top:6, right:6,
-                  width:8, height:8, borderRadius:"50%",
-                  background:"#ef4444", border:"2px solid #fff",
-                }} />
-              )}
-            </Link>
-            <Link href="/library/wishlist" style={{
-              width:36, height:36, borderRadius:8,
-              display:"flex", alignItems:"center", justifyContent:"center",
-              textDecoration:"none",
-            }}>
-              <Heart size={18} color="#6b7280" />
-            </Link>
-            {/* Avatar */}
-            <Link href="/profile" style={{
-              width:34, height:34, borderRadius:"50%",
-              background:"#4b5563",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer",
-              overflow:"hidden",
-              textDecoration:"none",
-            }}>
-              {user.name?.[0]?.toUpperCase()}
-            </Link>
-          </div>
-        </header>
-
-        {/* ── CONTENT ── */}
-        <main style={{ flex:1, padding:"28px 32px", overflowY:"auto" }}>
+    <AppLayout topbarActions={topbarActions}>
+      <div style={{ padding:"28px 32px" }}>
 
           {/* Page heading row */}
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>
@@ -510,8 +401,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-        </main>
       </div>
-    </div>
+    </AppLayout>
   );
 }

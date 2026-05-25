@@ -1,31 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Archive, Send, BookOpen, ShieldCheck, FlaskConical,
-  Bell, Heart, Search, Plus, Upload, X, ChevronLeft, ChevronRight,
+  Search, Plus, Upload, X, ChevronLeft, ChevronRight, Archive as ArchiveIcon,
 } from "lucide-react";
 import { useArchiveSearch, useDownloadArchiveItem } from "@/hooks/useArchive";
-import { useAuthStore } from "@/store/auth.store";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { ArchiveCard } from "@/components/archive/ArchiveCard";
 import { UploadModal } from "@/components/archive/UploadModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { timeAgo } from "@/lib/utils";
 import toast from "react-hot-toast";
-
-// ── Sidebar Navigation ────────────────────────────────────────────────────────
-const NAV = [
-  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },
-  { label: "Research",    href: "/research",  icon: FlaskConical },
-  { label: "Submissions", href: "/showcase",  icon: Send },
-  { label: "Library",     href: "/library",   icon: BookOpen },
-  { label: "Admin",       href: "/admin",     icon: ShieldCheck },
-];
 
 const CATEGORY_OPTIONS = [
   "General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other"
@@ -45,8 +34,7 @@ const FILE_TYPE_OPTIONS = [
 
 export default function ArchivePage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
-  const { data: notifData } = useNotifications(1, false, isAuthenticated);
+  const { user, ready } = useAuthGuard();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -60,14 +48,7 @@ export default function ArchivePage() {
   const { data, isLoading, isError } = useArchiveSearch(params);
   const { mutateAsync: download } = useDownloadArchiveItem();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, router]);
-
-  const canUpload = isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
-  const unreadCount = notifData?.unread_count ?? 0;
+  const canUpload = ready && ["archivist", "admin"].includes(user?.role ?? "");
 
   const handleSearch = () => {
     setParams((p) => ({ ...p, query: searchInput, page: 1 }));
@@ -105,164 +86,46 @@ export default function ArchivePage() {
 
   const hasActiveFilters = filterCategory || filterLanguage || filterFileType || searchInput;
 
-  if (!isAuthenticated) return null;
+  if (!ready) return null;
 
   const totalPages = data?.total_pages || 1;
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f0f2f5" }}>
-      {/* ── Sidebar ── */}
-      <div style={{
-        width: 200,
-        background: "#fff",
-        borderRight: "1px solid #e5e7eb",
-        position: "fixed",
-        height: "100vh",
-        overflowY: "auto",
-        top: 0,
-        left: 0,
-        zIndex: 40,
-      }}>
-        <div style={{ padding: "20px 12px" }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111827", margin: "0 0 20px 0", letterSpacing: "-0.5px" }}>
-            DKP
-          </h2>
-          <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {NAV.map((item) => {
-              const Icon = item.icon;
-              const isActive = item.href === "/archive";
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    background: isActive ? "#f3f4f6" : "transparent",
-                    color: isActive ? "#111827" : "#6b7280",
-                    textDecoration: "none",
-                    fontSize: 13,
-                    fontWeight: isActive ? 600 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.background = "#f9fafb";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
-                  }}
-                >
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+  const topbarSearch = <div />; // Empty div to hide default search
 
-      {/* ── Main Content ── */}
-      <div style={{ marginLeft: 200, flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* ── Header ── */}
-        <div style={{
-          height: 60,
-          background: "#fff",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingRight: 20,
-          position: "sticky",
-          top: 0,
-          zIndex: 30,
-        }}>
-          <h1 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0, marginLeft: 20 }}>
-            Digital Archive
-          </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Link href="/notifications" style={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              background: "transparent",
-              cursor: "pointer",
-              textDecoration: "none",
-            }}>
-              <Bell size={18} color="#6b7280" />
-              {unreadCount > 0 && (
-                <span style={{
-                  position: "absolute",
-                  top: 2,
-                  right: 2,
-                  width: 16,
-                  height: 16,
-                  background: "#dc2626",
-                  borderRadius: "50%",
-                  color: "#fff",
-                  fontSize: 10,
-                  fontWeight: 700,
+  return (
+    <AppLayout topbarSearch={topbarSearch}>
+      <div style={{ padding:"28px 32px" }}>
+          {/* Title Section */}
+          <div style={{ marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.5px" }}>
+                Archive Repository
+              </h2>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "8px 0 0 0" }}>
+                Find institutional documents and media
+              </p>
+            </div>
+            {canUpload && (
+              <button
+                onClick={() => setUploadOpen(true)}
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
-            <Link href="/library/wishlist" style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              background: "transparent",
-              cursor: "pointer",
-              textDecoration: "none",
-            }}>
-              <Heart size={18} color="#6b7280" />
-            </Link>
-            <Link href="/profile" style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              background: "#e5e7eb",
-              cursor: "pointer",
-              textDecoration: "none",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#4b5563",
-            }}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </Link>
-          </div>
-        </div>
-
-        {/* ── Main Area ── */}
-        <main style={{
-          flex: 1,
-          padding: "28px 32px",
-          overflowY: "auto",
-        }}>
-          {/* Title Section */}
-          <div style={{ marginBottom: 28 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.5px" }}>
-              Search & Browse
-            </h2>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "8px 0 0 0" }}>
-              Find institutional documents and media
-            </p>
+                  gap: 6,
+                  padding: "10px 16px",
+                  background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                <Upload size={14} />
+                Upload
+              </button>
+            )}
           </div>
 
           {/* Search & Filter Bar */}
@@ -320,27 +183,6 @@ export default function ArchivePage() {
               <Search size={14} />
               Search
             </button>
-            {canUpload && (
-              <button
-                onClick={() => setUploadOpen(true)}
-                style={{
-                  padding: "10px 16px",
-                  background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <Upload size={14} />
-                Upload
-              </button>
-            )}
           </div>
 
           {/* Filter Chips */}
@@ -478,6 +320,21 @@ export default function ArchivePage() {
             </div>
 
             {/* Apply Button */}
+            <button
+              onClick={handleFilterApply}
+              style={{
+                padding: "8px 16px",
+                background: "#111827",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              Apply Filters
+            </button>
             {hasActiveFilters && (
               <button
                 onClick={handleClearFilters}
@@ -530,7 +387,7 @@ export default function ArchivePage() {
           {/* Empty State */}
           {!isLoading && !isError && (!data || data.items.length === 0) && (
             <EmptyState
-              icon={<Archive size={32} />}
+              icon={<ArchiveIcon size={32} />}
               title="No documents found"
               description={hasActiveFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
             />
@@ -634,10 +491,9 @@ export default function ArchivePage() {
               )}
             </>
           )}
-        </main>
-      </div>
+        </div>
 
       <UploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
-    </div>
+    </AppLayout>
   );
 }

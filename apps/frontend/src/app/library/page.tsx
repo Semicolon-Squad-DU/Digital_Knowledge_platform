@@ -2,17 +2,15 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Search, Heart, BookOpen, Quote, Eye,
-  LayoutDashboard, Archive, Send, Library, ShieldCheck,
-  Bell, ChevronDown, X, Plus, Trash2,
+  ChevronDown, X, Plus, Trash2,
   FileText, Upload,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem, useAddToWishlist } from "@/hooks/useLibrary";
-import { useNotifications } from "@/hooks/useNotifications";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -37,13 +35,6 @@ interface CatalogItem {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const NAV = [
-  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },  { label: "Research",    href: "/research",  icon: Archive },  { label: "Submissions", href: "/showcase",  icon: Send },
-  { label: "Library",     href: "/library",   icon: Library },
-  { label: "Admin",       href: "/admin", icon: ShieldCheck },
-];
-
 const CATEGORIES = [
   { value: "",              label: "All Categories" },
   { value: "Social Sciences", label: "Social Sciences" },
@@ -234,11 +225,8 @@ function Pager({ page, totalPages, onChange }: { page: number; totalPages: numbe
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function LibraryPage() {
-  const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
-  const isLibrarian = isAuthenticated && ["librarian", "admin"].includes(user?.role ?? "");
-  const { data: notifData } = useNotifications(1, false, isAuthenticated);
-  const unreadCount = notifData?.unread_count ?? 0;
+  const { user, ready } = useAuthGuard();
+  const isLibrarian = ready && ["librarian", "admin"].includes(user?.role ?? "");
 
   const [searchInput, setSearchInput]   = useState("");
   const [activeSearch, setActiveSearch] = useState("");
@@ -275,6 +263,8 @@ export default function LibraryPage() {
   const { mutateAsync: addBook, isPending: isAdding }      = useAddCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
   const { mutateAsync: addToWishlist }                     = useAddToWishlist();
+
+  if (!ready) return null;
 
   const applyYear = (val: string) => {
     const y = parseInt(val);
@@ -335,93 +325,15 @@ export default function LibraryPage() {
     }
   });
 
+  const topbarActions = isLibrarian ? (
+    <button onClick={() => setAddModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:6, background:"#111827", color:"#fff", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+      <Plus size={13} /> Add Book
+    </button>
+  ) : null;
+
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:"#f0f2f5", fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-
-      {/* ── SIDEBAR ── */}
-      <aside style={{ width:200, flexShrink:0, background:"#fff", borderRight:"1px solid #e5e7eb", display:"flex", flexDirection:"column", position:"sticky", top:0, height:"100vh", overflowY:"auto" }}>
-        <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid #f3f4f6" }}>
-          <p style={{ fontSize:15, fontWeight:700, color:"#111827", lineHeight:1.3 }}>Digital Knowledge</p>
-          <p style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>Academic Portal</p>
-        </div>
-        <div style={{ padding:"10px 8px 6px", marginTop:8 }}>
-          <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", padding:"0 12px", marginBottom:6 }}>Navigation</p>
-        </div>
-        <nav style={{ flex:1, padding:"0 8px" }}>
-          {NAV.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link key={href} href={href} style={{ textDecoration:"none" }}>
-                <div style={{
-                  display:"flex", alignItems:"center", gap:10,
-                  padding:"9px 12px", borderRadius:6, marginBottom:2,
-                  fontSize:13, fontWeight: active ? 600 : 500,
-                  color: active ? "#111827" : "#6b7280",
-                  background: active ? "#f3f4f6" : "transparent",
-                  borderLeft: active ? "3px solid #111827" : "3px solid transparent",
-                }}>
-                  <Icon size={15} />{label}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-        {/* Access Tier filter */}
-        <div style={{ padding:"16px 20px", borderTop:"1px solid #f3f4f6" }}>
-          <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", marginBottom:10 }}>Access Tier</p>
-          {[
-            { value:"",           label:"Open Access" },
-            { value:"member",     label:"Institutional" },
-            { value:"restricted", label:"Restricted" },
-          ].map(opt => (
-            <label key={opt.value} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, cursor:"pointer", fontSize:13, color:"#374151" }}>
-              <input type="checkbox"
-                checked={params.availability === (opt.value || "all")}
-                onChange={() => setParams(p => ({ ...p, availability: (opt.value || "all") as "all"|"available"|"on_loan", page:1 }))}
-                style={{ accentColor:"#111827", width:14, height:14 }}
-              />
-              {opt.label}
-            </label>
-          ))}
-        </div>
-      </aside>
-
-      {/* ── MAIN ── */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
-
-        {/* TOP BAR */}
-        <header style={{ height:60, background:"#fff", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", padding:"0 28px", gap:24, flexShrink:0 }}>
-          <span style={{ fontSize:14, fontWeight:700, color:"#111827", whiteSpace:"nowrap" }}>Digital Knowledge Platform</span>
-          <nav style={{ display:"flex", alignItems:"center", gap:4 }}>
-            {[{label:"Dashboard",href:"/dashboard"},{label:"Search",href:"/library"},{label:"Library",href:"/library"}].map(n => (
-              <Link key={n.label} href={n.href} style={{
-                padding:"6px 14px", fontSize:13, fontWeight:500, textDecoration:"none",
-                color: n.href === "/library" ? "#111827" : "#6b7280",
-                borderBottom: n.href === "/library" ? "2px solid #111827" : "2px solid transparent",
-              }}>{n.label}</Link>
-            ))}
-          </nav>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginLeft:"auto" }}>
-            {isLibrarian && (
-              <button onClick={() => setAddModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:6, background:"#111827", color:"#fff", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                <Plus size={13} /> Add Book
-              </button>
-            )}
-            <Link href="/notifications" style={{ position:"relative", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
-              <Bell size={17} color="#6b7280" />
-              {unreadCount > 0 && <span style={{ position:"absolute", top:6, right:6, width:7, height:7, borderRadius:"50%", background:"#ef4444" }} />}
-            </Link>
-            <Link href="/library/wishlist" title="My Wishlist" style={{ width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
-              <Heart size={17} color="#6b7280" />
-            </Link>
-            <div style={{ width:32, height:32, borderRadius:"50%", background:"#4b5563", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff" }}>
-              {user?.name?.[0]?.toUpperCase() ?? "U"}
-            </div>
-          </div>
-        </header>
-
-        {/* CONTENT */}
-        <main style={{ flex:1, padding:"28px 32px", overflowY:"auto" }}>
+    <AppLayout topbarActions={topbarActions}>
+      <div style={{ padding:"28px 32px" }}>
 
           {/* Search bar */}
           <form onSubmit={handleSearch} style={{ display:"flex", gap:0, marginBottom:20 }}>
@@ -530,7 +442,7 @@ export default function LibraryPage() {
                   key={item.catalog_id}
                   item={item}
                   isLibrarian={isLibrarian}
-                  isAuthenticated={isAuthenticated}
+                  isAuthenticated={ready}
                   onWishlist={async () => {
                     try {
                       await addToWishlist(item.catalog_id);
@@ -549,7 +461,6 @@ export default function LibraryPage() {
           {!isLoading && totalPages > 1 && (
             <Pager page={params.page} totalPages={totalPages} onChange={p => setParams(prev => ({ ...prev, page: p }))} />
           )}
-        </main>
       </div>
 
       {/* Add Book Modal */}
@@ -604,6 +515,6 @@ export default function LibraryPage() {
       <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete}
         title="Remove Book" description={`Remove "${deleteTitle}" from the catalog?`}
         confirmLabel="Remove" loading={isDeleting} variant="danger" />
-    </div>
+    </AppLayout>
   );
 }

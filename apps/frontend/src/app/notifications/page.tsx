@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Bell, CheckCheck } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/hooks/useNotifications";
-import { Button } from "@/components/ui/Button";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { timeAgo } from "@/lib/utils";
 
 export default function NotificationsPage() {
@@ -13,7 +14,7 @@ export default function NotificationsPage() {
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
+    if (!isAuthenticated) router.push("/login?redirect=/notifications");
   }, [isAuthenticated, router]);
 
   const { data, isLoading } = useNotifications(1, false, isAuthenticated);
@@ -21,99 +22,96 @@ export default function NotificationsPage() {
   const { mutate: markAllRead, isPending } = useMarkAllRead();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="page-title">Notifications</h1>
-          {data?.unread_count > 0 && (
-            <p className="page-subtitle">{data.unread_count} unread</p>
+    <AppLayout>
+      <div style={{ padding: "28px 32px", maxWidth: 760 }}>
+        {/* Heading */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, lineHeight: 1.2 }}>
+              Notifications
+            </h1>
+            {(data?.unread_count ?? 0) > 0 && (
+              <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+                {data.unread_count} unread
+              </p>
+            )}
+          </div>
+          {(data?.unread_count ?? 0) > 0 && (
+            <button
+              onClick={() => markAllRead()}
+              disabled={isPending}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "9px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                border: "1px solid #e5e7eb", background: "#fff", color: "#374151",
+                cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1,
+              }}
+            >
+              <CheckCheck size={14} /> Mark all read
+            </button>
           )}
         </div>
-        {data?.unread_count > 0 && (
-          <Button variant="outline" size="sm" onClick={() => markAllRead()} loading={isPending}>
-            <CheckCheck size={16} className="mr-1.5" /> Mark all read
-          </Button>
+
+        {/* Loading */}
+        {isLoading && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 20px" }}>
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
         )}
-      </div>
 
-      {/* Loading skeletons */}
-      {isLoading && (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-md border p-4"
-              style={{
-                background: "var(--color-canvas-default)",
-                borderColor: "var(--color-border-default)",
-              }}
-            >
-              <div className="skeleton h-4 w-3/4 mb-2" />
-              <div className="skeleton h-3 w-1/2" />
+        {/* Empty */}
+        {!isLoading && data?.notifications?.length === 0 && (
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "60px 32px", textAlign: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <Bell size={24} color="#9ca3af" />
             </div>
-          ))}
-        </div>
-      )}
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>All caught up</h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No notifications yet.</p>
+          </div>
+        )}
 
-      {/* Empty state */}
-      {!isLoading && data?.notifications?.length === 0 && (
-        <div className="empty-state">
-          <Bell className="empty-state-icon" size={48} />
-          <p className="empty-state-title">No notifications yet</p>
-          <p className="empty-state-desc">You&apos;ll see updates about your loans, requests, and activity here.</p>
-        </div>
-      )}
-
-      {/* Notification list */}
-      {!isLoading && (
-        <div className="space-y-2">
-          {data?.notifications?.map((notif: {
-            notification_id: string;
-            title: string;
-            message: string;
-            read: boolean;
-            created_at: string;
-            action_url?: string;
-          }) => (
-            <div
-              key={notif.notification_id}
-              onClick={() => {
-                if (!notif.read) markRead(notif.notification_id);
-                if (notif.action_url) router.push(notif.action_url);
-              }}
-              className="rounded-md border p-4 cursor-pointer transition-colors duration-100"
-              style={{
-                background: !notif.read
-                  ? "var(--color-accent-subtle)"
-                  : "var(--color-canvas-default)",
-                borderColor: !notif.read
-                  ? "var(--color-accent-emphasis)"
-                  : "var(--color-border-default)",
-              }}
-            >
-              <div className="flex items-start gap-3">
-                {!notif.read && (
-                  <div
-                    className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                    style={{ background: "var(--color-accent-emphasis)" }}
-                  />
-                )}
-                <div className={!notif.read ? "" : "ml-5"}>
-                  <p className="text-sm font-medium" style={{ color: "var(--color-fg-default)" }}>
-                    {notif.title}
-                  </p>
-                  <p className="text-sm mt-0.5" style={{ color: "var(--color-fg-muted)" }}>
-                    {notif.message}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--color-fg-subtle)" }}>
-                    {timeAgo(notif.created_at)}
-                  </p>
+        {/* List */}
+        {!isLoading && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {data?.notifications?.map((notif: {
+              notification_id: string; title: string; message: string;
+              read: boolean; created_at: string; action_url?: string;
+            }) => (
+              <div
+                key={notif.notification_id}
+                onClick={() => {
+                  if (!notif.read) markRead(notif.notification_id);
+                  if (notif.action_url) router.push(notif.action_url);
+                }}
+                style={{
+                  background: notif.read ? "#fff" : "#eff6ff",
+                  border: `1px solid ${notif.read ? "#e5e7eb" : "#bfdbfe"}`,
+                  borderRadius: 8, padding: "16px 20px",
+                  cursor: "pointer", transition: "background 0.1s",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = notif.read ? "#f9fafb" : "#dbeafe")}
+                onMouseLeave={e => (e.currentTarget.style.background = notif.read ? "#fff" : "#eff6ff")}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  {!notif.read && (
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563eb", flexShrink: 0, marginTop: 5 }} />
+                  )}
+                  <div style={{ flex: 1, marginLeft: notif.read ? 20 : 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>{notif.title}</p>
+                    <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 6px" }}>{notif.message}</p>
+                    <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>{timeAgo(notif.created_at)}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 }

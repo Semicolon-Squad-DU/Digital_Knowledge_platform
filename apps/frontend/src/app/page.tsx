@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
-import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard } from "lucide-react";
+import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap } from "lucide-react";
 
 const PARTNERS = [
   { id: 1, name: "CSE" }, { id: 2, name: "EEE" }, { id: 3, name: "IIT" },
@@ -149,34 +149,85 @@ export default function HomePage() {
             {isAuthenticated ? (
               /* ── SIGNED-IN HERO ── */
               <>
-                <p style={{ fontSize: "13px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
-                  Welcome back
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>
+                  WELCOME BACK
                 </p>
-                <h1 style={{ fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 700, color: "#1a1a2e", lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 16 }}>
+                <h1 style={{ fontSize: "clamp(2.5rem,5vw,3.5rem)", fontWeight: 800, color: "#111827", lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 16 }}>
                   {user?.name?.split(" ")[0]}, your research workspace is ready.
                 </h1>
-                <p style={{ fontSize: "15px", color: "#6c757d", lineHeight: 1.7, maxWidth: "520px", margin: "0 auto 40px" }}>
+                <p style={{ fontSize: "16px", color: "#6b7280", lineHeight: 1.7, maxWidth: "600px", margin: "0 auto 48px" }}>
                   {user?.department ? `${user.department} · ` : ""}
                   <span style={{ textTransform: "capitalize" }}>{user?.role?.replace("_", " ")}</span>
                   {" "}— pick up where you left off.
                 </p>
                 {/* Quick access grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12, maxWidth: 520, margin: "0 auto 32px", textAlign: "left" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 20, maxWidth: 700, margin: "0 auto 40px", textAlign: "left" }}>
                   {QUICK_LINKS.map(ql => (
-                    <Link key={ql.href} href={ql.href} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: ql.bg, textDecoration: "none", border: `1px solid ${ql.bg}` }}
-                      onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                    <Link key={ql.href} href={ql.href} style={{ 
+                      display: "flex", 
+                      flexDirection: "column",
+                      gap: 16, 
+                      padding: "32px 28px", 
+                      borderRadius: 12, 
+                      background: ql.bg, 
+                      textDecoration: "none", 
+                      border: `2px solid transparent`,
+                      transition: "all 0.2s"
+                    }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = ql.color;
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.08)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = "transparent";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
                     >
-                      <ql.icon size={18} style={{ color: ql.color, flexShrink: 0 }} />
+                      <div style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 10,
+                        background: ql.color,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}>
+                        <ql.icon size={24} style={{ color: "#fff" }} />
+                      </div>
                       <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: ql.color, margin: 0 }}>{ql.label}</p>
-                        <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>{ql.desc}</p>
+                        <p style={{ fontSize: 18, fontWeight: 700, color: ql.color, margin: "0 0 6px 0" }}>{ql.label}</p>
+                        <p style={{ fontSize: 14, color: ql.color, margin: 0, opacity: 0.8 }}>{ql.desc}</p>
                       </div>
                     </Link>
                   ))}
                 </div>
-                <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 28px", fontSize: "14px", fontWeight: 600, color: "#fff", background: "#1a1a2e", borderRadius: "8px", textDecoration: "none" }}>
-                  Go to Dashboard →
+                <Link href="/dashboard" style={{ 
+                  display: "inline-flex", 
+                  alignItems: "center", 
+                  gap: 8, 
+                  padding: "14px 32px", 
+                  fontSize: "15px", 
+                  fontWeight: 600, 
+                  color: "#fff", 
+                  background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", 
+                  borderRadius: "10px", 
+                  textDecoration: "none",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  transition: "all 0.2s"
+                }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                  }}
+                >
+                  Go to Dashboard
+                  <ArrowRight size={18} />
                 </Link>
               </>
             ) : (
