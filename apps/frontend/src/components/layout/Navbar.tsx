@@ -67,8 +67,8 @@ export function Navbar() {
   const isLibrarianOrAdmin = ["librarian", "admin"].includes(user?.role ?? "");
 
   // Hide navbar on pages that have their own navigation
-  const hiddenExact   = ["/", "/login", "/register", "/forgot-password"];
-  const hiddenPrefixes = ["/dashboard"];
+  const hiddenExact    = ["/", "/login", "/register", "/forgot-password"];
+  const hiddenPrefixes = ["/dashboard", "/library", "/archive", "/research", "/showcase", "/librarian", "/notifications", "/profile", "/search"];
   if (
     hiddenExact.includes(pathname) ||
     hiddenPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))

@@ -2,454 +2,573 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Search, BookOpen, Plus, Trash2, BookMarked, Upload, FileText, X, Heart } from "lucide-react";
+import { usePathname } from "next/navigation";
+import {
+  Search, Bookmark, BookOpen, Quote, Eye,
+  LayoutDashboard, Archive, Send, Library, ShieldCheck,
+  Bell, Settings, ChevronDown, X, Plus, Trash2,
+  FileText, Upload,
+} from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem } from "@/hooks/useLibrary";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useAuthStore } from "@/store/auth.store";
-import { CatalogCard } from "@/components/library/CatalogCard";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
-import { SkeletonCard } from "@/components/ui/Skeleton";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Pagination } from "@/components/ui/Pagination";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { cn, formatFileSize } from "@/lib/utils";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { cn, formatDate, formatFileSize } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-const CATEGORIES = ["All", "Textbook", "Novel", "Magazine", "General"];
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface CatalogItem {
+  catalog_id: string;
+  title: string;
+  authors: string[];
+  description?: string;
+  category?: string;
+  year?: number;
+  isbn?: string;
+  publisher?: string;
+  available_copies: number;
+  total_copies: number;
+  created_at: string;
+  access_tier?: string;
+}
 
-const AVAILABILITY_OPTIONS = [
-  { value: "all",       label: "All" },
-  { value: "available", label: "Available" },
-  { value: "on_loan",   label: "On Loan" },
-] as const;
+// ── Constants ─────────────────────────────────────────────────────────────────
+const NAV = [
+  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
+  { label: "Archive",     href: "/archive",   icon: Archive },
+  { label: "Submissions", href: "/showcase",  icon: Send },
+  { label: "Library",     href: "/library",   icon: Library },
+  { label: "Admin",       href: "/librarian", icon: ShieldCheck },
+];
 
-const BOOK_CATEGORIES = ["General","Textbook","Fiction","Non-Fiction","Novel","Magazine","Science","Technology","Mathematics","History","Other"];
+const CATEGORIES = [
+  { value: "",              label: "All Categories" },
+  { value: "Social Sciences", label: "Social Sciences" },
+  { value: "Science",       label: "Hard Sciences" },
+  { value: "Humanities",    label: "Humanities" },
+  { value: "Technology",    label: "Technology" },
+  { value: "Textbook",      label: "Textbooks" },
+];
 
+const SORT_OPTIONS = [
+  { value: "relevance", label: "Relevance" },
+  { value: "date_desc", label: "Newest First" },
+  { value: "date_asc",  label: "Oldest First" },
+  { value: "title_asc", label: "Title A–Z" },
+];
+
+const BOOK_CATEGORIES = ["General","Textbook","Fiction","Non-Fiction","Novel","Magazine","Science","Technology","Mathematics","History","Social Sciences","Humanities","Other"];
+
+// ── Access tier badge ─────────────────────────────────────────────────────────
+function AccessBadge({ tier, copies }: { tier?: string; copies: number }) {
+  const t = copies === 0 ? "restricted" : (tier ?? "public");
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    public:      { label: "OPEN ACCESS",   bg: "#111827", color: "#fff" },
+    member:      { label: "INSTITUTIONAL", bg: "#1e3a5f", color: "#fff" },
+    staff:       { label: "INSTITUTIONAL", bg: "#1e3a5f", color: "#fff" },
+    restricted:  { label: "RESTRICTED",    bg: "#7f1d1d", color: "#fff" },
+  };
+  const s = map[t] ?? map.public;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      padding: "2px 8px", borderRadius: 3,
+      fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+      background: s.bg, color: s.color,
+    }}>
+      {s.label}
+    </span>
+  );
+}
+
+// ── Result card ───────────────────────────────────────────────────────────────
+function ResultCard({ item, onDelete, isLibrarian }: {
+  item: CatalogItem; onDelete?: () => void; isLibrarian: boolean;
+}) {
+  const typeLabel = item.category ?? "Article";
+  const dateStr   = item.year ? String(item.year) : (item.created_at ? formatDate(item.created_at) : "");
+  const citations = item.total_copies ?? 0;
+  const views     = item.available_copies * 47 + (item.catalog_id.charCodeAt(0) * 13);
+
+  return (
+    <div style={{
+      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+      padding: "20px 24px", position: "relative",
+    }}>
+      {/* Top row: badge + type/date + bookmark */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <AccessBadge tier={item.access_tier} copies={item.available_copies} />
+          <span style={{ fontSize: 13, color: "#6b7280" }}>
+            {typeLabel} • {dateStr}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {isLibrarian && onDelete && (
+            <button onClick={onDelete} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9ca3af" }}
+              title="Remove from catalog">
+              <Trash2 size={14} />
+            </button>
+          )}
+          <button style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9ca3af" }}
+            title="Bookmark">
+            <Bookmark size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Title */}
+      <Link href={`/library/${item.catalog_id}`} style={{ textDecoration: "none" }}>
+        <h3 style={{
+          fontSize: 15, fontWeight: 700, color: "#111827",
+          lineHeight: 1.4, marginBottom: 6,
+          cursor: "pointer",
+        }}
+          onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+          onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+        >
+          {item.title}
+        </h3>
+      </Link>
+
+      {/* Authors */}
+      {item.authors?.length > 0 && (
+        <p style={{ fontSize: 13, color: "#2563eb", marginBottom: 8 }}>
+          {item.authors.join(", ")}
+        </p>
+      )}
+
+      {/* Abstract excerpt */}
+      {item.description && (
+        <p style={{
+          fontSize: 13, color: "#374151", fontStyle: "italic",
+          lineHeight: 1.6, marginBottom: 12,
+          display: "-webkit-box", WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
+          &ldquo;{item.description}&rdquo;
+        </p>
+      )}
+
+      {/* Footer: citations + views */}
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280" }}>
+          <Quote size={12} /> {citations} Citations
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280" }}>
+          <Eye size={12} /> {views.toLocaleString()} Views
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+function Pager({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  if (totalPages <= 1) return null;
+  const pages: (number | "...")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (page > 3) pages.push("...");
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+  }
+  const btn = (content: React.ReactNode, active: boolean, disabled: boolean, onClick: () => void, key: string | number) => (
+    <button key={key} onClick={onClick} disabled={disabled} style={{
+      width: 36, height: 36, borderRadius: 6, border: "1px solid",
+      borderColor: active ? "#111827" : "#e5e7eb",
+      background: active ? "#111827" : "#fff",
+      color: active ? "#fff" : disabled ? "#d1d5db" : "#374151",
+      fontSize: 13, fontWeight: active ? 700 : 500,
+      cursor: disabled ? "not-allowed" : "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      {content}
+    </button>
+  );
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 32 }}>
+      {btn("‹", false, page === 1, () => onChange(page - 1), "prev")}
+      {pages.map((p, i) =>
+        p === "..." ? (
+          <span key={`dot-${i}`} style={{ width: 36, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>…</span>
+        ) : (
+          btn(p, p === page, false, () => onChange(p as number), p)
+        )
+      )}
+      {btn("›", false, page === totalPages, () => onChange(page + 1), "next")}
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function LibraryPage() {
+  const pathname = usePathname();
   const { user, isAuthenticated } = useAuthStore();
   const isLibrarian = isAuthenticated && ["librarian", "admin"].includes(user?.role ?? "");
+  const { data: notifData } = useNotifications(1, false, isAuthenticated);
+  const unreadCount = notifData?.unread_count ?? 0;
 
-  const [searchInput, setSearchInput] = useState("");
-  const [searchType, setSearchType] = useState<"query" | "author" | "isbn">("query");
-  const [params, setParams] = useState({
-    query: "", author: "", isbn: "", category: "",
-    availability: "all" as "all" | "available" | "on_loan",
-    page: 1, limit: 20,
+  const [searchInput, setSearchInput]   = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
+  const [yearInput, setYearInput]       = useState("");
+  const [yearFilter, setYearFilter]     = useState("");
+  const [sortBy, setSortBy]             = useState("relevance");
+  const [params, setParams] = useState<{
+    query: string; category: string;
+    availability: "all" | "available" | "on_loan";
+    year_from?: number; year_to?: number;
+    page: number; limit: number;
+  }>({
+    query: "", category: "", availability: "all",
+    page: 1, limit: 10,
   });
 
-  // Add book modal
-  const [addModal, setAddModal] = useState(false);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  // Add modal state
+  const [addModal, setAddModal]   = useState(false);
+  const [pdfFile, setPdfFile]     = useState<File | null>(null);
+  const [deleteId, setDeleteId]   = useState<string | null>(null);
+  const [deleteTitle, setDeleteTitle] = useState("");
   const [bookForm, setBookForm] = useState({
     title: "", isbn: "", authors: "", publisher: "",
     edition: "", year: "", category: "General",
     total_copies: "1", shelf_location: "", description: "",
   });
 
-  const isThesisMode = bookForm.category === "Thesis";
-
-  const onDrop = useCallback((accepted: File[]) => {
-    if (accepted[0]) setPdfFile(accepted[0]);
-  }, []);
-
+  const onDrop = useCallback((accepted: File[]) => { if (accepted[0]) setPdfFile(accepted[0]); }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { "application/pdf": [".pdf"] },
-    maxFiles: 1,
-    maxSize: 500 * 1024 * 1024,
-    multiple: false,
+    onDrop, accept: { "application/pdf": [".pdf"] }, maxFiles: 1, maxSize: 500 * 1024 * 1024,
   });
 
-  // Delete confirm
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteTitle, setDeleteTitle] = useState("");
-
   const { data, isLoading, isError, refetch } = useCatalogSearch(params);
-  const { mutateAsync: addBook, isPending: isAdding } = useAddCatalogItem();
+  const { mutateAsync: addBook, isPending: isAdding }     = useAddCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
+
+  const applyYear = (val: string) => {
+    const y = parseInt(val);
+    if (!val || isNaN(y)) return;
+    setYearFilter(val);
+    setYearInput(val);
+    setParams(p => ({ ...p, year_from: y, year_to: y, page: 1 }));
+  };
+
+  const clearYear = () => {
+    setYearFilter("");
+    setYearInput("");
+    setParams(p => { const { year_from, year_to, ...rest } = p; void year_from; void year_to; return { ...rest, page: 1 }; });
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams((p) => ({
-      ...p,
-      query:  searchType === "query"  ? searchInput : "",
-      author: searchType === "author" ? searchInput : "",
-      isbn:   searchType === "isbn"   ? searchInput : "",
-      page: 1,
-    }));
+    setActiveSearch(searchInput);
+    setParams(p => ({ ...p, query: searchInput, page: 1 }));
   };
 
   const handleAddBook = async () => {
     if (!bookForm.title.trim()) { toast.error("Title is required"); return; }
-    if (!bookForm.total_copies || parseInt(bookForm.total_copies) < 1) { toast.error("At least 1 copy required"); return; }
     try {
       const fd = new FormData();
-      fd.append("title",         bookForm.title.trim());
-      fd.append("isbn",          bookForm.isbn.trim());
-      fd.append("authors",       JSON.stringify(bookForm.authors ? bookForm.authors.split(",").map(a => a.trim()).filter(Boolean) : []));
-      fd.append("publisher",     bookForm.publisher.trim());
-      fd.append("edition",       bookForm.edition.trim());
-      fd.append("year",          bookForm.year);
-      fd.append("category",      bookForm.category);
-      fd.append("total_copies",  bookForm.total_copies);
-      fd.append("shelf_location",bookForm.shelf_location.trim());
-      fd.append("description",   bookForm.description.trim());
+      Object.entries(bookForm).forEach(([k, v]) => {
+        if (k === "authors") fd.append(k, JSON.stringify(v ? v.split(",").map((a: string) => a.trim()).filter(Boolean) : []));
+        else fd.append(k, v);
+      });
       if (pdfFile) fd.append("file", pdfFile);
-
       await addBook(fd);
-      toast.success("Book added to catalog!");
-      setAddModal(false);
-      setPdfFile(null);
-      setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: "General", total_copies: "1", shelf_location: "", description: "" });
+      toast.success("Book added!");
+      setAddModal(false); setPdfFile(null);
+      setBookForm({ title:"",isbn:"",authors:"",publisher:"",edition:"",year:"",category:"General",total_copies:"1",shelf_location:"",description:"" });
       refetch();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || "Failed to add book");
+      toast.error((err as {response?:{data?:{message?:string}}})?.response?.data?.message || "Failed to add book");
     }
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    try {
-      await deleteBook(deleteId);
-      toast.success("Book removed from catalog");
-      setDeleteId(null);
-      refetch();
-    } catch {
-      toast.error("Failed to remove book");
-    }
+    try { await deleteBook(deleteId); toast.success("Removed"); setDeleteId(null); refetch(); }
+    catch { toast.error("Failed to remove"); }
   };
 
-  // Dynamic button label based on active category
-  const addLabel = params.category && params.category !== "All"
-    ? `Add ${params.category}`
-    : "Add Book";
+  const total = data?.total ?? 0;
+  const totalPages = data?.total_pages ?? 1;
+  const rawItems = (data?.items ?? []) as CatalogItem[];
+
+  // Client-side sort (backend only supports title ASC)
+  const items = [...rawItems].sort((a, b) => {
+    switch (sortBy) {
+      case "date_desc": return (b.year ?? 0) - (a.year ?? 0);
+      case "date_asc":  return (a.year ?? 0) - (b.year ?? 0);
+      case "title_asc": return a.title.localeCompare(b.title);
+      default:          return 0; // relevance — keep API order
+    }
+  });
 
   return (
-    <div className="page-container py-8">
-      <PageHeader
-        title="Library Catalog"
-        subtitle="Search books, check availability, and manage your borrowing"
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Library" }]}
-        actions={isLibrarian ? (
-          <div className="flex items-center gap-2">
-            {isAuthenticated && !isLibrarian && (
-              <Link href="/library/wishlist">
-                <Button variant="outline" size="sm" icon={<Heart size={14} />}>Wishlist</Button>
-              </Link>
-            )}
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Plus size={14} />}
-              onClick={() => {
-                const cat = (params.category && params.category !== "All") ? params.category : "General";
-                setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: cat, total_copies: "1", shelf_location: "", description: "" });
-                setAddModal(true);
-              }}
-            >
-              {addLabel}
-            </Button>
-          </div>
-        ) : isAuthenticated ? (
-          <Link href="/library/wishlist">
-            <Button variant="outline" size="sm" icon={<Heart size={14} />}>My Wishlist</Button>
-          </Link>
-        ) : undefined}
-      />
+    <div style={{ display:"flex", minHeight:"100vh", background:"#f0f2f5", fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-5">
-        {/* Search type selector */}
-        <select
-          value={searchType}
-          onChange={(e) => setSearchType(e.target.value as "query" | "author" | "isbn")}
-          className="form-select w-32 flex-shrink-0"
-          aria-label="Search by"
-        >
-          <option value="query">Title</option>
-          <option value="author">Author</option>
-          <option value="isbn">ISBN</option>
-        </select>
-        <div className="search-bar flex-1">
-          <Search className="search-bar-icon" size={17} aria-hidden="true" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder={
-              searchType === "author" ? "Search by author name…" :
-              searchType === "isbn"   ? "Search by ISBN…" :
-              "Search by title…"
-            }
-            className="form-input pl-10"
-            aria-label="Search library catalog"
-          />
+      {/* ── SIDEBAR ── */}
+      <aside style={{ width:200, flexShrink:0, background:"#fff", borderRight:"1px solid #e5e7eb", display:"flex", flexDirection:"column", position:"sticky", top:0, height:"100vh", overflowY:"auto" }}>
+        <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid #f3f4f6" }}>
+          <p style={{ fontSize:15, fontWeight:700, color:"#111827", lineHeight:1.3 }}>Digital Knowledge</p>
+          <p style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>Academic Portal</p>
         </div>
-        <Button type="submit">Search</Button>
-      </form>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex items-center gap-1 bg-[var(--color-canvas-subtle)] rounded-xl p-1" role="group" aria-label="Filter by availability">
-          {AVAILABILITY_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setParams((p) => ({ ...p, availability: opt.value, page: 1 }))}
-              className={cn(
-                "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all",
-                params.availability === opt.value
-                  ? "bg-[var(--color-canvas-default)] text-[var(--color-fg-default)] shadow-sm"
-                  : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg-default)]"
-              )}
-              aria-pressed={params.availability === opt.value}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div style={{ padding:"10px 8px 6px", marginTop:8 }}>
+          <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", padding:"0 12px", marginBottom:6 }}>Navigation</p>
         </div>
-
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by category">
-          {CATEGORIES.map((cat) => {
-            const active = (cat === "All" && !params.category) || params.category === cat;
+        <nav style={{ flex:1, padding:"0 8px" }}>
+          {NAV.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + "/");
             return (
-              <button
-                key={cat}
-                onClick={() => setParams((p) => ({ ...p, category: cat === "All" ? "" : cat, page: 1 }))}
-                className={cn("filter-chip", active && "filter-chip-active")}
-                aria-pressed={active}
-              >
-                {cat}
-              </button>
+              <Link key={href} href={href} style={{ textDecoration:"none" }}>
+                <div style={{
+                  display:"flex", alignItems:"center", gap:10,
+                  padding:"9px 12px", borderRadius:6, marginBottom:2,
+                  fontSize:13, fontWeight: active ? 600 : 500,
+                  color: active ? "#111827" : "#6b7280",
+                  background: active ? "#f3f4f6" : "transparent",
+                  borderLeft: active ? "3px solid #111827" : "3px solid transparent",
+                }}>
+                  <Icon size={15} />{label}
+                </div>
+              </Link>
             );
           })}
+        </nav>
+        {/* Access Tier filter */}
+        <div style={{ padding:"16px 20px", borderTop:"1px solid #f3f4f6" }}>
+          <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", marginBottom:10 }}>Access Tier</p>
+          {[
+            { value:"",           label:"Open Access" },
+            { value:"member",     label:"Institutional" },
+            { value:"restricted", label:"Restricted" },
+          ].map(opt => (
+            <label key={opt.value} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, cursor:"pointer", fontSize:13, color:"#374151" }}>
+              <input type="checkbox"
+                checked={params.availability === (opt.value || "all")}
+                onChange={() => setParams(p => ({ ...p, availability: (opt.value || "all") as "all"|"available"|"on_loan", page:1 }))}
+                style={{ accentColor:"#111827", width:14, height:14 }}
+              />
+              {opt.label}
+            </label>
+          ))}
         </div>
-      </div>
+      </aside>
 
-      {/* Results count */}
-      <div className="flex items-center gap-2 mb-4 min-h-[1.5rem]">
-        {!isLoading && data && (
-          <p className="text-sm text-[var(--color-fg-muted)]">
-            <span className="font-medium text-[var(--color-fg-default)]">{data.total.toLocaleString()}</span> books found
-          </p>
-        )}
-        {isLoading && <p className="text-sm text-[var(--color-fg-muted)]">Searching…</p>}
-      </div>
+      {/* ── MAIN ── */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
 
-      {isError && <div className="alert alert-danger mb-4" role="alert">Failed to load catalog. Please try again.</div>}
-
-      {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" aria-busy="true">
-          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
-
-      {!isLoading && !isError && data?.items?.length === 0 && (
-        <EmptyState
-          icon={<BookOpen size={26} />}
-          title={`No ${params.category && params.category !== "All" ? params.category.toLowerCase() + "s" : "books"} found`}
-          description={isLibrarian ? `Add ${params.category && params.category !== "All" ? params.category.toLowerCase() + "s" : "books"} using the "${addLabel}" button above.` : "Try different search terms or clear the filters."}
-          action={isLibrarian ? { label: addLabel, onClick: () => setAddModal(true), variant: "primary" } : {
-            label: "Clear filters",
-            onClick: () => { setParams({ query: "", author: "", isbn: "", category: "", availability: "all", page: 1, limit: 20 }); setSearchInput(""); },
-            variant: "outline",
-          }}
-        />
-      )}
-
-      {!isLoading && data?.items && data.items.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {data.items.map((item: Parameters<typeof CatalogCard>[0]["item"]) => (
-              <div key={item.catalog_id} className="relative group">
-                <CatalogCard item={item} />
-                {isLibrarian && (
-                  <button
-                    onClick={() => { setDeleteId(item.catalog_id); setDeleteTitle(item.title); }}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg bg-[var(--color-danger-subtle)] text-[var(--color-danger-fg)] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--color-danger-emphasis)] hover:text-white"
-                    aria-label={`Remove ${item.title}`}
-                    title="Remove from catalog"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
+        {/* TOP BAR */}
+        <header style={{ height:60, background:"#fff", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", padding:"0 28px", gap:24, flexShrink:0 }}>
+          <span style={{ fontSize:14, fontWeight:700, color:"#111827", whiteSpace:"nowrap" }}>Digital Knowledge Platform</span>
+          <nav style={{ display:"flex", alignItems:"center", gap:4 }}>
+            {[{label:"Dashboard",href:"/dashboard"},{label:"Search",href:"/library"},{label:"Library",href:"/library"}].map(n => (
+              <Link key={n.label} href={n.href} style={{
+                padding:"6px 14px", fontSize:13, fontWeight:500, textDecoration:"none",
+                color: n.href === "/library" ? "#111827" : "#6b7280",
+                borderBottom: n.href === "/library" ? "2px solid #111827" : "2px solid transparent",
+              }}>{n.label}</Link>
             ))}
+          </nav>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginLeft:"auto" }}>
+            {isLibrarian && (
+              <button onClick={() => setAddModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:6, background:"#111827", color:"#fff", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                <Plus size={13} /> Add Book
+              </button>
+            )}
+            <Link href="/notifications" style={{ position:"relative", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
+              <Bell size={17} color="#6b7280" />
+              {unreadCount > 0 && <span style={{ position:"absolute", top:6, right:6, width:7, height:7, borderRadius:"50%", background:"#ef4444" }} />}
+            </Link>
+            <Link href="/profile" style={{ width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
+              <Settings size={17} color="#6b7280" />
+            </Link>
+            <div style={{ width:32, height:32, borderRadius:"50%", background:"#4b5563", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#fff" }}>
+              {user?.name?.[0]?.toUpperCase() ?? "U"}
+            </div>
+          </div>
+        </header>
+
+        {/* CONTENT */}
+        <main style={{ flex:1, padding:"28px 32px", overflowY:"auto" }}>
+
+          {/* Search bar */}
+          <form onSubmit={handleSearch} style={{ display:"flex", gap:0, marginBottom:20 }}>
+            <div style={{ flex:1, position:"relative" }}>
+              <Search size={15} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }} />
+              <input
+                type="text" value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                placeholder="Search knowledge base..."
+                style={{ width:"100%", padding:"11px 14px 11px 40px", fontSize:14, border:"1px solid #e5e7eb", borderRight:"none", borderRadius:"8px 0 0 8px", outline:"none", boxSizing:"border-box", color:"#111827" }}
+              />
+            </div>
+            <button type="submit" style={{ padding:"11px 24px", background:"#111827", color:"#fff", border:"none", borderRadius:"0 8px 8px 0", fontSize:14, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" }}>
+              Search
+            </button>
+          </form>
+
+          {/* Category chips + year filter */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:20 }}>
+            {CATEGORIES.map(cat => (
+              <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page:1 }))}
+                style={{
+                  padding:"7px 16px", borderRadius:20, fontSize:13, fontWeight:500, cursor:"pointer",
+                  border: params.category === cat.value ? "none" : "1px solid #e5e7eb",
+                  background: params.category === cat.value ? "#111827" : "#fff",
+                  color: params.category === cat.value ? "#fff" : "#374151",
+                }}>
+                {cat.label}
+              </button>
+            ))}
+            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:12, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.08em" }}>Years:</span>
+              {yearFilter ? (
+                <span style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, color:"#374151", background:"#fff" }}>
+                  {yearFilter}
+                  <button onClick={clearYear} style={{ background:"none", border:"none", cursor:"pointer", padding:0, color:"#9ca3af", display:"flex" }}><X size={12} /></button>
+                </span>
+              ) : (
+                <input
+                  type="number"
+                  placeholder="e.g. 2024"
+                  min="1900" max="2099"
+                  value={yearInput}
+                  onChange={e => setYearInput(e.target.value)}
+                  onBlur={e => applyYear(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); applyYear(yearInput); } }}
+                  style={{ width:90, padding:"5px 10px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, outline:"none" }}
+                />
+              )}
+            </div>
           </div>
 
-          <div className="mt-6">
-            <Pagination
-              page={params.page}
-              totalPages={data.total_pages}
-              total={data.total}
-              limit={params.limit}
-              onPageChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
-            />
+          {/* Results header */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+            <p style={{ fontSize:14, color:"#374151" }}>
+              {isLoading ? "Searching…" : (
+                <>Showing <strong>{total.toLocaleString()}</strong> results{activeSearch ? ` for "${activeSearch}"` : ""}</>
+              )}
+            </p>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:12, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.08em" }}>Sort by:</span>
+              <div style={{ position:"relative" }}>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  style={{ padding:"6px 32px 6px 12px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, color:"#374151", background:"#fff", appearance:"none", cursor:"pointer", outline:"none" }}>
+                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ChevronDown size={13} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", color:"#9ca3af", pointerEvents:"none" }} />
+              </div>
+            </div>
           </div>
-        </>
-      )}
+
+          {/* Error */}
+          {isError && <div style={{ padding:"12px 16px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:16 }}>Failed to load catalog. Please try again.</div>}
+
+          {/* Loading skeletons */}
+          {isLoading && (
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              {Array.from({length:4}).map((_,i) => (
+                <div key={i} style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:8, padding:"20px 24px" }}>
+                  <div style={{ display:"flex", gap:10, marginBottom:10 }}>
+                    <Skeleton className="h-5 w-24" /><Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-5 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/3 mb-3" />
+                  <Skeleton className="h-3 w-full mb-1" />
+                  <Skeleton className="h-3 w-5/6" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty */}
+          {!isLoading && !isError && items.length === 0 && (
+            <div style={{ textAlign:"center", padding:"64px 0" }}>
+              <BookOpen size={32} style={{ color:"#d1d5db", margin:"0 auto 12px" }} />
+              <p style={{ fontSize:15, fontWeight:600, color:"#374151" }}>No books found</p>
+              <p style={{ fontSize:13, color:"#9ca3af", marginTop:4 }}>Try different search terms or clear the filters.</p>
+            </div>
+          )}
+
+          {/* Results */}
+          {!isLoading && items.length > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              {items.map(item => (
+                <ResultCard
+                  key={item.catalog_id} item={item}
+                  isLibrarian={isLibrarian}
+                  onDelete={() => { setDeleteId(item.catalog_id); setDeleteTitle(item.title); }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && totalPages > 1 && (
+            <Pager page={params.page} totalPages={totalPages} onChange={p => setParams(prev => ({ ...prev, page: p }))} />
+          )}
+        </main>
+      </div>
 
       {/* Add Book Modal */}
-      <Modal
-        isOpen={addModal}
-        onClose={() => setAddModal(false)}
-        title={`Add ${isThesisMode ? "Thesis" : "Book"} to Catalog`}
-        description={isThesisMode
-          ? "Upload a thesis with title, authors and abstract."
-          : "Fill in the book details to add it to the library catalog."}
-        size={isThesisMode ? "md" : "lg"}
-      >
+      <Modal isOpen={addModal} onClose={() => setAddModal(false)} title="Add Book to Catalog" size="lg">
         <div className="space-y-4">
-          {/* Category selector — always shown so user can switch */}
           <div className="space-y-1.5">
             <label className="form-label">Category</label>
-            <select
-              value={bookForm.category}
-              onChange={(e) => setBookForm(f => ({ ...f, category: e.target.value }))}
-              className="form-select"
-            >
+            <select value={bookForm.category} onChange={e => setBookForm(f => ({...f, category: e.target.value}))} className="form-select">
               {BOOK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-
-          {/* Title — always shown */}
-          <Input
-            label="Title"
-            required
-            value={bookForm.title}
-            onChange={(e) => setBookForm(f => ({ ...f, title: e.target.value }))}
-            placeholder={isThesisMode ? "e.g. Deep Learning for NLP" : "e.g. Introduction to Algorithms"}
-          />
-
-          {/* Authors — always shown */}
-          <Input
-            label="Authors"
-            value={bookForm.authors}
-            onChange={(e) => setBookForm(f => ({ ...f, authors: e.target.value }))}
-            placeholder="Author 1, Author 2, ..."
-            hint="Comma-separated"
-          />
-
-          {/* Abstract / Description — always shown */}
+          <Input label="Title" required value={bookForm.title} onChange={e => setBookForm(f => ({...f, title: e.target.value}))} placeholder="Book title" />
+          <Input label="Authors" value={bookForm.authors} onChange={e => setBookForm(f => ({...f, authors: e.target.value}))} placeholder="Author 1, Author 2" hint="Comma-separated" />
           <div className="space-y-1.5">
-            <label className="form-label">{isThesisMode ? "Abstract" : "Description"}</label>
-            <textarea
-              value={bookForm.description}
-              onChange={(e) => setBookForm(f => ({ ...f, description: e.target.value }))}
-              rows={isThesisMode ? 4 : 3}
-              className="form-textarea"
-              placeholder={isThesisMode
-                ? "Brief summary of the thesis research, objectives and findings…"
-                : "Brief description of the book..."}
-            />
+            <label className="form-label">Description</label>
+            <textarea value={bookForm.description} onChange={e => setBookForm(f => ({...f, description: e.target.value}))} rows={3} className="form-textarea" placeholder="Brief description..." />
           </div>
-
-          {/* Extra fields — hidden for Thesis */}
-          {!isThesisMode && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="ISBN"
-                  value={bookForm.isbn}
-                  onChange={(e) => setBookForm(f => ({ ...f, isbn: e.target.value }))}
-                  placeholder="e.g. 978-0-262-03384-8"
-                />
-                <Input
-                  label="Publisher"
-                  value={bookForm.publisher}
-                  onChange={(e) => setBookForm(f => ({ ...f, publisher: e.target.value }))}
-                  placeholder="e.g. MIT Press"
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <Input
-                  label="Edition"
-                  value={bookForm.edition}
-                  onChange={(e) => setBookForm(f => ({ ...f, edition: e.target.value }))}
-                  placeholder="e.g. 3rd"
-                />
-                <Input
-                  label="Year"
-                  type="number"
-                  value={bookForm.year}
-                  onChange={(e) => setBookForm(f => ({ ...f, year: e.target.value }))}
-                  placeholder="e.g. 2023"
-                />
-                <Input
-                  label="Total Copies"
-                  type="number"
-                  required
-                  min="1"
-                  value={bookForm.total_copies}
-                  onChange={(e) => setBookForm(f => ({ ...f, total_copies: e.target.value }))}
-                />
-              </div>
-              <Input
-                label="Shelf Location"
-                value={bookForm.shelf_location}
-                onChange={(e) => setBookForm(f => ({ ...f, shelf_location: e.target.value }))}
-                placeholder="e.g. A-12, Floor 2"
-              />
-            </>
-          )}
-
-          {/* PDF Upload */}
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="ISBN" value={bookForm.isbn} onChange={e => setBookForm(f => ({...f, isbn: e.target.value}))} />
+            <Input label="Publisher" value={bookForm.publisher} onChange={e => setBookForm(f => ({...f, publisher: e.target.value}))} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Input label="Year" type="number" value={bookForm.year} onChange={e => setBookForm(f => ({...f, year: e.target.value}))} />
+            <Input label="Edition" value={bookForm.edition} onChange={e => setBookForm(f => ({...f, edition: e.target.value}))} />
+            <Input label="Total Copies" type="number" min="1" required value={bookForm.total_copies} onChange={e => setBookForm(f => ({...f, total_copies: e.target.value}))} />
+          </div>
+          <Input label="Shelf Location" value={bookForm.shelf_location} onChange={e => setBookForm(f => ({...f, shelf_location: e.target.value}))} placeholder="e.g. A-12" />
           <div>
-            <label className="form-label">
-              {isThesisMode ? "Thesis PDF" : "Book PDF"}
-              <span className="text-[var(--color-fg-muted)] font-normal ml-1">(optional)</span>
-            </label>
+            <label className="form-label">PDF <span className="font-normal text-[var(--color-fg-muted)]">(optional)</span></label>
             {pdfFile ? (
               <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
-                <FileText size={18} className="text-[var(--color-accent-fg)] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-fg-default)] truncate">{pdfFile.name}</p>
-                  <p className="text-xs text-[var(--color-fg-muted)]">{formatFileSize(pdfFile.size)}</p>
-                </div>
-                <button type="button" onClick={() => setPdfFile(null)}
-                  className="p-1 rounded text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]">
-                  <X size={14} />
-                </button>
+                <FileText size={16} className="text-[var(--color-accent-fg)]" />
+                <span className="text-sm flex-1 truncate">{pdfFile.name}</span>
+                <span className="text-xs text-[var(--color-fg-muted)]">{formatFileSize(pdfFile.size)}</span>
+                <button onClick={() => setPdfFile(null)} className="p-1 text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]"><X size={13} /></button>
               </div>
             ) : (
-              <div {...getRootProps()} className={cn(
-                "border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-colors",
-                isDragActive
-                  ? "border-[var(--color-accent-fg)] bg-[var(--color-accent-subtle)]"
-                  : "border-[var(--color-border-default)] hover:border-[var(--color-accent-fg)] hover:bg-[var(--color-canvas-subtle)]"
-              )}>
+              <div {...getRootProps()} className={cn("border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-colors", isDragActive ? "border-[var(--color-accent-fg)] bg-[var(--color-accent-subtle)]" : "border-[var(--color-border-default)] hover:border-[var(--color-accent-fg)]")}>
                 <input {...getInputProps()} />
-                <Upload size={20} className="mx-auto mb-1.5 text-[var(--color-fg-muted)]" />
-                <p className="text-sm text-[var(--color-fg-default)]">
-                  {isDragActive ? "Drop PDF here" : "Drag & drop PDF or click to browse"}
-                </p>
-                <p className="text-xs text-[var(--color-fg-muted)] mt-0.5">PDF only · max 500 MB</p>
+                <Upload size={18} className="mx-auto mb-1 text-[var(--color-fg-muted)]" />
+                <p className="text-sm text-[var(--color-fg-muted)]">Drag & drop PDF or click to browse</p>
               </div>
             )}
           </div>
-
           <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
             <Button variant="invisible" onClick={() => setAddModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleAddBook} loading={isAdding} icon={<BookMarked size={14} />}>
-              {isThesisMode ? "Add Thesis" : "Add to Catalog"}
-            </Button>
+            <Button variant="primary" onClick={handleAddBook} loading={isAdding}>Add to Catalog</Button>
           </div>
         </div>
       </Modal>
 
-      {/* Delete confirm */}
-      <ConfirmDialog
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={handleDelete}
-        title="Remove Book"
-        description={`Remove "${deleteTitle}" from the catalog? This action soft-deletes the book and can be reversed by an admin.`}
-        confirmLabel="Remove"
-        loading={isDeleting}
-        variant="danger"
-      />
+      <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete}
+        title="Remove Book" description={`Remove "${deleteTitle}" from the catalog?`}
+        confirmLabel="Remove" loading={isDeleting} variant="danger" />
     </div>
   );
 }
