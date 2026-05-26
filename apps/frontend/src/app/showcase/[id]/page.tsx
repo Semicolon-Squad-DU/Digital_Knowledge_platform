@@ -17,10 +17,11 @@ function DownloadReportButton({ reportKey }: { reportKey: string }) {
       const { data } = await api.get("/archive/download-url", {
         params: { key: reportKey },
       });
-      window.open(data.data.url, "_blank");
+      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
+      window.open(downloadUrl, "_blank");
     } catch {
       // Fallback: try direct MinIO URL
-      const minioUrl = `http://localhost:9000/dkp-files/${reportKey}`;
+      const minioUrl = `http://127.0.0.1:9000/dkp-files/${reportKey}`;
       window.open(minioUrl, "_blank");
       toast("Opening report via direct link");
     } finally {

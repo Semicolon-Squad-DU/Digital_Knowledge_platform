@@ -548,29 +548,30 @@ router.post(
     );
 
     // Auto-archive: Create archive item from catalog
-    try {
-      const archiveTitle = `${title}${edition ? ` (Edition ${edition})` : ""}`;
-      const archiveAuthors = Array.isArray(authors) ? authors : [];
-      const archiveFile = file_url || null;
-      const archiveCategory = category || "General";
-      
-      await query(
-        `INSERT INTO archive_items
-           (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-        [
-          archiveTitle, description || `From Library Catalog: ${title}`,
-          archiveAuthors, archiveCategory, "en",
-          "member", "published", archiveFile, "application/pdf", 0,
-          req.user!.user_id, "library", item.catalog_id
-        ]
-      );
-    } catch (archiveErr) {
-      logger.warn("Failed to auto-archive library item", {
-        catalog_id: item.catalog_id,
-        error: (archiveErr as Error).message,
-      });
-      // Continue despite archive failure
+    if (file_url && req.file) {
+      try {
+        const archiveTitle = `${title}${edition ? ` (Edition ${edition})` : ""}`;
+        const archiveAuthors = Array.isArray(authors) ? authors : [];
+        const archiveCategory = category || "General";
+        
+        await query(
+          `INSERT INTO archive_items
+             (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            archiveTitle, description || `From Library Catalog: ${title}`,
+            archiveAuthors, archiveCategory, "en",
+            "member", "published", file_url, req.file.mimetype || "application/pdf", req.file.size,
+            req.user!.user_id, "library", item.catalog_id
+          ]
+        );
+      } catch (archiveErr) {
+        logger.warn("Failed to auto-archive library item", {
+          catalog_id: item.catalog_id,
+          error: (archiveErr as Error).message,
+        });
+        // Continue despite archive failure
+      }
     }
 
     res.status(201).json({ success: true, data: item });

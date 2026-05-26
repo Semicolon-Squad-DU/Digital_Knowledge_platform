@@ -1,113 +1,72 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import {
-  Heart, BookMarked, ArrowLeft, Pencil, Trash2,
-  Building2, Calendar, Hash, Layers,
-  MapPin, Copy, CheckCircle, Clock, FileText, Plus, Minus,
-  LayoutDashboard, Archive, Send, Library, ShieldCheck,
-  Bell, Search, Download, Share2, FileJson, ChevronLeft, ChevronRight,
+  Heart, BookMarked, Pencil, Trash2,
+  FileText, Download, Share2, FileJson,
 } from "lucide-react";
 import {
   useCatalogItem, useAddToWishlist, usePlaceHold,
   useUpdateCatalogItem, useDeleteCatalogItem,
 } from "@/hooks/useLibrary";
-import { useAuthStore } from "@/store/auth.store";
-import { useNotifications } from "@/hooks/useNotifications";
-import api from "@/lib/api";
-import { Button } from "@/components/ui/Button";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface CatalogItem {
-  catalog_id: string;
-  title: string;
-  authors: string[];
-  publisher?: string;
-  year?: number;
-  isbn?: string;
-  category?: string;
-  description?: string;
-  available_copies: number;
-  total_copies: number;
-  edition?: string;
-  shelf_location?: string;
-  cover_url?: string;
-}
-
-// ── Sidebar nav ───────────────────────────────────────────────────────────────
-const NAV = [
-  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },  { label: "Research",    href: "/research",  icon: Archive },  { label: "Submissions", href: "/showcase",  icon: Send },
-  { label: "Library",     href: "/library",   icon: Library },
-  { label: "Admin",       href: "/admin", icon: ShieldCheck },
-];
+import api from "@/lib/api";
 
 // ── PDF Preview ─────────────────────────────────────────────────────────────────────
 function PdfPreview({ pdfKey }: { pdfKey: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setError(false);
-    api.get("/archive/download-url", { params: { key: pdfKey } })
-      .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
-      .catch(() => { if (!cancelled) setUrl(`http://localhost:9000/dkp-files/${pdfKey}`); })
+    
+    // Clean S3 key by removing S3 scheme/prefix if present
+    const cleanKey = pdfKey.replace(/^local:\/\//, "");
+
+    api.get("/archive/download-url", { params: { key: cleanKey } })
+      .then(({ data }) => {
+        if (!cancelled) {
+          const urlWithIp = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
+          setUrl(urlWithIp);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setUrl(`http://127.0.0.1:9000/dkp-files/${cleanKey}`);
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
+
     return () => { cancelled = true; };
   }, [pdfKey]);
 
-  if (loading)
+  if (loading) {
     return (
-      <div style={{ height: 600, borderRadius: 8, background: "#f3f4f6", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ height: 560, borderRadius: 12, background: "#f9fafb", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 32, height: 32, border: "2px solid #2563eb", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 8px" }} />
           <p style={{ fontSize: 13, color: "#6b7280" }}>Loading preview…</p>
         </div>
       </div>
     );
+  }
 
-  if (error || !url)
+  if (!url) {
     return (
-      <div style={{ height: 400, borderRadius: 8, background: "#f3f4f6", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ height: 400, borderRadius: 12, background: "#f9fafb", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ fontSize: 13, color: "#6b7280" }}>Preview unavailable</p>
       </div>
     );
+  }
 
   return (
-    <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #e5e7eb" }}>
-      {/* PDF Viewer Toolbar */}
-      <div style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button style={{ padding: 6, borderRadius: 4, background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center" }}>
-            <ChevronLeft size={16} />
-          </button>
-          <input type="number" value={currentPage} onChange={e => setCurrentPage(Math.max(1, parseInt(e.target.value) || 1))} style={{ width: 50, padding: "4px 8px", borderRadius: 4, border: "1px solid #e5e7eb", fontSize: 12, textAlign: "center" }} />
-          <span style={{ fontSize: 12, color: "#6b7280" }}>/ 12</span>
-          <button style={{ padding: 6, borderRadius: 4, background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center" }}>
-            <ChevronRight size={16} />
-          </button>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button style={{ padding: 6, borderRadius: 4, background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center" }} title="Zoom">
-            <span style={{ fontSize: 12, fontWeight: 600 }}>100%</span>
-          </button>
-          <button style={{ padding: 6, borderRadius: 4, background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center" }} title="Download">
-            <Download size={16} />
-          </button>
-        </div>
-      </div>
-      <iframe src={`${url}#page=${currentPage}&view=FitH&toolbar=0`} style={{ width: "100%", height: 600 }} title="PDF Preview" onError={() => setError(true)} />
+    <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+      <iframe src={url} style={{ width: "100%", height: 560, border: "none" }} title="PDF Preview" />
     </div>
   );
 }
@@ -118,26 +77,23 @@ const BOOK_CATEGORIES = ["General","Textbook","Reference","Fiction","Non-Fiction
 export default function LibraryItemPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const pathname = usePathname();
   const itemId = params?.id ?? "";
 
+  const { user, ready } = useAuthGuard();
   const { data: item, isLoading, refetch } = useCatalogItem(itemId);
-  const { isAuthenticated, user } = useAuthStore();
-  const { mutateAsync: addToWishlist, isPending: wishlistPending } = useAddToWishlist();
-  const { mutateAsync: placeHold, isPending: holdPending } = usePlaceHold();
+  const { mutateAsync: addToWishlist } = useAddToWishlist();
+  const { mutateAsync: placeHold } = usePlaceHold();
   const { mutateAsync: updateBook, isPending: isUpdating } = useUpdateCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
-  const { data: notifData } = useNotifications(1, false, isAuthenticated);
 
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "", isbn: "", authors: "", publisher: "",
     edition: "", year: "", category: "General",
     total_copies: "1", shelf_location: "", description: "",
   });
-
-  const unreadCount = notifData?.unread_count ?? 0;
 
   useEffect(() => {
     if (item) {
@@ -159,10 +115,6 @@ export default function LibraryItemPage() {
   const isLibrarian = ["librarian", "admin"].includes(user?.role ?? "");
 
   const handleWishlist = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to use wishlist");
-      return;
-    }
     try {
       await addToWishlist(itemId);
       toast.success("Added to wishlist");
@@ -172,10 +124,6 @@ export default function LibraryItemPage() {
   };
 
   const handleHold = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to place a hold");
-      return;
-    }
     try {
       await placeHold(itemId);
       toast.success("Hold placed — you'll be notified when available");
@@ -223,259 +171,430 @@ export default function LibraryItemPage() {
     }
   };
 
-  if (!user) return null;
+  const handleCopyCitation = () => {
+    if (!item) return;
+    const citation = `${item.authors?.join(", ")} (${item.year || "n.d."}). ${item.title}. ${item.publisher || ""}.`;
+    navigator.clipboard.writeText(citation);
+    setCopied(true);
+    toast.success("APA citation copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!item?.cover_url) return;
+    const cleanKey = item.cover_url.replace(/^local:\/\//, "");
+    try {
+      const { data } = await api.get("/archive/download-url", { params: { key: cleanKey } });
+      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
+      window.open(downloadUrl, "_blank");
+    } catch {
+      window.open(`http://127.0.0.1:9000/dkp-files/${cleanKey}`, "_blank");
+    }
+  };
+
+  if (!ready) return null;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f0f2f5", fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-      {/* ════════════════ SIDEBAR ════════════════ */}
-      <aside style={{
-        width: 200, flexShrink: 0, background: "#ffffff",
-        borderRight: "1px solid #e5e7eb",
-        display: "flex", flexDirection: "column",
-        position: "sticky", top: 0, height: "100vh", overflowY: "auto",
-      }}>
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #f3f4f6" }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3, margin: 0 }}>Digital Knowledge</p>
-          <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, margin: "2px 0 0" }}>Academic Portal</p>
+    <AppLayout>
+      <div style={{ padding: "28px 32px", maxWidth: "1200px", margin: "0 auto" }}>
+        
+        {/* Breadcrumbs */}
+        <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280", marginBottom: 20 }}>
+          <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
+          <span>/</span>
+          <span style={{ cursor: "pointer" }} onClick={() => router.push("/library")}>Library</span>
+          <span>/</span>
+          <span style={{ color: "#111827", fontWeight: 500 }}>Book Details</span>
         </div>
 
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {NAV.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link key={href} href={href} style={{ textDecoration: "none" }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 12px", borderRadius: 6, marginBottom: 2,
-                  fontSize: 13, fontWeight: active ? 600 : 500,
-                  color: active ? "#111827" : "#6b7280",
-                  background: active ? "#f3f4f6" : "transparent",
-                  borderLeft: active ? "3px solid #111827" : "3px solid transparent",
-                  transition: "all 0.1s", cursor: "pointer",
-                }}>
-                  <Icon size={15} />
-                  {label}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-
-      {/* ════════════════ MAIN COLUMN ════════════════ */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* ── TOP BAR ── */}
-        <header style={{
-          height: 60, background: "#ffffff",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex", alignItems: "center",
-          padding: "0 28px", gap: 16, flexShrink: 0,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "7px 14px", flex: 1, maxWidth: 340 }}>
-            <Search size={14} color="#9ca3af" />
-            <span style={{ fontSize: 13, color: "#9ca3af" }}>Search knowledge base...</span>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-            <Link href="/notifications" style={{ position: "relative", width: 36, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", textDecoration: "none" }}>
-              <Bell size={18} color="#6b7280" />
-              {unreadCount > 0 && (
-                <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
-              )}
-            </Link>
-            <Link href="/library/wishlist" style={{ width: 36, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-              <Heart size={18} color="#6b7280" />
-            </Link>
-            <Link href="/profile" style={{ width: 34, height: 34, borderRadius: "50%", background: "#4b5563", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", overflow: "hidden", textDecoration: "none" }}>
-              {user.name?.[0]?.toUpperCase()}
-            </Link>
-          </div>
-        </header>
-
-        {/* ── CONTENT ── */}
-        <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>
-          {isLoading && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 32 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Skeleton className="h-96 rounded" />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Skeleton className="h-10 w-48" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-40 w-full" />
-              </div>
+        {isLoading && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 32 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <Skeleton className="h-96 rounded-xl" />
             </div>
-          )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          </div>
+        )}
 
-          {!isLoading && item && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 32 }}>
-              {/* ─────────── LEFT: PDF VIEWER ─────────── */}
-              <div>
-                {item.cover_url ? (
-                  <PdfPreview pdfKey={item.cover_url} />
-                ) : (
-                  <div style={{ height: 600, borderRadius: 8, background: "#f3f4f6", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ textAlign: "center" }}>
-                      <FileText size={48} color="#d1d5db" style={{ margin: "0 auto 12px" }} />
-                      <p style={{ fontSize: 13, color: "#6b7280" }}>No preview available</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ─────────── RIGHT: METADATA ─────────── */}
-              <div>
-                {/* Title & Authors */}
-                <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111827", lineHeight: 1.3, margin: "0 0 8px" }}>
-                  {item.title}
-                </h1>
-                {item.authors?.length > 0 && (
-                  <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 16px", lineHeight: 1.6 }}>
-                    {item.authors.join(", ")}
-                  </p>
-                )}
-
-                {/* Publication Info */}
-                {(item.publisher || item.year) && (
-                  <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 20px" }}>
-                    {[item.publisher, item.year && `Published ${item.year}`].filter(Boolean).join(" • ")}
-                  </p>
-                )}
-
-                {/* Availability Badge */}
+        {!isLoading && item && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 32 }}>
+            
+            {/* ─────────── LEFT: PDF VIEWER ─────────── */}
+            <div>
+              {item.cover_url ? (
+                <PdfPreview pdfKey={item.cover_url} />
+              ) : (
                 <div style={{
-                  display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 4,
-                  fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em",
-                  background: item.available_copies > 0 ? "#e8f0fe" : "#fde8e8",
-                  color: item.available_copies > 0 ? "#1a56db" : "#c81e1e",
-                  margin: "0 0 20px",
+                  height: 560,
+                  borderRadius: 12,
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}>
-                  {item.available_copies > 0 ? `${item.available_copies} Available` : "All on Loan"}
+                  <div style={{ textAlign: "center", padding: 24 }}>
+                    <FileText size={48} color="#d1d5db" style={{ margin: "0 auto 12px" }} />
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: 0 }}>No preview available</p>
+                    <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>This catalog entry does not have a PDF document attached.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ─────────── RIGHT: METADATA ─────────── */}
+            <div>
+              <div style={{
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: 12,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                padding: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: 20,
+              }}>
+                {/* Title & Authors */}
+                <div>
+                  <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.3, margin: "0 0 6px" }}>
+                    {item.title}
+                  </h1>
+                  {item.authors?.length > 0 && (
+                    <p style={{ fontSize: 13, color: "#6b7280", margin: 0, fontWeight: 500 }}>
+                      by {item.authors.join(", ")}
+                    </p>
+                  )}
                 </div>
 
-                {/* Action Buttons */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                {/* Badges / Availability */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    background: item.available_copies > 0 ? "#e6f4ea" : "#fde8e8",
+                    color: item.available_copies > 0 ? "#1e7e34" : "#c81e1e",
+                  }}>
+                    {item.available_copies > 0 ? `${item.available_copies} Available` : "All on Loan"}
+                  </span>
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: "#f3f4f6",
+                    color: "#4b5563",
+                  }}>
+                    {item.category}
+                  </span>
+                </div>
+
+                {/* Primary Actions */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {item.cover_url && (
-                    <button style={{
-                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      padding: "10px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600,
-                      border: "none", background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
-                      color: "#fff", cursor: "pointer", transition: "opacity 0.15s",
-                    }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                    <button
+                      onClick={handleDownloadPdf}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: "none",
+                        background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                        color: "#fff",
+                        cursor: "pointer",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                      }}
+                    >
                       <Download size={14} />
                       Download PDF
                     </button>
                   )}
 
-                  <button style={{
-                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    padding: "10px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600,
-                    border: "1px solid #e5e7eb", background: "#fff",
-                    color: "#111827", cursor: "pointer", transition: "all 0.15s",
-                  }} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                  <button
+                    onClick={handleWishlist}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      padding: "10px 16px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      color: "#374151",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#f9fafb";
+                      e.currentTarget.style.borderColor = "#d1d5db";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "#fff";
+                      e.currentTarget.style.borderColor = "#e5e7eb";
+                    }}
+                  >
                     <Heart size={14} />
                     Add to Wishlist
                   </button>
 
-                  {item.available_copies > 0 && isAuthenticated && !isLibrarian && (
-                    <button style={{
-                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      padding: "10px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600,
-                      border: "1px solid #e5e7eb", background: "#fff",
-                      color: "#111827", cursor: "pointer", transition: "all 0.15s",
-                    }} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                  {item.available_copies > 0 && !isLibrarian && (
+                    <button
+                      onClick={handleHold}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: "1px solid #e5e7eb",
+                        background: "#fff",
+                        color: "#374151",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = "#f9fafb";
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.borderColor = "#e5e7eb";
+                      }}
+                    >
                       <BookMarked size={14} />
-                      Reserve
+                      Reserve Book
                     </button>
                   )}
 
-                  {item.available_copies === 0 && isAuthenticated && (
-                    <button style={{
-                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      padding: "10px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600,
-                      border: "1px solid #e5e7eb", background: "#fff",
-                      color: "#111827", cursor: "pointer", transition: "all 0.15s",
-                    }} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                  {item.available_copies === 0 && (
+                    <button
+                      onClick={handleHold}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: "1px solid #e5e7eb",
+                        background: "#fff",
+                        color: "#374151",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = "#f9fafb";
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.borderColor = "#e5e7eb";
+                      }}
+                    >
                       <BookMarked size={14} />
                       Place Hold
                     </button>
                   )}
                 </div>
 
-                {/* Quick Actions */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-                  <button style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                    border: "1px solid #e5e7eb", background: "#fff",
-                    color: "#111827", cursor: "pointer", transition: "all 0.15s",
-                  }} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                {/* Secondary Actions */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <button
+                    onClick={handleCopyCitation}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      color: "#374151",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#f9fafb";
+                      e.currentTarget.style.borderColor = "#d1d5db";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "#fff";
+                      e.currentTarget.style.borderColor = "#e5e7eb";
+                    }}
+                  >
+                    <FileJson size={13} />
+                    {copied ? "Copied!" : "Cite"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      toast.success("Link copied!");
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      color: "#374151",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#f9fafb";
+                      e.currentTarget.style.borderColor = "#d1d5db";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "#fff";
+                      e.currentTarget.style.borderColor = "#e5e7eb";
+                    }}
+                  >
                     <Share2 size={13} />
                     Share
                   </button>
-                  <button style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                    border: "1px solid #e5e7eb", background: "#fff",
-                    color: "#111827", cursor: "pointer", transition: "all 0.15s",
-                  }} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
-                    <FileJson size={13} />
-                    Citation
-                  </button>
                 </div>
 
-                {/* Description / Abstract */}
+                {/* About Book / Description */}
                 {item.description && (
-                  <div style={{ marginBottom: 20 }}>
-                    <h3 style={{ fontSize: 12, fontWeight: 700, color: "#111827", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>
+                  <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>
                       About
                     </h3>
-                    <p style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.6, margin: 0 }}>
+                    <p style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.6, margin: 0 }}>
                       {item.description}
                     </p>
                   </div>
                 )}
 
-                {/* Metadata */}
-                <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
+                {/* Bibliographic Info */}
+                <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {item.isbn && (
-                    <div style={{ marginBottom: 12 }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>ISBN</p>
-                      <p style={{ fontSize: 13, color: "#111827", margin: 0 }}>{item.isbn}</p>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ca3af", fontWeight: 500 }}>ISBN</span>
+                      <span style={{ color: "#111827", fontWeight: 600, fontFamily: "monospace" }}>{item.isbn}</span>
                     </div>
                   )}
-                  {item.category && (
-                    <div style={{ marginBottom: 12 }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>Category</p>
-                      <p style={{ fontSize: 13, color: "#111827", margin: 0 }}>{item.category}</p>
+                  {item.publisher && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ca3af", fontWeight: 500 }}>Publisher</span>
+                      <span style={{ color: "#111827", fontWeight: 600, textAlign: "right" }}>{item.publisher}</span>
+                    </div>
+                  )}
+                  {item.edition && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ca3af", fontWeight: 500 }}>Edition</span>
+                      <span style={{ color: "#111827", fontWeight: 600 }}>{item.edition}</span>
                     </div>
                   )}
                   {item.year && (
-                    <div style={{ marginBottom: 12 }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>Published</p>
-                      <p style={{ fontSize: 13, color: "#111827", margin: 0 }}>{item.year}</p>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ca3af", fontWeight: 500 }}>Published Year</span>
+                      <span style={{ color: "#111827", fontWeight: 600 }}>{item.year}</span>
                     </div>
                   )}
+                  {item.shelf_location && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ca3af", fontWeight: 500 }}>Shelf Location</span>
+                      <span style={{ color: "#2563eb", fontWeight: 700, fontFamily: "monospace" }}>{item.shelf_location}</span>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: "#9ca3af", fontWeight: 500 }}>Total Copies</span>
+                    <span style={{ color: "#111827", fontWeight: 600 }}>{item.total_copies}</span>
+                  </div>
                 </div>
 
-                {/* Librarian Actions */}
+                {/* Librarian / Admin Actions */}
                 {isLibrarian && (
-                  <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 16, display: "flex", gap: 8 }}>
-                    <button style={{
-                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                      padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                      border: "1px solid #e5e7eb", background: "#fff",
-                      color: "#111827", cursor: "pointer", transition: "all 0.15s",
-                    }} onClick={() => setEditModal(true)} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                  <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16, display: "flex", gap: 10 }}>
+                    <button
+                      onClick={() => setEditModal(true)}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: "1px solid #e5e7eb",
+                        background: "#fff",
+                        color: "#374151",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = "#f9fafb";
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.borderColor = "#e5e7eb";
+                      }}
+                    >
                       <Pencil size={13} />
-                      Edit
+                      Edit Details
                     </button>
-                    <button style={{
-                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                      padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                      border: "1px solid #ef4444", background: "#fff",
-                      color: "#ef4444", cursor: "pointer", transition: "all 0.15s",
-                    }} onClick={() => setDeleteModal(true)} onMouseEnter={e => { e.currentTarget.style.background = "#fde8e8"; }} onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+                    <button
+                      onClick={() => setDeleteModal(true)}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: "1px solid #fecaca",
+                        background: "#fff",
+                        color: "#dc2626",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = "#fee2e2";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = "#fff";
+                      }}
+                    >
                       <Trash2 size={13} />
                       Delete
                     </button>
@@ -483,17 +602,41 @@ export default function LibraryItemPage() {
                 )}
               </div>
             </div>
-          )}
 
-          {!isLoading && !item && (
-            <div style={{ textAlign: "center", padding: "60px 32px" }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: "#111827", margin: 0 }}>Book not found</p>
-              <button onClick={() => router.back()} style={{ fontSize: 13, color: "#2563eb", marginTop: 12, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                Go back
-              </button>
-            </div>
-          )}
-        </main>
+          </div>
+        )}
+
+        {!isLoading && !item && (
+          <div style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            padding: "48px 24px",
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          }}>
+            <p style={{ fontSize: 16, fontWeight: 600, color: "#111827", margin: 0 }}>Book not found</p>
+            <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4, marginBottom: 16 }}>The requested book catalog ID does not exist or has been deleted.</p>
+            <button
+              onClick={() => router.back()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#374151",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Go Back
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* Edit Modal */}
@@ -510,18 +653,24 @@ export default function LibraryItemPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
             <Input label="Year" type="number" value={editForm.year} onChange={e => setEditForm(f => ({ ...f, year: e.target.value }))} />
-            <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13 }}>
-              {BOOK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Category</label>
+              <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} style={{ height: 38, padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none", background: "#fff", cursor: "pointer" }}>
+                {BOOK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
             <Input label="Total Copies" type="number" min="1" value={editForm.total_copies} onChange={e => setEditForm(f => ({ ...f, total_copies: e.target.value }))} />
           </div>
           <Input label="Shelf Location" value={editForm.shelf_location} onChange={e => setEditForm(f => ({ ...f, shelf_location: e.target.value }))} />
-          <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", resize: "none" }} />
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
-            <button onClick={() => setEditModal(false)} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", color: "#111827", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Description</label>
+            <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 8 }}>
+            <button onClick={() => setEditModal(false)} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               Cancel
             </button>
-            <button onClick={handleSaveEdit} disabled={isUpdating} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: isUpdating ? 0.6 : 1 }}>
+            <button onClick={handleSaveEdit} disabled={isUpdating} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: isUpdating ? 0.6 : 1 }}>
               {isUpdating ? "Saving..." : "Save Changes"}
             </button>
           </div>
@@ -539,6 +688,6 @@ export default function LibraryItemPage() {
         loading={isDeleting}
         variant="danger"
       />
-    </div>
+    </AppLayout>
   );
 }

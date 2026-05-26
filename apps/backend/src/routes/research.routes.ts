@@ -259,29 +259,31 @@ router.post(
     );
 
     // Auto-archive: Create archive item from research output
-    try {
-      const authorNames = Array.isArray(authors)
-        ? authors.map((a: unknown) => (typeof a === "object" && a !== null && "name" in a ? (a as { name: string }).name : String(a)))
-        : [];
-      const archiveDescription = abstract || `Research output: ${title}`;
-      
-      await query(
-        `INSERT INTO archive_items
-           (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-        [
-          title, archiveDescription,
-          authorNames, "Research", "en",
-          "member", "published", file_url, "application/pdf", 0,
-          req.user!.user_id, "research", (output as Record<string, string>).output_id
-        ]
-      );
-    } catch (archiveErr) {
-      logger.warn("Failed to auto-archive research output", {
-        output_id: (output as Record<string, string>).output_id,
-        error: (archiveErr as Error).message,
-      });
-      // Continue despite archive failure
+    if (file_url && req.file) {
+      try {
+        const authorNames = Array.isArray(authors)
+          ? authors.map((a: unknown) => (typeof a === "object" && a !== null && "name" in a ? (a as { name: string }).name : String(a)))
+          : [];
+        const archiveDescription = abstract || `Research output: ${title}`;
+        
+        await query(
+          `INSERT INTO archive_items
+             (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            title, archiveDescription,
+            authorNames, "Research", "en",
+            "member", "published", file_url, req.file.mimetype || "application/pdf", req.file.size,
+            req.user!.user_id, "research", (output as Record<string, string>).output_id
+          ]
+        );
+      } catch (archiveErr) {
+        logger.warn("Failed to auto-archive research output", {
+          output_id: (output as Record<string, string>).output_id,
+          error: (archiveErr as Error).message,
+        });
+        // Continue despite archive failure
+      }
     }
 
     res.status(201).json({ success: true, data: output });

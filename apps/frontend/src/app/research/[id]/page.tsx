@@ -26,9 +26,10 @@ function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: stri
     setLoading(true);
     try {
       const { data } = await api.get(`/research/${outputId}/download-url`);
-      window.open(data.data.url, "_blank");
+      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
+      window.open(downloadUrl, "_blank");
     } catch {
-      window.open(`http://localhost:9000/dkp-files/${fileKey}`, "_blank");
+      window.open(`http://127.0.0.1:9000/dkp-files/${fileKey}`, "_blank");
       toast("Opening via direct link");
     } finally {
       setLoading(false);
@@ -149,7 +150,7 @@ function CitationBlock({
 // PDF Preview — direct MinIO URL (avoids presigned URL clock skew)
 // ---------------------------------------------------------------------------
 function PdfPreview({ fileKey }: { fileKey: string }) {
-  const url = `http://localhost:9000/dkp-files/${fileKey}`;
+  const url = `http://127.0.0.1:9000/dkp-files/${fileKey}`;
   return (
     <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)]">
       <iframe src={url} className="w-full" style={{ height: "520px" }} title="PDF Preview" />
