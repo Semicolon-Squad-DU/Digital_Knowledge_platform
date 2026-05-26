@@ -30,6 +30,24 @@ interface AppLayoutProps {
 export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutProps) {
   const pathname  = usePathname();
   const router    = useRouter();
+
+  const getHeaderTitle = () => {
+    if (pathname.startsWith("/library") || pathname.startsWith("/librarian")) {
+      return "Library Repository";
+    }
+    if (pathname.startsWith("/research")) {
+      return "Research Repository";
+    }
+    if (pathname.startsWith("/archive")) {
+      return "Digital Archive";
+    }
+    if (pathname.startsWith("/admin")) {
+      return "Admin panel";
+    }
+    return null;
+  };
+
+  const headerTitle = getHeaderTitle();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { data: notifData } = useNotifications(1, false, isAuthenticated);
   const unreadCount = notifData?.unread_count ?? 0;
@@ -147,6 +165,20 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           padding: "0 28px", gap: 16, flexShrink: 0,
           position: "sticky", top: 0, zIndex: 30,
         }}>
+          {/* Left corner header title */}
+          {headerTitle && (
+            <div style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#111827",
+              letterSpacing: "-0.3px",
+              flexShrink: 0,
+              marginRight: 8,
+            }}>
+              {headerTitle}
+            </div>
+          )}
+
           {/* Search slot */}
           {topbarSearch}
 

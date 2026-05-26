@@ -408,6 +408,28 @@ router.get(
   })
 );
 
+// GET /api/library/member/:id/holds
+router.get(
+  "/member/:id/holds",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (req.user!.role === "member" && req.user!.user_id !== req.params.id) {
+      throw new AppError(403, "Access denied");
+    }
+
+    const holds = await query(
+      `SELECT hr.*, ci.title, ci.authors, ci.isbn
+       FROM hold_requests hr
+       JOIN catalog_items ci ON hr.catalog_id = ci.catalog_id
+       WHERE hr.member_id = $1
+       ORDER BY hr.request_date DESC`,
+      [req.params.id]
+    );
+
+    res.json({ success: true, data: holds });
+  })
+);
+
 // GET /api/library/fines/:member_id
 router.get("/fines/:member_id", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   if (req.user!.role === "member" && req.user!.user_id !== req.params.member_id) {

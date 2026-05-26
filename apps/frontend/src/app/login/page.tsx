@@ -301,6 +301,29 @@ function LoginForm() {
               Sign in with Google
             </button>
 
+            {/* Institutional SSO button */}
+            <button
+              type="button"
+              className="w-full flex items-center justify-center gap-2.5 transition-colors hover:bg-gray-50"
+              style={{
+                padding: "11px 16px",
+                fontSize: "12px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                background: "#ffffff",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                cursor: "pointer",
+                marginTop: "10px",
+              }}
+              onClick={() => toast("Institutional SSO (OAuth) integration coming soon")}
+            >
+              <ShieldCheck size={16} color="#374151" />
+              Sign in with Institutional SSO
+            </button>
+
             {/* Bottom divider */}
             <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 20px" }} />
 

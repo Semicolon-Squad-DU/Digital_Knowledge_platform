@@ -108,6 +108,17 @@ export function useBorrowingHistory(memberId: string) {
   });
 }
 
+export function useMemberHolds(memberId: string) {
+  return useQuery({
+    queryKey: ["library", "holds", memberId],
+    queryFn: async () => {
+      const { data } = await api.get(`/library/member/${memberId}/holds`);
+      return data.data;
+    },
+    enabled: !!memberId,
+  });
+}
+
 export function useWishlist() {
   return useQuery({
     queryKey: ["library", "wishlist"],
