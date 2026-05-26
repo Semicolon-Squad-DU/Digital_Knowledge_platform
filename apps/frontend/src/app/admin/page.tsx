@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
-import { useAdminStats, useCatalogDocuments, useResearcherSubmissions } from "@/hooks/useAdmin";
+import { useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments } from "@/hooks/useAdmin";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import toast from "react-hot-toast";
@@ -112,10 +112,27 @@ export default function AdminPage() {
     search: searchQuery,
     status: filterStatus !== "all" ? filterStatus : undefined,
   });
+  const { data: archiveDocsData, isLoading: archiveLoading } = useArchiveDocuments({
+    page: currentPage,
+    limit: 10,
+    search: searchQuery,
+    status: filterStatus !== "all" ? filterStatus : undefined,
+  });
 
   // Use appropriate data based on user role
-  const documentsData = user?.role === "researcher" ? researchSubmissionsData : catalogDocsData;
-  const docsLoading = user?.role === "researcher" ? researchLoading : catalogDocsLoading;
+  const documentsData =
+    user?.role === "researcher"
+      ? researchSubmissionsData
+      : user?.role === "archivist"
+      ? archiveDocsData
+      : catalogDocsData;
+
+  const docsLoading =
+    user?.role === "researcher"
+      ? researchLoading
+      : user?.role === "archivist"
+      ? archiveLoading
+      : catalogDocsLoading;
 
   useEffect(() => {
     if (!isAuthenticated) {

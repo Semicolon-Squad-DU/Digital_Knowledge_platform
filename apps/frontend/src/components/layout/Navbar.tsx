@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, BookOpen, User, LogOut, Menu, X, LayoutDashboard, Library, Search, Moon, Sun } from "lucide-react";
+import { Bell, BookOpen, User, LogOut, Menu, X, LayoutDashboard, Library, Search, Moon, Sun, ArrowLeft } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -34,7 +34,7 @@ function useDarkMode() {
   return { dark, toggle };
 }
 
-export function Navbar() {
+export function Navbar({ showBack = false }: { showBack?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -68,7 +68,7 @@ export function Navbar() {
 
   // Hide navbar on pages that have their own navigation
   const hiddenExact    = ["/", "/login", "/register", "/forgot-password"];
-  const hiddenPrefixes = ["/dashboard", "/library", "/archive", "/research", "/showcase", "/librarian", "/notifications", "/profile", "/search"];
+  const hiddenPrefixes = ["/dashboard", "/library", "/archive", "/research", "/showcase", "/librarian", "/notifications", "/search"];
   if (
     hiddenExact.includes(pathname) ||
     hiddenPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))
@@ -80,6 +80,18 @@ export function Navbar() {
       <header className="gh-navbar sticky top-0 z-40" role="banner">
         <div className="page-container">
           <div className="flex items-center gap-4 h-14">
+
+            {/* Back Button if showBack is true */}
+            {showBack && (
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-100 mr-2 border border-white/20 bg-white/5"
+                aria-label="Go back"
+              >
+                <ArrowLeft size={14} />
+                <span>Back</span>
+              </button>
+            )}
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="DKP Home">
@@ -149,95 +161,97 @@ export function Navbar() {
                   </Link>
 
                   {/* User menu */}
-                  <div className="relative" ref={dropdownRef}>
-                    <button
-                      onClick={() => setDropdownOpen((v) => !v)}
-                      className="flex items-center p-1 rounded-full hover:ring-2 hover:ring-white/30 transition-all duration-100"
-                      aria-expanded={dropdownOpen}
-                      aria-haspopup="menu"
-                      aria-label="User menu"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-[#6e7781] flex items-center justify-center text-white text-xs font-semibold">
-                        {user?.name?.[0]?.toUpperCase() ?? "U"}
-                      </div>
-                    </button>
-
-                    {dropdownOpen && (
-                      <div
-                        className="absolute right-0 mt-1 w-56 rounded-md border shadow-lg animate-scale-in overflow-hidden z-50"
-                        style={{
-                          background: "var(--color-canvas-default)",
-                          borderColor: "var(--color-border-default)",
-                          boxShadow: "0 1px 3px rgba(31,35,40,0.12), 0 8px 24px rgba(66,74,83,0.12)",
-                        }}
-                        role="menu"
+                  {pathname !== "/profile" && (
+                    <div className="relative" ref={dropdownRef}>
+                      <button
+                        onClick={() => setDropdownOpen((v) => !v)}
+                        className="flex items-center p-1 rounded-full hover:ring-2 hover:ring-white/30 transition-all duration-100"
+                        aria-expanded={dropdownOpen}
+                        aria-haspopup="menu"
+                        aria-label="User menu"
                       >
-                        {/* User info */}
-                        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--color-border-default)" }}>
-                          <p className="text-xs font-semibold" style={{ color: "var(--color-fg-muted)" }}>Signed in as</p>
-                          <p className="text-sm font-semibold truncate mt-0.5" style={{ color: "var(--color-fg-default)" }}>{user?.name}</p>
-                          <p className="text-xs truncate mt-0.5" style={{ color: "var(--color-fg-muted)" }}>{user?.email}</p>
-                          <span className={cn(
-                            "inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-semibold",
-                            {
-                              "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300": user?.role === "admin",
-                              "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300": user?.role === "librarian",
-                              "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300": user?.role === "researcher",
-                              "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300": user?.role === "archivist",
-                              "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300": user?.role === "student_author",
-                              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300": user?.role === "member" || user?.role === "guest",
-                            }
-                          )}>
-                            {{
-                              admin:          "Admin",
-                              librarian:      "Librarian",
-                              researcher:     "Researcher",
-                              archivist:      "Archivist",
-                              student_author: "Student Author",
-                              member:         "Member",
-                              guest:          "Guest",
-                            }[user?.role ?? "guest"] ?? user?.role}
-                          </span>
+                        <div className="w-7 h-7 rounded-full bg-[#6e7781] flex items-center justify-center text-white text-xs font-semibold">
+                          {user?.name?.[0]?.toUpperCase() ?? "U"}
                         </div>
+                      </button>
 
-                        <div className="py-1">
-                          {[
-                            { href: "/dashboard", icon: LayoutDashboard, label: "Your dashboard" },
-                            { href: "/profile",   icon: User,            label: "Your profile" },
-                            ...(isLibrarianOrAdmin ? [{ href: "/librarian", icon: Library, label: "Librarian dashboard" }] : []),
-                          ].map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
+                      {dropdownOpen && (
+                        <div
+                          className="absolute right-0 mt-1 w-56 rounded-md border shadow-lg animate-scale-in overflow-hidden z-50"
+                          style={{
+                            background: "var(--color-canvas-default)",
+                            borderColor: "var(--color-border-default)",
+                            boxShadow: "0 1px 3px rgba(31,35,40,0.12), 0 8px 24px rgba(66,74,83,0.12)",
+                          }}
+                          role="menu"
+                        >
+                          {/* User info */}
+                          <div className="px-4 py-3 border-b" style={{ borderColor: "var(--color-border-default)" }}>
+                            <p className="text-xs font-semibold" style={{ color: "var(--color-fg-muted)" }}>Signed in as</p>
+                            <p className="text-sm font-semibold truncate mt-0.5" style={{ color: "var(--color-fg-default)" }}>{user?.name}</p>
+                            <p className="text-xs truncate mt-0.5" style={{ color: "var(--color-fg-muted)" }}>{user?.email}</p>
+                            <span className={cn(
+                              "inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-semibold",
+                              {
+                               "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300": user?.role === "admin",
+                               "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300": user?.role === "librarian",
+                               "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300": user?.role === "researcher",
+                               "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300": user?.role === "archivist",
+                               "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300": user?.role === "student_author",
+                               "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300": user?.role === "member" || user?.role === "guest",
+                              }
+                            )}>
+                              {{
+                                admin:          "Admin",
+                                librarian:      "Librarian",
+                                researcher:     "Researcher",
+                                archivist:      "Archivist",
+                                student_author: "Student Author",
+                                member:         "Member",
+                                guest:          "Guest",
+                              }[user?.role ?? "guest"] ?? user?.role}
+                            </span>
+                          </div>
+
+                          <div className="py-1">
+                            {[
+                              { href: "/dashboard", icon: LayoutDashboard, label: "Your dashboard" },
+                              { href: "/profile",   icon: User,            label: "Your profile" },
+                              ...(isLibrarianOrAdmin ? [{ href: "/librarian", icon: Library, label: "Librarian dashboard" }] : []),
+                            ].map((item) => (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                role="menuitem"
+                                onClick={() => setDropdownOpen(false)}
+                                className="flex items-center gap-2 px-4 py-1.5 text-sm transition-colors duration-100 hover:bg-[var(--color-accent-emphasis)] hover:text-white"
+                                style={{ color: "var(--color-fg-default)" }}
+                              >
+                                <item.icon size={14} />
+                                {item.label}
+                              </Link>
+                            ))}
+                          </div>
+
+                          <div className="py-1 border-t" style={{ borderColor: "var(--color-border-default)" }}>
+                            <button
                               role="menuitem"
-                              onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-2 px-4 py-1.5 text-sm transition-colors duration-100 hover:bg-[var(--color-accent-emphasis)] hover:text-white"
+                              onClick={async () => {
+                                await logout();
+                                setDropdownOpen(false);
+                                router.push("/");
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-1.5 text-sm transition-colors duration-100 hover:bg-[var(--color-danger-emphasis)] hover:text-white text-left"
                               style={{ color: "var(--color-fg-default)" }}
                             >
-                              <item.icon size={14} />
-                              {item.label}
-                            </Link>
-                          ))}
+                              <LogOut size={14} />
+                              Sign out
+                            </button>
+                          </div>
                         </div>
-
-                        <div className="py-1 border-t" style={{ borderColor: "var(--color-border-default)" }}>
-                          <button
-                            role="menuitem"
-                            onClick={async () => {
-                              await logout();
-                              setDropdownOpen(false);
-                              router.push("/");
-                            }}
-                            className="w-full flex items-center gap-2 px-4 py-1.5 text-sm transition-colors duration-100 hover:bg-[var(--color-danger-emphasis)] hover:text-white text-left"
-                            style={{ color: "var(--color-fg-default)" }}
-                          >
-                            <LogOut size={14} />
-                            Sign out
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="flex items-center gap-2">

@@ -13,8 +13,8 @@ router.get(
     const role = req.user?.role;
     const userId = req.user?.user_id;
 
-    // Only librarians, admins, and researchers can access stats
-    if (!["librarian", "admin", "researcher"].includes(role ?? "")) {
+    // Only librarians, admins, researchers, and archivists can access stats
+    if (!["librarian", "admin", "researcher", "archivist"].includes(role ?? "")) {
       throw new AppError(403, "Unauthorized");
     }
 

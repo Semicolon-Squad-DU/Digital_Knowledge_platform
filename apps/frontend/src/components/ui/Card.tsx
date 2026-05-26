@@ -5,12 +5,13 @@ interface CardProps {
   className?: string;
   padding?: "none" | "sm" | "md" | "lg";
   as?: "div" | "article" | "section";
+  style?: React.CSSProperties;
 }
 
-export function Card({ children, className, padding = "md", as: Tag = "div" }: CardProps) {
+export function Card({ children, className, padding = "md", as: Tag = "div", style }: CardProps) {
   const paddings = { none: "", sm: "p-3", md: "p-4", lg: "p-6" };
   return (
-    <Tag className={cn("gh-box", paddings[padding], className)}>
+    <Tag className={cn("gh-box", paddings[padding], className)} style={style}>
       {children}
     </Tag>
   );
