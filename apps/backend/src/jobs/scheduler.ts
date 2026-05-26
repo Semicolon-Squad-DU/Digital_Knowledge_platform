@@ -177,6 +177,13 @@ async function checkOverdueAndSendReminders(): Promise<void> {
       subject: `Due Today: "${reminder.book_title}"`,
       html: dueDateReminderEmail(reminder.member_name, reminder.book_title, reminder.due_date, 0),
     });
+
+    await query(
+      `INSERT INTO notifications (user_id, type, title, message, action_url)
+       VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
+       ON CONFLICT DO NOTHING`,
+      [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`, "/dashboard"]
+    ).catch(() => {});
   }
 
   logger.info("Overdue reminders sent", {

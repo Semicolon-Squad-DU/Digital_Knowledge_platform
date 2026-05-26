@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Search, Heart, BookOpen, Quote, Eye,
   ChevronDown, X, Plus, Trash2,
-  FileText, Upload,
+  FileText, Upload, Filter,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem, useAddToWishlist } from "@/hooks/useLibrary";
@@ -233,9 +233,16 @@ export default function LibraryPage() {
   const [yearInput, setYearInput]       = useState("");
   const [yearFilter, setYearFilter]     = useState("");
   const [sortBy, setSortBy]             = useState("relevance");
+
+  // Advanced Search Filters state
+  const [authorInput, setAuthorInput]   = useState("");
+  const [isbnInput, setIsbnInput]       = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const [params, setParams] = useState<{
     query: string; category: string;
     availability: "all" | "available" | "on_loan";
+    author?: string; isbn?: string;
     year_from?: number; year_to?: number;
     page: number; limit: number;
   }>({
@@ -356,7 +363,7 @@ export default function LibraryPage() {
             {CATEGORIES.map(cat => (
               <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page:1 }))}
                 style={{
-                  padding:"7px 16px", borderRadius:20, fontSize:13, fontWeight:500, cursor:"pointer",
+                  padding:"7px 16px", borderRadius:6, fontSize:13, fontWeight:500, cursor:"pointer",
                   border: params.category === cat.value ? "none" : "1px solid #e5e7eb",
                   background: params.category === cat.value ? "#111827" : "#fff",
                   color: params.category === cat.value ? "#fff" : "#374151",
@@ -384,7 +391,93 @@ export default function LibraryPage() {
                 />
               )}
             </div>
+
+            {/* Advanced Search Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 14px",
+                borderRadius: 6,
+                border: "1px solid #e5e7eb",
+                background: showAdvanced ? "#111827" : "#fff",
+                color: showAdvanced ? "#fff" : "#374151",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+            >
+              <Filter size={13} />
+              {showAdvanced ? "Hide Filters" : "Advanced Search"}
+            </button>
           </div>
+
+          {/* Advanced Search Expandable Panel */}
+          {showAdvanced && (
+            <div style={{
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              padding: "16px 20px",
+              marginBottom: 20,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 16,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            }}>
+              {/* Author Filter */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                  Author Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Jiawei Han"
+                  value={authorInput}
+                  onChange={e => setAuthorInput(e.target.value)}
+                  onBlur={() => setParams(p => ({ ...p, author: authorInput || undefined, page: 1 }))}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); setParams(p => ({ ...p, author: authorInput || undefined, page: 1 })); } }}
+                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, outline: "none" }}
+                />
+              </div>
+
+              {/* ISBN Filter */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                  ISBN Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 978-012"
+                  value={isbnInput}
+                  onChange={e => setIsbnInput(e.target.value)}
+                  onBlur={() => setParams(p => ({ ...p, isbn: isbnInput || undefined, page: 1 }))}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); setParams(p => ({ ...p, isbn: isbnInput || undefined, page: 1 })); } }}
+                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, outline: "none" }}
+                />
+              </div>
+
+              {/* Availability Filter */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                  Availability Status
+                </label>
+                <select
+                  value={params.availability}
+                  onChange={e => setParams(p => ({ ...p, availability: e.target.value as any, page: 1 }))}
+                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="available">Available in Library</option>
+                  <option value="on_loan">Currently On Loan</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Results header */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>

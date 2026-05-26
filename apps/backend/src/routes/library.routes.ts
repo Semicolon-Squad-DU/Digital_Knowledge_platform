@@ -569,6 +569,8 @@ router.post(
        file_url]
     );
 
+    if (!item) throw new AppError(500, "Failed to create catalog item");
+
     // Auto-archive: Create archive item from catalog
     if (file_url && req.file) {
       try {

@@ -6,11 +6,13 @@ import {
   FileText, RefreshCw,
   Pencil, Trash2, Eye, EyeOff, Filter, ChevronLeft, ChevronRight,
   Users, HardDrive, AlertCircle, Search, BookOpen,
+  Lock, Check, X
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import { useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/hooks/useLibrary";
+import { usePendingAccessRequests, useReviewAccessRequest } from "@/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import toast from "react-hot-toast";
@@ -129,6 +131,11 @@ export default function AdminPage() {
   const { data: memberHolds, isLoading: holdsLoading } = useMemberHolds(memberId);
   const { data: finesData, isLoading: finesLoading } = useMemberFines(memberId);
 
+  // Fetch pending access requests if archivist or admin
+  const isArchivistOrAdmin = ["archivist", "admin"].includes(user?.role ?? "");
+  const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
+  const { mutateAsync: reviewRequest } = useReviewAccessRequest();
+
   // Combine borrow and hold history for unified student view
   const combinedItems = [];
   if (borrowHistory) combinedItems.push(...borrowHistory);
@@ -190,6 +197,7 @@ export default function AdminPage() {
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["admin"] });
     queryClient.invalidateQueries({ queryKey: ["library"] });
+    queryClient.invalidateQueries({ queryKey: ["archive"] });
     toast.success("Data refreshed");
   };
 
@@ -381,6 +389,93 @@ export default function AdminPage() {
             <RefreshCw size={14} color="#6b7280" />
           </button>
         </div>
+
+        {/* ── Restricted Document Access Requests (Only for Archivist/Admin) ── */}
+        {isArchivistOrAdmin && pendingRequests && pendingRequests.length > 0 && (
+          <div style={{
+            background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+            border: "1px solid #bfdbfe",
+            borderRadius: 12,
+            padding: "20px 24px",
+            marginBottom: 24,
+            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+          }}>
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: "#1e3a8a", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+              <Lock size={16} /> Restricted Document Access Requests ({pendingRequests.length})
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {pendingRequests.map((req: any) => (
+                <div key={req.request_id} style={{ background: "#fff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#111827" }}>
+                      Request by: <span style={{ color: "#2563eb" }}>{req.user_name}</span> ({req.user_email})
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#374151" }}>
+                      Document: <strong style={{ color: "#111827" }}>{req.item_title}</strong>
+                    </p>
+                    <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280", fontStyle: "italic", background: "#f9fafb", padding: "6px 10px", borderRadius: 6, borderLeft: "3px solid #2563eb" }}>
+                      &ldquo;{req.reason}&rdquo;
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await reviewRequest({ requestId: req.request_id, status: "approved" });
+                          toast.success("Access request approved successfully!");
+                          refetchRequests();
+                        } catch {
+                          toast.error("Failed to approve access request");
+                        }
+                      }}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 6,
+                        border: "none",
+                        background: "#16a34a",
+                        color: "#fff",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Check size={12} /> Approve
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await reviewRequest({ requestId: req.request_id, status: "denied" });
+                          toast.success("Access request denied successfully!");
+                          refetchRequests();
+                        } catch {
+                          toast.error("Failed to deny access request");
+                        }
+                      }}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 6,
+                        border: "1px solid #fca5a5",
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <X size={12} /> Deny
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Library policy notice banner (only for student) ── */}
         {isStudent && (

@@ -97,3 +97,35 @@ export function useTags() {
     staleTime: 5 * 60_000,
   });
 }
+
+export function useRequestAccess() {
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { data } = await api.post(`/archive/${id}/access-request`, { reason });
+      return data.data;
+    },
+  });
+}
+
+export function usePendingAccessRequests() {
+  return useQuery({
+    queryKey: ["archive", "access-requests", "pending"],
+    queryFn: async () => {
+      const { data } = await api.get("/archive/access-requests/pending");
+      return data.data;
+    },
+  });
+}
+
+export function useReviewAccessRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string; status: "approved" | "denied" }) => {
+      const { data } = await api.patch(`/archive/access-requests/${requestId}/review`, { status });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["archive", "access-requests"] });
+    },
+  });
+}

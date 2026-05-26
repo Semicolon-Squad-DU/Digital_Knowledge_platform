@@ -174,6 +174,7 @@ router.patch(
 
     const project = await queryOne<{
       project_id: string; title: string; advisor_id: string; submitted_by: string; status: string;
+      team_members: unknown; abstract: string; report_url: string | null;
     }>(
       "SELECT * FROM student_projects WHERE project_id = $1",
       [req.params.id]
