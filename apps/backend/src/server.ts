@@ -21,6 +21,9 @@ import showcaseRoutes from "./routes/showcase.routes";
 import researchRoutes from "./routes/research.routes";
 import notificationRoutes from "./routes/notifications.routes";
 import adminRoutes from "./routes/admin.routes";
+import commentsRoutes from "./routes/comments.routes";
+import reactionsRoutes from "./routes/reactions.routes";
+import eventsRoutes from "./routes/events.routes";
 
 const app = express();
 
@@ -99,6 +102,9 @@ app.use("/api/library", libraryRoutes);
 app.use("/api/showcase", showcaseRoutes);
 app.use("/api/research", researchRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/comments", commentsRoutes);
+app.use("/api/reactions", reactionsRoutes);
+app.use("/api/events", eventsRoutes);
 
 // ── Error handling ────────────────────────────────────────────
 app.use(notFound);

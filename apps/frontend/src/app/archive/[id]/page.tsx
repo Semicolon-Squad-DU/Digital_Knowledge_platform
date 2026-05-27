@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { DiscussionSection } from "@/components/community/DiscussionSection";
 
 export default function ArchiveItemPage() {
   const params = useParams<{ id: string }>();
@@ -463,6 +464,7 @@ export default function ArchiveItemPage() {
           )}
         </div>
 
+        <DiscussionSection entityType="archive" entityId={item.item_id} />
       </div>
     </AppLayout>
   );

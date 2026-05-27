@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
+import { DiscussionSection } from "@/components/community/DiscussionSection";
 
 type CitationFormat = "apa" | "mla" | "bibtex";
 
@@ -398,6 +399,8 @@ export default function ResearchDetailPage() {
           )}
         </div>
       </div>
+
+      <DiscussionSection entityType="research" entityId={output.output_id} />
     </div>
   );
 }

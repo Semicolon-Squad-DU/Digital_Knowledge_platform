@@ -373,10 +373,10 @@ export default function DashboardPage() {
               }}>
                 <div style={{
                   width:36, height:36, borderRadius:6, flexShrink:0,
-                  background:"#f3f4f6",
+                  background:"var(--avatar-theme-color, #2563eb)",
                   display:"flex", alignItems:"center", justifyContent:"center",
                 }}>
-                  <item.icon size={16} color="#6b7280" />
+                  <item.icon size={16} color="#ffffff" />
                 </div>
                 <div>
                   <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", margin:"0 0 3px" }}>

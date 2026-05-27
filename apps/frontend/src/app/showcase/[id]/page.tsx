@@ -8,6 +8,7 @@ import { FileText, Loader2, AlertTriangle, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
+import { DiscussionSection } from "@/components/community/DiscussionSection";
 
 function DownloadReportButton({ reportKey }: { reportKey: string }) {
   const [loading, setLoading] = useState(false);
@@ -147,6 +148,8 @@ export default function ShowcaseDetailPage() {
             </Link>
           )}
         </div>
+        
+        <DiscussionSection entityType="project" entityId={project.project_id} />
       </div>
     </div>
   );

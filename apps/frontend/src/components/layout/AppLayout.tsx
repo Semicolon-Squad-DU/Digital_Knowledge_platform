@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Archive, FlaskConical, Send,
-  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut,
+  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -16,6 +16,7 @@ export const APP_NAV = [
   { label: "Research",    href: "/research",  icon: FlaskConical },
   { label: "Submissions", href: "/showcase",  icon: Send },
   { label: "Library",     href: "/library",   icon: BookOpen },
+  { label: "Events",      href: "/events",    icon: Calendar },
   { label: "Admin",       href: "/admin",     icon: ShieldCheck },
 ];
 
