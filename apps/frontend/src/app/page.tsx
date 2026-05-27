@@ -48,9 +48,9 @@ export default function HomePage() {
         setHeadingText(TYPEWRITER_HEADING.slice(0, idx));
         if (idx >= TYPEWRITER_HEADING.length) {
           clearInterval(timer);
-          setTimeout(() => setPhase("body"), 300);
+          setTimeout(() => setPhase("body"), 500);
         }
-      }, 35);
+      }, 80);
     } else if (phase === "body") {
       timer = setInterval(() => {
         idx++;
@@ -59,13 +59,13 @@ export default function HomePage() {
           clearInterval(timer);
           setPhase("done");
         }
-      }, 18);
+      }, 40);
     } else if (phase === "done") {
       pauseTimer = setTimeout(() => {
         setHeadingText("");
         setBodyText("");
         setPhase("heading");
-      }, 5000);
+      }, 8000);
     }
 
     return () => {
@@ -129,7 +129,7 @@ export default function HomePage() {
 
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
 
-        <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <header style={{ background: "#e8eaed", borderBottom: "1px solid #d1d5db", position: "sticky", top: 0, zIndex: 50 }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
             <span style={{ fontSize: "15px", fontWeight: 700, color: "#111827", letterSpacing: "-0.01em" }}>
               Digital Knowledge Platform
@@ -137,7 +137,7 @@ export default function HomePage() {
 
             <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               {[
-                { label: "Archive", href: "/archive", protected: true },
+                { label: "Archive", href: "/archive", protected: false },
                 { label: "Library", href: "/library", protected: true },
                 { label: "Research", href: "/research", protected: true },
                 { label: "About", href: "/about", protected: false },
@@ -145,8 +145,8 @@ export default function HomePage() {
                 <Link
                   key={item.label}
                   href={item.protected && !isAuthenticated ? `/login?redirect=${item.href}` : item.href}
-                  style={{ padding: "6px 14px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+                  style={{ padding: "6px 14px", fontSize: "13px", fontWeight: 700, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
                 >{item.label}</Link>
               ))}
@@ -462,21 +462,19 @@ export default function HomePage() {
             {/* Links */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
               <div style={{ display: "flex", gap: "24px" }}>
-                {["Privacy Policy", "Terms of Service", "Contact Us"].map((l) => (
-                  <Link key={l} href="#" style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
+                {[
+                  { label: "Privacy Policy", href: "/privacy" },
+                  { label: "Terms of Service", href: "/terms" },
+                  { label: "Contact Us", href: "/contact" }
+                ].map((l) => (
+                  <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
                     onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                     onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                   >
-                    {l}
+                    {l.label}
                   </Link>
                 ))}
               </div>
-              <Link href="#" style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
-                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-              >
-
-              </Link>
             </div>
 
             {/* Globe icons */}

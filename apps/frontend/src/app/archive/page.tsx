@@ -7,7 +7,7 @@ import {
   Search, Plus, Upload, X, ChevronLeft, ChevronRight, Archive as ArchiveIcon,
 } from "lucide-react";
 import { useArchiveSearch, useDownloadArchiveItem } from "@/hooks/useArchive";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ArchiveCard } from "@/components/archive/ArchiveCard";
 import { UploadModal } from "@/components/archive/UploadModal";
@@ -34,7 +34,7 @@ const FILE_TYPE_OPTIONS = [
 
 export default function ArchivePage() {
   const router = useRouter();
-  const { user, ready } = useAuthGuard();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -48,19 +48,39 @@ export default function ArchivePage() {
   const { data, isLoading, isError } = useArchiveSearch(params);
   const { mutateAsync: download } = useDownloadArchiveItem();
 
-  const canUpload = ready && ["archivist", "admin"].includes(user?.role ?? "");
+  const canUpload = _hasHydrated && isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
 
   const handleSearch = () => {
     setParams((p) => ({ ...p, query: searchInput, page: 1 }));
     setCurrentPage(1);
   };
 
-  const handleFilterApply = () => {
+  const handleCategoryChange = (cat: string) => {
+    const newCategory = cat === "" ? "" : cat;
+    setFilterCategory(newCategory);
     setParams((p) => ({
       ...p,
-      category: filterCategory,
-      language: filterLanguage,
-      file_type: filterFileType,
+      category: newCategory,
+      page: 1,
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    setFilterLanguage(lang);
+    setParams((p) => ({
+      ...p,
+      language: lang,
+      page: 1,
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleFileTypeChange = (type: string) => {
+    setFilterFileType(type);
+    setParams((p) => ({
+      ...p,
+      file_type: type,
       page: 1,
     }));
     setCurrentPage(1);
@@ -86,7 +106,7 @@ export default function ArchivePage() {
 
   const hasActiveFilters = filterCategory || filterLanguage || filterFileType || searchInput;
 
-  if (!ready) return null;
+  if (!_hasHydrated) return null;
 
   const totalPages = data?.total_pages || 1;
 
@@ -185,172 +205,162 @@ export default function ArchivePage() {
             </button>
           </div>
 
-          {/* Filter Chips */}
+          {/* Filter Section - Redesigned */}
           <div style={{
-            display: "flex",
-            gap: 12,
-            marginBottom: 20,
-            flexWrap: "wrap",
-            alignItems: "center",
+            background: "#f9fafb",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            padding: "20px",
+            marginBottom: 24,
           }}>
-            {/* Category Chips */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Category:
-              </span>
-              <button
-                onClick={() => setFilterCategory("")}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 6,
-                  border: filterCategory === "" ? "none" : "1px solid #e5e7eb",
-                  background: filterCategory === "" ? "var(--theme-gradient-160)" : "#fff",
-                  color: filterCategory === "" ? "#fff" : "#6b7280",
-                  fontSize: 12,
-                  fontWeight: filterCategory === "" ? 600 : 500,
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-              >
-                All
-              </button>
-              {CATEGORY_OPTIONS.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setFilterCategory(cat)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 6,
-                    border: filterCategory === cat ? "none" : "1px solid #e5e7eb",
-                    background: filterCategory === cat ? "var(--theme-gradient-160)" : "#fff",
-                    color: filterCategory === cat ? "#fff" : "#6b7280",
-                    fontSize: 12,
-                    fontWeight: filterCategory === cat ? 600 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
+            {/* Category Filter */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#111827", display: "block", marginBottom: 12 }}>
+                Category
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["All", ...CATEGORY_OPTIONS].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat === "All" ? "" : cat)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? "none" : "1px solid #d1d5db",
+                      background: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? "var(--avatar-theme-color)" : "#ffffff",
+                      color: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? "#ffffff" : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!((cat === "All" ? filterCategory === "" : filterCategory === cat))) {
+                        e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                        e.currentTarget.style.color = "var(--avatar-theme-color)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!((cat === "All" ? filterCategory === "" : filterCategory === cat))) {
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                        e.currentTarget.style.color = "#6b7280";
+                      }
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Language Chips */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Language:
-              </span>
-              <button
-                onClick={() => setFilterLanguage("")}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 6,
-                  border: filterLanguage === "" ? "none" : "1px solid #e5e7eb",
-                  background: filterLanguage === "" ? "var(--theme-gradient-160)" : "#fff",
-                  color: filterLanguage === "" ? "#fff" : "#6b7280",
-                  fontSize: 12,
-                  fontWeight: filterLanguage === "" ? 600 : 500,
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-              >
-                All
-              </button>
-              {LANGUAGE_OPTIONS.map((lang) => (
-                <button
-                  key={lang.value}
-                  onClick={() => setFilterLanguage(lang.value)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 6,
-                    border: filterLanguage === lang.value ? "none" : "1px solid #e5e7eb",
-                    background: filterLanguage === lang.value ? "var(--theme-gradient-160)" : "#fff",
-                    color: filterLanguage === lang.value ? "#fff" : "#6b7280",
-                    fontSize: 12,
-                    fontWeight: filterLanguage === lang.value ? 600 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {lang.label}
-                </button>
-              ))}
+            {/* Language Filter */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#111827", display: "block", marginBottom: 12 }}>
+                Language
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[{ value: "", label: "All" }, ...LANGUAGE_OPTIONS].map((lang) => (
+                  <button
+                    key={lang.value}
+                    onClick={() => handleLanguageChange(lang.value)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: filterLanguage === lang.value ? "none" : "1px solid #d1d5db",
+                      background: filterLanguage === lang.value ? "var(--avatar-theme-color)" : "#ffffff",
+                      color: filterLanguage === lang.value ? "#ffffff" : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: filterLanguage === lang.value ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filterLanguage !== lang.value) {
+                        e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                        e.currentTarget.style.color = "var(--avatar-theme-color)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filterLanguage !== lang.value) {
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                        e.currentTarget.style.color = "#6b7280";
+                      }
+                    }}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* File Type Chips */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Type:
-              </span>
-              <button
-                onClick={() => setFilterFileType("")}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 6,
-                  border: filterFileType === "" ? "none" : "1px solid #e5e7eb",
-                  background: filterFileType === "" ? "var(--theme-gradient-160)" : "#fff",
-                  color: filterFileType === "" ? "#fff" : "#6b7280",
-                  fontSize: 12,
-                  fontWeight: filterFileType === "" ? 600 : 500,
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-              >
-                All
-              </button>
-              {FILE_TYPE_OPTIONS.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setFilterFileType(type.value)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 6,
-                    border: filterFileType === type.value ? "none" : "1px solid #e5e7eb",
-                    background: filterFileType === type.value ? "var(--theme-gradient-160)" : "#fff",
-                    color: filterFileType === type.value ? "#fff" : "#6b7280",
-                    fontSize: 12,
-                    fontWeight: filterFileType === type.value ? 600 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {type.label}
-                </button>
-              ))}
+            {/* File Type Filter */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#111827", display: "block", marginBottom: 12 }}>
+                File Type
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[{ value: "", label: "All" }, ...FILE_TYPE_OPTIONS].map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => handleFileTypeChange(type.value)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: filterFileType === type.value ? "none" : "1px solid #d1d5db",
+                      background: filterFileType === type.value ? "var(--avatar-theme-color)" : "#ffffff",
+                      color: filterFileType === type.value ? "#ffffff" : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: filterFileType === type.value ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filterFileType !== type.value) {
+                        e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                        e.currentTarget.style.color = "var(--avatar-theme-color)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filterFileType !== type.value) {
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                        e.currentTarget.style.color = "#6b7280";
+                      }
+                    }}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Apply Button */}
-            <button
-              onClick={handleFilterApply}
-              style={{
-                padding: "8px 16px",
-                background: "#111827",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            >
-              Apply Filters
-            </button>
+            {/* Clear Filters Button */}
             {hasActiveFilters && (
-              <button
-                onClick={handleClearFilters}
-                style={{
-                  padding: "8px 12px",
-                  background: "#f3f4f6",
-                  color: "#6b7280",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                Clear All
-              </button>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={handleClearFilters}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#ffffff",
+                    color: "#6b7280",
+                    border: "1px solid #d1d5db",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#f3f4f6";
+                    e.currentTarget.style.borderColor = "#9ca3af";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#ffffff";
+                    e.currentTarget.style.borderColor = "#d1d5db";
+                  }}
+                >
+                  Clear All
+                </button>
+              </div>
             )}
           </div>
 

@@ -18,6 +18,7 @@ const ROLES = [
   { value: "researcher", label: "Researcher", desc: "Publish research outputs and manage labs" },
   { value: "archivist", label: "Archivist", desc: "Upload and manage archive documents" },
   { value: "librarian", label: "Librarian", desc: "Manage library catalog and lending" },
+  { value: "admin", label: "Admin", desc: "Full platform access and user management" },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
 

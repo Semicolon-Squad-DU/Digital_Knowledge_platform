@@ -24,6 +24,7 @@ import adminRoutes from "./routes/admin.routes";
 import commentsRoutes from "./routes/comments.routes";
 import reactionsRoutes from "./routes/reactions.routes";
 import eventsRoutes from "./routes/events.routes";
+import contactRoutes from "./routes/contact.routes";
 
 const app = express();
 
@@ -105,6 +106,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/comments", commentsRoutes);
 app.use("/api/reactions", reactionsRoutes);
 app.use("/api/events", eventsRoutes);
+app.use("/api/contact", contactRoutes);
 
 // ── Error handling ────────────────────────────────────────────
 app.use(notFound);
