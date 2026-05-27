@@ -198,8 +198,8 @@ function Pager({ page, totalPages, onChange }: { page: number; totalPages: numbe
   const btn = (content: React.ReactNode, active: boolean, disabled: boolean, onClick: () => void, key: string | number) => (
     <button key={key} onClick={onClick} disabled={disabled} style={{
       width: 36, height: 36, borderRadius: 6, border: "1px solid",
-      borderColor: active ? "#111827" : "#e5e7eb",
-      background: active ? "#111827" : "#fff",
+      borderColor: active ? "var(--avatar-theme-color)" : "#e5e7eb",
+      background: active ? "var(--avatar-theme-color)" : "#fff",
       color: active ? "#fff" : disabled ? "#d1d5db" : "#374151",
       fontSize: 13, fontWeight: active ? 700 : 500,
       cursor: disabled ? "not-allowed" : "pointer",
@@ -333,7 +333,7 @@ export default function LibraryPage() {
   });
 
   const topbarActions = isLibrarian ? (
-    <button onClick={() => setAddModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:6, background:"#111827", color:"#fff", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+    <button onClick={() => setAddModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:6, background:"var(--avatar-theme-color)", color:"#fff", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
       <Plus size={13} /> Add Book
     </button>
   ) : null;
@@ -341,6 +341,16 @@ export default function LibraryPage() {
   return (
     <AppLayout topbarActions={topbarActions}>
       <div style={{ padding:"28px 32px" }}>
+
+          {/* Page heading */}
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+              Library Repository
+            </h1>
+            <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+              Browse and reserve academic textbooks, journals, and articles
+            </p>
+          </div>
 
           {/* Search bar */}
           <form onSubmit={handleSearch} style={{ display:"flex", gap:0, marginBottom:20 }}>
@@ -353,7 +363,7 @@ export default function LibraryPage() {
                 style={{ width:"100%", padding:"11px 14px 11px 40px", fontSize:14, border:"1px solid #e5e7eb", borderRight:"none", borderRadius:"8px 0 0 8px", outline:"none", boxSizing:"border-box", color:"#111827" }}
               />
             </div>
-            <button type="submit" style={{ padding:"11px 24px", background:"#111827", color:"#fff", border:"none", borderRadius:"0 8px 8px 0", fontSize:14, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" }}>
+            <button type="submit" style={{ padding:"11px 24px", background:"var(--avatar-theme-color)", color:"#fff", border:"none", borderRadius:"0 8px 8px 0", fontSize:14, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" }}>
               Search
             </button>
           </form>
@@ -365,7 +375,7 @@ export default function LibraryPage() {
                 style={{
                   padding:"7px 16px", borderRadius:6, fontSize:13, fontWeight:500, cursor:"pointer",
                   border: params.category === cat.value ? "none" : "1px solid #e5e7eb",
-                  background: params.category === cat.value ? "#111827" : "#fff",
+                  background: params.category === cat.value ? "var(--avatar-theme-color)" : "#fff",
                   color: params.category === cat.value ? "#fff" : "#374151",
                 }}>
                 {cat.label}
@@ -403,7 +413,7 @@ export default function LibraryPage() {
                 padding: "7px 14px",
                 borderRadius: 6,
                 border: "1px solid #e5e7eb",
-                background: showAdvanced ? "#111827" : "#fff",
+                background: showAdvanced ? "var(--avatar-theme-color)" : "#fff",
                 color: showAdvanced ? "#fff" : "#374151",
                 fontSize: 13,
                 fontWeight: 600,

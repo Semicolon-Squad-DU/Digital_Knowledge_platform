@@ -67,7 +67,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       {/* ════════ SIDEBAR ════════ */}
       <aside style={{
         width: 200, flexShrink: 0,
-        background: "linear-gradient(135deg, #111116 0%, #1a1a2e 100%)",
+        background: "var(--theme-sidebar-gradient)",
         borderRight: "1px solid rgba(255,255,255,0.05)",
         display: "flex", flexDirection: "column",
         position: "sticky", top: 0, height: "100vh", overflowY: "auto",
@@ -101,8 +101,8 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
                   padding: "9px 12px", borderRadius: 6, marginBottom: 2,
                   fontSize: 13,
                   fontWeight: active ? 600 : 500,
-                  color: active ? "#111827" : "rgba(255,255,255,0.7)",
-                  background: active ? "#ffffff" : "transparent",
+                  color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
+                  background: active ? "var(--avatar-theme-color)" : "transparent",
                   transition: "all 0.1s",
                 }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; } }}
@@ -165,22 +165,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           padding: "0 28px", gap: 16, flexShrink: 0,
           position: "sticky", top: 0, zIndex: 30,
         }}>
-          {/* Left corner header title */}
-          {headerTitle && (
-            <div style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#111827",
-              letterSpacing: "-0.3px",
-              flexShrink: 0,
-              marginRight: 8,
-            }}>
-              {headerTitle}
-            </div>
-          )}
 
-          {/* Search slot */}
-          {topbarSearch}
 
           {/* Extra actions slot */}
           {topbarActions && (
@@ -226,7 +211,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             <Link href="/profile" title="View Profile" style={{ textDecoration: "none", display: "flex" }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
-                background: "#1a1a2e",
+                background: "var(--avatar-theme-color)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
               }}>

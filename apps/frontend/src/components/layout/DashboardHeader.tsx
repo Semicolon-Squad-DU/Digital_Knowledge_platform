@@ -141,7 +141,7 @@ export function DashboardHeader({
             width: 34,
             height: 34,
             borderRadius: "50%",
-            background: "#4b5563",
+            background: "var(--avatar-theme-color)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

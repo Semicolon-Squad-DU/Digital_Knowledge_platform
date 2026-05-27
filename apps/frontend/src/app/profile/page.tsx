@@ -98,6 +98,7 @@ export default function ProfilePage() {
   const handleAvatarColorChange = (colorVal: string) => {
     setAvatarColor(colorVal);
     localStorage.setItem("user_avatar_color", colorVal);
+    window.dispatchEvent(new Event("avatar-theme-changed"));
     toast.success("Avatar backdrop customized!");
   };
 
@@ -192,7 +193,7 @@ export default function ProfilePage() {
             
             {/* ── PROFILE BANNER ── */}
             <div style={{
-              background: `linear-gradient(135deg, ${avatarColor} 0%, #111116 100%)`,
+              background: "var(--theme-gradient-135)",
               padding: "56px 32px",
               position: "relative",
               overflow: "hidden",
@@ -674,7 +675,7 @@ export default function ProfilePage() {
                   style={{
                     fontSize: "13px",
                     fontWeight: 600,
-                    background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                    background: "var(--theme-gradient-160)",
                     color: "#ffffff",
                     border: "none",
                     padding: "10px 20px",
@@ -830,7 +831,7 @@ export default function ProfilePage() {
                     padding: "8px 16px",
                     borderRadius: "6px",
                     border: "none",
-                    background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                    background: "var(--theme-gradient-160)",
                     color: "#ffffff",
                     fontSize: "12px",
                     fontWeight: 600,

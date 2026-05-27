@@ -316,7 +316,7 @@ export default function LibraryItemPage() {
                         fontSize: 13,
                         fontWeight: 600,
                         border: "none",
-                        background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                        background: "var(--theme-gradient-160)",
                         color: "#fff",
                         cursor: "pointer",
                         boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
@@ -670,7 +670,7 @@ export default function LibraryItemPage() {
             <button onClick={() => setEditModal(false)} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               Cancel
             </button>
-            <button onClick={handleSaveEdit} disabled={isUpdating} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: isUpdating ? 0.6 : 1 }}>
+            <button onClick={handleSaveEdit} disabled={isUpdating} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: isUpdating ? 0.6 : 1 }}>
               {isUpdating ? "Saving..." : "Save Changes"}
             </button>
           </div>

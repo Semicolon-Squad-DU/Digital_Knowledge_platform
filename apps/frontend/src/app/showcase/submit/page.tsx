@@ -542,7 +542,7 @@ export default function SubmitProjectPage() {
                 alignItems: "center",
                 gap: 6,
                 padding: "10px 18px",
-                background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                background: "var(--theme-gradient-160)",
                 border: "none",
                 borderRadius: 8,
                 cursor: (isSubmitting || submitProject.isPending) ? "not-allowed" : "pointer",

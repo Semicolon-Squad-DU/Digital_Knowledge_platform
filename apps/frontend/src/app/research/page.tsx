@@ -153,7 +153,7 @@ export default function ResearchPage() {
 
           {/* Page heading */}
           <div style={{ marginBottom:24 }}>
-            <h1 style={{ fontSize:28, fontWeight:800, color:"#111827", margin:0, lineHeight:1.2 }}>
+            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
               Research Repository
             </h1>
             <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
@@ -180,7 +180,7 @@ export default function ResearchPage() {
               type="submit"
               style={{
                 padding:"10px 20px", borderRadius:8, border:"none",
-                background:"linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                background:"var(--theme-gradient-160)",
                 color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer",
               }}
             >
@@ -190,7 +190,7 @@ export default function ResearchPage() {
               <Link href="/research/upload" style={{
                 display:"flex", alignItems:"center", gap:6,
                 padding:"10px 16px", borderRadius:8,
-                background:"linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                background:"var(--theme-gradient-160)",
                 color:"#fff", fontSize:13, fontWeight:600,
                 textDecoration:"none", cursor:"pointer",
               }}>
@@ -216,7 +216,7 @@ export default function ResearchPage() {
                   onClick={() => setParams((p) => ({ ...p, output_type: t.value, page: 1 }))}
                   style={{
                     padding:"6px 14px", borderRadius:6, border: active ? "none" : "1px solid #e5e7eb",
-                    background: active ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                    background: active ? "var(--theme-gradient-160)" : "#fff",
                     color: active ? "#fff" : "#6b7280",
                     fontSize:12, fontWeight: active ? 600 : 500,
                     cursor:"pointer", transition:"all 0.2s",

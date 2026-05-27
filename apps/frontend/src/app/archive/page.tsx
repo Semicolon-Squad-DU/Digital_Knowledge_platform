@@ -98,9 +98,9 @@ export default function ArchivePage() {
           {/* Title Section */}
           <div style={{ marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.5px" }}>
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                 Archive Repository
-              </h2>
+              </h1>
               <p style={{ fontSize: 13, color: "#6b7280", margin: "8px 0 0 0" }}>
                 Find institutional documents and media
               </p>
@@ -113,7 +113,7 @@ export default function ArchivePage() {
                   alignItems: "center",
                   gap: 6,
                   padding: "10px 16px",
-                  background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                  background: "var(--theme-gradient-160)",
                   color: "#fff",
                   border: "none",
                   borderRadius: 8,
@@ -168,7 +168,7 @@ export default function ArchivePage() {
               onClick={handleSearch}
               style={{
                 padding: "10px 16px",
-                background: "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)",
+                background: "var(--theme-gradient-160)",
                 color: "#fff",
                 border: "none",
                 borderRadius: 8,
@@ -204,7 +204,7 @@ export default function ArchivePage() {
                   padding: "6px 14px",
                   borderRadius: 6,
                   border: filterCategory === "" ? "none" : "1px solid #e5e7eb",
-                  background: filterCategory === "" ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                  background: filterCategory === "" ? "var(--theme-gradient-160)" : "#fff",
                   color: filterCategory === "" ? "#fff" : "#6b7280",
                   fontSize: 12,
                   fontWeight: filterCategory === "" ? 600 : 500,
@@ -222,7 +222,7 @@ export default function ArchivePage() {
                     padding: "6px 14px",
                     borderRadius: 6,
                     border: filterCategory === cat ? "none" : "1px solid #e5e7eb",
-                    background: filterCategory === cat ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                    background: filterCategory === cat ? "var(--theme-gradient-160)" : "#fff",
                     color: filterCategory === cat ? "#fff" : "#6b7280",
                     fontSize: 12,
                     fontWeight: filterCategory === cat ? 600 : 500,
@@ -246,7 +246,7 @@ export default function ArchivePage() {
                   padding: "6px 14px",
                   borderRadius: 6,
                   border: filterLanguage === "" ? "none" : "1px solid #e5e7eb",
-                  background: filterLanguage === "" ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                  background: filterLanguage === "" ? "var(--theme-gradient-160)" : "#fff",
                   color: filterLanguage === "" ? "#fff" : "#6b7280",
                   fontSize: 12,
                   fontWeight: filterLanguage === "" ? 600 : 500,
@@ -264,7 +264,7 @@ export default function ArchivePage() {
                     padding: "6px 14px",
                     borderRadius: 6,
                     border: filterLanguage === lang.value ? "none" : "1px solid #e5e7eb",
-                    background: filterLanguage === lang.value ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                    background: filterLanguage === lang.value ? "var(--theme-gradient-160)" : "#fff",
                     color: filterLanguage === lang.value ? "#fff" : "#6b7280",
                     fontSize: 12,
                     fontWeight: filterLanguage === lang.value ? 600 : 500,
@@ -288,7 +288,7 @@ export default function ArchivePage() {
                   padding: "6px 14px",
                   borderRadius: 6,
                   border: filterFileType === "" ? "none" : "1px solid #e5e7eb",
-                  background: filterFileType === "" ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                  background: filterFileType === "" ? "var(--theme-gradient-160)" : "#fff",
                   color: filterFileType === "" ? "#fff" : "#6b7280",
                   fontSize: 12,
                   fontWeight: filterFileType === "" ? 600 : 500,
@@ -306,7 +306,7 @@ export default function ArchivePage() {
                     padding: "6px 14px",
                     borderRadius: 6,
                     border: filterFileType === type.value ? "none" : "1px solid #e5e7eb",
-                    background: filterFileType === type.value ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                    background: filterFileType === type.value ? "var(--theme-gradient-160)" : "#fff",
                     color: filterFileType === type.value ? "#fff" : "#6b7280",
                     fontSize: 12,
                     fontWeight: filterFileType === type.value ? 600 : 500,
@@ -455,7 +455,7 @@ export default function ArchivePage() {
                           height: 32,
                           borderRadius: 4,
                           border: page === currentPage ? "none" : "1px solid #e5e7eb",
-                          background: page === currentPage ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                          background: page === currentPage ? "var(--theme-gradient-160)" : "#fff",
                           cursor: "pointer",
                           fontSize: 12,
                           fontWeight: 600,

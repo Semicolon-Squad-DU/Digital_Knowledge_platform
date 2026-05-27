@@ -158,38 +158,38 @@ export default function HomePage() {
                 <>
                   {/* Signed-in: show avatar circle + sign out */}
                   {/* Dashboard button for logged in users */}
-                  <Link 
-                    href="/dashboard" 
-                    style={{ 
-                      padding: "7px 16px", 
-                      fontSize: "13px", 
-                      fontWeight: 600, 
-                      color: "#ffffff", 
-                      background: "#1a1a2e", 
-                      borderRadius: "6px", 
+                  <Link
+                    href="/dashboard"
+                    style={{
+                      padding: "7px 16px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#ffffff",
+                      background: "var(--avatar-theme-color)",
+                      borderRadius: "6px",
                       textDecoration: "none",
                       transition: "all 0.2s"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#2a2a3a"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#1a1a2e"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "0.9"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "1"; }}
                   >
                     Dashboard
                   </Link>
-                  <button 
+                  <button
                     onClick={() => router.push("/profile")}
-                    style={{ 
-                      width: 48, 
-                      height: 48, 
-                      borderRadius: "50%", 
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: "50%",
                       background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "center", 
-                      fontSize: 16, 
-                      fontWeight: 700, 
-                      color: "#111827", 
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: "#111827",
                       border: "2px solid #d1d5db",
-                      cursor: "pointer", 
+                      cursor: "pointer",
                       transition: "all 0.3s ease",
                       outline: "none",
                       boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
@@ -207,19 +207,19 @@ export default function HomePage() {
                   >
                     {user?.name?.[0]?.toUpperCase()}
                   </button>
-                  <button 
-                    onClick={handleLogout} 
-                    style={{ 
-                      display: "inline-flex", 
-                      alignItems: "center", 
-                      gap: 5, 
-                      padding: "7px 12px", 
-                      fontSize: "13px", 
-                      fontWeight: 500, 
-                      color: "#4b5563", 
-                      background: "transparent", 
-                      border: "1px solid #dee2e6", 
-                      borderRadius: "6px", 
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      padding: "7px 12px",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      color: "#4b5563",
+                      background: "transparent",
+                      border: "1px solid #dee2e6",
+                      borderRadius: "6px",
                       cursor: "pointer",
                       transition: "all 0.2s"
                     }}
@@ -232,16 +232,16 @@ export default function HomePage() {
               ) : (
                 <>
                   {/* Guest: sign in + register */}
-                  <Link 
-                    href="/login" 
-                    style={{ 
-                      padding: "7px 16px", 
-                      fontSize: "13px", 
-                      fontWeight: 500, 
-                      color: "#495057", 
-                      textDecoration: "none", 
-                      borderRadius: "6px", 
-                      border: "1px solid #dee2e6", 
+                  <Link
+                    href="/login"
+                    style={{
+                      padding: "7px 16px",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      color: "#495057",
+                      textDecoration: "none",
+                      borderRadius: "6px",
+                      border: "1px solid #dee2e6",
                       background: "#ffffff",
                       transition: "all 0.2s"
                     }}
@@ -250,20 +250,20 @@ export default function HomePage() {
                   >
                     Sign In
                   </Link>
-                  <Link 
-                    href="/register" 
-                    style={{ 
-                      padding: "7px 16px", 
-                      fontSize: "13px", 
-                      fontWeight: 600, 
-                      color: "#ffffff", 
-                      background: "#1a1a2e", 
-                      borderRadius: "6px", 
+                  <Link
+                    href="/register"
+                    style={{
+                      padding: "7px 16px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#ffffff",
+                      background: "var(--avatar-theme-color)",
+                      borderRadius: "6px",
                       textDecoration: "none",
                       transition: "all 0.2s"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#2a2a3a"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#1a1a2e"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "0.9"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "1"; }}
                   >
                     Register
                   </Link>
@@ -276,112 +276,130 @@ export default function HomePage() {
         {/* ── GUEST HERO ── */}
         <section style={{ background: "#ffffff", padding: "20px 32px 0", display: "flex", flexDirection: "column" }}>
           <div style={{ maxWidth: "1400px", width: "100%", margin: "0 auto", textAlign: "left", display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%", flexWrap: "wrap", gap: "20px", position: "relative", zIndex: 10 }}>
-                  <h1 style={{
-                    fontSize: "clamp(1.5rem, 4vw, 3.5rem)",
-                    fontWeight: 500,
+            <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%", flexWrap: "wrap", gap: "20px", position: "relative", zIndex: 10 }}>
+                <h1 style={{
+                  fontSize: "clamp(1.5rem, 4vw, 3.5rem)",
+                  fontWeight: 800,
+                  background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%), var(--avatar-theme-color)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  display: "inline-block",
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.05em",
+                  wordSpacing: "0.3em",
+                  margin: 0,
+                  textTransform: "uppercase",
+                  wordBreak: "break-word",
+                  flex: "1 1 min-content"
+                }}>
+                  The  Digital<br />Knowledge  Platform
+                </h1>
+                <button
+                  onClick={() => {
+                    const nextSection = document.getElementById('network-section');
+                    if (nextSection) {
+                      nextSection.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+                    }
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    marginTop: "12px",
                     color: "#000",
-                    lineHeight: 1.1,
-                    letterSpacing: "-0.04em",
-                    margin: 0,
-                    textTransform: "uppercase",
-                    wordBreak: "break-word",
-                    flex: "1 1 min-content"
-                  }}>
-                    The Digital<br />Knowledge Platform
-                  </h1>
-                  <button
-                    onClick={() => {
-                      const nextSection = document.getElementById('network-section');
-                      if (nextSection) {
-                        nextSection.scrollIntoView({ behavior: 'smooth' });
-                      } else {
-                        window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-                      }
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      marginTop: "12px",
-                      color: "#000",
-                      flexShrink: 0,
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0
-                    }}
-                  >
-                    <span style={{ fontSize: "16px", fontWeight: 500 }}>Scroll down</span>
-                    <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_downward</span>
-                  </button>
-                </div>
-
-                <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "-15%", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
-                  <img src="/hero-graphic.png" alt="Platform Graphic" style={{ width: "100%", maxWidth: "1000px", objectFit: "contain", zIndex: 1, position: "relative", paddingBottom: "2px", mixBlendMode: "multiply" }} />
-
-                  {/* Horizontal line behind the graphic, stretching full width */}
-                  <div style={{ position: "absolute", bottom: "2px", left: "-5vw", right: "-5vw", height: "3px", background: "#000", zIndex: 0 }}></div>
-                </div>
-
-                {/* ── TYPEWRITER TEXT ── */}
-                <div style={{
-                  width: "100%",
-                  maxWidth: "720px",
-                  padding: "48px 0 12px",
-                  textAlign: "left",
-                }}
+                    flexShrink: 0,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0
+                  }}
                 >
-                  <h2 style={{
-                    fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)",
-                    fontWeight: 700,
-                    color: "#1a1a2e",
-                    lineHeight: 1.3,
-                    letterSpacing: "-0.02em",
-                    margin: "0 0 16px",
-                    minHeight: "2.3em",
-                  }}>
-                    {headingText}
-                    {phase === "heading" && (
-                      <span style={{
-                        display: "inline-block",
-                        width: "2px",
-                        height: "1em",
-                        background: "#1a1a2e",
-                        marginLeft: "2px",
-                        verticalAlign: "text-bottom",
-                        animation: "cursorBlink 0.7s steps(1) infinite",
-                      }} />
-                    )}
-                  </h2>
-                  <p style={{
-                    fontSize: "clamp(0.875rem, 1.4vw, 1.05rem)",
-                    color: "#495057",
-                    lineHeight: 1.75,
-                    margin: 0,
-                    minHeight: "4.5em",
-                  }}>
-                    {bodyText}
-                    {(phase === "body") && (
-                      <span style={{
-                        display: "inline-block",
-                        width: "2px",
-                        height: "1em",
-                        background: "#495057",
-                        marginLeft: "2px",
-                        verticalAlign: "text-bottom",
-                        animation: "cursorBlink 0.7s steps(1) infinite",
-                      }} />
-                    )}
-                  </p>
-                </div>
+                  <span style={{ fontSize: "16px", fontWeight: 500 }}>Scroll down</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_downward</span>
+                </button>
               </div>
+
+              <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "-15%", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
+                <div style={{ position: "relative", width: "100%", maxWidth: "1000px", zIndex: 1 }}>
+                  <img src="/hero-graphic.png" alt="Platform Graphic" style={{ width: "100%", objectFit: "contain", display: "block", mixBlendMode: "multiply" }} />
+                  <div style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "var(--avatar-theme-color)",
+                    mixBlendMode: "color",
+                    zIndex: 2,
+                    pointerEvents: "none",
+                    opacity: 0.8
+                  }} />
+                </div>
+
+                {/* Horizontal line behind the graphic, stretching full width */}
+                <div style={{ position: "absolute", bottom: "2px", left: "-5vw", right: "-5vw", height: "3px", background: "#000", zIndex: 0 }}></div>
+              </div>
+
+              {/* ── TYPEWRITER TEXT ── */}
+              <div style={{
+                width: "100%",
+                maxWidth: "720px",
+                padding: "48px 0 12px",
+                textAlign: "left",
+              }}
+              >
+                <h2 style={{
+                  fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)",
+                  fontWeight: 700,
+                  color: "var(--avatar-theme-color)",
+                  lineHeight: 1.3,
+                  letterSpacing: "-0.02em",
+                  margin: "0 0 16px",
+                  minHeight: "2.3em",
+                }}>
+                  {headingText}
+                  {phase === "heading" && (
+                    <span style={{
+                      display: "inline-block",
+                      width: "2px",
+                      height: "1em",
+                      background: "var(--avatar-theme-color)",
+                      marginLeft: "2px",
+                      verticalAlign: "text-bottom",
+                      animation: "cursorBlink 0.7s steps(1) infinite",
+                    }} />
+                  )}
+                </h2>
+                <p style={{
+                  fontSize: "clamp(0.875rem, 1.4vw, 1.05rem)",
+                  color: "#495057",
+                  lineHeight: 1.75,
+                  margin: 0,
+                  minHeight: "4.5em",
+                }}>
+                  {bodyText}
+                  {(phase === "body") && (
+                    <span style={{
+                      display: "inline-block",
+                      width: "2px",
+                      height: "1em",
+                      background: "#495057",
+                      marginLeft: "2px",
+                      verticalAlign: "text-bottom",
+                      animation: "cursorBlink 0.7s steps(1) infinite",
+                    }} />
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* ── PARTNER NETWORK ────────────────────────────────────────────────── */}
-        <section id="network-section" style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%)", padding: "72px 32px" }}>
+        <section id="network-section" style={{ background: "var(--theme-sidebar-gradient)", padding: "72px 32px" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <div style={{ marginBottom: "40px" }}>
               <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#ffffff", marginBottom: "6px" }}>
@@ -433,7 +451,7 @@ export default function HomePage() {
           }}>
             {/* Brand */}
             <div>
-              <p style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a2e", lineHeight: 1.55, margin: "0 0 6px" }}>
+              <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color)", lineHeight: 1.55, margin: "0 0 6px" }}>
                 Digital Knowledge Platform
               </p>
               <p style={{ fontSize: "12px", color: "#6c757d", margin: 0 }}>
@@ -457,7 +475,7 @@ export default function HomePage() {
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
               >
-               
+
               </Link>
             </div>
 

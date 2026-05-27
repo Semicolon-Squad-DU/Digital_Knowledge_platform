@@ -28,7 +28,7 @@ export function DashboardSidebar() {
     <aside
       style={{
         width: 200,
-        background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)",
+        background: "var(--theme-sidebar-gradient)",
         borderRight: "1px solid rgba(255,255,255,0.1)",
         position: "fixed",
         height: "100vh",
@@ -76,9 +76,9 @@ export function DashboardSidebar() {
                 marginBottom: 2,
                 fontSize: 13,
                 fontWeight: isActive ? 600 : 500,
-                color: isActive ? "#000000" : "rgba(255,255,255,0.7)",
-                background: isActive ? "#f3f4f6" : "transparent",
-                borderLeft: isActive ? "3px solid #f3f4f6" : "3px solid transparent",
+                color: isActive ? "#ffffff" : "rgba(255,255,255,0.7)",
+                background: isActive ? "var(--avatar-theme-color)" : "transparent",
+                borderLeft: isActive ? "3px solid var(--avatar-theme-color)" : "3px solid transparent",
                 transition: "all 0.1s",
                 textDecoration: "none",
                 cursor: "pointer",

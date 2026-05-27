@@ -169,7 +169,7 @@ export default function DashboardPage() {
           {/* Page heading row */}
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>
             <div>
-              <h1 style={{ fontSize:28, fontWeight:800, color:"#111827", margin:0, lineHeight:1.2 }}>
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                 Overview Dashboard
               </h1>
               <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
               display:"inline-flex", alignItems:"center", gap:8,
               padding:"10px 20px", borderRadius:8,
               fontSize:13, fontWeight:600, color:"#fff",
-              background:"linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)", textDecoration:"none",
+              background:"var(--theme-gradient-160)", textDecoration:"none",
               whiteSpace:"nowrap",
             }}>
               <Plus size={14} />
@@ -297,7 +297,8 @@ export default function DashboardPage() {
               }}>
                 <div style={{
                   position:"absolute", inset:0,
-                  background:"linear-gradient(160deg,rgba(30,40,60,0.7) 0%,rgba(10,15,25,0.95) 100%)",
+                  background:"var(--theme-gradient-160)",
+                  opacity: 0.9,
                 }} />
                 <div style={{ position:"relative", zIndex:1 }}>
                   <h3 style={{ fontSize:18, fontWeight:800, color:"#fff", margin:"0 0 8px" }}>Library Catalog</h3>
@@ -322,7 +323,8 @@ export default function DashboardPage() {
               }}>
                 <div style={{
                   position:"absolute", inset:0,
-                  background:"linear-gradient(160deg,rgba(55,65,81,0.5) 0%,rgba(17,24,39,0.95) 100%)",
+                  background:"var(--theme-gradient-160)",
+                  opacity: 0.85,
                 }} />
                 <div style={{ position:"relative", zIndex:1 }}>
                   <h3 style={{ fontSize:18, fontWeight:800, color:"#fff", margin:"0 0 8px" }}>Digital Archive</h3>

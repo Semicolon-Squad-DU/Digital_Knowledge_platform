@@ -43,7 +43,7 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, sub, icon: Icon, color = "#2563eb", loading = false }: StatCardProps) {
-  const isGradient = color.includes("gradient");
+  const isGradient = color.includes("gradient") || color.startsWith("var(");
   const iconColor = isGradient ? "#ffffff" : color;
   const bgStyle = isGradient ? color : color + "15";
 
@@ -238,7 +238,7 @@ export default function AdminPage() {
       <div style={{ padding: "28px 32px" }}>
         {/* ── Page heading ── */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
             {roleTitle}
           </h1>
           <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
@@ -255,7 +255,7 @@ export default function AdminPage() {
                 value={docsLoading ? "—" : activeLoansCount}
                 sub="currently borrowed"
                 icon={BookOpen}
-                color="linear-gradient(135deg, #1e293b, #475569)"
+                color="var(--theme-gradient-135)"
                 loading={docsLoading}
               />
               <StatCard
@@ -263,7 +263,7 @@ export default function AdminPage() {
                 value={docsLoading ? "—" : activeHoldsCount}
                 sub="active holds / reservations"
                 icon={HardDrive}
-                color="linear-gradient(135deg, #1e293b, #475569)"
+                color="var(--theme-gradient-135)"
                 loading={docsLoading}
               />
               <StatCard
@@ -271,7 +271,7 @@ export default function AdminPage() {
                 value={docsLoading ? "—" : `${finesData?.total_pending ?? 0} TK`}
                 sub="flat 100 TK fine for overdue books"
                 icon={AlertCircle}
-                color={(finesData?.total_pending ?? 0) > 0 ? "linear-gradient(135deg, #dc2626, #b91c1c)" : "linear-gradient(135deg, #1e293b, #475569)"}
+                color={(finesData?.total_pending ?? 0) > 0 ? "linear-gradient(135deg, #dc2626, #b91c1c)" : "var(--theme-gradient-135)"}
                 loading={docsLoading}
               />
             </>
@@ -291,7 +291,7 @@ export default function AdminPage() {
                 value={statsLoading ? "—" : (adminStats?.totalDocuments ?? 0).toLocaleString()}
                 sub={adminStats?.totalDocuments ? `Archive & Library combined` : undefined}
                 icon={FileText}
-                color="linear-gradient(135deg, #4b5563, #d1d5db)"
+                color="var(--theme-gradient-135)"
                 loading={statsLoading}
               />
               <StatCard
@@ -299,7 +299,7 @@ export default function AdminPage() {
                 value={statsLoading ? "—" : (adminStats?.activeUsers ?? 0).toLocaleString()}
                 sub={adminStats?.activeUsers ? "online this month" : undefined}
                 icon={Users}
-                color="linear-gradient(135deg, #4b5563, #d1d5db)"
+                color="var(--theme-gradient-135)"
                 loading={statsLoading}
               />
               <StatCard
@@ -307,7 +307,7 @@ export default function AdminPage() {
                 value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 0}%`}
                 sub={adminStats ? "of total capacity" : undefined}
                 icon={HardDrive}
-                color="linear-gradient(135deg, #4b5563, #d1d5db)"
+                color="var(--theme-gradient-135)"
                 loading={statsLoading}
               />
             </>
@@ -359,7 +359,7 @@ export default function AdminPage() {
               alignItems: "center",
               gap: 6,
               padding: "10px 14px",
-              background: (filterStatus !== "all" || searchQuery) ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+              background: (filterStatus !== "all" || searchQuery) ? "var(--theme-gradient-160)" : "#fff",
               border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb",
               borderRadius: 8,
               cursor: "pointer",
@@ -862,7 +862,7 @@ export default function AdminPage() {
                       height: 32,
                       borderRadius: 4,
                       border: page === currentPage ? "none" : "1px solid #e5e7eb",
-                      background: page === currentPage ? "linear-gradient(160deg,rgba(30,40,60,0.9) 0%,rgba(10,15,25,1) 100%)" : "#fff",
+                      background: page === currentPage ? "var(--avatar-theme-color)" : "#fff",
                       cursor: "pointer",
                       fontSize: 12,
                       fontWeight: 600,
