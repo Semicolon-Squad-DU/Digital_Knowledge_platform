@@ -176,16 +176,6 @@ export default function DashboardPage() {
                 Comprehensive metrics for the academic repository
               </p>
             </div>
-            <Link href="/archive" style={{
-              display:"inline-flex", alignItems:"center", gap:8,
-              padding:"10px 20px", borderRadius:8,
-              fontSize:13, fontWeight:600, color:"#fff",
-              background:"var(--theme-gradient-160)", textDecoration:"none",
-              whiteSpace:"nowrap",
-            }}>
-              <Plus size={14} />
-              New Submission
-            </Link>
           </div>
 
           {/* ── STAT CARDS ── */}

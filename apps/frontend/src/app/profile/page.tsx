@@ -28,9 +28,10 @@ export default function ProfilePage() {
   const [sessionTime, setSessionTime] = useState("");
   
   // Fetch user's showcase projects
-  const { data: myProjects, isLoading: projectsLoading } = useShowcaseGallery({
+  const { data: myProjectsData, isLoading: projectsLoading } = useShowcaseGallery({
     submitted_by: user?.user_id ?? "non-existent-user",
   });
+  const projectsList = myProjectsData?.items || [];
   
   // Custom Bio states
   const [bio, setBio] = useState("Academic researcher and student author passionate about digital archives and machine learning.");
@@ -391,9 +392,9 @@ export default function ProfilePage() {
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{
                             padding: "6px 14px",
-                            background: "#e8f0fe",
-                            color: "#1a56db",
-                            border: "1px solid #c3ddfd",
+                            background: "color-mix(in srgb, var(--avatar-theme-color, #1a56db) 10%, transparent)",
+                            color: "var(--avatar-theme-color, #1a56db)",
+                            border: "1px solid color-mix(in srgb, var(--avatar-theme-color, #1a56db) 30%, transparent)",
                             borderRadius: "6px",
                             fontSize: "12px",
                             fontWeight: 700,
@@ -447,7 +448,7 @@ export default function ProfilePage() {
                       gap: 4,
                       fontSize: "12px",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: "var(--avatar-theme-color, #2563eb)",
                       background: "none",
                       border: "none",
                       cursor: "pointer",
@@ -478,7 +479,7 @@ export default function ProfilePage() {
                       type="checkbox"
                       checked={notificationPrefs.dueDateReminders}
                       onChange={() => {}} // handled by parent onClick
-                      style={{ width: 16, height: 16, cursor: "pointer" }}
+                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
                     />
                   </div>
 
@@ -500,7 +501,7 @@ export default function ProfilePage() {
                       type="checkbox"
                       checked={notificationPrefs.holdAvailability}
                       onChange={() => {}}
-                      style={{ width: 16, height: 16, cursor: "pointer" }}
+                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
                     />
                   </div>
 
@@ -522,7 +523,7 @@ export default function ProfilePage() {
                       type="checkbox"
                       checked={notificationPrefs.weeklyDigests}
                       onChange={() => {}}
-                      style={{ width: 16, height: 16, cursor: "pointer" }}
+                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
                     />
                   </div>
 
@@ -544,7 +545,7 @@ export default function ProfilePage() {
                       type="checkbox"
                       checked={notificationPrefs.appAlerts}
                       onChange={() => {}}
-                      style={{ width: 16, height: 16, cursor: "pointer" }}
+                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
                     />
                   </div>
 
@@ -586,7 +587,7 @@ export default function ProfilePage() {
 
                 {projectsLoading ? (
                   <p style={{ fontSize: "13px", color: "#6b7280" }}>Loading project submissions...</p>
-                ) : !myProjects || myProjects.length === 0 ? (
+                ) : !projectsList || projectsList.length === 0 ? (
                   <div style={{
                     textAlign: "center",
                     padding: "24px 16px",
@@ -612,7 +613,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {myProjects.map((project: any) => {
+                    {projectsList.map((project: any) => {
                       const isPending = project.status === "pending_review";
                       const isChanges = project.status === "changes_requested";
                       const isPublished = project.status === "published";
@@ -696,7 +697,7 @@ export default function ProfilePage() {
                                 gap: "4px",
                                 fontSize: "12px",
                                 fontWeight: 600,
-                                color: "#2563eb",
+                                color: "var(--avatar-theme-color, #2563eb)",
                                 background: "none",
                                 border: "none",
                                 cursor: "pointer",
@@ -768,10 +769,11 @@ export default function ProfilePage() {
                     onMouseLeave={e => e.currentTarget.style.background = "#f9fafb"}
                   >
                     <div style={{
-                      width: "36px", height: "36px", borderRadius: "8px", background: "#e8f0fe",
+                      width: "36px", height: "36px", borderRadius: "8px",
+                      background: "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 10%, transparent)",
                       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                     }}>
-                      <KeyRound size={16} color="#1a56db" />
+                      <KeyRound size={16} color="var(--avatar-theme-color, #1a56db)" />
                     </div>
                     <div>
                       <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", display: "block" }}>Change Password</span>

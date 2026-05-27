@@ -7,7 +7,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDropzone } from "react-dropzone";
-import { Plus, Trash2, Upload, FileText, X, GraduationCap } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, X, GraduationCap, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { useSubmitProject } from "@/hooks/useShowcase";
@@ -167,18 +167,63 @@ export default function SubmitProjectPage() {
     <AppLayout>
       <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
         
-        {/* Breadcrumb */}
-        <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
-          <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
-          <span>/</span>
-          <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
-          <span>/</span>
-          <span style={{ color: "#111827", fontWeight: 500 }}>Submit</span>
+        {/* Back Button & Breadcrumb Row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#374151",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#f9fafb";
+              e.currentTarget.style.borderColor = "var(--avatar-theme-color, #d1d5db)";
+              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#fff";
+              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.color = "#374151";
+            }}
+            aria-label="Go back"
+          >
+            <ArrowLeft size={14} />
+            <span>Back</span>
+          </button>
+
+          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
+            <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
+            <span>/</span>
+            <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
+            <span>/</span>
+            <span style={{ color: "#111827", fontWeight: 500 }}>Submit</span>
+          </div>
         </div>
 
         {/* Page heading */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, lineHeight: 1.2 }}>
+          <h1 style={{
+            fontSize: 40,
+            fontWeight: 800,
+            fontFamily: "'Inter', -apple-system, sans-serif",
+            background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, color-mix(in srgb, var(--avatar-theme-color) 40%, #fff) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            margin: 0,
+            lineHeight: 1.2,
+            display: "inline-block"
+          }}>
             Submit Project
           </h1>
           <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
@@ -293,23 +338,24 @@ export default function SubmitProjectPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  padding: "6px 12px",
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
+                  padding: "6px 14px",
+                  background: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 70%, #fff) 100%)",
+                  border: "none",
                   borderRadius: 8,
                   cursor: "pointer",
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#374151",
-                  transition: "all 0.2s",
+                  color: "#fff",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                  transition: "all 0.2s ease",
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#f9fafb";
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.filter = "brightness(1.1)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#fff";
-                  e.currentTarget.style.borderColor = "#e5e7eb";
+                  e.currentTarget.style.filter = "none";
+                  e.currentTarget.style.transform = "none";
                 }}
               >
                 <Plus size={13} /> Add Member
@@ -423,7 +469,7 @@ export default function SubmitProjectPage() {
                   border: "1px solid #e5e7eb",
                   background: "#f9fafb",
                 }}>
-                  <FileText size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <FileText size={20} color="var(--avatar-theme-color, #2563eb)" style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {pdfFile.name}
@@ -469,14 +515,14 @@ export default function SubmitProjectPage() {
                     padding: "32px 20px",
                     textAlign: "center",
                     cursor: "pointer",
-                    background: isDragActive ? "#eff6ff" : "#fff",
-                    borderColor: isDragActive ? "#2563eb" : "#d1d5db",
+                    background: isDragActive ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 8%, transparent)" : "#fff",
+                    borderColor: isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#d1d5db",
                     transition: "all 0.2s",
                   }}
                   onMouseOver={(e) => {
                     if (!isDragActive) {
-                      e.currentTarget.style.borderColor = "#2563eb";
-                      e.currentTarget.style.background = "#f9fafb";
+                      e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)";
+                      e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)";
                     }
                   }}
                   onMouseOut={(e) => {
@@ -489,14 +535,14 @@ export default function SubmitProjectPage() {
                   <input {...getInputProps()} aria-label="Upload PDF report" />
                   <Upload
                     size={24}
-                    color={isDragActive ? "#2563eb" : "#6b7280"}
+                    color={isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#6b7280"}
                     style={{ margin: "0 auto 12px" }}
                   />
                   <p style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", margin: 0 }}>
                     {isDragActive ? "Drop your PDF here" : "Drag & drop your report PDF"}
                   </p>
                   <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
-                    or <span style={{ color: "#2563eb", fontWeight: 500 }}>browse to upload</span> · PDF only · max {MAX_PDF_MB} MB
+                    or <span style={{ color: "var(--avatar-theme-color, #2563eb)", fontWeight: 500 }}>browse to upload</span> · PDF only · max {MAX_PDF_MB} MB
                   </p>
                 </div>
               )}
@@ -542,7 +588,7 @@ export default function SubmitProjectPage() {
                 alignItems: "center",
                 gap: 6,
                 padding: "10px 18px",
-                background: "var(--theme-gradient-160)",
+                background: "var(--avatar-theme-color, var(--theme-gradient-160))",
                 border: "none",
                 borderRadius: 8,
                 cursor: (isSubmitting || submitProject.isPending) ? "not-allowed" : "pointer",
@@ -550,6 +596,20 @@ export default function SubmitProjectPage() {
                 fontWeight: 600,
                 color: "#fff",
                 opacity: (isSubmitting || submitProject.isPending) ? 0.7 : 1,
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                if (!isSubmitting && !submitProject.isPending) {
+                  e.currentTarget.style.filter = "brightness(1.15)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isSubmitting && !submitProject.isPending) {
+                  e.currentTarget.style.filter = "none";
+                  e.currentTarget.style.transform = "none";
+                }
               }}
             >
               <GraduationCap size={15} />

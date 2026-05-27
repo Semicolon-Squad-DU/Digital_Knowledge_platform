@@ -148,8 +148,14 @@ export default function AdminPage() {
     return dateB - dateA;
   });
 
-  // Filter combined library items by search query
+  // Filter combined library items by search query and status
   const filteredCombinedItems = combinedItems.filter((item: any) => {
+    // 1. Status Filter
+    if (filterStatus !== "all" && item.status !== filterStatus) {
+      return false;
+    }
+
+    // 2. Search Query Filter
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     const titleMatch = item.title?.toLowerCase().includes(query);
@@ -348,6 +354,42 @@ export default function AdminPage() {
               }}
             />
           </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: "10px 14px",
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#374151",
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            <option value="all">All Statuses</option>
+            {isStudent ? (
+              <>
+                <option value="active">Active Borrowed</option>
+                <option value="overdue">Overdue Books</option>
+                <option value="returned">Returned Books</option>
+                <option value="pending">Pending Hold</option>
+                <option value="available">Available Hold</option>
+              </>
+            ) : (
+              <>
+                <option value="published">Published</option>
+                <option value="pending_review">Pending Review</option>
+                <option value="changes_requested">Changes Requested</option>
+                <option value="draft">Draft</option>
+              </>
+            )}
+          </select>
           <button
             onClick={() => {
               setFilterStatus("all");
@@ -359,7 +401,7 @@ export default function AdminPage() {
               alignItems: "center",
               gap: 6,
               padding: "10px 14px",
-              background: (filterStatus !== "all" || searchQuery) ? "var(--theme-gradient-160)" : "#fff",
+              background: (filterStatus !== "all" || searchQuery) ? "var(--avatar-theme-color, var(--theme-gradient-160))" : "#fff",
               border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb",
               borderRadius: 8,
               cursor: "pointer",

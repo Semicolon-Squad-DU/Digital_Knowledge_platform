@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Heart, BookMarked, Pencil, Trash2,
-  FileText, Download, Share2, FileJson,
+  FileText, Download, Share2, FileJson, ArrowLeft
 } from "lucide-react";
 import {
   useCatalogItem, useAddToWishlist, usePlaceHold,
@@ -26,7 +26,7 @@ function PdfPreview({ pdfKey }: { pdfKey: string }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    
+
     // Clean S3 key by removing S3 scheme/prefix if present
     const cleanKey = pdfKey.replace(/^local:\/\//, "");
 
@@ -72,7 +72,7 @@ function PdfPreview({ pdfKey }: { pdfKey: string }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-const BOOK_CATEGORIES = ["General","Textbook","Reference","Fiction","Non-Fiction","Novel","Journal","Magazine","Thesis","Science","Technology","Mathematics","History","Other"];
+const BOOK_CATEGORIES = ["General", "Textbook", "Reference", "Fiction", "Non-Fiction", "Novel", "Journal", "Magazine", "Thesis", "Science", "Technology", "Mathematics", "History", "Other"];
 
 export default function LibraryItemPage() {
   const params = useParams<{ id: string }>();
@@ -197,14 +197,49 @@ export default function LibraryItemPage() {
   return (
     <AppLayout>
       <div style={{ padding: "28px 32px", maxWidth: "1200px", margin: "0 auto" }}>
-        
-        {/* Breadcrumbs */}
-        <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280", marginBottom: 20 }}>
-          <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
-          <span>/</span>
-          <span style={{ cursor: "pointer" }} onClick={() => router.push("/library")}>Library</span>
-          <span>/</span>
-          <span style={{ color: "#111827", fontWeight: 500 }}>Book Details</span>
+
+        {/* Back Button & Breadcrumbs Row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#374151",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#f9fafb";
+              e.currentTarget.style.borderColor = "var(--avatar-theme-color, #d1d5db)";
+              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#fff";
+              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.color = "#374151";
+            }}
+            aria-label="Go back"
+          >
+            <ArrowLeft size={14} />
+            <span>Back</span>
+          </button>
+
+          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
+            <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
+            <span>/</span>
+            <span style={{ cursor: "pointer" }} onClick={() => router.push("/library")}>Library</span>
+            <span>/</span>
+            <span style={{ color: "#111827", fontWeight: 500 }}>Book Details</span>
+          </div>
         </div>
 
         {isLoading && (
@@ -222,7 +257,7 @@ export default function LibraryItemPage() {
 
         {!isLoading && item && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 32 }}>
-            
+
             {/* ─────────── LEFT: PDF VIEWER ─────────── */}
             <div>
               {item.cover_url ? (

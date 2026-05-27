@@ -170,7 +170,7 @@ export default function EventsPage() {
               border: "1px solid #e2e8f0",
               boxShadow: "0 4px 6px rgba(0,0,0,0.02)"
             }}>
-              <Calendar size={48} color="#94a3b8" style={{ marginBottom: "16px" }} />
+              <Calendar size={48} color="#94a3b8" style={{ margin: "0 auto 16px", display: "block" }} />
               <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", margin: "0 0 8px" }}>
                 No seminars scheduled
               </h3>
