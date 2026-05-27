@@ -7,17 +7,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, ShieldCheck, BookCopy } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck, BookCopy, ArrowLeft } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 
 // ── Role options ──────────────────────────────────────────────────────────────
 const ROLES = [
-  { value: "member",         label: "Member",         desc: "Browse and access published content" },
+  { value: "member", label: "Member", desc: "Browse and access published content" },
   { value: "student_author", label: "Student Author", desc: "Submit projects to the showcase" },
-  { value: "researcher",     label: "Researcher",     desc: "Publish research outputs and manage labs" },
-  { value: "archivist",      label: "Archivist",      desc: "Upload and manage archive documents" },
-  { value: "librarian",      label: "Librarian",      desc: "Manage library catalog and lending" },
+  { value: "researcher", label: "Researcher", desc: "Publish research outputs and manage labs" },
+  { value: "archivist", label: "Archivist", desc: "Upload and manage archive documents" },
+  { value: "librarian", label: "Librarian", desc: "Manage library catalog and lending" },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
 
@@ -39,10 +39,10 @@ const DEPARTMENTS = [
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 const schema = z.object({
-  name:       z.string().min(2, "Name must be at least 2 characters"),
-  email:      z.string().email("Valid email required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Valid email required"),
   department: z.string().optional(),
-  password:   z
+  password: z
     .string()
     .min(8, "At least 8 characters")
     .regex(/[A-Z]/, "Uppercase letter required")
@@ -55,11 +55,11 @@ type FormData = z.infer<typeof schema>;
 // ── Password strength checker ─────────────────────────────────────────────────
 function PasswordChecklist({ password }: { password: string }) {
   const checks = [
-    { label: "8+ characters",       ok: password.length >= 8 },
-    { label: "Uppercase letter",     ok: /[A-Z]/.test(password) },
-    { label: "Lowercase letter",     ok: /[a-z]/.test(password) },
-    { label: "One digit (0-9)",      ok: /\d/.test(password) },
-    { label: "Special (@$!%*?&)",    ok: /[@$!%*?&]/.test(password) },
+    { label: "8+ characters", ok: password.length >= 8 },
+    { label: "Uppercase letter", ok: /[A-Z]/.test(password) },
+    { label: "Lowercase letter", ok: /[a-z]/.test(password) },
+    { label: "One digit (0-9)", ok: /\d/.test(password) },
+    { label: "Special (@$!%*?&)", ok: /[@$!%*?&]/.test(password) },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", marginTop: "10px" }}>
@@ -116,10 +116,10 @@ const labelStyle: React.CSSProperties = {
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser } = useAuthStore();
-  const [error, setError]             = useState("");
+  const [error, setError] = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
   const [showPassword, setShowPassword] = useState(false);
-  const [agreed, setAgreed]           = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, watch } =
@@ -149,53 +149,110 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#eef0f3", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-      
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f3f4f6", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", position: "relative", overflow: "hidden" }}>
+      {/* Mock Blurred Dashboard Layout in the Background */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        gridTemplateColumns: "240px 1fr",
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: 0
+      }}>
+        {/* Mock Sidebar */}
+        <div style={{ background: "#111827", borderRight: "1px solid #1f2937", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{ height: "32px", width: "120px", background: "#374151", borderRadius: "6px" }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} style={{ height: "24px", width: i % 2 === 0 ? "80%" : "60%", background: "#1f2937", borderRadius: "4px" }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Mock Content */}
+        <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "24px", background: "#f9fafb" }}>
+          {/* Mock Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
+              <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
+            </div>
+          </div>
+
+          {/* Mock Stat Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ height: "100px", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px" }}>
+                <div style={{ height: "12px", width: "40px", background: "#f3f4f6", marginBottom: "12px" }} />
+                <div style={{ height: "24px", width: "80px", background: "#e5e7eb" }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Mock Table/List */}
+          <div style={{ flex: 1, background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ height: "16px", width: "150px", background: "#e5e7eb", marginBottom: "8px" }} />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", borderBottom: "1px solid #f3f4f6", paddingBottom: "12px" }}>
+                <div style={{ height: "16px", width: "16px", background: "#f3f4f6", borderRadius: "4px" }} />
+                <div style={{ height: "12px", width: i % 2 === 0 ? "200px" : "150px", background: "#f3f4f6" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Backdrop blur overlay - Dark overlay to match Change Password page's backdrop overlay */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backdropFilter: "blur(5px)",
+        WebkitBackdropFilter: "blur(5px)",
+        background: "rgba(0, 0, 0, 0.4)", // matches change password overlay exactly
+        pointerEvents: "none",
+        zIndex: 1
+      }} />
 
       {/* ── Navbar ── */}
-      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px" }}>
-          <Link href="/" style={{ fontSize: "14px", fontWeight: 700, color: "#111827", textDecoration: "none", letterSpacing: "-0.01em" }}>
-            Digital Knowledge Platform
+      <header style={{ background: "rgba(255, 255, 255, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderBottom: "1px solid rgba(229, 231, 235, 0.8)", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", height: "58px", justifyContent: "space-between" }}>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 hover:underline"
+            style={{ fontSize: "14px", color: "var(--avatar-theme-color, #111827)", fontWeight: 700, transition: "color 0.2s", textDecoration: "none", display: "flex", alignItems: "center" }}
+          >
+            <ArrowLeft size={15} strokeWidth={2.5} style={{ marginRight: "4px" }} />
+            Back to Portal
           </Link>
-          <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            {[
-              { label: "Archive", href: "/archive" },
-              { label: "Library", href: "/library" },
-              { label: "Research", href: "/research" },
-              { label: "About", href: "/about" },
-            ].map((item) => (
-              <Link key={item.label} href={item.href} style={{ padding: "6px 13px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px" }}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#374151", textDecoration: "none", border: "1px solid #d1d5db", borderRadius: "6px", background: "#fff" }}>
-              Sign In
-            </Link>
-            <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "#111827", borderRadius: "6px", textDecoration: "none" }}>
-              Register
-            </Link>
-          </div>
+          <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em", transition: "color 0.2s" }}>
+            Digital Knowledge Platform
+          </span>
         </div>
       </header>
 
       {/* ── Main ── */}
-      <main style={{ flex: 1, padding: "48px 32px" }}>
+      <main style={{ flex: 1, padding: "48px 32px", position: "relative", zIndex: 2 }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "340px 1fr", gap: "40px", alignItems: "start" }}>
 
           {/* ── LEFT COLUMN ── */}
           <div>
-            <h1 style={{ fontSize: "36px", fontWeight: 800, color: "#111827", lineHeight: 1.15, marginBottom: "16px", letterSpacing: "-0.02em" }}>
-              Join the Archive.
+            <h1 style={{ fontSize: "36px", fontWeight: 800, color: "#ffffff", lineHeight: 1.15, marginBottom: "16px", letterSpacing: "-0.02em", transition: "color 0.2s" }}>
+              Join the Platform.
             </h1>
-            <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: 1.7, marginBottom: "28px" }}>
+            <p style={{ fontSize: "14px", color: "#e5e7eb", lineHeight: 1.7, marginBottom: "28px" }}>
               Establish your scholarly presence within the Digital Knowledge Platform. Access exclusive research repositories, contribute to peer-reviewed collections, and collaborate with global academic institutions.
             </p>
 
             {/* Role selector card */}
-            <div style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px" }}>
+            <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px", transition: "background 0.3s" }}>
               <label style={{ ...labelStyle, marginBottom: "12px", color: "#ffffff" }}>
                 I am registering as <span style={{ color: "#ef4444" }}></span>
               </label>
@@ -222,8 +279,8 @@ export default function RegisterPage() {
               </div>
             </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px", transition: "background 0.3s" }}>
                 <ShieldCheck size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
                 <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
                   Institutional Access
@@ -232,7 +289,7 @@ export default function RegisterPage() {
                   SSO integration for participating universities.
                 </p>
               </div>
-              <div style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px" }}>
+              <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px", transition: "background 0.3s" }}>
                 <BookCopy size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
                 <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
                   Research Vaults
@@ -245,7 +302,7 @@ export default function RegisterPage() {
           </div>
 
           {/* ── RIGHT COLUMN — Form card ── */}
-          <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "36px 36px 32px", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "rgba(255, 255, 255, 0.9)", border: "1px solid rgba(229, 231, 235, 0.9)", borderRadius: "12px", padding: "36px 36px 32px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
               {/* Row 1: Full Name + Email */}
@@ -484,7 +541,7 @@ export default function RegisterPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "#e9ebee", borderTop: "1px solid #d1d5db" }}>
+      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px 32px", display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "center", gap: "16px" }}>
           <div>
             <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", margin: "0 0 3px" }}>Digital Knowledge Platform</p>

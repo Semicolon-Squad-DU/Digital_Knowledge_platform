@@ -17,7 +17,7 @@ export default function AboutPage() {
         {/* ── NAVBAR ── */}
         <header style={{ background: "#ffffff", borderBottom: "1px solid #e9ecef", position: "sticky", top: 0, zIndex: 50 }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
-            <Link href="/" style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.01em", textDecoration: "none" }}>
+            <Link href="/" style={{ fontSize: "15px", fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.01em", textDecoration: "none", transition: "color 0.2s ease" }}>
               Digital Knowledge Platform
             </Link>
 
@@ -35,22 +35,58 @@ export default function AboutPage() {
                     padding: "6px 14px", 
                     fontSize: "13px", 
                     fontWeight: 500, 
-                    color: item.label === "About" ? "#1a1a2e" : "#495057",
+                    color: item.label === "About" ? "var(--avatar-theme-color, #1a1a2e)" : "#495057",
                     textDecoration: "none", 
                     borderRadius: "6px",
-                    background: item.label === "About" ? "#f1f3f5" : "transparent"
+                    background: item.label === "About" ? "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 8%, transparent)" : "transparent",
+                    transition: "all 0.2s ease"
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#f1f3f5")}
-                  onMouseLeave={e => (e.currentTarget.style.background = item.label === "About" ? "#f1f3f5" : "transparent")}
+                  onMouseEnter={e => (e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, transparent)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = item.label === "About" ? "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 8%, transparent)" : "transparent")}
                 >{item.label}</Link>
               ))}
             </nav>
 
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#495057", textDecoration: "none", borderRadius: "6px", border: "1px solid #dee2e6", background: "#ffffff" }}>
+              <Link 
+                href="/login" 
+                style={{ 
+                  padding: "7px 16px", 
+                  fontSize: "13px", 
+                  fontWeight: 500, 
+                  color: "#495057", 
+                  textDecoration: "none", 
+                  borderRadius: "6px", 
+                  border: "1px solid #dee2e6", 
+                  background: "#ffffff",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "var(--avatar-theme-color, #1a1a2e)";
+                  e.currentTarget.style.color = "var(--avatar-theme-color, #1a1a2e)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "#dee2e6";
+                  e.currentTarget.style.color = "#495057";
+                }}
+              >
                 Sign In
               </Link>
-              <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "#1a1a2e", borderRadius: "6px", textDecoration: "none" }}>
+              <Link 
+                href="/register" 
+                style={{ 
+                  padding: "7px 16px", 
+                  fontSize: "13px", 
+                  fontWeight: 600, 
+                  color: "#ffffff", 
+                  background: "var(--avatar-theme-color, #1a1a2e)", 
+                  borderRadius: "6px", 
+                  textDecoration: "none",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+              >
                 Register
               </Link>
             </div>
@@ -58,7 +94,7 @@ export default function AboutPage() {
         </header>
 
         {/* ── HERO SECTION ── */}
-        <section style={{ background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", padding: "80px 32px", color: "#ffffff" }}>
+        <section style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", padding: "80px 32px", color: "#ffffff", transition: "background 0.3s ease" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
             <h1 style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", fontWeight: 700, marginBottom: "20px", letterSpacing: "-0.02em" }}>
               About Digital Knowledge Platform
@@ -76,10 +112,10 @@ export default function AboutPage() {
               {/* Mission */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                  <div style={{ width: "50px", height: "50px", borderRadius: "10px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Target size={28} style={{ color: "#000000" }} />
+                  <div style={{ width: "50px", height: "50px", borderRadius: "10px", background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 8%, #f8f9fa)", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.3s ease" }}>
+                    <Target size={28} style={{ color: "var(--avatar-theme-color, #1a1a2e)", transition: "color 0.3s ease" }} />
                   </div>
-                  <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a2e", margin: 0 }}>Our Mission</h2>
+                  <h2 style={{ fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, transition: "color 0.3s ease" }}>Our Mission</h2>
                 </div>
                 <p style={{ fontSize: "15px", color: "#17111c", lineHeight: 1.8, margin: 0 }}>
                  To develop a centralized platform that provides seamless access to library resources, research archives, and student projects while promoting knowledge sharing, academic collaboration, and efficient management of institutional data for students, researchers, and educators.
@@ -89,10 +125,10 @@ export default function AboutPage() {
               {/* Vision */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                  <div style={{ width: "50px", height: "50px", borderRadius: "10px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Lightbulb size={28} style={{ color: "#000000" }} />
+                  <div style={{ width: "50px", height: "50px", borderRadius: "10px", background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 8%, #f8f9fa)", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.3s ease" }}>
+                    <Lightbulb size={28} style={{ color: "var(--avatar-theme-color, #1a1a2e)", transition: "color 0.3s ease" }} />
                   </div>
-                  <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a2e", margin: 0 }}>Our Vision</h2>
+                  <h2 style={{ fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, transition: "color 0.3s ease" }}>Our Vision</h2>
                 </div>
                 <p style={{ fontSize: "15px", color: "#6c757d", lineHeight: 1.8, margin: 0 }}>
                  To create a unified digital knowledge ecosystem that transforms how academic institutions preserve, access, and share knowledge, enabling innovation, collaboration, and research excellence across all disciplines.
@@ -106,7 +142,7 @@ export default function AboutPage() {
         <section style={{ padding: "80px 32px", background: "#f8f9facc" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: "60px" }}>
-              <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#1a1a2e", marginBottom: "12px" }}>
+              <h2 style={{ fontSize: "32px", fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", marginBottom: "12px", transition: "color 0.3s ease" }}>
                 Core Features
               </h2>
               <p style={{ fontSize: "16px", color: "#6c757d" }}>
@@ -124,7 +160,7 @@ export default function AboutPage() {
                 <div
                   key={idx}
                   style={{
-                    background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)",
+                    background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))",
                     border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: "12px",
                     padding: "28px 24px",
@@ -158,10 +194,8 @@ export default function AboutPage() {
           </div>
         </section>
 
-
-
         {/* ── CTA SECTION ── */}
-        <section style={{ padding: "80px 32px", background: "linear-gradient(135deg, #000000 0%, #2d2533 100%)", color: "#ffffff", textAlign: "center" }}>
+        <section style={{ padding: "80px 32px", background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", color: "#ffffff", textAlign: "center", transition: "background 0.3s ease" }}>
           <div style={{ maxWidth: "700px", margin: "0 auto" }}>
             <h2 style={{ fontSize: "32px", fontWeight: 700, marginBottom: "20px" }}>
               Ready to Explore?
@@ -178,7 +212,7 @@ export default function AboutPage() {
                   gap: "8px",
                   padding: "14px 32px",
                   background: "#ffffff",
-                  color: "#1a1a2e",
+                  color: "var(--avatar-theme-color, #1a1a2e)",
                   fontWeight: 600,
                   borderRadius: "8px",
                   textDecoration: "none",

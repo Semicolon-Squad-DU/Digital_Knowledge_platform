@@ -55,47 +55,124 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#eef0f3" }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "#f3f4f6" }}>
+      {/* Mock Blurred Dashboard Layout in the Background */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        gridTemplateColumns: "240px 1fr",
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: 0
+      }}>
+        {/* Mock Sidebar */}
+        <div style={{ background: "#111827", borderRight: "1px solid #1f2937", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{ height: "32px", width: "120px", background: "#374151", borderRadius: "6px" }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} style={{ height: "24px", width: i % 2 === 0 ? "80%" : "60%", background: "#1f2937", borderRadius: "4px" }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Mock Content */}
+        <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "24px", background: "#f9fafb" }}>
+          {/* Mock Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
+              <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
+            </div>
+          </div>
+
+          {/* Mock Stat Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ height: "100px", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px" }}>
+                <div style={{ height: "12px", width: "40px", background: "#f3f4f6", marginBottom: "12px" }} />
+                <div style={{ height: "24px", width: "80px", background: "#e5e7eb" }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Mock Table/List */}
+          <div style={{ flex: 1, background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ height: "16px", width: "150px", background: "#e5e7eb", marginBottom: "8px" }} />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", borderBottom: "1px solid #f3f4f6", paddingBottom: "12px" }}>
+                <div style={{ height: "16px", width: "16px", background: "#f3f4f6", borderRadius: "4px" }} />
+                <div style={{ height: "12px", width: i % 2 === 0 ? "200px" : "150px", background: "#f3f4f6" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Backdrop blur overlay - Dark overlay to match Change Password page's backdrop overlay */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backdropFilter: "blur(5px)",
+        WebkitBackdropFilter: "blur(5px)",
+        background: "rgba(0, 0, 0, 0.4)", // matches change password overlay exactly
+        pointerEvents: "none",
+        zIndex: 1
+      }} />
 
       {/* ── Navbar ── */}
       <header
-        className="flex items-center justify-between bg-white"
+        className="flex items-center justify-between"
         style={{
           padding: "14px 24px",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
+          background: "rgba(255, 255, 255, 0.75)",
+          backdropFilter: "blur(15px)",
+          WebkitBackdropFilter: "blur(15px)",
+          position: "relative",
+          zIndex: 2
         }}
       >
-        <span
-          className="font-bold"
-          style={{ fontSize: "13px", color: "#111827", letterSpacing: "0.01em" }}
-        >
-          Digital Knowledge Platform
-        </span>
         <Link
           href="/"
           className="inline-flex items-center gap-1 hover:underline"
-          style={{ fontSize: "13px", color: "#000000", fontWeight: 700 }}
+          style={{ fontSize: "13px", color: "var(--avatar-theme-color, #000000)", fontWeight: 700, transition: "color 0.2s", textDecoration: "none" }}
         >
-          <ArrowLeft size={13} strokeWidth={2} />
+          <ArrowLeft size={14} strokeWidth={2.5} />
           Back to Portal
         </Link>
+        <span
+          className="font-bold"
+          style={{ fontSize: "13px", color: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em", transition: "color 0.2s" }}
+        >
+          Digital Knowledge Platform
+        </span>
       </header>
 
       {/* ── Main ── */}
       <main
         className="flex-1 flex flex-col items-center justify-center"
-        style={{ padding: "48px 16px" }}
+        style={{ padding: "48px 16px", position: "relative", zIndex: 2 }}
       >
         <div className="w-full" style={{ maxWidth: "420px" }}>
 
           {/* ── Card ── */}
           <div
-            className="bg-white"
+            className="bg-white/90"
             style={{
-              borderRadius: "8px",
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
+              borderRadius: "12px",
+              border: "1px solid rgba(229, 231, 235, 0.9)",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
               padding: "40px 40px 32px 40px",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
             }}
           >
             {/* Heading */}
@@ -365,7 +442,7 @@ function LoginForm() {
       </main>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "#e9ebee", borderTop: "1px solid #d1d5db" }}>
+      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }}>
         <div
           style={{
             maxWidth: "960px",
