@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, AlertTriangle, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
+import { useAuthStore } from "@/store/auth.store";
 
 function DownloadReportButton({ reportKey }: { reportKey: string }) {
   const [loading, setLoading] = useState(false);
@@ -44,6 +45,7 @@ function DownloadReportButton({ reportKey }: { reportKey: string }) {
 export default function ShowcaseDetailPage() {
   const params = useParams<{ id: string }>();
   const projectId = params?.id ?? "";
+  const { user } = useAuthStore();
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["showcase", "detail", projectId],
@@ -62,11 +64,40 @@ export default function ShowcaseDetailPage() {
     return <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">Project not found.</div>;
   }
 
+  const isOwnerOrAdmin = user && (project.submitted_by === user.user_id || user.role === "admin");
+  const isEditable = project.status === "pending_review" || project.status === "changes_requested";
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {project.status === "changes_requested" && project.advisor_comments && (
+        <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+          <div>
+            <h4 className="font-semibold text-sm">Revision Required</h4>
+            <p className="text-sm mt-1">{project.advisor_comments}</p>
+          </div>
+        </div>
+      )}
+
       <div className="gh-box p-6">
-        <h1 className="text-2xl font-bold" style={{ color: "var(--color-fg-default)" }}>{project.title}</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>{project.department} · {project.semester}</p>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: "var(--color-fg-default)" }}>{project.title}</h1>
+            <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>{project.department} · {project.semester}</p>
+          </div>
+          {isOwnerOrAdmin && isEditable && (
+            <Link
+              href={`/showcase/${project.project_id}/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white transition-all shadow-sm shrink-0 self-start hover:opacity-90"
+              style={{
+                background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
+              }}
+            >
+              <Pencil size={13} />
+              Edit Submission
+            </Link>
+          )}
+        </div>
 
         <p className="text-sm mt-4" style={{ color: "var(--color-fg-default)" }}>{project.abstract}</p>
 

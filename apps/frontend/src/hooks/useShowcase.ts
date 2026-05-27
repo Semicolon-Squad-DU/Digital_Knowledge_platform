@@ -71,3 +71,19 @@ export function useReviewProject() {
     },
   });
 }
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+      const { data } = await api.patch(`/showcase/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return data.data as StudentProject;
+    },
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["showcase", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["showcase", "gallery"] });
+    },
+  });
+}

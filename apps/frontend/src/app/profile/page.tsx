@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   User, Mail, Building2, Shield, LogOut, ShieldCheck, KeyRound, 
-  MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp 
+  MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp,
+  FolderGit, ExternalLink, Pencil
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useShowcaseGallery } from "@/hooks/useShowcase";
 import toast from "react-hot-toast";
 
 const AVATAR_COLORS = [
@@ -24,6 +26,11 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [sessionTime, setSessionTime] = useState("");
+  
+  // Fetch user's showcase projects
+  const { data: myProjects, isLoading: projectsLoading } = useShowcaseGallery({
+    submitted_by: user?.user_id ?? "non-existent-user",
+  });
   
   // Custom Bio states
   const [bio, setBio] = useState("Academic researcher and student author passionate about digital archives and machine learning.");
@@ -542,6 +549,187 @@ export default function ProfilePage() {
                   </div>
 
                 </div>
+              </div>
+
+              {/* SECTION 3.5: STUDENT SHOWCASE PROJECTS */}
+              <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#111827",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    margin: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}>
+                    <FolderGit size={16} color="#111827" /> Showcase Project Submissions
+                  </h3>
+                  
+                  <button
+                    onClick={() => router.push("/showcase/submit")}
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "var(--avatar-theme-color, #2563eb)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textDecoration: "underline"
+                    }}
+                  >
+                    + Submit New Project
+                  </button>
+                </div>
+
+                {projectsLoading ? (
+                  <p style={{ fontSize: "13px", color: "#6b7280" }}>Loading project submissions...</p>
+                ) : !myProjects || myProjects.length === 0 ? (
+                  <div style={{
+                    textAlign: "center",
+                    padding: "24px 16px",
+                    background: "#f9fafb",
+                    borderRadius: "8px",
+                    border: "1px dashed #d1d5db"
+                  }}>
+                    <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 12px" }}>
+                      You haven&apos;t submitted any semester projects to the Showcase Gallery yet.
+                    </p>
+                    <Button
+                      onClick={() => router.push("/showcase/submit")}
+                      style={{
+                        fontSize: "12px",
+                        padding: "6px 14px",
+                        background: "var(--theme-gradient-160)",
+                        border: "none",
+                        color: "#ffffff"
+                      }}
+                    >
+                      Submit Project Now
+                    </Button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {myProjects.map((project: any) => {
+                      const isPending = project.status === "pending_review";
+                      const isChanges = project.status === "changes_requested";
+                      const isPublished = project.status === "published";
+
+                      let statusBg = "#f3f4f6";
+                      let statusColor = "#374151";
+                      let statusLabel = "Draft";
+
+                      if (isPublished) {
+                        statusBg = "#ecfdf5";
+                        statusColor = "#047857";
+                        statusLabel = "Approved & Published";
+                      } else if (isPending) {
+                        statusBg = "#fef3c7";
+                        statusColor = "#b45309";
+                        statusLabel = "Pending Advisor Review";
+                      } else if (isChanges) {
+                        statusBg = "#fee2e2";
+                        statusColor = "#b91c1c";
+                        statusLabel = "Changes Requested";
+                      }
+
+                      return (
+                        <div
+                          key={project.project_id}
+                          style={{
+                            padding: "16px",
+                            background: "#ffffff",
+                            borderRadius: "8px",
+                            border: "1px solid #e5e7eb",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                            position: "relative"
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                            <div>
+                              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>
+                                {project.title}
+                              </h4>
+                              <p style={{ fontSize: "11px", color: "#6b7280", margin: 0 }}>
+                                {project.department} · {project.semester}
+                              </p>
+                            </div>
+                            
+                            <span style={{
+                              padding: "4px 8px",
+                              borderRadius: "4px",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              background: statusBg,
+                              color: statusColor,
+                              whiteSpace: "nowrap"
+                            }}>
+                              {statusLabel}
+                            </span>
+                          </div>
+
+                          {isChanges && project.advisor_comments && (
+                            <p style={{
+                              fontSize: "11px",
+                              color: "#991b1b",
+                              background: "#fef2f2",
+                              padding: "8px 12px",
+                              borderRadius: "6px",
+                              borderLeft: "3px solid #ef4444",
+                              margin: "4px 0 0",
+                              fontStyle: "italic"
+                            }}>
+                              <strong>Advisor Feedback:</strong> &ldquo;{project.advisor_comments}&rdquo;
+                            </p>
+                          )}
+
+                          <div style={{ display: "flex", gap: "16px", marginTop: "8px", borderTop: "1px solid #f3f4f6", paddingTop: "8px" }}>
+                            <button
+                              onClick={() => router.push(`/showcase/${project.project_id}`)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                color: "#2563eb",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                padding: 0
+                              }}
+                            >
+                              <ExternalLink size={13} /> View Details
+                            </button>
+                            {(isPending || isChanges) && (
+                              <button
+                                onClick={() => router.push(`/showcase/${project.project_id}/edit`)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  color: "#b45309",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  padding: 0
+                                }}
+                              >
+                                <Pencil size={13} /> Edit Submission
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* SECTION 4: SECURITY CONTROLS & EXPANDABLE AUDIT LOG */}
