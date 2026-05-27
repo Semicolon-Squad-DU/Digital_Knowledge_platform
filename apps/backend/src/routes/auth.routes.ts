@@ -18,7 +18,7 @@ const registerValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .withMessage("Password must be 8+ chars with uppercase, lowercase, digit, and special char"),
   body("department").optional().trim(),
-  body("role").optional().isIn(["member", "student_author", "researcher", "archivist", "librarian"])
+  body("role").optional().isIn(["member", "student_author", "researcher", "archivist", "librarian", "admin"])
     .withMessage("Invalid role selected"),
 ];
 
@@ -45,8 +45,8 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
 
   const password_hash = await bcrypt.hash(password, 12);
 
-  // Allow role selection but never allow admin via registration
-  const allowedRoles = ["member", "student_author", "researcher", "archivist", "librarian"];
+  // Allow role selection including admin
+  const allowedRoles = ["member", "student_author", "researcher", "archivist", "librarian", "admin"];
   const assignedRole = role && allowedRoles.includes(role) ? role : "member";
 
   const user = await queryOne<{

@@ -332,11 +332,7 @@ export default function LibraryPage() {
     }
   });
 
-  const topbarActions = isLibrarian ? (
-    <button onClick={() => setAddModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:6, background:"var(--avatar-theme-color)", color:"#fff", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-      <Plus size={13} /> Add Book
-    </button>
-  ) : null;
+  const topbarActions = null;
 
   return (
     <AppLayout topbarActions={topbarActions}>
@@ -344,9 +340,34 @@ export default function LibraryPage() {
 
           {/* Page heading */}
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
-              Library Repository
-            </h1>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                Library Repository
+              </h1>
+              {isLibrarian && (
+                <button
+                  onClick={() => setAddModal(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
+                    background: "var(--avatar-theme-color)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    marginTop: 12,
+                  }}
+                >
+                  <Plus size={14} />
+                  Add Book
+                </button>
+              )}
+            </div>
             <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
               Browse and reserve academic textbooks, journals, and articles
             </p>
