@@ -548,7 +548,7 @@ function UsersTab() {
 
       {/* Table */}
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1.2fr 1.2fr 1fr 1.4fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
           {["USER","EMAIL","ROLE","STATUS","JOINED","ACTIONS"].map(c => (
             <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
           ))}
@@ -567,7 +567,7 @@ function UsersTab() {
           </div>
         ) : filtered.map((u: any, i: number) => (
           <div key={u.user_id} style={{
-            display: "grid", gridTemplateColumns: "2fr 2fr 1.2fr 1.2fr 1fr 1.4fr",
+            display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr",
             gap: 12, alignItems: "center", padding: "14px 20px",
             borderBottom: i < filtered.length - 1 ? "1px solid #f3f4f6" : "none",
             transition: "background 0.1s",
@@ -588,7 +588,7 @@ function UsersTab() {
             <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[u.role]?.color ?? "#6b7280"} />
             <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f3f4f6"} color={PILL[u.membership_status]?.color ?? "#6b7280"} />
             <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{new Date(u.created_at).toLocaleDateString()}</p>
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
               <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
               <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
               <ActionBtn icon={Trash2} label="Delete" bg="#fde8e8" color="#c81e1e" onClick={() => setDeleteModal(u)} />
@@ -631,7 +631,7 @@ function UsersTab() {
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button type="button" onClick={() => setCreateUserModal(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
-              <button type="submit" disabled={createMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+              <button type="submit" disabled={createMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                 {createMutation.isPending ? "Creating..." : "Create User"}
               </button>
             </div>
@@ -677,7 +677,7 @@ function UsersTab() {
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button type="button" onClick={() => setEditUser(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
-              <button type="submit" disabled={updateMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+              <button type="submit" disabled={updateMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                 {updateMutation.isPending ? "Saving..." : "Save Changes"}
               </button>
             </div>
@@ -783,7 +783,7 @@ function AuditTab() {
         title="Audit Log Viewer"
         desc="Immutable, append-only record of all state-changing platform events."
         action={
-          <button onClick={handleExportCSV} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+          <button onClick={handleExportCSV} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
             <Download size={13} /> Export CSV
           </button>
         }
@@ -976,7 +976,7 @@ function ConfigTab() {
       )}
 
       <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={handleSave} disabled={updateMutation.isPending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+        <button onClick={handleSave} disabled={updateMutation.isPending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
           <Check size={14} /> {saved ? "Saved!" : updateMutation.isPending ? "Saving..." : "Save Configuration"}
         </button>
       </div>
@@ -1008,7 +1008,7 @@ function BackupsTab() {
         title="Backup Management"
         desc="Generate, schedule, and restore database backups stored in S3/MinIO."
         action={
-          <button onClick={handleGenerate} disabled={generating} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: generating ? "not-allowed" : "pointer", opacity: generating ? 0.7 : 1 }}>
+          <button onClick={handleGenerate} disabled={generating} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: generating ? "not-allowed" : "pointer", opacity: generating ? 0.7 : 1 }}>
             <Database size={14} /> {generating ? "Generating…" : "Generate Backup Now"}
           </button>
         }
@@ -1141,13 +1141,15 @@ function AlertsTab() {
                 padding: "9px 15px",
                 borderRadius: 8,
                 border: "none",
-                background: slackHover ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 85%, #000)" : "var(--avatar-theme-color, #2563eb)",
+                background: "var(--theme-gradient-160)",
                 fontSize: 12,
                 fontWeight: 700,
                 color: "#fff",
                 cursor: "pointer",
-                transition: "all 0.2s ease",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)"
+                transition: "opacity 0.2s ease, transform 0.1s ease",
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                opacity: slackHover ? 0.9 : 1,
+                transform: slackHover ? "translateY(-1px)" : "none"
               }}
             >
               <Slack size={13} /> Configure Slack
@@ -1163,13 +1165,15 @@ function AlertsTab() {
                 padding: "9px 15px",
                 borderRadius: 8,
                 border: "none",
-                background: emailHover ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 85%, #000)" : "var(--avatar-theme-color, #2563eb)",
+                background: "var(--theme-gradient-160)",
                 fontSize: 12,
                 fontWeight: 700,
                 color: "#fff",
                 cursor: "pointer",
-                transition: "all 0.2s ease",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)"
+                transition: "opacity 0.2s ease, transform 0.1s ease",
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                opacity: emailHover ? 0.9 : 1,
+                transform: emailHover ? "translateY(-1px)" : "none"
               }}
             >
               <Mail size={13} /> Configure Email
@@ -1201,7 +1205,7 @@ function AlertsTab() {
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" onClick={() => setSlackOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #2563eb)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Webhook</button>
+                <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Webhook</button>
               </div>
             </form>
           </div>
@@ -1231,7 +1235,7 @@ function AlertsTab() {
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" onClick={() => setEmailOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #2563eb)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Config</button>
+                <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Config</button>
               </div>
             </form>
           </div>
@@ -1360,7 +1364,7 @@ function AnnouncementsTab() {
           <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button type="submit" disabled={sending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <button type="submit" disabled={sending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             <Zap size={14} /> {sending ? "Broadcasting..." : "Broadcast Notice"}
           </button>
         </div>

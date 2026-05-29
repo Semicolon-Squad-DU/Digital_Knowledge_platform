@@ -68,7 +68,7 @@ function LoginForm() {
         pointerEvents: "none",
         userSelect: "none",
         zIndex: 0
-      }}>
+      }} className="login-mock-layout">
         {/* Mock Sidebar */}
         <div style={{ background: "#111827", borderRight: "1px solid #1f2937", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ height: "32px", width: "120px", background: "#374151", borderRadius: "6px" }} />
@@ -129,7 +129,7 @@ function LoginForm() {
 
       {/* ── Navbar ── */}
       <header
-        className="flex items-center justify-between"
+        className="flex items-center justify-between login-navbar"
         style={{
           padding: "14px 24px",
           borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
@@ -148,7 +148,7 @@ function LoginForm() {
           <ArrowLeft size={18} strokeWidth={2} />
         </Link>
         <span
-          className="font-bold"
+          className="font-bold login-navbar-title"
           style={{ fontSize: "13px", color: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em", transition: "color 0.2s" }}
         >
           Digital Knowledge Platform
@@ -157,14 +157,14 @@ function LoginForm() {
 
       {/* ── Main ── */}
       <main
-        className="flex-1 flex flex-col items-center justify-center"
+        className="flex-1 flex flex-col items-center justify-center login-container"
         style={{ padding: "48px 16px", position: "relative", zIndex: 2 }}
       >
         <div className="w-full" style={{ maxWidth: "420px" }}>
 
           {/* ── Card ── */}
           <div
-            className="bg-white/90"
+            className="bg-white/90 login-card"
             style={{
               borderRadius: "12px",
               border: "1px solid rgba(229, 231, 235, 0.9)",
@@ -177,7 +177,7 @@ function LoginForm() {
             {/* Heading */}
             <div className="text-center" style={{ marginBottom: "28px" }}>
               <h1
-                className="font-bold"
+                className="font-bold login-heading"
                 style={{
                   fontSize: "28px",
                   color: "#111827",
@@ -188,7 +188,7 @@ function LoginForm() {
               >
                 Sign In
               </h1>
-              <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.5 }} className="login-heading-desc">
                 Access your academic collections and research.
               </p>
             </div>
@@ -197,7 +197,7 @@ function LoginForm() {
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
               {/* Email field */}
-              <div style={{ marginBottom: "20px" }}>
+              <div style={{ marginBottom: "20px" }} className="login-form-group">
                 <label
                   htmlFor="login-email"
                   style={{
@@ -209,6 +209,7 @@ function LoginForm() {
                     color: "#000000",
                     marginBottom: "6px",
                   }}
+                  className="login-label"
                 >
                   Email Address
                 </label>
@@ -230,6 +231,7 @@ function LoginForm() {
                     outline: "none",
                     boxSizing: "border-box",
                   }}
+                  className="login-input"
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = "#111827";
                     e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)";
@@ -249,7 +251,7 @@ function LoginForm() {
               </div>
 
               {/* Password field */}
-              <div style={{ marginBottom: "20px" }}>
+              <div style={{ marginBottom: "20px" }} className="login-form-group">
                 <div
                   className="flex items-center justify-between"
                   style={{ marginBottom: "6px" }}
@@ -263,6 +265,7 @@ function LoginForm() {
                       letterSpacing: "0.09em",
                       color: "#000000",
                     }}
+                    className="login-label"
                   >
                     Password
                   </label>
@@ -282,7 +285,7 @@ function LoginForm() {
                   aria-invalid={!!errors.password}
                   {...register("password")}
                   error={errors.password?.message}
-                  className="w-full"
+                  className="w-full login-input"
                 />
               </div>
 
@@ -308,7 +311,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 login-button"
                 style={{
                   padding: "13px 16px",
                   fontSize: "12px",
@@ -336,7 +339,7 @@ function LoginForm() {
 
             {/* OR divider */}
             <div
-              className="flex items-center"
+              className="flex items-center login-divider"
               style={{ margin: "20px 0" }}
             >
               <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
@@ -358,7 +361,7 @@ function LoginForm() {
             {/* Google button */}
             <button
               type="button"
-              className="w-full flex items-center justify-center gap-2.5 transition-colors hover:bg-gray-50"
+              className="w-full flex items-center justify-center gap-2.5 transition-colors hover:bg-gray-50 login-button"
               style={{
                 padding: "11px 16px",
                 fontSize: "12px",
@@ -380,7 +383,7 @@ function LoginForm() {
             {/* Institutional SSO button */}
             <button
               type="button"
-              className="w-full flex items-center justify-center gap-2.5 transition-colors hover:bg-gray-50"
+              className="w-full flex items-center justify-center gap-2.5 transition-colors hover:bg-gray-50 login-button"
               style={{
                 padding: "11px 16px",
                 fontSize: "12px",
@@ -418,7 +421,7 @@ function LoginForm() {
 
           {/* Trust badges */}
           <div
-            className="flex items-center justify-center"
+            className="flex items-center justify-center login-trust-badges"
             style={{ gap: "20px", marginTop: "16px" }}
           >
             <span
@@ -441,7 +444,7 @@ function LoginForm() {
       </main>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }}>
+      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }} className="login-footer">
         <div
           style={{
             maxWidth: "960px",
@@ -461,8 +464,8 @@ function LoginForm() {
           </p>
 
           {/* Links — center */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }} className="login-footer-links">
+            <div style={{ display: "flex", alignItems: "center", gap: "28px" }} className="login-footer-links-row">
               <Link href="/privacy" className="hover:underline" style={{ fontSize: "13px", color: "#374151" }}>
                 Privacy Policy
               </Link>

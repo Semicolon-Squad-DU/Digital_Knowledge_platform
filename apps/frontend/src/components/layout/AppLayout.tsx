@@ -66,11 +66,11 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
     }}>
 
       {/* ════════ SIDEBAR ════════ */}
-      <aside style={{
+      <aside className="hidden md:flex" style={{
         width: 200, flexShrink: 0,
         background: "var(--theme-sidebar-gradient)",
         borderRight: "1px solid rgba(255,255,255,0.05)",
-        display: "flex", flexDirection: "column",
+        flexDirection: "column",
         position: "sticky", top: 0, height: "100vh", overflowY: "auto",
       }}>
         {/* Logo */}

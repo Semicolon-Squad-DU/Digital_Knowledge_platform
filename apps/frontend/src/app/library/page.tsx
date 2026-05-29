@@ -336,12 +336,12 @@ export default function LibraryPage() {
 
   return (
     <AppLayout topbarActions={topbarActions}>
-      <div style={{ padding:"28px 32px" }}>
+      <div style={{ padding:"28px 32px" }} className="library-container">
 
           {/* Page heading */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }} className="library-heading-row">
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="library-heading">
                 Library Repository
               </h1>
               {isLibrarian && (
@@ -350,20 +350,19 @@ export default function LibraryPage() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
-                    padding: "7px 14px",
+                    gap: 8,
+                    padding: "10px 20px",
                     background: "var(--avatar-theme-color)",
                     color: "#fff",
                     border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
+                    borderRadius: 8,
+                    fontSize: 14,
                     fontWeight: 600,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
-                    marginTop: 12,
                   }}
                 >
-                  <Plus size={14} />
+                  <Plus size={18} />
                   Add Book
                 </button>
               )}
@@ -374,7 +373,7 @@ export default function LibraryPage() {
           </div>
 
           {/* Search bar */}
-          <form onSubmit={handleSearch} style={{ display:"flex", gap:0, marginBottom:20 }}>
+          <form onSubmit={handleSearch} style={{ display:"flex", gap:0, marginBottom:20 }} className="library-search-form">
             <div style={{ flex:1, position:"relative" }}>
               <Search size={15} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }} />
               <input
@@ -459,7 +458,7 @@ export default function LibraryPage() {
               gridTemplateColumns: "1fr 1fr 1fr",
               gap: 16,
               boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-            }}>
+            }} className="library-advanced-panel">
               {/* Author Filter */}
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>

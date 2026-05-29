@@ -235,13 +235,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <div style={{
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        background: "#eef0f3",
-        minHeight: "calc(100vh - 56px)",
-        padding: "48px 24px 80px",
-        color: "#111827"
-      }}>
+      <div style={{ padding: "48px 24px 80px" }} className="profile-container">
         <div style={{ maxWidth: "760px", margin: "0 auto" }}>
           
           <Card style={{
@@ -261,7 +255,7 @@ export default function ProfilePage() {
               textAlign: "center",
               borderBottom: "1px solid #e5e7eb",
               transition: "all 0.4s ease"
-            }}>
+            }} className="profile-banner">
               {/* Active session banner */}
               <div style={{
                 position: "absolute",
@@ -295,7 +289,7 @@ export default function ProfilePage() {
                 color: "#111827",
                 position: "relative",
                 zIndex: 1
-              }}>
+              }} className="profile-avatar">
                 {user.name?.[0]?.toUpperCase()}
               </div>
               

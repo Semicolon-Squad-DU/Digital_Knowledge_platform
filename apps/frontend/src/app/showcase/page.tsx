@@ -167,11 +167,11 @@ export default function ShowcasePage() {
 
   return (
     <AppLayout topbarSearch={topbarSearch}>
-      <div style={{ padding:"28px 32px" }}>
+      <div style={{ padding:"28px 32px" }} className="showcase-container">
 
           {/* Page heading */}
           <div style={{ marginBottom:24 }}>
-            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="showcase-heading">
               Student Showcase
             </h1>
             <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
@@ -180,7 +180,7 @@ export default function ShowcasePage() {
           </div>
 
           {/* Search bar */}
-          <form onSubmit={handleSearch} style={{ display:"flex", gap:8, marginBottom:20 }}>
+          <form onSubmit={handleSearch} style={{ display:"flex", gap:8, marginBottom:20 }} className="showcase-search-form">
             <input
               type="text"
               value={searchInput}

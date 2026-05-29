@@ -114,9 +114,9 @@ export default function ArchivePage() {
 
   return (
     <AppLayout topbarSearch={topbarSearch}>
-      <div style={{ padding:"28px 32px" }}>
+      <div style={{ padding:"28px 32px" }} className="archive-container">
           {/* Title Section */}
-          <div style={{ marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }} className="archive-heading">
             <div>
               <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                 Archive Repository

@@ -164,12 +164,12 @@ export default function DashboardPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <AppLayout>
-      <div style={{ padding:"28px 32px" }}>
+      <div style={{ padding:"28px 32px" }} className="dashboard-container">
 
           {/* Page heading row */}
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>
             <div>
-              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="dashboard-heading">
                 Overview Dashboard
               </h1>
               <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
@@ -179,7 +179,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ── STAT CARDS ── */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }} className="dashboard-stat-grid">
             <StatCard
               label="Total Documents"
               value={totalDocs.toLocaleString()}
@@ -213,7 +213,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ── MIDDLE ROW ── */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 300px", gap:20, marginBottom:20 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 300px", gap:20, marginBottom:20 }} className="dashboard-middle-row">
 
             {/* Recent Activity */}
             <div style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
