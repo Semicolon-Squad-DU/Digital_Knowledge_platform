@@ -415,7 +415,6 @@ export default function ArchiveItemPage() {
                 {formatDate(item.created_at)}
               </p>
             </div>
-            </div>
             {item.custom_metadata && Object.entries(item.custom_metadata).map(([key, val]) => (
               <div key={key}>
                 <span style={{ color: "#9ca3af", fontWeight: 500 }}>{key}</span>
@@ -466,8 +465,7 @@ export default function ArchiveItemPage() {
               <span style={{
                 width: "36px", height: "36px", borderRadius: "8px",
                 background: "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 10%, transparent)",
-                display: "flex", alignItems: "center", justifyCenter: "center",
-                display: "flex", justifyContent: "center", flexShrink: 0
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
               }}>
                 <FileText size={18} color="var(--avatar-theme-color, #1a56db)" style={{ marginTop: 9 }} />
               </span>
@@ -483,7 +481,7 @@ export default function ArchiveItemPage() {
                   Document Lifecycle State
                 </span>
                 <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
-                  Transition this document's state to control search indexing, visibility, and staff review pipelines.
+                  Transition this document&apos;s state to control search indexing, visibility, and staff review pipelines.
                 </p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {["draft", "review", "published", "archived"].map((state) => {

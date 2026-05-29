@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 export interface AdminStats {
+  totalUsers: number;
+  archiveCount: number;
+  catalogCount: number;
+  showcaseCount: number;
   totalDocuments: number;
   pendingReview: number;
   activeUsers: number;
@@ -25,8 +29,8 @@ export function useAdminStats() {
       const { data } = await api.get("/admin/stats");
       return data.data as AdminStats;
     },
-    staleTime: 30_000,
-    refetchInterval: 60_000, // Refetch every minute
+    staleTime: 0, // always fetch fresh counts from live database
+    refetchInterval: 15_000, // Refetch every 15 seconds
   });
 }
 
@@ -187,6 +191,18 @@ export function useAdminAuditLogs(params?: { search?: string; action?: string; e
       return data.data;
     },
     staleTime: 30_000,
+  });
+}
+
+export function useAdminHealth() {
+  return useQuery({
+    queryKey: ["admin", "health"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/health");
+      return data.data;
+    },
+    staleTime: 10_000, // short cache for high-accuracy live health status
+    refetchInterval: 15_000, // Poll health status every 15 seconds
   });
 }
 

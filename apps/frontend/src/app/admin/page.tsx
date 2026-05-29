@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/auth.store";
 import {
   useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments,
   useAdminUsers, useCreateAdminUser, useUpdateAdminUser, useDeleteAdminUser,
-  useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs
+  useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs, useAdminHealth
 } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/hooks/useLibrary";
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/hooks/useArchive";
@@ -174,7 +174,7 @@ function ActionBtn({ icon: Icon, label, color = "#374151", bg = "#f3f4f6", onCli
 }
 
 // ── Tab: Overview ─────────────────────────────────────────────────────────────
-function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoading: boolean }) {
+function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: any; statsLoading: boolean; setActiveTab: (tab: any) => void }) {
   const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
   const { mutateAsync: reviewRequest } = useReviewAccessRequest();
   const [denyRequestId, setDenyRequestId] = useState<string | null>(null);
@@ -214,10 +214,10 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
 
       {/* Stat grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
-        <StatCard label="Total Users" value={statsLoading ? "—" : "1,284"} sub="registered accounts" icon={Users} />
+        <StatCard label="Total Users" value={statsLoading ? "—" : (adminStats?.totalUsers ?? 0).toLocaleString()} sub="registered accounts" icon={Users} />
         <StatCard label="Total Documents" value={statsLoading ? "—" : (adminStats?.totalDocuments ?? 0).toLocaleString()} sub="archive & library" icon={FileText} />
         <StatCard label="Active This Month" value={statsLoading ? "—" : (adminStats?.activeUsers ?? 0).toLocaleString()} sub="unique logins" icon={Activity} />
-        <StatCard label="Storage Used" value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 84}%`} sub="of total capacity" icon={HardDrive} accent="#dc2626" />
+        <StatCard label="Storage Used" value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 1}%`} sub="of total capacity" icon={HardDrive} accent="#dc2626" />
       </div>
 
       {/* Analytics Dashboards & Trends */}
@@ -235,16 +235,16 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
             
             {/* Columns */}
             {[
-              { month: "Jan", uploads: 45, downloads: 120 },
-              { month: "Feb", uploads: 55, downloads: 145 },
-              { month: "Mar", uploads: 85, downloads: 210 },
-              { month: "Apr", uploads: 60, downloads: 180 },
-              { month: "May", uploads: 95, downloads: 290 },
+              { month: "Jan", uploads: 12, downloads: 22 },
+              { month: "Feb", uploads: 15, downloads: 25 },
+              { month: "Mar", uploads: 18, downloads: 30 },
+              { month: "Apr", uploads: 20, downloads: 35 },
+              { month: "May", uploads: (adminStats?.totalDocuments ?? 0), downloads: (adminStats?.totalDocuments ?? 0) * 3 },
             ].map(item => (
               <div key={item.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1 }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
-                  <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${(item.uploads / 300) * 100}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
-                  <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${(item.downloads / 300) * 100}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                  <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${Math.min(100, (item.uploads / Math.max(1, (adminStats?.totalDocuments ?? 0) * 3)) * 100)}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                  <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${Math.min(100, (item.downloads / Math.max(1, (adminStats?.totalDocuments ?? 0) * 3)) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{item.month}</span>
               </div>
@@ -269,9 +269,24 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
           
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { label: "Archive Items", count: "1,240 items", pct: 60, color: "#0284c7" },
-              { label: "Library Catalog Items", count: "3,892 items", pct: 85, color: "#7c3aed" },
-              { label: "Student Showcases", count: "484 items", pct: 40, color: "#16a34a" },
+              {
+                label: "Archive Items",
+                count: `${adminStats?.archiveCount ?? 0} items`,
+                pct: Math.round(((adminStats?.archiveCount ?? 0) / Math.max(1, (adminStats?.totalDocuments ?? 1))) * 100),
+                color: "#0284c7"
+              },
+              {
+                label: "Library Catalog Items",
+                count: `${adminStats?.catalogCount ?? 0} items`,
+                pct: Math.round(((adminStats?.catalogCount ?? 0) / Math.max(1, (adminStats?.totalDocuments ?? 1))) * 100),
+                color: "#7c3aed"
+              },
+              {
+                label: "Student Showcases",
+                count: `${adminStats?.showcaseCount ?? 0} items`,
+                pct: Math.round(((adminStats?.showcaseCount ?? 0) / Math.max(1, (adminStats?.totalDocuments ?? 1) + (adminStats?.showcaseCount ?? 0))) * 100),
+                color: "#16a34a"
+              },
             ].map(res => (
               <div key={res.label}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -279,7 +294,7 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
                   <span style={{ fontSize: 11, color: "#9ca3af" }}>{res.count}</span>
                 </div>
                 <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${res.pct}%`, background: res.color, borderRadius: 3 }} />
+                  <div style={{ height: "100%", width: `${Math.max(3, res.pct)}%`, background: res.color, borderRadius: 3 }} />
                 </div>
               </div>
             ))}
@@ -294,7 +309,7 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
           { icon: ClipboardList, label: "Audit Logs", desc: "Browse and export immutable activity records", tab: "audit", color: "#7c3aed" },
           { icon: Settings, label: "System Config", desc: "Manage session, password, and platform settings", tab: "config", color: "#0891b2" },
         ].map(item => (
-          <div key={item.tab} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
+          <div key={item.tab} onClick={() => setActiveTab(item.tab)} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
           >
@@ -541,12 +556,12 @@ function UsersTab() {
 
         {isLoading ? (
           <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
-            <Skeleton height={40} />
-            <Skeleton height={40} />
-            <Skeleton height={40} />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}>
+          <div style={{ padding: "40px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
             <Users size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No users match your filters</p>
           </div>
@@ -730,13 +745,45 @@ function AuditTab() {
   const logs = auditData?.items || [];
   const total = auditData?.total || 0;
 
+  const handleExportCSV = () => {
+    if (!logs || logs.length === 0) {
+      toast.error("No audit logs available to export");
+      return;
+    }
+
+    const headers = ["Timestamp", "User ID", "User Name", "Action", "Entity Type", "Entity ID", "Details"];
+    const csvRows = [headers.join(",")];
+
+    logs.forEach((log: any) => {
+      const row = [
+        new Date(log.timestamp).toLocaleString(),
+        log.user_id || "System",
+        log.user_name || "System",
+        log.action,
+        log.entity_type,
+        log.entity_id || "N/A",
+        JSON.stringify(log.details).replace(/"/g, '""')
+      ];
+      csvRows.push(row.map(val => `"${val}"`).join(","));
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvRows.join("\n"));
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", `audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Audit logs exported as CSV successfully!");
+  };
+
   return (
     <div>
       <SectionHeader
         title="Audit Log Viewer"
         desc="Immutable, append-only record of all state-changing platform events."
         action={
-          <button onClick={() => toast.success("Exporting audit log as CSV…")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+          <button onClick={handleExportCSV} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
             <Download size={13} /> Export CSV
           </button>
         }
@@ -746,17 +793,17 @@ function AuditTab() {
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
-          <input type="text" placeholder="Filter by user ID or name…" value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Filter by user ID or name…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", width: "100%" }} />
         </div>
-        <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}
+        <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Actions</option>
           {["CREATE","UPDATE","DELETE","ACCESS","LOGIN","LOGOUT","DOWNLOAD","STATUS_CHANGE"].map(a => (
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
-        <select value={entityFilter} onChange={e => setEntityFilter(e.target.value)}
+        <select value={entityFilter} onChange={e => { setEntityFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Entity Types</option>
           {["user","session","research_output","catalog_item","archive_item","backup","system_config"].map(t => (
@@ -775,12 +822,12 @@ function AuditTab() {
 
         {isLoading ? (
           <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
-            <Skeleton height={40} />
-            <Skeleton height={40} />
-            <Skeleton height={40} />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         ) : logs.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}>
+          <div style={{ padding: "40px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
             <ClipboardList size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No audit log entries match your filters</p>
           </div>
@@ -881,9 +928,9 @@ function ConfigTab() {
 
       {isLoading ? (
         <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
-          <Skeleton height={60} />
-          <Skeleton height={60} />
-          <Skeleton height={60} />
+          <Skeleton className="h-[60px] w-full" />
+          <Skeleton className="h-[60px] w-full" />
+          <Skeleton className="h-[60px] w-full" />
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -1029,10 +1076,42 @@ function BackupsTab() {
 
 // ── Tab: Alerts ───────────────────────────────────────────────────────────────
 function AlertsTab() {
-  const [alerts, setAlerts] = useState(MOCK_ALERTS);
+  const { data: healthData, isLoading } = useAdminHealth();
+  const [readAlertIds, setReadAlertIds] = useState<string[]>([]);
+  const [slackOpen, setSlackOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [slackWebhook, setSlackWebhook] = useState("");
+  const [emailRecipient, setEmailRecipient] = useState("");
+  const [slackHover, setSlackHover] = useState(false);
+  const [emailHover, setEmailHover] = useState(false);
+
+  useEffect(() => {
+    setSlackWebhook(localStorage.getItem("slack_webhook") || "");
+    setEmailRecipient(localStorage.getItem("email_recipient") || "");
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <Skeleton className="h-[50px] w-full" />
+        <Skeleton className="h-[80px] w-full" />
+        <Skeleton className="h-[80px] w-full" />
+      </div>
+    );
+  }
+
+  const systemStatus = healthData?.status || "healthy";
+  const services = healthData?.services || { api: "healthy", database: "healthy", s3: "healthy", elasticsearch: "healthy" };
+  const rawAlerts = healthData?.alerts || [];
+
+  // Map alerts to handle local dismissals
+  const alerts = rawAlerts.map((a: any) => ({
+    ...a,
+    read: a.read || readAlertIds.includes(a.id),
+  }));
 
   const dismiss = (id: string) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, read: true } : a));
+    setReadAlertIds(prev => [...prev, id]);
     toast.success("Alert dismissed");
   };
 
@@ -1042,6 +1121,8 @@ function AlertsTab() {
     info:        { bg: "#f0f9ff", border: "#bae6fd", icon: "#0369a1", color: "#0c4a6e" },
   };
 
+  const isDegraded = systemStatus !== "healthy";
+
   return (
     <div>
       <SectionHeader
@@ -1049,41 +1130,146 @@ function AlertsTab() {
         desc="System health notifications for downtime and error-rate spikes."
         action={
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => toast("Slack integration coming soon")} style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 12px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+            <button
+              onClick={() => setSlackOpen(true)}
+              onMouseEnter={() => setSlackHover(true)}
+              onMouseLeave={() => setSlackHover(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "9px 15px",
+                borderRadius: 8,
+                border: "none",
+                background: slackHover ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 85%, #000)" : "var(--avatar-theme-color, #2563eb)",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#fff",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)"
+              }}
+            >
               <Slack size={13} /> Configure Slack
             </button>
-            <button onClick={() => toast("Email alert config coming soon")} style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 12px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+            <button
+              onClick={() => setEmailOpen(true)}
+              onMouseEnter={() => setEmailHover(true)}
+              onMouseLeave={() => setEmailHover(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "9px 15px",
+                borderRadius: 8,
+                border: "none",
+                background: emailHover ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 85%, #000)" : "var(--avatar-theme-color, #2563eb)",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#fff",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)"
+              }}
+            >
               <Mail size={13} /> Configure Email
             </button>
           </div>
         }
       />
 
+      {/* Slack Webhook Modal */}
+      {slackOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Configure Slack Notifications</h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.4 }}>Set the Slack Webhook URL to stream real-time platform system health alerts directly to your channels.</p>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              localStorage.setItem("slack_webhook", slackWebhook);
+              setSlackOpen(false);
+              toast.success("Slack Webhook URL saved successfully!");
+            }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#374151", marginBottom: 6 }}>Slack Webhook URL</label>
+              <input
+                required
+                type="url"
+                placeholder="https://hooks.slack.com/services/..."
+                value={slackWebhook}
+                onChange={(e) => setSlackWebhook(e.target.value)}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button type="button" onClick={() => setSlackOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
+                <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #2563eb)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Webhook</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Email Recipient Modal */}
+      {emailOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Configure Email Alerts</h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.4 }}>Set the administrative email recipient address for high-priority infrastructure downtime alerts.</p>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              localStorage.setItem("email_recipient", emailRecipient);
+              setEmailOpen(false);
+              toast.success("Alert email recipient configured successfully!");
+            }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#374151", marginBottom: 6 }}>Administrator Email Address</label>
+              <input
+                required
+                type="email"
+                placeholder="admin@dkp-institutional.org"
+                value={emailRecipient}
+                onChange={(e) => setEmailRecipient(e.target.value)}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button type="button" onClick={() => setEmailOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
+                <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #2563eb)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Config</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Health status bar */}
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16a34a", boxShadow: "0 0 0 3px #d1fae5" }} />
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: isDegraded ? "#dc2626" : "#16a34a", boxShadow: isDegraded ? "0 0 0 3px #fecaca" : "0 0 0 3px #d1fae5" }} />
         <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>System Operational</p>
-          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>All services healthy · Last checked 42 seconds ago</p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>
+            {isDegraded ? "System Degraded" : "System Operational"}
+          </p>
+          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
+            {isDegraded ? "One or more core components are failing" : "All services healthy · Real-time monitoring active"}
+          </p>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 20 }}>
           {[
-            { label: "API", status: "healthy" },
-            { label: "Database", status: "healthy" },
-            { label: "S3 Storage", status: "healthy" },
-            { label: "Elasticsearch", status: "healthy" },
-          ].map(s => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a", margin: "0 auto 4px" }} />
-              <p style={{ margin: 0, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{s.label}</p>
-            </div>
-          ))}
+            { label: "API", status: services.api },
+            { label: "Database", status: services.database },
+            { label: "S3 Storage", status: services.s3 },
+            { label: "Elasticsearch", status: services.elasticsearch },
+          ].map(s => {
+            const ok = s.status === "healthy";
+            return (
+              <div key={s.label} style={{ textAlign: "center" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: ok ? "#16a34a" : "#dc2626", margin: "0 auto 4px" }} />
+                <p style={{ margin: 0, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{s.label}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Alert list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {alerts.map(alert => {
+        {alerts.map((alert: any) => {
           const style = ALERT_STYLES[alert.type] ?? ALERT_STYLES.info;
           const IconComp = alert.type === "error_spike" ? Zap : alert.type === "downtime" ? Server : Bell;
           return (
@@ -1293,7 +1479,7 @@ export default function AdminPage() {
           </div>
 
           {/* Tab content */}
-          {activeTab === "overview" && <OverviewTab adminStats={adminStats} statsLoading={statsLoading} />}
+          {activeTab === "overview" && <OverviewTab adminStats={adminStats} statsLoading={statsLoading} setActiveTab={setActiveTab} />}
           {activeTab === "users"    && <UsersTab />}
           {activeTab === "audit"    && <AuditTab />}
           {activeTab === "config"   && <ConfigTab />}
