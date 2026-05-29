@@ -131,7 +131,7 @@ export default function HomePage() {
 
         <header style={{ background: "#e8eaed", borderBottom: "1px solid #d1d5db", position: "sticky", top: 0, zIndex: 50 }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
-            <span style={{ fontSize: "15px", fontWeight: 700, color: "#111827", letterSpacing: "-0.01em" }}>
+            <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em", transition: "color 0.3s ease" }}>
               Digital Knowledge Platform
             </span>
 
@@ -309,12 +309,13 @@ export default function HomePage() {
                     alignItems: "center",
                     gap: "6px",
                     marginTop: "12px",
-                    color: "#000",
+                    color: "var(--avatar-theme-color, #000)",
                     flexShrink: 0,
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    padding: 0
+                    padding: 0,
+                    transition: "color 0.3s ease"
                   }}
                 >
                   <span style={{ fontSize: "16px", fontWeight: 500 }}>Scroll down</span>

@@ -85,11 +85,10 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
             {showBack && (
               <button
                 onClick={() => router.back()}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-100 mr-2 border border-white/20 bg-white/5"
+                className="flex items-center text-sm font-bold text-white/80 hover:text-white transition-colors duration-100 mr-2 bg-transparent"
                 aria-label="Go back"
               >
-                <ArrowLeft size={14} />
-                <span>Back</span>
+                <ArrowLeft size={18} strokeWidth={2} />
               </button>
             )}
 

@@ -353,10 +353,10 @@ export default function EventsPage() {
       {/* ── CREATE SEMINAR MODAL ── */}
       {createModal && (
         <Modal isOpen={createModal} onClose={() => setCreateModal(false)} title="Schedule Academic Seminar">
-          <form onSubmit={handleCreateSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, fontFamily: "'Inter', sans-serif", padding: "10px 0" }}>
+          <form onSubmit={handleCreateSubmit} style={{ display: "flex", flexDirection: "column", gap: 18, fontFamily: "'Inter', -apple-system, sans-serif", padding: "12px 0 6px" }}>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Seminar Title *</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Seminar Title *</label>
               <input
                 id="event-form-title"
                 type="text"
@@ -364,12 +364,29 @@ export default function EventsPage() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g. Advancements in Machine Learning and AI Ethics"
-                style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none" }}
+                style={{
+                  padding: "11px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "13px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  width: "100%",
+                  transition: "all 0.2s ease"
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Presented Speaker *</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Presented Speaker *</label>
               <input
                 id="event-form-speaker"
                 type="text"
@@ -377,38 +394,89 @@ export default function EventsPage() {
                 value={formData.speaker}
                 onChange={(e) => setFormData({ ...formData, speaker: e.target.value })}
                 placeholder="e.g. Dr. Sarah Jenkins"
-                style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none" }}
+                style={{
+                  padding: "11px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "13px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  width: "100%",
+                  transition: "all 0.2s ease"
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Scheduled Date & Time *</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Scheduled Date & Time *</label>
               <input
                 id="event-form-date"
                 type="datetime-local"
                 required
                 value={formData.scheduledAt}
                 onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
-                style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none" }}
+                style={{
+                  padding: "11px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "13px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  width: "100%",
+                  transition: "all 0.2s ease"
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Location/Venue *</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Location/Venue *</label>
               <input
                 id="event-form-location"
                 type="text"
                 required
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g. Audiorium B or Zoom Conference"
-                style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none" }}
+                placeholder="e.g. Auditorium B or Zoom Conference"
+                style={{
+                  padding: "11px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "13px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  width: "100%",
+                  transition: "all 0.2s ease"
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Total Seats *</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Total Seats *</label>
                 <input
                   id="event-form-seats"
                   type="number"
@@ -416,25 +484,59 @@ export default function EventsPage() {
                   min={1}
                   value={formData.totalSeats}
                   onChange={(e) => setFormData({ ...formData, totalSeats: Number(e.target.value) })}
-                  style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none" }}
+                  style={{
+                    padding: "11px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    width: "100%",
+                    transition: "all 0.2s ease"
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Materials URL (optional)</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Materials URL (optional)</label>
                 <input
                   id="event-form-materials"
                   type="text"
                   value={formData.materialsUrl}
                   onChange={(e) => setFormData({ ...formData, materialsUrl: e.target.value })}
                   placeholder="Link to slides or recording"
-                  style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none" }}
+                  style={{
+                    padding: "11px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    width: "100%",
+                    transition: "all 0.2s ease"
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 />
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#334155" }}>Event Abstract/Description *</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Event Abstract/Description *</label>
               <textarea
                 id="event-form-description"
                 required
@@ -442,23 +544,52 @@ export default function EventsPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Give a brief summary of what will be discussed at the seminar..."
                 rows={4}
-                style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", fontFamily: "inherit", outline: "none", resize: "none" }}
+                style={{
+                  padding: "11px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "13px",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  resize: "none",
+                  boxSizing: "border-box",
+                  width: "100%",
+                  lineHeight: 1.5,
+                  transition: "all 0.2s ease"
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               />
             </div>
 
-            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 10 }}>
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 12 }}>
               <button
                 type="button"
                 onClick={() => setCreateModal(false)}
                 style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "1px solid #cbd5e1",
+                  padding: "9px 18px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
                   background: "#ffffff",
                   color: "#475569",
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: 600,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "#f3f4f6";
+                  e.currentTarget.style.color = "#1e293b";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.color = "#475569";
                 }}
               >
                 Cancel
@@ -467,14 +598,22 @@ export default function EventsPage() {
                 id="submit-event-btn"
                 type="submit"
                 style={{
-                  padding: "8px 18px",
-                  borderRadius: "6px",
+                  padding: "9px 20px",
+                  borderRadius: "8px",
                   border: "none",
-                  background: "var(--theme-gradient-160)",
+                  background: "var(--avatar-theme-color, var(--theme-gradient-160))",
                   color: "#ffffff",
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: 700,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.opacity = "0.9";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.opacity = "1";
                 }}
               >
                 Schedule Event

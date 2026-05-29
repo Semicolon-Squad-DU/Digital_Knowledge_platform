@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { 
   User, Mail, Building2, Shield, LogOut, ShieldCheck, KeyRound, 
   MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp,
-  FolderGit, ExternalLink, Pencil
+  FolderGit, ExternalLink, Pencil, ArrowLeft
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { Navbar } from "@/components/layout/Navbar";
@@ -180,7 +180,60 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Navbar showBack={true} />
+      <header style={{
+        background: "#e8eaed",
+        borderBottom: "1px solid #d1d5db",
+        position: "sticky",
+        top: 0,
+        zIndex: 50
+      }}>
+        <div style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "0 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: "56px"
+        }}>
+          {/* Top Left corner: Back button */}
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 0",
+              fontSize: "16px",
+              fontWeight: 700,
+              color: "#495057",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = "#111827";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = "#495057";
+            }}
+          >
+            <ArrowLeft size={20} strokeWidth={2} />
+          </button>
+
+          {/* Top Right corner: Digital Knowledge Platform */}
+          <span style={{
+            fontSize: "14px",
+            fontWeight: 700,
+            color: "var(--avatar-theme-color, #111827)",
+            letterSpacing: "-0.01em",
+            transition: "color 0.3s ease"
+          }}>
+            Digital Knowledge Platform
+          </span>
+        </div>
+      </header>
 
       <div style={{
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",

@@ -145,8 +145,7 @@ function LoginForm() {
           className="inline-flex items-center gap-1 hover:underline"
           style={{ fontSize: "13px", color: "var(--avatar-theme-color, #000000)", fontWeight: 700, transition: "color 0.2s", textDecoration: "none" }}
         >
-          <ArrowLeft size={14} strokeWidth={2.5} />
-          Back to Portal
+          <ArrowLeft size={18} strokeWidth={2} />
         </Link>
         <span
           className="font-bold"

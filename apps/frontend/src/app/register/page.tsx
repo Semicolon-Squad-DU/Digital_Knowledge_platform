@@ -230,8 +230,7 @@ export default function RegisterPage() {
             className="inline-flex items-center gap-1 hover:underline"
             style={{ fontSize: "14px", color: "var(--avatar-theme-color, #111827)", fontWeight: 700, transition: "color 0.2s", textDecoration: "none", display: "flex", alignItems: "center" }}
           >
-            <ArrowLeft size={15} strokeWidth={2.5} style={{ marginRight: "4px" }} />
-            Back to Portal
+            <ArrowLeft size={18} strokeWidth={2} />
           </Link>
           <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em", transition: "color 0.2s" }}>
             Digital Knowledge Platform
