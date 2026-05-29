@@ -146,4 +146,47 @@ router.delete(
   })
 );
 
+// GET /api/events/:id/rsvps — Get participant list
+router.get(
+  "/:id/rsvps",
+  authenticate,
+  requireRole("admin", "archivist", "librarian"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const participants = await query(
+      `SELECT r.rsvp_id, r.created_at as rsvp_at, u.user_id, u.name, u.email, u.department
+       FROM event_rsvps r
+       JOIN users u ON r.user_id = u.user_id
+       WHERE r.event_id = $1
+       ORDER BY r.created_at ASC`,
+      [id]
+    );
+    res.json({
+      success: true,
+      data: participants,
+    });
+  })
+);
+
+// DELETE /api/events/:id — Delete event
+router.delete(
+  "/:id",
+  authenticate,
+  requireRole("admin", "archivist", "librarian"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    await withTransaction(async (client) => {
+      await client.query("DELETE FROM event_rsvps WHERE event_id = $1", [id]);
+      const resDel = await client.query("DELETE FROM events WHERE event_id = $1 RETURNING *", [id]);
+      if (resDel.rowCount === 0) {
+        throw new AppError(404, "Event not found");
+      }
+    });
+    res.json({
+      success: true,
+      message: "Event deleted successfully",
+    });
+  })
+);
+
 export default router;

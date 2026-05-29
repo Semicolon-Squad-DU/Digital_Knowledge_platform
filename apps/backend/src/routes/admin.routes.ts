@@ -1,4 +1,5 @@
 import { Router, Response } from "express";
+import bcrypt from "bcryptjs";
 import { query, queryOne } from "../db/pool";
 import { authenticate, requireRole, AuthRequest } from "../middleware/auth.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
@@ -415,4 +416,303 @@ router.delete(
   })
 );
 
+// GET /api/admin/users — Get users with filtering
+router.get(
+  "/users",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { search, role, status, page = "1", limit = "10" } = req.query as Record<string, string>;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    const where: string[] = ["deleted_at IS NULL"];
+    const values: unknown[] = [];
+    let i = 1;
+
+    if (search) {
+      where.push(`(name ILIKE $${i} OR email ILIKE $${i} OR department ILIKE $${i})`);
+      values.push(`%${search}%`);
+      i++;
+    }
+
+    if (role && role !== "all") {
+      where.push(`role = $${i}`);
+      values.push(role);
+      i++;
+    }
+
+    if (status && status !== "all") {
+      where.push(`membership_status = $${i}`);
+      values.push(status);
+      i++;
+    }
+
+    const whereClause = `WHERE ${where.join(" AND ")}`;
+
+    const [countResult] = await query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM users ${whereClause}`,
+      values
+    );
+
+    const usersList = await query(
+      `SELECT user_id, name, email, role, department, membership_status, created_at
+       FROM users
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${i} OFFSET $${i + 1}`,
+      [...values, limitNum, offset]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        items: usersList,
+        total: parseInt(countResult.count),
+        page: pageNum,
+        limit: limitNum,
+      },
+    });
+  })
+);
+
+// POST /api/admin/users — Create new user
+router.post(
+  "/users",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { name, email, password, role, department } = req.body;
+    if (!name || !email || !password || !role) {
+      throw new AppError(400, "Name, email, password, and role are required");
+    }
+
+    const existing = await queryOne("SELECT user_id FROM users WHERE email = $1", [email]);
+    if (existing) {
+      throw new AppError(409, "Email already registered");
+    }
+
+    const password_hash = await bcrypt.hash(password, 12);
+    const newUser = await queryOne<{ user_id: string; name: string; email: string; role: string; department: string; membership_status: string; created_at: string }>(
+      `INSERT INTO users (name, email, password_hash, role, department, membership_status)
+       VALUES ($1, $2, $3, $4, $5, 'active')
+       RETURNING user_id, name, email, role, department, membership_status, created_at`,
+      [name, email, password_hash, role, department || null]
+    );
+
+    if (!newUser) {
+      throw new AppError(500, "Failed to create user account");
+    }
+
+    // Log in audit log
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+       VALUES ($1, 'CREATE', 'user', $2, $3)`,
+      [req.user!.user_id, newUser.user_id, JSON.stringify({ email, role, name })]
+    );
+
+    res.status(201).json({
+      success: true,
+      data: newUser,
+    });
+  })
+);
+
+// PATCH /api/admin/users/:id — Update user
+router.patch(
+  "/users/:id",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { name, email, role, department, membership_status } = req.body;
+
+    const existingUser = await queryOne("SELECT * FROM users WHERE user_id = $1", [id]);
+    if (!existingUser) {
+      throw new AppError(404, "User not found");
+    }
+
+    const updatedUser = await queryOne(
+      `UPDATE users
+       SET name = COALESCE($1, name),
+           email = COALESCE($2, email),
+           role = COALESCE($3, role),
+           department = COALESCE($4, department),
+           membership_status = COALESCE($5, membership_status),
+           updated_at = NOW()
+       WHERE user_id = $6
+       RETURNING user_id, name, email, role, department, membership_status, created_at`,
+      [name, email, role, department, membership_status, id]
+    );
+
+    // Log in audit log
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+       VALUES ($1, 'UPDATE', 'user', $2, $3)`,
+      [req.user!.user_id, id, JSON.stringify({ name, email, role, membership_status })]
+    );
+
+    res.json({
+      success: true,
+      data: updatedUser,
+    });
+  })
+);
+
+// DELETE /api/admin/users/:id — Delete user
+router.delete(
+  "/users/:id",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { mode } = req.query as { mode?: "hard_delete" | "anonymize" };
+
+    const existingUser = await queryOne("SELECT * FROM users WHERE user_id = $1", [id]);
+    if (!existingUser) {
+      throw new AppError(404, "User not found");
+    }
+
+    if (mode === "hard_delete") {
+      await query("DELETE FROM users WHERE user_id = $1", [id]);
+    } else {
+      const randomHash = Math.random().toString(36).substring(2, 10);
+      await query(
+        `UPDATE users
+         SET name = 'Deleted User',
+             email = $1,
+             password_hash = NULL,
+             deleted_at = NOW(),
+             membership_status = 'inactive'
+         WHERE user_id = $2`,
+        [`deleted_${randomHash}@dkp.edu`, id]
+      );
+    }
+
+    // Log in audit log
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+       VALUES ($1, 'DELETE', 'user', $2, $3)`,
+      [req.user!.user_id, id, JSON.stringify({ mode })]
+    );
+
+    res.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  })
+);
+
+// GET /api/admin/configs — Get configurations
+router.get(
+  "/configs",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const configs = await query("SELECT key, value, description, category FROM system_configs ORDER BY category, key");
+    res.json({
+      success: true,
+      data: configs,
+    });
+  })
+);
+
+// POST /api/admin/configs — Update configurations
+router.post(
+  "/configs",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { configs } = req.body as { configs: Record<string, string> };
+    if (!configs) {
+      throw new AppError(400, "Configs are required");
+    }
+
+    for (const [key, value] of Object.entries(configs)) {
+      await query(
+        `INSERT INTO system_configs (key, value)
+         VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [key, value]
+      );
+    }
+
+    // Log in audit log
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, details)
+       VALUES ($1, 'UPDATE', 'system_config', $2)`,
+      [req.user!.user_id, JSON.stringify({ updated_keys: Object.keys(configs) })]
+    );
+
+    res.json({
+      success: true,
+      message: "Configurations updated successfully",
+    });
+  })
+);
+
+// GET /api/admin/audit-logs — Get audit logs
+router.get(
+  "/audit-logs",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { search, action, entityType, page = "1", limit = "10" } = req.query as Record<string, string>;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    const where: string[] = [];
+    const values: unknown[] = [];
+    let i = 1;
+
+    if (search) {
+      where.push(`(u.name ILIKE $${i} OR a.user_id::text ILIKE $${i})`);
+      values.push(`%${search}%`);
+      i++;
+    }
+
+    if (action && action !== "all") {
+      where.push(`a.action = $${i}`);
+      values.push(action);
+      i++;
+    }
+
+    if (entityType && entityType !== "all") {
+      where.push(`a.entity_type = $${i}`);
+      values.push(entityType);
+      i++;
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+
+    const [countResult] = await query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM audit_logs a LEFT JOIN users u ON a.user_id = u.user_id ${whereClause}`,
+      values
+    );
+
+    const logs = await query(
+      `SELECT a.log_id, a.user_id, u.name as user_name, a.action as action, a.entity_type, a.entity_id, a.details, a.timestamp
+       FROM audit_logs a
+       LEFT JOIN users u ON a.user_id = u.user_id
+       ${whereClause}
+       ORDER BY a.timestamp DESC
+       LIMIT $${i} OFFSET $${i + 1}`,
+      [...values, limitNum, offset]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        items: logs,
+        total: parseInt(countResult.count),
+        page: pageNum,
+        limit: limitNum,
+      },
+    });
+  })
+);
+
 export default router;
+

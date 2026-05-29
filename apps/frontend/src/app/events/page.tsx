@@ -8,6 +8,8 @@ import {
   useCreateEvent,
   useEventRSVP,
   useCancelRSVP,
+  useEventParticipants,
+  useDeleteEvent,
   AcademicEvent,
 } from "@/hooks/useEvents";
 import {
@@ -21,6 +23,8 @@ import {
   CheckCircle,
   Download,
   Loader2,
+  Trash2,
+  Eye,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import toast from "react-hot-toast";
@@ -45,6 +49,22 @@ export default function EventsPage() {
   });
 
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [participantsModal, setParticipantsModal] = useState(false);
+
+  const { data: participants = [], isLoading: participantsLoading } = useEventParticipants(activeEventId);
+  const { mutateAsync: deleteEvent } = useDeleteEvent();
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (confirm("Are you sure you want to delete this academic seminar?")) {
+      try {
+        await deleteEvent(eventId);
+        toast.success("Academic seminar event deleted successfully!");
+      } catch {
+        toast.error("Failed to delete event");
+      }
+    }
+  };
 
   const canCreate = user && ["admin", "archivist", "librarian"].includes(user.role);
 
@@ -300,7 +320,52 @@ export default function EventsPage() {
                       </div>
 
                       {/* RSVP Buttons */}
-                      <div>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        {canCreate && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setActiveEventId(event.event_id);
+                                setParticipantsModal(true);
+                              }}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "8px 14px",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                color: "#475569",
+                                background: "#f1f5f9",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Eye size={12} />
+                              RSVPs ({event.total_seats - event.available_seats})
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(event.event_id)}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "8px 14px",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                color: "#ef4444",
+                                background: "#fef2f2",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Trash2 size={12} />
+                              Delete
+                            </button>
+                          </>
+                        )}
                         <button
                           id={`rsvp-toggle-btn-${event.event_id}`}
                           onClick={() => handleRSVPToggle(event)}
@@ -621,6 +686,33 @@ export default function EventsPage() {
             </div>
 
           </form>
+        </Modal>
+      )}
+
+      {/* ── VIEW PARTICIPANTS MODAL ── */}
+      {participantsModal && (
+        <Modal isOpen={participantsModal} onClose={() => { setParticipantsModal(false); setActiveEventId(null); }} title="Registered Participants">
+          <div style={{ padding: "10px 0", maxHeight: "400px", overflowY: "auto", fontFamily: "'Inter', sans-serif" }}>
+            {participantsLoading ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: "20px 0" }}>
+                <Loader2 className="animate-spin" size={24} color="var(--avatar-theme-color)" />
+              </div>
+            ) : participants.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#64748b", fontSize: "13px", padding: "20px 0" }}>No participants registered yet.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {participants.map((p: any) => (
+                  <div key={p.rsvp_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#0f172a" }}>{p.name}</p>
+                      <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{p.email} · <span style={{ fontWeight: 600 }}>{p.department || "No Dept"}</span></p>
+                    </div>
+                    <span style={{ fontSize: "11px", color: "#94a3b8" }}>Registered: {new Date(p.rsvp_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </Modal>
       )}
 

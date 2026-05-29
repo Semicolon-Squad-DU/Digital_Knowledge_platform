@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { query, queryOne } from "../db/pool";
-import { authenticate, AuthRequest } from "../middleware/auth.middleware";
+import { authenticate, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
 
 const router = Router();
@@ -8,17 +8,31 @@ const router = Router();
 // GET /api/comments/:entityType/:entityId
 router.get(
   "/:entityType/:entityId",
-  asyncHandler(async (req, res: Response) => {
+  optionalAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { entityType, entityId } = req.params;
+    const userRole = req.user?.role;
 
-    const commentsList = await query<any>(
-      `SELECT c.*, u.name as user_name, u.role as user_role
-       FROM comments c
-       JOIN users u ON c.user_id = u.user_id
-       WHERE c.entity_type = $1 AND c.entity_id = $2
-       ORDER BY c.created_at ASC`,
-      [entityType, entityId]
-    );
+    let commentsList;
+    if (userRole === "admin") {
+      commentsList = await query<any>(
+        `SELECT c.*, u.name as user_name, u.role as user_role
+         FROM comments c
+         JOIN users u ON c.user_id = u.user_id
+         WHERE c.entity_type = $1 AND c.entity_id = $2
+         ORDER BY c.created_at ASC`,
+        [entityType, entityId]
+      );
+    } else {
+      commentsList = await query<any>(
+        `SELECT c.*, u.name as user_name, u.role as user_role
+         FROM comments c
+         JOIN users u ON c.user_id = u.user_id
+         WHERE c.entity_type = $1 AND c.entity_id = $2 AND c.is_hidden = FALSE
+         ORDER BY c.created_at ASC`,
+        [entityType, entityId]
+      );
+    }
 
     res.json({
       success: true,
@@ -58,6 +72,38 @@ router.post(
     res.status(201).json({
       success: true,
       data: fullComment,
+    });
+  })
+);
+
+// PATCH /api/comments/:id/moderate — Moderate comment
+router.patch(
+  "/:id/moderate",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { isFlagged, isHidden } = req.body;
+    const userRole = req.user!.role;
+
+    if (userRole !== "admin") {
+      throw new AppError(403, "Moderation is restricted to administrators");
+    }
+
+    const comment = await queryOne<any>(
+      `UPDATE comments
+       SET is_flagged = COALESCE($1, is_flagged),
+           is_hidden = COALESCE($2, is_hidden),
+           updated_at = NOW()
+       WHERE comment_id = $3
+       RETURNING *`,
+      [isFlagged !== undefined ? isFlagged : null, isHidden !== undefined ? isHidden : null, id]
+    );
+
+    if (!comment) throw new AppError(404, "Comment not found");
+
+    res.json({
+      success: true,
+      data: comment,
     });
   })
 );

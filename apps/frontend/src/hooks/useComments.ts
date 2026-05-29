@@ -67,3 +67,31 @@ export function useDeleteComment() {
     },
   });
 }
+
+export function useModerateComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      commentId,
+      entityType,
+      entityId,
+      isFlagged,
+      isHidden,
+    }: {
+      commentId: string;
+      entityType: string;
+      entityId: string;
+      isFlagged?: boolean;
+      isHidden?: boolean;
+    }) => {
+      const { data } = await api.patch(`/comments/${commentId}/moderate`, { isFlagged, isHidden });
+      return { data: data.data, entityType, entityId };
+    },
+    onSuccess: (variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["comments", variables.entityType, variables.entityId],
+      });
+    },
+  });
+}
+

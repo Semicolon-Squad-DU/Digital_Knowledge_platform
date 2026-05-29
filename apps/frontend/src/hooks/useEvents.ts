@@ -73,3 +73,29 @@ export function useCancelRSVP() {
     },
   });
 }
+
+export function useEventParticipants(eventId: string | null) {
+  return useQuery({
+    queryKey: ["events", eventId, "rsvps"],
+    queryFn: async () => {
+      if (!eventId) return [];
+      const { data } = await api.get(`/events/${eventId}/rsvps`);
+      return data.data;
+    },
+    enabled: !!eventId,
+  });
+}
+
+export function useDeleteEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const { data } = await api.delete(`/events/${eventId}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events", "list"] });
+    },
+  });
+}
+

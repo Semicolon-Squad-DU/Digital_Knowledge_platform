@@ -11,7 +11,11 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
-import { useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments } from "@/hooks/useAdmin";
+import {
+  useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments,
+  useAdminUsers, useCreateAdminUser, useUpdateAdminUser, useDeleteAdminUser,
+  useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs
+} from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/hooks/useLibrary";
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -19,7 +23,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import toast from "react-hot-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type AdminTab = "overview" | "users" | "audit" | "config" | "backups" | "alerts";
+type AdminTab = "overview" | "users" | "audit" | "config" | "backups" | "alerts" | "announcements";
 
 // ── Status pill map ───────────────────────────────────────────────────────────
 const PILL: Record<string, { bg: string; color: string }> = {
@@ -171,9 +175,42 @@ function ActionBtn({ icon: Icon, label, color = "#374151", bg = "#f3f4f6", onCli
 
 // ── Tab: Overview ─────────────────────────────────────────────────────────────
 function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoading: boolean }) {
+  const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
+  const { mutateAsync: reviewRequest } = useReviewAccessRequest();
+  const [denyRequestId, setDenyRequestId] = useState<string | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState("");
+  const [submittingDeny, setSubmittingDeny] = useState(false);
+
+  const handleApprove = async (requestId: string) => {
+    try {
+      await reviewRequest({ requestId, status: "approved" });
+      toast.success("Access request approved successfully");
+      refetchRequests();
+    } catch (err: any) {
+      toast.error("Failed to approve access request");
+    }
+  };
+
+  const handleDenySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!denyRequestId) return;
+    setSubmittingDeny(true);
+    try {
+      await reviewRequest({ requestId: denyRequestId, status: "denied", rejection_message: rejectionMessage });
+      toast.success("Access request denied successfully");
+      setDenyRequestId(null);
+      setRejectionMessage("");
+      refetchRequests();
+    } catch (err: any) {
+      toast.error("Failed to deny access request");
+    } finally {
+      setSubmittingDeny(false);
+    }
+  };
+
   return (
     <div>
-      <SectionHeader title="Platform Overview" desc="Real-time snapshot of platform activity and health." />
+      <SectionHeader title="Platform Overview" desc="Real-time snapshot of platform activity, security audit trail, and analytical insights." />
 
       {/* Stat grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
@@ -181,6 +218,73 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
         <StatCard label="Total Documents" value={statsLoading ? "—" : (adminStats?.totalDocuments ?? 0).toLocaleString()} sub="archive & library" icon={FileText} />
         <StatCard label="Active This Month" value={statsLoading ? "—" : (adminStats?.activeUsers ?? 0).toLocaleString()} sub="unique logins" icon={Activity} />
         <StatCard label="Storage Used" value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 84}%`} sub="of total capacity" icon={HardDrive} accent="#dc2626" />
+      </div>
+
+      {/* Analytics Dashboards & Trends */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20, marginBottom: 28 }}>
+        {/* Upload and Download Trends (Sleek Visual SVG Chart) */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Engagement & Transfer Trends</h3>
+          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 20px" }}>Monthly comparisons of resource uploads vs. downloads</p>
+          
+          <div style={{ position: "relative", height: 180, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 10px 20px", borderBottom: "1px solid #f3f4f6" }}>
+            {/* Background grids */}
+            <div style={{ position: "absolute", left: 0, right: 0, top: 20, borderTop: "1px dashed #f3f4f6" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: 70, borderTop: "1px dashed #f3f4f6" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: 120, borderTop: "1px dashed #f3f4f6" }} />
+            
+            {/* Columns */}
+            {[
+              { month: "Jan", uploads: 45, downloads: 120 },
+              { month: "Feb", uploads: 55, downloads: 145 },
+              { month: "Mar", uploads: 85, downloads: 210 },
+              { month: "Apr", uploads: 60, downloads: 180 },
+              { month: "May", uploads: 95, downloads: 290 },
+            ].map(item => (
+              <div key={item.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1 }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
+                  <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${(item.uploads / 300) * 100}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                  <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${(item.downloads / 300) * 100}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{item.month}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: "#bae6fd" }} />
+              <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Uploads</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: "var(--avatar-theme-color)" }} />
+              <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Downloads</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Resource Usage & Distribution */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>Resource Usage Metrics</h3>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {[
+              { label: "Archive Items", count: "1,240 items", pct: 60, color: "#0284c7" },
+              { label: "Library Catalog Items", count: "3,892 items", pct: 85, color: "#7c3aed" },
+              { label: "Student Showcases", count: "484 items", pct: 40, color: "#16a34a" },
+            ].map(res => (
+              <div key={res.label}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{res.label}</span>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>{res.count}</span>
+                </div>
+                <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${res.pct}%`, background: res.color, borderRadius: 3 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Quick action cards */}
@@ -208,11 +312,81 @@ function OverviewTab({ adminStats, statsLoading }: { adminStats: any; statsLoadi
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
           <Lock size={14} color="var(--avatar-theme-color)" /> Pending Access Requests
         </h3>
-        <div style={{ padding: "32px", textAlign: "center", color: "#9ca3af" }}>
-          <Lock size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
-          <p style={{ margin: 0, fontSize: 13 }}>No pending access requests</p>
-        </div>
+        {!pendingRequests || pendingRequests.length === 0 ? (
+          <div style={{ padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+            <Lock size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
+            <p style={{ margin: 0, fontSize: 13 }}>No pending access requests</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {pendingRequests.map((req: any) => (
+              <div key={req.request_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#111827" }}>
+                    Request by: <span style={{ color: "#2563eb" }}>{req.user_name}</span> ({req.user_email})
+                  </p>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "#374151" }}>
+                    Document: <strong>{req.item_title}</strong>
+                  </p>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280", fontStyle: "italic", background: "#fff", padding: "8px 12px", borderRadius: 6, borderLeft: "3px solid #2563eb" }}>
+                    &ldquo;{req.reason}&rdquo;
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleApprove(req.request_id)}
+                    style={{
+                      padding: "8px 14px", borderRadius: 6, border: "none",
+                      background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 4
+                    }}
+                  >
+                    <Check size={12} /> Approve
+                  </button>
+                  <button
+                    onClick={() => setDenyRequestId(req.request_id)}
+                    style={{
+                      padding: "8px 14px", borderRadius: 6, border: "1px solid #fca5a5",
+                      background: "#fee2e2", color: "#991b1b", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 4
+                    }}
+                  >
+                    <X size={12} /> Deny
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Rejection Message Modal */}
+      {denyRequestId && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <form onSubmit={handleDenySubmit} style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Deny Access Request</h3>
+              <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Explanation / Rejection Message</label>
+              <textarea
+                required
+                value={rejectionMessage}
+                onChange={e => setRejectionMessage(e.target.value)}
+                placeholder="Please enter a reason or rejection message explaining why access is denied..."
+                style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setDenyRequestId(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button type="submit" disabled={submittingDeny} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+                {submittingDeny ? "Submitting..." : "Deny Access"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
@@ -224,13 +398,85 @@ function UsersTab() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editUser, setEditUser] = useState<any>(null);
   const [deleteModal, setDeleteModal] = useState<any>(null);
+  const [createUserModal, setCreateUserModal] = useState(false);
 
-  const filtered = MOCK_USERS.filter(u => {
-    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "all" || u.role === roleFilter;
-    const matchStatus = statusFilter === "all" || u.membership_status === statusFilter;
-    return matchSearch && matchRole && matchStatus;
+  const { data: usersData, isLoading } = useAdminUsers({
+    search,
+    role: roleFilter,
+    status: statusFilter,
   });
+
+  const createMutation = useCreateAdminUser();
+  const updateMutation = useUpdateAdminUser();
+  const deleteMutation = useDeleteAdminUser();
+
+  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const role = formData.get("role") as string;
+    const department = formData.get("department") as string;
+
+    try {
+      await createMutation.mutateAsync({ name, email, password, role, department });
+      toast.success("User created successfully");
+      setCreateUserModal(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to create user");
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const role = formData.get("role") as string;
+    const department = formData.get("department") as string;
+    const membership_status = formData.get("membership_status") as string;
+
+    try {
+      await updateMutation.mutateAsync({
+        id: editUser.user_id,
+        name,
+        email,
+        role,
+        department,
+        membership_status,
+      });
+      toast.success("User updated successfully");
+      setEditUser(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update user");
+    }
+  };
+
+  const handleDeleteUser = async (mode: "hard_delete" | "anonymize") => {
+    try {
+      await deleteMutation.mutateAsync({ id: deleteModal.user_id, mode });
+      toast.success("User deleted successfully");
+      setDeleteModal(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete user");
+    }
+  };
+
+  const toggleStatus = async (u: any) => {
+    const newStatus = u.membership_status === "suspended" ? "active" : "suspended";
+    try {
+      await updateMutation.mutateAsync({
+        id: u.user_id,
+        membership_status: newStatus,
+      });
+      toast.success(`User ${newStatus === "active" ? "activated" : "suspended"}`);
+    } catch (err: any) {
+      toast.error("Failed to update status");
+    }
+  };
+
+  const filtered = usersData?.items || [];
 
   return (
     <div>
@@ -238,8 +484,26 @@ function UsersTab() {
         title="User Management"
         desc="View, edit roles, and control account status for all registered users."
         action={
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>{MOCK_USERS.length} total users</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>{usersData?.total || 0} total users</span>
+            <button
+              onClick={() => setCreateUserModal(true)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                borderRadius: 7,
+                border: "none",
+                background: "var(--avatar-theme-color)",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              + Create User
+            </button>
           </div>
         }
       />
@@ -275,12 +539,18 @@ function UsersTab() {
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}>
             <Users size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No users match your filters</p>
           </div>
-        ) : filtered.map((u, i) => (
+        ) : filtered.map((u: any, i: number) => (
           <div key={u.user_id} style={{
             display: "grid", gridTemplateColumns: "2fr 2fr 1.2fr 1.2fr 1fr 1.4fr",
             gap: 12, alignItems: "center", padding: "14px 20px",
@@ -292,11 +562,11 @@ function UsersTab() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                {u.name[0].toUpperCase()}
+                {(u.name || "U")[0].toUpperCase()}
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{u.department}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{u.department || "No Department"}</p>
               </div>
             </div>
             <p style={{ margin: 0, fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
@@ -305,55 +575,98 @@ function UsersTab() {
             <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{new Date(u.created_at).toLocaleDateString()}</p>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
               <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
-              <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toast.success(`User ${u.membership_status === "suspended" ? "activated" : "suspended"}`)} />
+              <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
               <ActionBtn icon={Trash2} label="Delete" bg="#fde8e8" color="#c81e1e" onClick={() => setDeleteModal(u)} />
             </div>
           </div>
         ))}
       </div>
 
+      {/* Create User Modal */}
+      {createUserModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <form onSubmit={handleCreateUser} style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Create New User Account</h3>
+              <button type="button" onClick={() => setCreateUserModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
+              <input name="name" required type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
+              <input name="email" required type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Password</label>
+              <input name="password" required type="password" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
+              <input name="department" type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
+              <select name="role" defaultValue="member" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+                {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
+                  <option key={r} value={r}>{r.replace("_"," ")}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setCreateUserModal(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button type="submit" disabled={createMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+                {createMutation.isPending ? "Creating..." : "Create User"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {editUser && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+          <form onSubmit={handleUpdateUser} style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Edit User Profile</h3>
-              <button onClick={() => setEditUser(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+              <button type="button" onClick={() => setEditUser(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
             </div>
-            {[
-              { label: "Full Name", key: "name", type: "text" },
-              { label: "Email Address", key: "email", type: "email" },
-              { label: "Department", key: "department", type: "text" },
-            ].map(f => (
-              <div key={f.key} style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>{f.label}</label>
-                <input type={f.type} defaultValue={(editUser as any)[f.key]} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }}
-                  onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,0,0,0.06)"; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }} />
-              </div>
-            ))}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
+              <input name="name" required defaultValue={editUser.name} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
+              <input name="email" required defaultValue={editUser.email} type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
+              <input name="department" defaultValue={editUser.department} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
-              <select defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+              <select name="role" defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
                 {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
               </select>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Access Tier Override</label>
-              <select defaultValue="none" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
-                <option value="none">— No Override —</option>
-                {["public","member","staff","restricted"].map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Status</label>
+              <select name="membership_status" defaultValue={editUser.membership_status} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="inactive">Inactive</option>
               </select>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={() => setEditUser(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
-              <button onClick={() => { toast.success("User updated successfully"); setEditUser(null); }} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>Save Changes</button>
+              <button type="button" onClick={() => setEditUser(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button type="submit" disabled={updateMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -373,10 +686,10 @@ function UsersTab() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
               {[
                 { mode: "anonymize", label: "Anonymize (GDPR)", desc: "Removes personal data, preserves transaction history", color: "#d97706" },
-                { mode: "hard_delete", label: "Hard Delete", desc: "Permanently removes the user record (only if no transactions)", color: "#dc2626" },
-              ].map(opt => (
+                { mode: "hard_delete", label: "Hard Delete", desc: "Permanently removes the user record", color: "#dc2626" },
+              ].map((opt, oidx) => (
                 <label key={opt.mode} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer" }}>
-                  <input type="radio" name="deleteMode" value={opt.mode} defaultChecked={opt.mode === "anonymize"} style={{ marginTop: 2 }} />
+                  <input type="radio" name="deleteMode" id={`delmode-${opt.mode}`} defaultChecked={oidx === 0} style={{ marginTop: 2 }} />
                   <div>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: opt.color }}>{opt.label}</p>
                     <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>{opt.desc}</p>
@@ -386,7 +699,10 @@ function UsersTab() {
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button onClick={() => setDeleteModal(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
-              <button onClick={() => { toast.success("User deletion initiated"); setDeleteModal(null); }} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>Confirm Delete</button>
+              <button onClick={() => {
+                const isHard = (document.getElementById("delmode-hard_delete") as HTMLInputElement)?.checked;
+                handleDeleteUser(isHard ? "hard_delete" : "anonymize");
+              }} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>Confirm Delete</button>
             </div>
           </div>
         </div>
@@ -401,13 +717,18 @@ function AuditTab() {
   const [actionFilter, setActionFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const filtered = MOCK_AUDIT.filter(l => {
-    const matchSearch = !search || l.user_name.toLowerCase().includes(search.toLowerCase()) || l.user_id.includes(search);
-    const matchAction = actionFilter === "all" || l.action === actionFilter;
-    const matchEntity = entityFilter === "all" || l.entity_type === entityFilter;
-    return matchSearch && matchAction && matchEntity;
+  const { data: auditData, isLoading } = useAdminAuditLogs({
+    search,
+    action: actionFilter,
+    entityType: entityFilter,
+    page,
+    limit: 10,
   });
+
+  const logs = auditData?.items || [];
+  const total = auditData?.total || 0;
 
   return (
     <div>
@@ -442,10 +763,6 @@ function AuditTab() {
             <option key={t} value={t}>{t.replace("_"," ")}</option>
           ))}
         </select>
-        <div style={{ display: "flex", gap: 6 }}>
-          <input type="date" style={{ padding: "9px 10px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, color: "#374151", outline: "none" }} />
-          <input type="date" style={{ padding: "9px 10px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, color: "#374151", outline: "none" }} />
-        </div>
       </div>
 
       {/* Table */}
@@ -456,7 +773,18 @@ function AuditTab() {
           ))}
         </div>
 
-        {filtered.map((log, i) => {
+        {isLoading ? (
+          <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+          </div>
+        ) : logs.length === 0 ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}>
+            <ClipboardList size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
+            <p style={{ margin: 0, fontSize: 13 }}>No audit log entries match your filters</p>
+          </div>
+        ) : logs.map((log: any, i: number) => {
           const ac = ACTION_COLORS[log.action] ?? { bg: "#f3f4f6", color: "#6b7280" };
           const isExpanded = expanded === log.log_id;
           return (
@@ -473,12 +801,12 @@ function AuditTab() {
                   {new Date(log.timestamp).toLocaleString()}
                 </p>
                 <div>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#111827" }}>{log.user_name}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontFamily: "monospace" }}>{log.user_id}</p>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#111827" }}>{log.user_name || "System"}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontFamily: "monospace" }}>{log.user_id || "N/A"}</p>
                 </div>
                 <Pill label={log.action} bg={ac.bg} color={ac.color} />
-                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{log.entity_type.replace("_"," ")}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.entity_id}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{(log.entity_type || "").replace("_"," ")}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.entity_id || "N/A"}</p>
                 <button onClick={() => setExpanded(isExpanded ? null : log.log_id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600 }}>
                   <Eye size={12} /> {isExpanded ? "Hide" : "View"}
                 </button>
@@ -494,24 +822,25 @@ function AuditTab() {
             </div>
           );
         })}
-
-        {filtered.length === 0 && (
-          <div style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}>
-            <ClipboardList size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
-            <p style={{ margin: 0, fontSize: 13 }}>No audit log entries match your filters</p>
-          </div>
-        )}
       </div>
 
       {/* Pagination */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>Showing {filtered.length} of {MOCK_AUDIT.length} entries</p>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>Showing {logs.length} of {total} entries</p>
         <div style={{ display: "flex", gap: 6 }}>
-          <button style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer" }}>
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: page === 1 ? 0.5 : 1 }}
+          >
             <ChevronLeft size={13} />
           </button>
-          <button style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 12, color: "#fff", cursor: "pointer", fontWeight: 700 }}>1</button>
-          <button style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer" }}>
+          <button style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 12, color: "#fff", cursor: "pointer", fontWeight: 700 }}>{page}</button>
+          <button
+            disabled={logs.length < 10}
+            onClick={() => setPage(p => p + 1)}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: logs.length < 10 ? 0.5 : 1 }}
+          >
             <ChevronRight size={13} />
           </button>
         </div>
@@ -522,68 +851,92 @@ function AuditTab() {
 
 // ── Tab: System Config ────────────────────────────────────────────────────────
 function ConfigTab() {
-  const [config, setConfig] = useState(MOCK_CONFIG.reduce((acc, c) => ({ ...acc, [c.key]: c.value }), {} as Record<string, string>));
+  const { data: configsList, isLoading } = useAdminConfigs();
+  const updateMutation = useUpdateAdminConfigs();
+  const [config, setConfig] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    toast.success("System configuration saved successfully");
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    if (configsList) {
+      setConfig(configsList.reduce((acc: any, c: any) => ({ ...acc, [c.key]: c.value }), {}));
+    }
+  }, [configsList]);
+
+  const handleSave = async () => {
+    try {
+      await updateMutation.mutateAsync(config);
+      toast.success("System configuration saved successfully");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err: any) {
+      toast.error("Failed to save configurations");
+    }
   };
+
+  const currentConfigs = configsList || [];
 
   return (
     <div>
       <SectionHeader title="System Configuration" desc="Manage global platform settings. Changes take effect immediately." />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {MOCK_CONFIG.map(item => (
-          <div key={item.key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "18px 20px" }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-              {item.key.replace(/_/g, " ")}
-            </label>
-            <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 10px", lineHeight: 1.5 }}>{item.description}</p>
-            {item.value === "true" || item.value === "false" ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  onClick={() => setConfig(prev => ({ ...prev, [item.key]: prev[item.key] === "true" ? "false" : "true" }))}
-                  style={{
-                    width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-                    background: config[item.key] === "true" ? "var(--avatar-theme-color)" : "#d1d5db",
-                    position: "relative", transition: "background 0.2s",
-                  }}
-                >
-                  <span style={{
-                    position: "absolute", top: 3, left: config[item.key] === "true" ? 23 : 3,
-                    width: 18, height: 18, borderRadius: "50%", background: "#fff",
-                    transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                  }} />
-                </button>
-                <span style={{ fontSize: 13, fontWeight: 600, color: config[item.key] === "true" ? "#065f46" : "#6b7280" }}>
-                  {config[item.key] === "true" ? "Enabled" : "Disabled"}
-                </span>
-              </div>
-            ) : (
-              <input
-                type="text"
-                value={config[item.key] ?? item.value}
-                onChange={e => setConfig(prev => ({ ...prev, [item.key]: e.target.value }))}
-                style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }}
-                onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
-                onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+      {isLoading ? (
+        <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <Skeleton height={60} />
+          <Skeleton height={60} />
+          <Skeleton height={60} />
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {currentConfigs.map((item: any) => (
+            <div key={item.key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "18px 20px" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                {item.key.replace(/_/g, " ")}
+              </label>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 10px", lineHeight: 1.5 }}>{item.description}</p>
+              {item.value === "true" || item.value === "false" || config[item.key] === "true" || config[item.key] === "false" ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button
+                    onClick={() => setConfig(prev => ({ ...prev, [item.key]: prev[item.key] === "true" ? "false" : "true" }))}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
+                      background: config[item.key] === "true" ? "var(--avatar-theme-color)" : "#d1d5db",
+                      position: "relative", transition: "background 0.2s",
+                    }}
+                  >
+                    <span style={{
+                      position: "absolute", top: 3, left: config[item.key] === "true" ? 23 : 3,
+                      width: 18, height: 18, borderRadius: "50%", background: "#fff",
+                      transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    }} />
+                  </button>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: config[item.key] === "true" ? "#065f46" : "#6b7280" }}>
+                    {config[item.key] === "true" ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={config[item.key] ?? item.value}
+                  onChange={e => setConfig(prev => ({ ...prev, [item.key]: e.target.value }))}
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }}
+                  onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={handleSave} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-          <Check size={14} /> {saved ? "Saved!" : "Save Configuration"}
+        <button onClick={handleSave} disabled={updateMutation.isPending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <Check size={14} /> {saved ? "Saved!" : updateMutation.isPending ? "Saving..." : "Save Configuration"}
         </button>
       </div>
     </div>
   );
 }
+
 
 // ── Tab: Backups ──────────────────────────────────────────────────────────────
 function BackupsTab() {
@@ -765,6 +1118,71 @@ function AlertsTab() {
   );
 }
 
+// ── Tab: Broadcast Announcements ──────────────────────────────────────────────
+function AnnouncementsTab() {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [targetRole, setTargetRole] = useState("all");
+  const [sending, setSending] = useState(false);
+  const router = useRouter();
+
+  const handleBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) {
+      toast.error("Title and message body are required");
+      return;
+    }
+
+    setSending(true);
+    try {
+      // Import dynamic api client
+      const api = (await import("@/lib/api")).default;
+      await api.post("/notifications/announcements", {
+        title,
+        body,
+        target_role: targetRole === "all" ? undefined : targetRole,
+      });
+      toast.success("Announcement broadcasted successfully to all target users!");
+      setTitle("");
+      setBody("");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to broadcast announcement");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px" }}>
+      <SectionHeader title="Broadcast Announcement" desc="Send a platform-wide alert or targeted notification via email and in-app message." />
+      <form onSubmit={handleBroadcast} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
+          <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+            <option value="all">All Registered Users</option>
+            {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
+              <option key={r} value={r}>{r.replace("_"," ")}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
+          <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button type="submit" disabled={sending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--avatar-theme-color)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            <Zap size={14} /> {sending ? "Broadcasting..." : "Broadcast Notice"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const router = useRouter();
@@ -825,6 +1243,7 @@ export default function AdminPage() {
       { id: "config",   label: "System Config", icon: Settings },
       { id: "backups",  label: "Backups",  icon: Database },
       { id: "alerts",   label: "Alerts",   icon: Bell },
+      { id: "announcements", label: "Announcements", icon: Zap },
     ];
 
     return (
@@ -880,6 +1299,7 @@ export default function AdminPage() {
           {activeTab === "config"   && <ConfigTab />}
           {activeTab === "backups"  && <BackupsTab />}
           {activeTab === "alerts"   && <AlertsTab />}
+          {activeTab === "announcements" && <AnnouncementsTab />}
         </div>
       </AppLayout>
     );

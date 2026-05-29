@@ -6,6 +6,7 @@ import {
   useCommentsList,
   usePostComment,
   useDeleteComment,
+  useModerateComment,
   CommentData,
 } from "@/hooks/useComments";
 import { useReactionsData, useToggleReaction } from "@/hooks/useReactions";
@@ -24,6 +25,7 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
 
   const { mutateAsync: postComment } = usePostComment();
   const { mutateAsync: deleteComment } = useDeleteComment();
+  const { mutateAsync: moderateComment } = useModerateComment();
   const { mutateAsync: toggleReaction } = useToggleReaction();
 
   const [commentText, setCommentText] = useState("");
@@ -80,6 +82,15 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
       toast.success("Comment deleted");
     } catch {
       toast.error("Failed to delete comment");
+    }
+  };
+
+  const handleModerate = async (commentId: string, isFlagged?: boolean, isHidden?: boolean) => {
+    try {
+      await moderateComment({ commentId, entityType, entityId, isFlagged, isHidden });
+      toast.success("Comment moderation updated");
+    } catch {
+      toast.error("Failed to update moderation state");
     }
   };
 
@@ -259,6 +270,8 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
                   </div>
 
                   <p style={{ fontSize: "13px", color: "#374151", margin: "0 0 10px", lineHeight: 1.5 }}>
+                    {(comment as any).is_hidden && <span style={{ fontSize: "11px", fontWeight: 700, color: "#ef4444", background: "#fee2e2", padding: "2px 6px", borderRadius: "4px", marginRight: "6px" }}>HIDDEN</span>}
+                    {(comment as any).is_flagged && <span style={{ fontSize: "11px", fontWeight: 700, color: "#d97706", background: "#fef3c7", padding: "2px 6px", borderRadius: "4px", marginRight: "6px" }}>FLAGGED</span>}
                     {comment.content}
                   </p>
 
@@ -302,6 +315,38 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
                         Delete
                       </button>
                     )}
+                    {user && user.role === "admin" && (
+                      <>
+                        <button
+                          onClick={() => handleModerate(comment.comment_id, undefined, !(comment as any).is_hidden)}
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            color: "var(--avatar-theme-color, #2563eb)",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: 0
+                          }}
+                        >
+                          {(comment as any).is_hidden ? "Unhide" : "Hide"}
+                        </button>
+                        <button
+                          onClick={() => handleModerate(comment.comment_id, !(comment as any).is_flagged, undefined)}
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            color: "#d97706",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: 0
+                          }}
+                        >
+                          {(comment as any).is_flagged ? "Unflag" : "Flag"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -344,6 +389,8 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
                             </div>
 
                             <p style={{ fontSize: "12.5px", color: "#374151", margin: "0 0 8px", lineHeight: 1.45 }}>
+                              {(reply as any).is_hidden && <span style={{ fontSize: "10px", fontWeight: 700, color: "#ef4444", background: "#fee2e2", padding: "2px 5px", borderRadius: "4px", marginRight: "6px" }}>HIDDEN</span>}
+                              {(reply as any).is_flagged && <span style={{ fontSize: "10px", fontWeight: 700, color: "#d97706", background: "#fef3c7", padding: "2px 5px", borderRadius: "4px", marginRight: "6px" }}>FLAGGED</span>}
                               {reply.content}
                             </p>
 
@@ -351,7 +398,7 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
                               <button
                                 onClick={() => handleDelete(reply.comment_id)}
                                 style={{
-                                  display: "flex",
+                                  display: "inline-flex",
                                   alignItems: "center",
                                   gap: "3px",
                                   fontSize: "11px",
@@ -360,12 +407,45 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
                                   background: "none",
                                   border: "none",
                                   cursor: "pointer",
-                                  padding: 0
+                                  padding: 0,
+                                  marginRight: "8px"
                                 }}
                               >
                                 <Trash2 size={11} />
                                 Delete
                               </button>
+                            )}
+                            {user && user.role === "admin" && (
+                              <div style={{ display: "inline-flex", gap: "8px", alignItems: "center" }}>
+                                <button
+                                  onClick={() => handleModerate(reply.comment_id, undefined, !(reply as any).is_hidden)}
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: "var(--avatar-theme-color, #2563eb)",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    padding: 0
+                                  }}
+                                >
+                                  {(reply as any).is_hidden ? "Unhide" : "Hide"}
+                                </button>
+                                <button
+                                  onClick={() => handleModerate(reply.comment_id, !(reply as any).is_flagged, undefined)}
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: "#d97706",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    padding: 0
+                                  }}
+                                >
+                                  {(reply as any).is_flagged ? "Unflag" : "Flag"}
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>

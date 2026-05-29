@@ -104,3 +104,89 @@ export function useDeleteDocument() {
     },
   });
 }
+
+export function useAdminUsers(params?: { search?: string; role?: string; status?: string; page?: number; limit?: number }) {
+  return useQuery({
+    queryKey: ["admin", "users", params],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/users", { params });
+      return data.data;
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useCreateAdminUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (user: any) => {
+      const { data } = await api.post("/admin/users", user);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
+export function useUpdateAdminUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...user }: { id: string; name?: string; email?: string; role?: string; department?: string; membership_status?: string }) => {
+      const { data } = await api.patch(`/admin/users/${id}`, user);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
+export function useDeleteAdminUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, mode }: { id: string; mode: "hard_delete" | "anonymize" }) => {
+      const { data } = await api.delete(`/admin/users/${id}`, { params: { mode } });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
+export function useAdminConfigs() {
+  return useQuery({
+    queryKey: ["admin", "configs"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/configs");
+      return data.data;
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateAdminConfigs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (configs: Record<string, string>) => {
+      const { data } = await api.post("/admin/configs", { configs });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "configs"] });
+    },
+  });
+}
+
+export function useAdminAuditLogs(params?: { search?: string; action?: string; entityType?: string; page?: number; limit?: number }) {
+  return useQuery({
+    queryKey: ["admin", "audit-logs", params],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/audit-logs", { params });
+      return data.data;
+    },
+    staleTime: 30_000,
+  });
+}
+
