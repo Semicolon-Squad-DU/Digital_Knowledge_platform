@@ -132,6 +132,9 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [uploading, setUploading]   = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput]     = useState("");
+  const [customFields, setCustomFields] = useState<{ key: string; value: string }[]>([]);
+  const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
   const abortRef                    = useRef<AbortController | null>(null);
 
   const { mutateAsync: upload } = useUploadArchiveItem();
@@ -201,6 +204,14 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     if (selectedTags.length > 0) {
       fd.append("tags", JSON.stringify(selectedTags));
     }
+
+    const metaObj: Record<string, string> = {};
+    customFields.forEach((f) => {
+      if (f.key.trim() && f.value.trim()) {
+        metaObj[f.key.trim()] = f.value.trim();
+      }
+    });
+    fd.append("custom_metadata", JSON.stringify(metaObj));
 
     // Simulate progress (real progress needs XHR — axios doesn't expose it easily with FormData)
     const progressInterval = setInterval(() => {
@@ -508,6 +519,64 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             </Button>
           </div>
           <p className="form-hint">Press Enter or comma to add a tag</p>
+        </div>
+
+        {/* ── Custom Metadata Fields ────────────────────── */}
+        <div className="space-y-2">
+          <label className="form-label flex items-center gap-1.5 font-semibold text-xs text-[var(--color-fg-default)]">
+            <Plus size={13} /> Custom Metadata Fields
+          </label>
+          
+          {customFields.length > 0 && (
+            <div className="space-y-1.5 mb-2">
+              {customFields.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 bg-[var(--color-canvas-subtle)] p-2 rounded-lg border border-[var(--color-border-muted)]">
+                  <span className="font-semibold text-xs text-[var(--color-fg-default)]">{f.key}:</span>
+                  <span className="text-xs text-[var(--color-fg-muted)] flex-1">{f.value}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomFields((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="text-[var(--color-fg-muted)] hover:text-red-500 transition-colors"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Key (e.g. Provenance)"
+              value={newKey}
+              onChange={(e) => setNewKey(e.target.value)}
+              className="form-input flex-1 text-xs"
+              style={{ padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+            />
+            <input
+              type="text"
+              placeholder="Value"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              className="form-input flex-1 text-xs"
+              style={{ padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (newKey.trim() && newValue.trim()) {
+                  setCustomFields((prev) => [...prev, { key: newKey.trim(), value: newValue.trim() }]);
+                  setNewKey("");
+                  setNewValue("");
+                }
+              }}
+            >
+              Add
+            </Button>
+          </div>
         </div>
 
         {/* ── Actions ───────────────────────────────────── */}

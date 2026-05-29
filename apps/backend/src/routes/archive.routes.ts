@@ -3,7 +3,7 @@ import { query, queryOne, withTransaction } from "../db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../middleware/auth.middleware";
 import { uploadSingle, uploadMultiple, checkUploadQuota } from "../middleware/upload.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
-import { uploadToS3, getPresignedUrl, generateS3Key } from "../services/s3.service";
+import { uploadToS3, getPresignedUrl, generateS3Key, deleteFromS3 } from "../services/s3.service";
 import { indexArchiveItem, searchArchive } from "../services/elasticsearch.service";
 import { logger } from "../config/logger";
 import { AccessTier } from "@dkp/shared";
@@ -165,7 +165,7 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.file) throw new AppError(400, "No file provided");
 
-    const { title_en, title_bn, description, authors, category, language, access_tier, status, tags } =
+    const { title_en, title_bn, description, authors, category, language, access_tier, status, tags, custom_metadata } =
       req.body as Record<string, string>;
 
     if (!title_en) throw new AppError(400, "English title is required");
@@ -179,8 +179,8 @@ router.post(
     const item = await withTransaction(async (client) => {
       const result = await client.query(
         `INSERT INTO archive_items
-           (title_en, title_bn, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+           (title_en, title_bn, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, custom_metadata)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          RETURNING *`,
         [
           title_en, title_bn || null, description || null,
@@ -188,6 +188,7 @@ router.post(
           category || "General", language || "en",
           access_tier || "public", initialStatus,
           key, req.file!.mimetype, req.file!.size, req.user!.user_id,
+          custom_metadata ? JSON.parse(custom_metadata) : {},
         ]
       );
 
@@ -284,10 +285,11 @@ router.patch(
   authenticate,
   requireRole("archivist", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title_en, title_bn, description, authors, category, access_tier, tags: tagIds } =
+    const { title_en, title_bn, description, authors, category, access_tier, tags: tagIds, custom_metadata } =
       req.body as {
         title_en?: string; title_bn?: string; description?: string;
         authors?: string[]; category?: string; access_tier?: string; tags?: string[];
+        custom_metadata?: Record<string, any>;
       };
 
     const item = await queryOne<{ item_id: string }>(
@@ -299,18 +301,21 @@ router.patch(
     const updated = await withTransaction(async (client) => {
       const result = await client.query(
         `UPDATE archive_items SET
-           title_en    = COALESCE($1, title_en),
-           title_bn    = COALESCE($2, title_bn),
-           description = COALESCE($3, description),
-           authors     = COALESCE($4, authors),
-           category    = COALESCE($5, category),
-           access_tier = COALESCE($6, access_tier),
-           updated_at  = NOW()
-         WHERE item_id = $7
+           title_en        = COALESCE($1, title_en),
+           title_bn        = COALESCE($2, title_bn),
+           description     = COALESCE($3, description),
+           authors         = COALESCE($4, authors),
+           category        = COALESCE($5, category),
+           access_tier     = COALESCE($6, access_tier),
+           custom_metadata = COALESCE($7, custom_metadata),
+           updated_at      = NOW()
+         WHERE item_id = $8
          RETURNING *`,
         [title_en ?? null, title_bn ?? null, description ?? null,
          authors ? JSON.stringify(authors) : null,
-         category ?? null, access_tier ?? null, req.params.id]
+         category ?? null, access_tier ?? null,
+         custom_metadata ? JSON.stringify(custom_metadata) : null,
+         req.params.id]
       );
 
       if (tagIds !== undefined) {
@@ -333,6 +338,49 @@ router.patch(
     });
 
     res.json({ success: true, data: updated });
+  })
+);
+
+// DELETE /api/archive/:id — permanently delete archive item (archivist/admin only)
+router.delete(
+  "/:id",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const item = await queryOne<{ item_id: string; file_url: string; title_en: string }>(
+      "SELECT item_id, file_url, title_en FROM archive_items WHERE item_id = $1",
+      [req.params.id]
+    );
+    if (!item) throw new AppError(404, "Archive item not found");
+
+    const versions = await query<{ file_url: string }>(
+      "SELECT file_url FROM archive_versions WHERE item_id = $1",
+      [req.params.id]
+    );
+
+    await withTransaction(async (client) => {
+      await client.query("DELETE FROM access_requests WHERE item_id = $1", [req.params.id]);
+      await client.query("DELETE FROM archive_item_tags WHERE item_id = $1", [req.params.id]);
+      await client.query("DELETE FROM archive_versions WHERE item_id = $1", [req.params.id]);
+      await client.query("DELETE FROM archive_items WHERE item_id = $1", [req.params.id]);
+
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+         VALUES ($1, 'DELETE', 'archive_item', $2, $3, $4)`,
+        [req.user!.user_id, req.params.id, JSON.stringify({ title_en: item.title_en }), req.ip]
+      );
+    });
+
+    for (const v of versions) {
+      if (v.file_url) {
+        deleteFromS3(v.file_url).catch((err) => logger.warn("S3 delete failed during item purge", { error: err.message }));
+      }
+    }
+    if (item.file_url) {
+      deleteFromS3(item.file_url).catch((err) => logger.warn("S3 main file delete failed during item purge", { error: err.message }));
+    }
+
+    res.json({ success: true, message: "Archive item permanently deleted" });
   })
 );
 
@@ -442,7 +490,7 @@ router.patch(
   authenticate,
   requireRole("archivist", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { status } = req.body as { status: "approved" | "denied" };
+    const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
     if (!["approved", "denied"].includes(status)) {
       throw new AppError(400, "Invalid status (must be approved or denied)");
     }
@@ -455,10 +503,10 @@ router.patch(
 
     const updated = await queryOne(
       `UPDATE access_requests
-       SET status = $1, reviewed_by = $2, reviewed_at = NOW()
-       WHERE request_id = $3
+       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), rejection_message = $3
+       WHERE request_id = $4
        RETURNING *`,
-      [status, req.user!.user_id, req.params.id]
+      [status, req.user!.user_id, rejection_message || null, req.params.id]
     );
 
     // Notify user of access decision
@@ -472,7 +520,7 @@ router.patch(
       const title = status === "approved" ? "Access Request Approved" : "Access Request Denied";
       const message = status === "approved"
         ? `Your request to access "${item.title_en}" has been approved.`
-        : `Your request to access "${item.title_en}" was denied.`;
+        : `Your request to access "${item.title_en}" was denied.${rejection_message ? ` Reason: ${rejection_message}` : ""}`;
 
       await query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
@@ -482,6 +530,73 @@ router.patch(
     }
 
     res.json({ success: true, data: updated });
+  })
+);
+
+// POST /api/archive/:id/version — upload a new version of an existing archive item
+router.post(
+  "/:id/version",
+  authenticate,
+  requireRole("archivist", "admin"),
+  checkUploadQuota,
+  uploadSingle,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const itemId = req.params.id;
+    if (!req.file) throw new AppError(400, "No file provided");
+
+    const item = await queryOne<{ item_id: string; title_en: string; status: string; version: number }>(
+      "SELECT item_id, title_en, status, version FROM archive_items WHERE item_id = $1",
+      [itemId]
+    );
+    if (!item) throw new AppError(404, "Archive item not found");
+
+    const key = generateS3Key("archive", req.file.originalname, req.file.mimetype);
+    await uploadToS3(key, req.file.buffer, req.file.mimetype);
+
+    // Get max version number
+    const maxVerRow = await queryOne<{ max_ver: number }>(
+      "SELECT COALESCE(MAX(version_number), 0) as max_ver FROM archive_versions WHERE item_id = $1",
+      [itemId]
+    );
+    const nextVersion = (maxVerRow?.max_ver ?? item.version) + 1;
+
+    const updated = await withTransaction(async (client) => {
+      // Update item
+      const updateResult = await client.query(
+        `UPDATE archive_items
+         SET file_url = $1, file_type = $2, file_size = $3, version = $4, updated_at = NOW()
+         WHERE item_id = $5
+         RETURNING *`,
+        [key, req.file!.mimetype, req.file!.size, nextVersion, itemId]
+      );
+
+      // Insert new version
+      await client.query(
+        `INSERT INTO archive_versions (item_id, version_number, file_url, metadata_snapshot, changed_by)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [itemId, nextVersion, key, JSON.stringify(updateResult.rows[0]), req.user!.user_id]
+      );
+
+      // Audit Log
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+         VALUES ($1, 'UPDATE', 'archive_item', $2, $3, $4)`,
+        [req.user!.user_id, itemId, JSON.stringify({ action: "NEW_VERSION", version: nextVersion }), req.ip]
+      );
+
+      return updateResult.rows[0];
+    });
+
+    if (item.status === "published") {
+      indexArchiveItem({
+        item_id: updated.item_id, title_en: updated.title_en, title_bn: updated.title_bn,
+        description: updated.description, authors: updated.authors, category: updated.category,
+        language: updated.language, access_tier: updated.access_tier, status: updated.status,
+        file_type: updated.file_type, created_at: updated.created_at,
+      }).catch((err) => logger.error("ES indexing failed for new version", { error: err.message }));
+    }
+
+    res.status(201).json({ success: true, data: updated });
   })
 );
 

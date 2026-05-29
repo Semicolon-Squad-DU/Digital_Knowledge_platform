@@ -78,6 +78,23 @@ export function useUpdateArchiveStatus() {
   });
 }
 
+export function useUploadArchiveVersion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+      const { data } = await api.post(`/archive/${id}/version`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return data.data;
+    },
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["archive", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["archive", "versions", id] });
+      queryClient.invalidateQueries({ queryKey: ["archive", "search"] });
+    },
+  });
+}
+
 export function useDownloadArchiveItem() {
   return useMutation({
     mutationFn: async (id: string) => {
@@ -120,12 +137,25 @@ export function usePendingAccessRequests() {
 export function useReviewAccessRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ requestId, status }: { requestId: string; status: "approved" | "denied" }) => {
-      const { data } = await api.patch(`/archive/access-requests/${requestId}/review`, { status });
+    mutationFn: async ({ requestId, status, rejection_message }: { requestId: string; status: "approved" | "denied"; rejection_message?: string }) => {
+      const { data } = await api.patch(`/archive/access-requests/${requestId}/review`, { status, rejection_message });
       return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["archive", "access-requests"] });
+    },
+  });
+}
+
+export function useDeleteArchiveItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/archive/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["archive"] });
     },
   });
 }

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle } from "lucide-react";
-import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess } from "@/hooks/useArchive";
+import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUploadArchiveVersion, useDeleteArchiveItem } from "@/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { useAuthStore } from "@/store/auth.store";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
 
 export default function ArchiveItemPage() {
@@ -20,7 +21,28 @@ export default function ArchiveItemPage() {
   const { mutateAsync: download, isPending: isDownloading } = useDownloadArchiveItem();
   const { mutateAsync: requestAccess, isPending: isSubmitting } = useRequestAccess();
 
+  const { user, isAuthenticated } = useAuthStore();
+  const isArchivistOrAdmin = isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
+
+  const { mutateAsync: updateStatus, isPending: isUpdatingStatus } = useUpdateArchiveStatus();
+  const { mutateAsync: uploadVersion, isPending: isUploadingVersion } = useUploadArchiveVersion();
+  const { mutateAsync: deleteItem, isPending: isDeleting } = useDeleteArchiveItem();
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete this archive item? This action is irreversible.")) {
+      return;
+    }
+    try {
+      await deleteItem(itemId);
+      toast.success("Archive item deleted successfully!");
+      router.push("/archive");
+    } catch {
+      toast.error("Failed to delete archive item");
+    }
+  };
+  
   const [reason, setReason] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleDownload = async () => {
     try {
@@ -393,12 +415,15 @@ export default function ArchiveItemPage() {
                 {formatDate(item.created_at)}
               </p>
             </div>
-            <div>
-              <span style={{ color: "#9ca3af", fontWeight: 500 }}>Last Updated</span>
-              <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>
-                {formatDate(item.updated_at)}
-              </p>
             </div>
+            {item.custom_metadata && Object.entries(item.custom_metadata).map(([key, val]) => (
+              <div key={key}>
+                <span style={{ color: "#9ca3af", fontWeight: 500 }}>{key}</span>
+                <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>
+                  {String(val)}
+                </p>
+              </div>
+            ))}
           </div>
 
           <button
@@ -424,6 +449,204 @@ export default function ArchiveItemPage() {
             {isDownloading ? "Preparing File..." : "Download Document"}
           </button>
         </div>
+
+        {/* ── ARCHIVIST & ADMIN MANAGEMENT PANEL ── */}
+        {isArchivistOrAdmin && (
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 16,
+              padding: 28,
+              marginBottom: 24,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <span style={{
+                width: "36px", height: "36px", borderRadius: "8px",
+                background: "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 10%, transparent)",
+                display: "flex", alignItems: "center", justifyCenter: "center",
+                display: "flex", justifyContent: "center", flexShrink: 0
+              }}>
+                <FileText size={18} color="var(--avatar-theme-color, #1a56db)" style={{ marginTop: 9 }} />
+              </span>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: 0 }}>
+                Archivist Document Controls
+              </h2>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+              {/* Lifecycle State Management */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                  Document Lifecycle State
+                </span>
+                <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
+                  Transition this document's state to control search indexing, visibility, and staff review pipelines.
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {["draft", "review", "published", "archived"].map((state) => {
+                    const isActive = item.status === state;
+                    let stateColor = "var(--avatar-theme-color, #1a56db)";
+                    if (state === "draft") stateColor = "#6b7280";
+                    if (state === "review") stateColor = "#d97706";
+                    if (state === "published") stateColor = "#059669";
+                    if (state === "archived") stateColor = "#dc2626";
+
+                    return (
+                      <button
+                        key={state}
+                        onClick={async () => {
+                          try {
+                            await updateStatus({ id: itemId, status: state });
+                            toast.success(`Document state updated to ${state.toUpperCase()}!`);
+                            refetch();
+                          } catch {
+                            toast.error("Failed to update document state");
+                          }
+                        }}
+                        disabled={isUpdatingStatus}
+                        style={{
+                          padding: "8px 14px",
+                          borderRadius: 8,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          border: isActive ? `1.5px solid ${stateColor}` : "1px solid #d1d5db",
+                          background: isActive ? `color-mix(in srgb, ${stateColor} 10%, #ffffff)` : "#ffffff",
+                          color: isActive ? stateColor : "#4b5563"
+                        }}
+                      >
+                        {state.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Version Upload Management */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                  Upload New Revision / Version
+                </span>
+                <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
+                  Replace the active file with a new revision. The system automatically increments the version counter and archives the previous file.
+                </p>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <label
+                      style={{
+                        padding: "8px 14px",
+                        background: "#f3f4f6",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#374151",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6
+                      }}
+                    >
+                      <FileText size={14} />
+                      Select File
+                      <input
+                        type="file"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setSelectedFile(e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+                    <span style={{ fontSize: 12, color: selectedFile ? "#111827" : "#9ca3af", fontStyle: selectedFile ? "normal" : "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>
+                      {selectedFile ? selectedFile.name : "No file selected"}
+                    </span>
+                  </div>
+
+                  {selectedFile && (
+                    <button
+                      onClick={async () => {
+                        const formData = new FormData();
+                        formData.append("file", selectedFile);
+                        try {
+                          await uploadVersion({ id: itemId, formData });
+                          toast.success("New file revision uploaded successfully!");
+                          setSelectedFile(null);
+                          refetch();
+                        } catch {
+                          toast.error("Failed to upload new document version");
+                        }
+                      }}
+                      disabled={isUploadingVersion}
+                      style={{
+                        padding: "9px 16px",
+                        background: "var(--avatar-theme-color, var(--theme-gradient-160))",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        opacity: isUploadingVersion ? 0.7 : 1,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+                      }}
+                    >
+                      {isUploadingVersion ? "Uploading Revision..." : "Submit New Version"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #fee2e2" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: "#991b1b", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+                    Danger Zone
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#ef4444", margin: "4px 0 0", lineHeight: 1.4 }}>
+                    Permanently delete this document from the DKP institutional archive. This deletes all version history and is irreversible.
+                  </p>
+                </div>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  style={{
+                    padding: "8px 16px",
+                    background: "#fee2e2",
+                    color: "#b91c1c",
+                    border: "1px solid #fca5a5",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "#fca5a5";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "#fee2e2";
+                  }}
+                >
+                  {isDeleting ? "Deleting..." : "Delete Archive Item"}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
 
         {/* Versions Card */}
         <div
