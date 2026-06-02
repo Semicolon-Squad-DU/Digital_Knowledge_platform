@@ -125,7 +125,12 @@ export default function UploadResearchPage() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { "application/pdf": [".pdf"] },
+    accept: {
+      "application/pdf": [".pdf"],
+      "application/zip": [".zip"],
+      "application/x-zip-compressed": [".zip"],
+      "application/json": [".json"]
+    },
     maxFiles: 1,
     maxSize: 500 * 1024 * 1024,
     multiple: false,
@@ -318,11 +323,11 @@ export default function UploadResearchPage() {
           </div>
         </section>
 
-        {/* ── PDF Upload ───────────────────────────────── */}
+        {/* ── File Upload ───────────────────────────────── */}
         <section className="gh-box">
           <div className="gh-box-header">
             <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">
-              PDF Upload
+              Document / Dataset File Upload
               <span className="ml-1.5 text-xs font-normal text-[var(--color-fg-muted)]">(optional)</span>
             </h2>
           </div>
@@ -353,18 +358,18 @@ export default function UploadResearchPage() {
                     : "border-[var(--color-border-default)] hover:border-[var(--color-accent-fg)] hover:bg-[var(--color-canvas-subtle)]"
                 )}
               >
-                <input {...getInputProps()} aria-label="Upload PDF" />
+                <input {...getInputProps()} aria-label="Upload PDF, ZIP or JSON" />
                 <Upload size={24} className={cn("mx-auto mb-3", isDragActive ? "text-[var(--color-accent-fg)]" : "text-[var(--color-fg-muted)]")} />
                 <p className="text-sm font-medium text-[var(--color-fg-default)]">
-                  {isDragActive ? "Drop your PDF here" : "Drag & drop your PDF"}
+                  {isDragActive ? "Drop your file here" : "Drag & drop your PDF, ZIP or JSON file"}
                 </p>
                 <p className="text-xs text-[var(--color-fg-muted)] mt-1">
-                  or <span className="text-[var(--color-accent-fg)]">browse to upload</span> · PDF only · max 500 MB
+                  or <span className="text-[var(--color-accent-fg)]">browse to upload</span> · PDF, ZIP or JSON · max 500 MB
                 </p>
               </div>
             )}
             {pdfError && <p className="form-error mt-2">{pdfError}</p>}
-            {pdfFile && <LocalPdfPreview file={pdfFile} />}
+            {pdfFile?.name.toLowerCase().endsWith(".pdf") && <LocalPdfPreview file={pdfFile} />}
           </div>
         </section>
 

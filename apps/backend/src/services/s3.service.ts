@@ -38,6 +38,9 @@ export const ALLOWED_MIME_TYPES = new Set([
   "video/mp4",
   "video/webm",
   "video/x-msvideo",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/json",
 ]);
 
 export const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
