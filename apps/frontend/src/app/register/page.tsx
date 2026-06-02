@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +11,8 @@ import toast from "react-hot-toast";
 import { Eye, EyeOff, ShieldCheck, BookCopy, ArrowLeft } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
+import { MockOAuthModal } from "@/components/ui/MockOAuthModal";
+import { GoogleConfigModal } from "@/components/ui/GoogleConfigModal";
 
 // ── Role options ──────────────────────────────────────────────────────────────
 const ROLES = [
@@ -21,22 +24,6 @@ const ROLES = [
   { value: "admin", label: "Admin", desc: "Full platform access and user management" },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
-
-const DEPARTMENTS = [
-  "Computer Science & Engineering",
-  "Electrical & Electronic Engineering",
-  "Civil Engineering",
-  "Mechanical Engineering",
-  "Business Administration",
-  "Economics",
-  "English",
-  "Physics",
-  "Chemistry",
-  "Mathematics",
-  "Law",
-  "Medicine",
-  "Other",
-];
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 const schema = z.object({
@@ -122,6 +109,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
+  const [oauthModalOpen, setOauthModalOpen] = useState(false);
+  const [googleConfigModalOpen, setGoogleConfigModalOpen] = useState(false);
+  const [oauthProvider, setOauthProvider] = useState<"google" | "sso">("google");
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, watch } =
     useForm<FormData>({ resolver: zodResolver(schema) });
@@ -146,6 +136,75 @@ export default function RegisterPage() {
       } else {
         setError(response?.message || "Registration failed. Please try again.");
       }
+    }
+  };
+
+  const handleOAuthAuthorize = async (oauthData: {
+    email: string;
+    name: string;
+    role: string;
+    provider: "google" | "sso";
+    providerId: string;
+    department?: string;
+  }) => {
+    setOauthModalOpen(false);
+    setGoogleConfigModalOpen(false);
+    try {
+      const res = await api.post("/auth/oauth-login", oauthData);
+      const { access_token, refresh_token, user } = res.data.data;
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
+      setUser(user);
+      toast.success(`Account authorized successfully: Welcome, ${user.name}!`);
+      router.push("/admin");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to sign up via OAuth");
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setGoogleConfigModalOpen(true);
+      return;
+    }
+
+    if (typeof window !== "undefined" && (window as any).google) {
+      try {
+        const client = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              const loadingToast = toast.loading("Fetching Google profile...");
+              try {
+                const profileRes = await fetch(
+                  `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`
+                );
+                const profile = await profileRes.json();
+                toast.dismiss(loadingToast);
+                
+                await handleOAuthAuthorize({
+                  email: profile.email,
+                  name: profile.name,
+                  role: selectedRole, // Registers as selected role
+                  provider: "google",
+                  providerId: `google_${profile.sub}`,
+                  department: "",
+                });
+              } catch (e) {
+                toast.dismiss(loadingToast);
+                toast.error("Failed to fetch user profile from Google");
+              }
+            }
+          },
+        });
+        client.requestAccessToken();
+      } catch (err) {
+        toast.error("Failed to initialize Google Sign-In SDK");
+      }
+    } else {
+      toast.error("Google SDK is still loading. Please try again in a moment.");
     }
   };
 
@@ -248,7 +307,7 @@ export default function RegisterPage() {
               Join the Platform.
             </h1>
             <p style={{ fontSize: "14px", color: "#e5e7eb", lineHeight: 1.7, marginBottom: "28px" }}>
-              Establish your scholarly presence within the Digital Knowledge Platform. Access exclusive research repositories, contribute to peer-reviewed collections, and collaborate with global academic institutions.
+
             </p>
 
             {/* Role selector card */}
@@ -306,7 +365,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
               {/* Row 1: Full Name + Email */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "18px" }}>
+              <div className="register-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "18px" }}>
                 <div>
                   <label style={labelStyle}>Full Name</label>
                   <input
@@ -338,25 +397,15 @@ export default function RegisterPage() {
               {/* Row 2: Department */}
               <div style={{ marginBottom: "18px" }}>
                 <label style={labelStyle}>Department / Faculty</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", maxHeight: "220px", overflowY: "auto", padding: "10px", border: "1px solid #d1d5db", borderRadius: "6px", background: "#f9fafb" }}>
-                  {DEPARTMENTS.map((d) => {
-                    const dept = watch("department") || "";
-                    return (
-                      <label key={d} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "8px 10px", borderRadius: "4px", background: dept === d ? "#000000" : "transparent", transition: "all 0.2s" }}
-                        onMouseEnter={(e) => !dept || dept !== d ? (e.currentTarget.style.background = "#e5e5e5") : null}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = dept === d ? "#000000" : "transparent")}
-                      >
-                        <input
-                          type="radio"
-                          {...register("department")}
-                          value={d}
-                          style={{ accentColor: "#111827", cursor: "pointer" }}
-                        />
-                        <span style={{ fontSize: "12px", fontWeight: 500, color: dept === d ? "#ffffff" : "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d}</span>
-                      </label>
-                    );
-                  })}
-                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. Computer Science & Engineering"
+                  aria-invalid={!!errors.department}
+                  style={inputStyle(!!errors.department)}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
+                  {...register("department", { onBlur: (e) => { e.currentTarget.style.borderColor = errors.department ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; } })}
+                />
+                {errors.department && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errors.department.message}</p>}
               </div>
 
               {/* Password */}
@@ -487,7 +536,7 @@ export default function RegisterPage() {
                     justifyContent: "center",
                     gap: "10px"
                   }}
-                  onClick={() => toast("Google signup integration coming soon")}
+                  onClick={handleGoogleSignIn}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -517,7 +566,10 @@ export default function RegisterPage() {
                     justifyContent: "center",
                     gap: "10px"
                   }}
-                  onClick={() => toast("Institutional SSO (OAuth) integration coming soon")}
+                  onClick={() => {
+                    setOauthProvider("sso");
+                    setOauthModalOpen(true);
+                  }}
                 >
                   <ShieldCheck size={16} color="#374151" />
                   Sign up with Institutional SSO
@@ -541,13 +593,13 @@ export default function RegisterPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px 32px", display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "center", gap: "16px" }}>
+      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }} className="register-footer">
+        <div className="register-footer-content" style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px 32px", display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "center", gap: "16px" }}>
           <div>
-            <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", margin: "0 0 3px" }}>Digital Knowledge Platform</p>
-            <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>© 2024 Digital Knowledge Platform. All rights reserved.</p>
+            <p className="register-footer-brand" style={{ fontSize: "13px", fontWeight: 700, color: "#111827", margin: "0 0 3px" }}>Digital Knowledge Platform</p>
+            <p className="register-footer-copyright" style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>© 2024 Digital Knowledge Platform. All rights reserved.</p>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "24px" }}>
+          <div className="register-footer-links" style={{ display: "flex", justifyContent: "flex-end", gap: "24px" }}>
             {["Privacy Policy", "Terms of Service", "Institutional Access", "Contact Support"].map((l) => (
               <Link key={l} href="#" style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
@@ -559,6 +611,25 @@ export default function RegisterPage() {
           </div>
         </div>
       </footer>
+
+      <MockOAuthModal
+        isOpen={oauthModalOpen}
+        onClose={() => setOauthModalOpen(false)}
+        provider={oauthProvider}
+        onAuthorize={handleOAuthAuthorize}
+      />
+
+      <GoogleConfigModal
+        isOpen={googleConfigModalOpen}
+        onClose={() => setGoogleConfigModalOpen(false)}
+        onUseMock={() => {
+          setGoogleConfigModalOpen(false);
+          setOauthProvider("google");
+          setOauthModalOpen(true);
+        }}
+      />
+
+      <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
 
       <style>{`
         input[type="radio"] {

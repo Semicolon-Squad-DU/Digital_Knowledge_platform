@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
+import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +11,9 @@ import toast from "react-hot-toast";
 import { ArrowLeft, LogIn, Lock, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { Input } from "@/components/ui/Input";
+import api from "@/lib/api";
+import { MockOAuthModal } from "@/components/ui/MockOAuthModal";
+import { GoogleConfigModal } from "@/components/ui/GoogleConfigModal";
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
@@ -32,8 +36,11 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/admin";
-  const { login } = useAuthStore();
+  const { login, setUser } = useAuthStore();
   const [error, setError] = useState("");
+  const [oauthModalOpen, setOauthModalOpen] = useState(false);
+  const [googleConfigModalOpen, setGoogleConfigModalOpen] = useState(false);
+  const [oauthProvider, setOauthProvider] = useState<"google" | "sso">("google");
 
   const {
     register,
@@ -51,6 +58,75 @@ function LoginForm() {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message;
       setError(msg || "Invalid email or password");
+    }
+  };
+
+  const handleOAuthAuthorize = async (oauthData: {
+    email: string;
+    name: string;
+    role: string;
+    provider: "google" | "sso";
+    providerId: string;
+    department?: string;
+  }) => {
+    setOauthModalOpen(false);
+    setGoogleConfigModalOpen(false);
+    try {
+      const res = await api.post("/auth/oauth-login", oauthData);
+      const { access_token, refresh_token, user } = res.data.data;
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
+      setUser(user);
+      toast.success(`Welcome back, ${user.name}!`);
+      router.push(redirectTo);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to sign in via OAuth");
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setGoogleConfigModalOpen(true);
+      return;
+    }
+
+    if (typeof window !== "undefined" && (window as any).google) {
+      try {
+        const client = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              const loadingToast = toast.loading("Fetching Google profile...");
+              try {
+                const profileRes = await fetch(
+                  `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`
+                );
+                const profile = await profileRes.json();
+                toast.dismiss(loadingToast);
+                
+                await handleOAuthAuthorize({
+                  email: profile.email,
+                  name: profile.name,
+                  role: "member",
+                  provider: "google",
+                  providerId: `google_${profile.sub}`,
+                  department: "",
+                });
+              } catch (e) {
+                toast.dismiss(loadingToast);
+                toast.error("Failed to fetch user profile from Google");
+              }
+            }
+          },
+        });
+        client.requestAccessToken();
+      } catch (err) {
+        toast.error("Failed to initialize Google Sign-In SDK");
+      }
+    } else {
+      toast.error("Google SDK is still loading. Please try again in a moment.");
     }
   };
 
@@ -374,7 +450,7 @@ function LoginForm() {
                 borderRadius: "6px",
                 cursor: "pointer",
               }}
-              onClick={() => toast("Google sign-in coming soon")}
+              onClick={handleGoogleSignIn}
             >
               <GoogleIcon />
               Sign in with Google
@@ -397,7 +473,10 @@ function LoginForm() {
                 cursor: "pointer",
                 marginTop: "10px",
               }}
-              onClick={() => toast("Institutional SSO (OAuth) integration coming soon")}
+              onClick={() => {
+                setOauthProvider("sso");
+                setOauthModalOpen(true);
+              }}
             >
               <ShieldCheck size={16} color="#374151" />
               Sign in with Institutional SSO
@@ -426,14 +505,14 @@ function LoginForm() {
           >
             <span
               className="inline-flex items-center"
-              style={{ gap: "5px", fontSize: "11px", color: "#9ca3af" }}
+              style={{ gap: "5px", fontSize: "11px", color: "#e5e7eb" }}
             >
               <Lock size={11} />
               Secure Encryption
             </span>
             <span
               className="inline-flex items-center"
-              style={{ gap: "5px", fontSize: "11px", color: "#9ca3af" }}
+              style={{ gap: "5px", fontSize: "11px", color: "#e5e7eb" }}
             >
               <ShieldCheck size={11} />
               GDPR Compliant
@@ -446,6 +525,7 @@ function LoginForm() {
       {/* ── Footer ── */}
       <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }} className="login-footer">
         <div
+          className="login-footer-content"
           style={{
             maxWidth: "960px",
             margin: "0 auto",
@@ -482,13 +562,32 @@ function LoginForm() {
           </div>
 
           {/* Copyright — right */}
-          <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, textAlign: "right", margin: 0 }}>
+          <p className="login-footer-copyright" style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, textAlign: "right", margin: 0 }}>
             © 2026 Digital Knowledge Platform. All rights
             <br />
             reserved.
           </p>
         </div>
       </footer>
+
+      <MockOAuthModal
+        isOpen={oauthModalOpen}
+        onClose={() => setOauthModalOpen(false)}
+        provider={oauthProvider}
+        onAuthorize={handleOAuthAuthorize}
+      />
+
+      <GoogleConfigModal
+        isOpen={googleConfigModalOpen}
+        onClose={() => setGoogleConfigModalOpen(false)}
+        onUseMock={() => {
+          setGoogleConfigModalOpen(false);
+          setOauthProvider("google");
+          setOauthModalOpen(true);
+        }}
+      />
+
+      <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
 
     </div>
   );

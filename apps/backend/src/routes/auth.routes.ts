@@ -196,6 +196,87 @@ router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Respo
   res.json({ success: true, data: user });
 }));
 
+// POST /api/auth/oauth-login
+router.post(
+  "/oauth-login",
+  [
+    body("email").isEmail().toLowerCase().withMessage("Valid email required"),
+    body("name").trim().notEmpty().withMessage("Name is required"),
+    body("role").isIn(["member", "student_author", "researcher", "archivist", "librarian", "admin"]),
+    body("provider").isIn(["google", "sso"]),
+    body("providerId").trim().notEmpty(),
+  ],
+  asyncHandler(async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { email, name, role, provider, providerId, department } = req.body as {
+      email: string;
+      name: string;
+      role: string;
+      provider: string;
+      providerId: string;
+      department?: string;
+    };
+
+    // Check if user already exists
+    let user = await queryOne<{
+      user_id: string;
+      name: string;
+      email: string;
+      role: string;
+      membership_status: string;
+      oauth_provider: string;
+      oauth_id: string;
+    }>(
+      `SELECT user_id, name, email, role, membership_status, oauth_provider, oauth_id
+       FROM users WHERE email = $1 AND deleted_at IS NULL`,
+      [email]
+    );
+
+    if (user) {
+      if (user.membership_status === "suspended") {
+        throw new AppError(403, "Account suspended. Contact administrator.");
+      }
+
+      // Update OAuth provider info if not set
+      if (!user.oauth_provider || !user.oauth_id) {
+        await query(
+          "UPDATE users SET oauth_provider = $1, oauth_id = $2 WHERE user_id = $3",
+          [provider, providerId, user.user_id]
+        );
+        user.oauth_provider = provider;
+        user.oauth_id = providerId;
+      }
+    } else {
+      // Create new user
+      user = await queryOne<{
+        user_id: string;
+        name: string;
+        email: string;
+        role: string;
+        membership_status: string;
+        oauth_provider: string;
+        oauth_id: string;
+      }>(
+        `INSERT INTO users (name, email, role, oauth_provider, oauth_id, department, membership_status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'active')
+         RETURNING user_id, name, email, role, membership_status, oauth_provider, oauth_id`,
+        [name, email, role, provider, providerId, department ?? null]
+      );
+    }
+
+    const tokens = generateTokens(user!.user_id, user!.email, user!.role as never);
+    await storeRefreshToken(user!.user_id, tokens.refresh_token);
+
+    logger.info("OAuth Login Successful", { user_id: user!.user_id, email, provider });
+    res.json({ success: true, data: { ...tokens, user } });
+  })
+);
+
 function generateTokens(user_id: string, email: string, role: string) {
   const access_token = jwt.sign(
     { user_id, email, role },

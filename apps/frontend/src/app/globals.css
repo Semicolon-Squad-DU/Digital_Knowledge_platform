@@ -748,9 +748,17 @@ input[type="password"]::-moz-reveal {
   }
 
   .login-footer {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
     padding: 16px 12px !important;
+  }
+
+  .login-footer-content {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    text-align: center !important;
+  }
+
+  .login-footer-copyright {
+    text-align: center !important;
   }
 
   .login-footer-links {
@@ -779,6 +787,72 @@ input[type="password"]::-moz-reveal {
 
   .login-mock-layout {
     display: none !important;
+  }
+
+  /* Register Page Responsive Overrides */
+  .register-main {
+    padding: 24px 16px !important;
+  }
+
+  .register-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .register-footer {
+    padding: 16px 12px !important;
+  }
+
+  .register-footer-content {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    text-align: center !important;
+  }
+
+  .register-footer-brand,
+  .register-footer-copyright {
+    text-align: center !important;
+  }
+
+  .register-footer-links {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
+  .register-form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .register-dept-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Privacy Policy Page Responsive Overrides */
+  .privacy-footer {
+    padding: 24px 16px !important;
+  }
+
+  .privacy-footer-content {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    text-align: center !important;
+  }
+
+  .privacy-footer-brand,
+  .privacy-footer-copyright {
+    text-align: center !important;
+  }
+
+  .privacy-footer-links-container {
+    align-items: center !important;
+  }
+
+  .privacy-footer-links {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
   }
 }
 
@@ -1047,9 +1121,17 @@ input[type="password"]::-moz-reveal {
   }
 
   .login-footer {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
     padding: 12px 12px !important;
+  }
+
+  .login-footer-content {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    text-align: center !important;
+  }
+
+  .login-footer-copyright {
+    text-align: center !important;
   }
 
   .login-footer-links {

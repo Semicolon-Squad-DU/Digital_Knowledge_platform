@@ -209,8 +209,8 @@ export default function PrivacyPage() {
       </main>
 
       {/* Footer */}
-      <footer style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2 }}>
-        <div style={{
+      <footer className="privacy-footer" style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2 }}>
+        <div className="privacy-footer-content" style={{
           maxWidth: "1100px",
           margin: "0 auto",
           padding: "32px 32px",
@@ -220,21 +220,21 @@ export default function PrivacyPage() {
           gap: "32px",
         }}>
           <div>
-            <p style={{ fontSize: "13px", fontWeight: 700, color: "#ffffff", lineHeight: 1.55, margin: "0 0 6px" }}>
+            <p className="privacy-footer-brand" style={{ fontSize: "13px", fontWeight: 700, color: "#d1d5db", lineHeight: 1.55, margin: "0 0 6px" }}>
               Digital Knowledge Platform
             </p>
-            <p style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.7)", margin: 0 }}>
+            <p className="privacy-footer-copyright" style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>
               © 2026 Digital Knowledge Platform. All rights reserved.
             </p>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <div style={{ display: "flex", gap: "24px" }}>
+          <div className="privacy-footer-links-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+            <div className="privacy-footer-links" style={{ display: "flex", gap: "24px" }}>
               {[
                 { label: "Privacy Policy", href: "/privacy" },
                 { label: "Terms of Service", href: "/terms" },
                 { label: "Contact Us", href: "/contact" }
               ].map((l) => (
-                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.8)", textDecoration: "none" }}
+                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "#d1d5db", textDecoration: "none" }}
                   onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                   onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                 >
