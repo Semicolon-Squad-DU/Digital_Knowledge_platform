@@ -630,7 +630,7 @@ export default function EditProjectPage() {
                 alignItems: "center",
                 gap: 6,
                 padding: "10px 18px",
-                background: "var(--theme-gradient-160)",
+                background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
                 border: "none",
                 borderRadius: 8,
                 cursor: (isSubmitting || updateProject.isPending) ? "not-allowed" : "pointer",
@@ -638,6 +638,20 @@ export default function EditProjectPage() {
                 fontWeight: 600,
                 color: "#fff",
                 opacity: (isSubmitting || updateProject.isPending) ? 0.7 : 1,
+                boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                if (!isSubmitting && !updateProject.isPending) {
+                  e.currentTarget.style.filter = "brightness(1.15)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isSubmitting && !updateProject.isPending) {
+                  e.currentTarget.style.filter = "none";
+                  e.currentTarget.style.transform = "none";
+                }
               }}
             >
               <GraduationCap size={15} />

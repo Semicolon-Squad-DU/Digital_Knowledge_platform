@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 type CitationFormat = "apa" | "mla" | "bibtex";
 
@@ -38,7 +39,32 @@ function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: stri
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={handleOpen} loading={loading} icon={<ExternalLink size={13} />}>
+    <Button
+      type="button"
+      size="sm"
+      onClick={handleOpen}
+      loading={loading}
+      icon={<ExternalLink size={13} />}
+      style={{
+        background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+        color: "#ffffff",
+        border: "none",
+        boxShadow: "0 2px 6px rgba(26, 26, 46, 0.15)",
+        transition: "all 0.2s ease",
+      }}
+      onMouseOver={(e) => {
+        if (!loading) {
+          e.currentTarget.style.filter = "brightness(1.15)";
+          e.currentTarget.style.transform = "translateY(-1px)";
+        }
+      }}
+      onMouseOut={(e) => {
+        if (!loading) {
+          e.currentTarget.style.filter = "none";
+          e.currentTarget.style.transform = "none";
+        }
+      }}
+    >
       {loading ? "Opening…" : "Open Attached File"}
     </Button>
   );
@@ -47,7 +73,7 @@ function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: stri
 // ---------------------------------------------------------------------------
 // Copy button with transient ✓ feedback
 // ---------------------------------------------------------------------------
-function CopyButton({ text, label }: { text: string; label: string }) {
+function CopyButton({ text, label, btnText }: { text: string; label: string; btnText?: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -73,7 +99,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
       aria-label={`Copy ${label}`}
     >
       {copied ? <Check size={13} /> : <Copy size={13} />}
-      {copied ? "Copied!" : "Copy"}
+      {copied ? "Copied!" : (btnText || "Copy")}
     </button>
   );
 }
@@ -188,18 +214,22 @@ export default function ResearchDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="page-container py-8 max-w-4xl">
-        <SkeletonCard />
-      </div>
+      <AppLayout>
+        <div className="page-container py-8 max-w-4xl">
+          <SkeletonCard />
+        </div>
+      </AppLayout>
     );
   }
 
   if (!output) {
     return (
-      <div className="page-container py-16 text-center">
-        <FileText size={36} className="mx-auto mb-3 text-[var(--color-fg-muted)]" />
-        <p className="font-semibold text-[var(--color-fg-default)]">Research output not found.</p>
-      </div>
+      <AppLayout>
+        <div className="page-container py-16 text-center">
+          <FileText size={36} className="mx-auto mb-3 text-[var(--color-fg-muted)]" />
+          <p className="font-semibold text-[var(--color-fg-default)]">Research output not found.</p>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -210,7 +240,8 @@ export default function ResearchDetailPage() {
   ];
 
   return (
-    <div className="page-container py-8 max-w-4xl">
+    <AppLayout>
+      <div className="page-container py-8 max-w-4xl">
       <PageHeader
         title={output.title}
         breadcrumb={[
@@ -308,10 +339,25 @@ export default function ResearchDetailPage() {
                   <h3 className="text-sm font-semibold text-[var(--color-fg-default)]">Research Document</h3>
                 </div>
                 <Button
-                  variant="primary"
+                  type="button"
                   size="sm"
                   onClick={() => setShowPdf(v => !v)}
                   icon={showPdf ? <Check size={13} /> : <BookOpen size={13} />}
+                  style={{
+                    background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                    color: "#ffffff",
+                    border: "none",
+                    boxShadow: "0 2px 8px rgba(26, 26, 46, 0.15)",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.filter = "brightness(1.15)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.filter = "none";
+                    e.currentTarget.style.transform = "none";
+                  }}
                 >
                   {showPdf ? "Close Reader" : "Read PDF Inline"}
                 </Button>
@@ -328,7 +374,26 @@ export default function ResearchDetailPage() {
                 <div className="bg-[var(--color-canvas-subtle)] rounded-xl p-6 text-center border border-dashed border-[var(--color-border-default)]">
                   <FileText size={32} className="mx-auto mb-2 text-[var(--color-fg-muted)] opacity-50" />
                   <p className="text-sm text-[var(--color-fg-muted)] mb-3">PDF document is available for this research.</p>
-                  <Button variant="outline" size="sm" onClick={() => setShowPdf(true)}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setShowPdf(true)}
+                    style={{
+                      background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                      color: "#ffffff",
+                      border: "none",
+                      boxShadow: "0 2px 8px rgba(26, 26, 46, 0.15)",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.filter = "brightness(1.15)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.filter = "none";
+                      e.currentTarget.style.transform = "none";
+                    }}
+                  >
                     Open PDF Reader
                   </Button>
                 </div>
@@ -386,9 +451,9 @@ export default function ResearchDetailPage() {
               {/* Quick-copy all formats */}
               <div className="flex items-center gap-2 pt-1 border-t border-[var(--color-border-muted)]">
                 <span className="text-xs text-[var(--color-fg-muted)]">Quick copy:</span>
-                <CopyButton text={citation.apa} label="APA" />
-                <CopyButton text={citation.mla} label="MLA" />
-                <CopyButton text={citation.bibtex} label="BibTeX" />
+                <CopyButton text={citation.apa} label="APA" btnText="APA" />
+                <CopyButton text={citation.mla} label="MLA" btnText="MLA" />
+                <CopyButton text={citation.bibtex} label="BibTeX" btnText="BibTeX" />
                 <BibDownloadButton bibtex={citation.bibtex} title={output.title} />
               </div>
             </div>
@@ -402,5 +467,6 @@ export default function ResearchDetailPage() {
 
       <DiscussionSection entityType="research" entityId={output.output_id} />
     </div>
+    </AppLayout>
   );
 }

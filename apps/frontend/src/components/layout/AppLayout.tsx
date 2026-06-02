@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Archive, FlaskConical, Send,
-  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar
+  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar, ArrowLeft
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -166,6 +166,34 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           padding: "0 28px", gap: 16, flexShrink: 0,
           position: "sticky", top: 0, zIndex: 30,
         }}>
+          {/* Back button */}
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              background: "#f3f4f6",
+              border: "none",
+              borderRadius: "50%",
+              cursor: "pointer",
+              color: "#374151",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#e5e7eb";
+              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#f3f4f6";
+              e.currentTarget.style.color = "#374151";
+            }}
+            aria-label="Go back"
+          >
+            <ArrowLeft size={16} />
+          </button>
 
 
           {/* Extra actions slot */}

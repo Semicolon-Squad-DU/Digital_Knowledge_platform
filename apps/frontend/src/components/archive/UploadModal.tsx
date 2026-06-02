@@ -586,10 +586,16 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
           </Button>
           <Button
             type="submit"
-            variant="primary"
             loading={uploading}
             disabled={!file || uploading}
             icon={<Upload size={14} />}
+            style={{
+              background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+              color: "#ffffff",
+              border: "none",
+              boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
+            }}
+            className="hover:opacity-90 transition-opacity"
           >
             {uploading ? `Uploading ${Math.round(progress)}%…` : "Upload Document"}
           </Button>

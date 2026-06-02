@@ -99,14 +99,28 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
       toast.error("Please sign in to react");
       return;
     }
+    
+    // Find if user already has a different active reaction
+    const previousReaction = reactions?.userReactions?.find((r: string) => r !== reactionType);
+
     try {
+      // Untoggle the previous reaction first
+      if (previousReaction) {
+        await toggleReaction({
+          entityType,
+          entityId,
+          reactionType: previousReaction,
+        });
+      }
+
+      // Toggle the clicked reaction
       await toggleReaction({
         entityType,
         entityId,
         reactionType,
       });
     } catch {
-      toast.error("Failed to toggle reaction");
+      toast.error("Failed to update reaction");
     }
   };
 

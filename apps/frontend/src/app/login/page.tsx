@@ -387,18 +387,32 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 login-button"
+                className="w-full flex items-center justify-center gap-2 disabled:opacity-60 login-button"
                 style={{
                   padding: "13px 16px",
                   fontSize: "12px",
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.12em",
-                  background: "#111827",
+                  background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: "6px",
                   cursor: isSubmitting ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseOver={(e) => {
+                  if (!isSubmitting) {
+                    e.currentTarget.style.filter = "brightness(1.15)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isSubmitting) {
+                    e.currentTarget.style.filter = "none";
+                    e.currentTarget.style.transform = "none";
+                  }
                 }}
               >
                 {isSubmitting ? (

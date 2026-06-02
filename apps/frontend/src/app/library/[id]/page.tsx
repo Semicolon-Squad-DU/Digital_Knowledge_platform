@@ -198,41 +198,8 @@ export default function LibraryItemPage() {
     <AppLayout>
       <div style={{ padding: "28px 32px", maxWidth: "1200px", margin: "0 auto" }}>
 
-        {/* Back Button & Breadcrumbs Row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "6px 12px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#374151",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#f9fafb";
-              e.currentTarget.style.borderColor = "var(--avatar-theme-color, #d1d5db)";
-              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#fff";
-              e.currentTarget.style.borderColor = "#e5e7eb";
-              e.currentTarget.style.color = "#374151";
-            }}
-            aria-label="Go back"
-          >
-            <ArrowLeft size={14} />
-            <span>Back</span>
-          </button>
-
+        {/* Breadcrumbs Row */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
             <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
             <span>/</span>
@@ -240,6 +207,20 @@ export default function LibraryItemPage() {
             <span>/</span>
             <span style={{ color: "#111827", fontWeight: 500 }}>Book Details</span>
           </div>
+        </div>
+
+        {/* Page heading */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "var(--avatar-theme-color)",
+            margin: 0,
+            lineHeight: 1.2,
+            fontFamily: "'Inter', -apple-system, sans-serif"
+          }}>
+            Book Details
+          </h1>
         </div>
 
         {isLoading && (

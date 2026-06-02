@@ -167,41 +167,8 @@ export default function SubmitProjectPage() {
     <AppLayout>
       <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
         
-        {/* Back Button & Breadcrumb Row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "6px 12px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#374151",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#f9fafb";
-              e.currentTarget.style.borderColor = "var(--avatar-theme-color, #d1d5db)";
-              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#fff";
-              e.currentTarget.style.borderColor = "#e5e7eb";
-              e.currentTarget.style.color = "#374151";
-            }}
-            aria-label="Go back"
-          >
-            <ArrowLeft size={14} />
-            <span>Back</span>
-          </button>
-
+        {/* Breadcrumb Row */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
             <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
             <span>/</span>
@@ -580,7 +547,7 @@ export default function SubmitProjectPage() {
             >
               Cancel
             </button>
-            <button
+             <button
               type="submit"
               disabled={isSubmitting || submitProject.isPending}
               style={{
@@ -588,7 +555,7 @@ export default function SubmitProjectPage() {
                 alignItems: "center",
                 gap: 6,
                 padding: "10px 18px",
-                background: "var(--avatar-theme-color, var(--theme-gradient-160))",
+                background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
                 border: "none",
                 borderRadius: 8,
                 cursor: (isSubmitting || submitProject.isPending) ? "not-allowed" : "pointer",
@@ -596,7 +563,7 @@ export default function SubmitProjectPage() {
                 fontWeight: 600,
                 color: "#fff",
                 opacity: (isSubmitting || submitProject.isPending) ? 0.7 : 1,
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
                 transition: "all 0.2s ease",
               }}
               onMouseOver={(e) => {

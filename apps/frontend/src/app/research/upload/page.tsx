@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, X, Plus, Trash2, FlaskConical } from "lucide-react";
+import { Upload, FileText, X, Plus, Trash2, FlaskConical, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { useSubmitResearchOutput } from "@/hooks/useResearch";
 import { useAuthStore } from "@/store/auth.store";
 import { cn, formatFileSize } from "@/lib/utils";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -73,7 +74,7 @@ const schema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   output_type: z.string().min(1, "Type is required"),
   abstract: z.string().min(20, "Abstract must be at least 20 characters"),
-  year: z.string().optional(),
+  published_date: z.string().optional(),
   doi: z.string().optional(),
   journal_name: z.string().optional(),
   keywords_raw: z.string().optional(),
@@ -142,7 +143,9 @@ export default function UploadResearchPage() {
         ? values.keywords_raw.split(",").map(k => k.trim()).filter(Boolean)
         : []
     ));
-    if (values.year) fd.append("published_date", `${values.year}-01-01`);
+    if (values.published_date) {
+      fd.append("published_date", values.published_date);
+    }
     if (values.doi) fd.append("doi", values.doi);
     if (values.journal_name) fd.append("journal_name", values.journal_name);
     if (pdfFile) fd.append("file", pdfFile);
@@ -160,27 +163,30 @@ export default function UploadResearchPage() {
   // Guard
   if (user && !["researcher", "admin"].includes(user.role)) {
     return (
-      <div className="page-container py-16 text-center">
-        <FlaskConical size={40} className="mx-auto mb-4 text-[var(--color-fg-muted)]" />
-        <p className="font-semibold text-lg text-[var(--color-fg-default)]">Access Restricted</p>
-        <p className="text-sm text-[var(--color-fg-muted)] mt-1">Only researchers can upload research outputs.</p>
-      </div>
+      <AppLayout>
+        <div className="page-container py-16 text-center">
+          <FlaskConical size={40} className="mx-auto mb-4 text-[var(--color-fg-muted)]" />
+          <p className="font-semibold text-lg text-[var(--color-fg-default)]">Access Restricted</p>
+          <p className="text-sm text-[var(--color-fg-muted)] mt-1">Only researchers can upload research outputs.</p>
+        </div>
+      </AppLayout>
     );
   }
 
   const showJournal = ["journal", "conference"].includes(outputType);
 
   return (
-    <div className="page-container py-8 max-w-3xl">
-      <PageHeader
-        title="Upload Research Output"
-        subtitle="Submit your research for the DKP repository"
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Research", href: "/research" },
-          { label: "Upload" },
-        ]}
-      />
+    <AppLayout>
+      <div className="page-container py-8 max-w-3xl">
+        <PageHeader
+          title={<span className="font-extrabold text-[var(--avatar-theme-color,#1a1a2e)]">Upload Research Output</span>}
+          subtitle="Submit your research for DKP repository"
+          breadcrumb={[
+            { label: "Home", href: "/" },
+            { label: "Research", href: "/research" },
+            { label: "Upload" },
+          ]}
+        />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
 
@@ -215,10 +221,9 @@ export default function UploadResearchPage() {
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="Year"
-                type="number"
-                placeholder="e.g. 2024"
-                {...register("year")}
+                label="Published Date"
+                type="date"
+                {...register("published_date")}
               />
               <Input
                 label="DOI"
@@ -243,7 +248,27 @@ export default function UploadResearchPage() {
               Authors
               <span className="ml-2 text-xs font-normal text-[var(--color-fg-muted)]">({authors.length})</span>
             </h2>
-            <Button type="button" variant="outline" size="sm" icon={<Plus size={13} />} onClick={addAuthor}>
+            <Button
+              type="button"
+              size="sm"
+              icon={<Plus size={13} />}
+              onClick={addAuthor}
+              style={{
+                background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                color: "#ffffff",
+                border: "none",
+                boxShadow: "0 2px 6px rgba(26, 26, 46, 0.15)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.filter = "brightness(1.15)";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.filter = "none";
+                e.currentTarget.style.transform = "none";
+              }}
+            >
               Add Author
             </Button>
           </div>
@@ -350,10 +375,28 @@ export default function UploadResearchPage() {
           </Button>
           <Button
             type="submit"
-            variant="primary"
             size="lg"
             loading={isSubmitting || submit.isPending}
             icon={<FlaskConical size={15} />}
+            style={{
+              background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+              color: "#ffffff",
+              border: "none",
+              boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              if (!isSubmitting && !submit.isPending) {
+                e.currentTarget.style.filter = "brightness(1.15)";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!isSubmitting && !submit.isPending) {
+                e.currentTarget.style.filter = "none";
+                e.currentTarget.style.transform = "none";
+              }
+            }}
           >
             Submit Research Output
           </Button>
@@ -361,5 +404,6 @@ export default function UploadResearchPage() {
 
       </form>
     </div>
+    </AppLayout>
   );
 }
