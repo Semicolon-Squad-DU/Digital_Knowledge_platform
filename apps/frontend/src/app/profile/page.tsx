@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { jsPDF } from "jspdf";
 import { 
   User, Mail, Building2, Shield, LogOut, ShieldCheck, KeyRound, 
   MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp,
@@ -136,38 +137,169 @@ export default function ProfilePage() {
 
   const handleExportData = () => {
     if (!user) return;
-    const personalData = {
-      fullName: user.name,
-      email: user.email,
-      department: user.department || "Not specified",
-      securityRole: user.role,
-      personalBio: bio,
-      sessionDetails: {
-        connection: "Secure SSL/TLS",
-        activeSince: sessionTime
-      },
-      notificationSettings: notificationPrefs,
-      exportedAt: new Date().toISOString(),
-    };
-
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(personalData, null, 2));
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `dkp_data_export_${user.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
     
-    toast.success("Your personal data has been exported!");
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const lineHeight = 7;
+      const margin = 15;
+      const contentWidth = pageWidth - 2 * margin;
+
+      // Title - GDPR Compliant
+      doc.setFontSize(16);
+      doc.setFont(undefined, "bold");
+      doc.text("GDPR DATA SUBJECT ACCESS REQUEST", margin, yPosition);
+      doc.setFontSize(12);
+      doc.text("Personal Data Export Report", margin, yPosition + 8);
+
+      yPosition += 20;
+
+      // Export timestamp and request reference
+      doc.setFontSize(9);
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Request Date: ${new Date().toLocaleString()}`, margin, yPosition);
+      doc.text(`Reference ID: DKP-${Date.now()}`, margin, yPosition + 5);
+      yPosition += 15;
+
+      // Helper function to add a section
+      const addSection = (title: string, data: { label: string; value: string }[]) => {
+        if (yPosition > pageHeight - 30) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        doc.setFontSize(11);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(26, 26, 46);
+        doc.text(title, margin, yPosition);
+        yPosition += 8;
+
+        doc.setFontSize(9);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(0, 0, 0);
+
+        data.forEach(({ label, value }) => {
+          if (yPosition > pageHeight - 15) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.setFont(undefined, "bold");
+          doc.text(`${label}:`, margin, yPosition);
+          doc.setFont(undefined, "normal");
+          
+          // Wrap long text
+          const wrappedText = doc.splitTextToSize(value, contentWidth - 50);
+          wrappedText.forEach((line: string, index: number) => {
+            doc.text(line, margin + 50, yPosition + (index * lineHeight));
+          });
+          yPosition += Math.max(lineHeight, wrappedText.length * lineHeight) + 2;
+        });
+
+        yPosition += 5;
+      };
+
+      // 1. Data Subject Information
+      addSection("1. DATA SUBJECT INFORMATION", [
+        { label: "Full Name", value: user.name },
+        { label: "Email Address", value: user.email },
+        { label: "Account Status", value: "Active" },
+      ]);
+
+      // 2. Personal Identification Data
+      addSection("2. PERSONAL IDENTIFICATION DATA", [
+        { label: "Department/Organisation", value: user.department || "Not specified" },
+        { label: "Access Role", value: user.role?.replace(/_/g, " ") || "Standard User" },
+        { label: "User Profile Bio", value: bio || "Not provided" },
+      ]);
+
+      // 3. Data Processing Basis
+      addSection("3. LEGAL BASIS FOR DATA PROCESSING", [
+        { label: "Primary Basis", value: "Performance of Contract & User Consent" },
+        { label: "Processing Purpose", value: "To provide academic platform services, manage user accounts, and maintain platform security" },
+        { label: "Data Controller", value: "Digital Knowledge Platform Administration" },
+      ]);
+
+      // 4. Data Categories Stored
+      addSection("4. CATEGORIES OF PERSONAL DATA PROCESSED", [
+        { label: "Identification Data", value: "Name, email address, department" },
+        { label: "Profile Data", value: "User biography, avatar preferences, security role" },
+        { label: "Preference Data", value: "Notification settings, communication preferences" },
+        { label: "Access Data", value: "Session information, activity logs, connection details" },
+      ]);
+
+      // 5. Data Retention
+      addSection("5. DATA RETENTION PERIOD", [
+        { label: "Retention Duration", value: "User account data retained for duration of active use plus 3 years" },
+        { label: "Deletion Policy", value: "Upon account deletion, personal data is permanently removed within 30 days" },
+        { label: "Backup Retention", value: "Backup copies retained for up to 90 days for recovery purposes" },
+      ]);
+
+      // 6. User Preferences & Settings
+      const notificationData = [
+        { label: "Due Date Reminders", value: notificationPrefs.dueDateReminders ? "Enabled" : "Disabled" },
+        { label: "Hold Availability Notifications", value: notificationPrefs.holdAvailability ? "Enabled" : "Disabled" },
+        { label: "Weekly Digest Emails", value: notificationPrefs.weeklyDigests ? "Enabled" : "Disabled" },
+        { label: "In-App Notifications", value: notificationPrefs.appAlerts ? "Enabled" : "Disabled" },
+      ];
+      addSection("6. YOUR PRIVACY PREFERENCES", notificationData);
+
+      // 7. Your GDPR Rights
+      addSection("7. YOUR GDPR RIGHTS", [
+        { label: "Right of Access", value: "You have the right to obtain confirmation and access to your personal data (this document)" },
+        { label: "Right of Rectification", value: "You can request correction of inaccurate or incomplete personal data" },
+        { label: "Right to Erasure", value: "You can request deletion of your personal data (right to be forgotten)" },
+        { label: "Right to Restrict Processing", value: "You can request to limit how your data is used" },
+        { label: "Right to Data Portability", value: "You can request your data in a structured, portable format" },
+        { label: "Right to Object", value: "You can object to certain types of data processing" },
+      ]);
+
+      // 8. Contact & Support
+      addSection("8. CONTACT INFORMATION", [
+        { label: "Data Protection Officer", value: "dpo@digitalkowledgeplatform.edu" },
+        { label: "Privacy Support", value: "privacy@digitalkowledgeplatform.edu" },
+        { label: "General Inquiries", value: "support@digitalkowledgeplatform.edu" },
+      ]);
+
+      // Footer - GDPR Compliant
+      if (yPosition > pageHeight - 40) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        "This document is your GDPR Data Subject Access Request export. It contains all personal data processed by Digital Knowledge Platform",
+        margin,
+        pageHeight - 15
+      );
+      doc.text(
+        "on your behalf. For questions about your data or to exercise your GDPR rights, contact our Data Protection Officer.",
+        margin,
+        pageHeight - 10
+      );
+
+      // Save the PDF
+      const fileName = `GDPR_Data_Export_${user.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${new Date().getTime()}.pdf`;
+      doc.save(fileName);
+
+      toast.success("Your GDPR data export has been generated as PDF!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to export data. Please try again.");
+    }
   };
 
   if (!user) return null;
 
   const fields = [
-    { icon: User, label: "Full Name", value: user.name, desc: "Primary display name across the portal" },
-    { icon: Mail, label: "Email Address", value: user.email, desc: "Used for account sign-in and delivery notifications" },
-    { icon: Building2, label: "Department", value: user.department || "Computer Science & Engineering", desc: "Assigned academic or structural division" },
-    { icon: Shield, label: "Security Role", value: user.role?.replace("_", " "), desc: "Privilege level controlling platform access", isBadge: true },
+    { icon: User, label: "Full Name", value: user.name, desc: "GDPR Personal Data: Your legal name registered in our system" },
+    { icon: Mail, label: "Email Address", value: user.email, desc: "GDPR Personal Data: Primary contact address for account and communications" },
+    { icon: Building2, label: "Department", value: user.department || "Computer Science & Engineering", desc: "GDPR Special Category: Institutional classification for access control" },
+    { icon: Shield, label: "Security Role", value: user.role?.replace("_", " "), desc: "GDPR Processing Basis: Your privilege level and platform permissions", isBadge: true },
   ];
 
   const mockLogs = [
@@ -342,7 +474,7 @@ export default function ProfilePage() {
             {/* Profile Body */}
             <div style={{ padding: "40px 32px", background: "#ffffff" }}>
               
-              {/* SECTION 1: BIO EDITOR */}
+              {/* SECTION 1: PERSONAL BIO  */}
               <div style={{ marginBottom: "36px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{
@@ -353,7 +485,7 @@ export default function ProfilePage() {
                     letterSpacing: "0.08em",
                     margin: 0
                   }}>
-                    Personal Bio
+                    Personal Bio 
                   </h3>
                   <button
                     onClick={() => {
@@ -416,7 +548,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* SECTION 2: ACCOUNT CREDENTIALS */}
+              {/* SECTION 2: PERSONAL DATA */}
               <div style={{ paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
                 <h3 style={{
                   fontSize: "13px",
@@ -426,7 +558,7 @@ export default function ProfilePage() {
                   letterSpacing: "0.08em",
                   margin: "0 0 20px"
                 }}>
-                  Account Credentials
+                  Personal Data 
                 </h3>
                 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px" }}>
@@ -472,7 +604,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* SECTION 3: INTERACTIVE NOTIFICATION PREFERENCES */}
+              {/* SECTION 3: DATA PROCESSING PREFERENCES (GDPR ARTICLE 21) */}
               <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                   <h3 style={{
@@ -483,7 +615,7 @@ export default function ProfilePage() {
                     letterSpacing: "0.08em",
                     margin: 0
                   }}>
-                    Notification Preferences
+                    Data Processing Preferences (GDPR Article 21)
                   </h3>
                   
                   {/* Direct link to in-app Feed */}
@@ -780,7 +912,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* SECTION 4: SECURITY CONTROLS & EXPANDABLE AUDIT LOG */}
+              {/* SECTION 4: SECURITY CONTROLS & GDPR COMPLIANCE AUDIT LOG */}
               <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
                 <h3 style={{
                   fontSize: "13px",
@@ -793,7 +925,7 @@ export default function ProfilePage() {
                   alignItems: "center",
                   gap: "8px"
                 }}>
-                  <ShieldCheck size={16} color="#111827" /> Security, Activity & Data Settings
+                  <ShieldCheck size={16} color="#111827" /> Security & Account Management
                 </h3>
                 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
@@ -828,7 +960,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* GDPR Export Action */}
+                  {/* GDPR Data Subject Access Request */}
                   <div 
                     onClick={handleExportData}
                     style={{ 
@@ -836,30 +968,36 @@ export default function ProfilePage() {
                       alignItems: "center", 
                       gap: "12px", 
                       padding: "16px", 
-                      background: "#f9fafb", 
+                      background: "#ecfdf5", 
                       borderRadius: "8px", 
-                      border: "1px solid #e5e7eb",
+                      border: "1px solid #059669",
                       cursor: "pointer",
-                      transition: "background 0.2s"
+                      transition: "all 0.2s"
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#f9fafb"}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "#d1fae5";
+                      e.currentTarget.style.borderColor = "#047857";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "#ecfdf5";
+                      e.currentTarget.style.borderColor = "#059669";
+                    }}
                   >
                     <div style={{
-                      width: "36px", height: "36px", borderRadius: "8px", background: "#ecfdf5",
+                      width: "36px", height: "36px", borderRadius: "8px", background: "#dbeafe",
                       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                     }}>
-                      <Download size={16} color="#059669" />
+                      <Download size={16} color="#0369a1" />
                     </div>
                     <div>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", display: "block" }}>Export Personal Data</span>
-                      <span style={{ fontSize: "11px", color: "#6b7280" }}>Download your GDPR profile info (.json)</span>
+                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", display: "block" }}>GDPR Data Subject Access Request</span>
+                      <span style={{ fontSize: "11px", color: "#374151" }}>Download your complete personal data record as PDF </span>
                     </div>
                   </div>
 
                 </div>
 
-                {/* Audit Log Toggle */}
+                {/* Personal Activity & Processing History */}
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
                   <button
                     onClick={() => setShowActivityLog(!showActivityLog)}
@@ -878,7 +1016,7 @@ export default function ProfilePage() {
                     }}
                   >
                     <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <Activity size={14} color="#6b7280" /> Personal Activity History Log
+                      <Activity size={14} color="#6b7280" /> Account Activity & Processing Log (GDPR Transparency)
                     </span>
                     {showActivityLog ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>

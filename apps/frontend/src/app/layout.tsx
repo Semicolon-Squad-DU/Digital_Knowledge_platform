@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_Bengali } from "next/font/google";
-import "./tailwind.generated.css";
+import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "react-hot-toast";
 
