@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard, Archive, FlaskConical, Send,
-  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar, ArrowLeft
+  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar, ArrowLeft, Menu, X
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -31,6 +32,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutProps) {
   const pathname  = usePathname();
   const router    = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getHeaderTitle = () => {
     if (pathname.startsWith("/library") || pathname.startsWith("/librarian")) {
@@ -65,7 +67,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
     }}>
 
-      {/* ════════ SIDEBAR ════════ */}
+      {/* ════════ SIDEBAR (DESKTOP ONLY) ════════ */}
       <aside className="hidden md:flex" style={{
         width: 200, flexShrink: 0,
         background: "var(--theme-sidebar-gradient)",
@@ -155,6 +157,124 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
         )}
       </aside>
 
+      {/* ════════ MOBILE DRAWER OVERLAY ════════ */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="md:hidden"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 39,
+          }}
+        />
+      )}
+
+      {/* ════════ MOBILE DRAWER (MOBILE ONLY) ════════ */}
+      <div
+        className="md:hidden"
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 240,
+          background: "var(--theme-sidebar-gradient)",
+          borderRight: "1px solid rgba(255,255,255,0.05)",
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 40,
+          transform: mobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.3s ease",
+          overflowY: "auto",
+        }}
+      >
+        {/* Logo */}
+        <div style={{
+          padding: "0 20px",
+          height: 60,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          flexShrink: 0,
+        }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>
+            Digital Knowledge
+          </p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2, marginBottom: 0 }}>
+            Academic Portal
+          </p>
+        </div>
+
+        {/* Mobile Nav items */}
+        <nav style={{ flex: 1, padding: "12px 8px" }}>
+          {APP_NAV.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ textDecoration: "none" }}
+              >
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "12px 12px", borderRadius: 6, marginBottom: 4,
+                  fontSize: 14,
+                  fontWeight: active ? 600 : 500,
+                  color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
+                  background: active ? "var(--avatar-theme-color)" : "transparent",
+                  transition: "all 0.1s",
+                }}>
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Mobile User info + sign out */}
+        {user && (
+          <div style={{ padding: "12px 12px 16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "#ffffff", flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: 700, color: "#111827",
+              }}>
+                {user.name?.[0]?.toUpperCase()}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "#ffffff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {user.name}
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0, textTransform: "capitalize" }}>
+                  {user.role?.replace("_", " ")}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 7,
+                padding: "10px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+                background: "transparent", cursor: "pointer",
+                fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)",
+              }}
+            >
+              <LogOut size={14} /> Sign Out
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* ════════ MAIN COLUMN ════════ */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
@@ -163,9 +283,40 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           height: 60, background: "#ffffff",
           borderBottom: "1px solid #e5e7eb",
           display: "flex", alignItems: "center",
-          padding: "0 28px", gap: 16, flexShrink: 0,
+          padding: "0 16px", gap: 12, flexShrink: 0,
           position: "sticky", top: 0, zIndex: 30,
         }}>
+          {/* Hamburger menu - Mobile only */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 40,
+              height: 40,
+              background: "#f3f4f6",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              color: "#374151",
+              transition: "all 0.2s ease",
+              flexShrink: 0,
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#e5e7eb";
+              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#f3f4f6";
+              e.currentTarget.style.color = "#374151";
+            }}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
           {/* Back button */}
           <button
             onClick={() => router.back()}
@@ -173,14 +324,15 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 32,
-              height: 32,
+              width: 40,
+              height: 40,
               background: "#f3f4f6",
               border: "none",
-              borderRadius: "50%",
+              borderRadius: "6px",
               cursor: "pointer",
               color: "#374151",
               transition: "all 0.2s ease",
+              flexShrink: 0,
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.background = "#e5e7eb";
@@ -192,7 +344,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             }}
             aria-label="Go back"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={18} />
           </button>
 
 
@@ -207,39 +359,39 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
             {/* Bell */}
             <Link href="/notifications" style={{
-              position: "relative", width: 34, height: 34, borderRadius: 8,
+              position: "relative", width: 40, height: 40, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
               textDecoration: "none",
             }}
               onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <Bell size={17} color="#6b7280" />
+              <Bell size={18} color="#6b7280" />
               {unreadCount > 0 && (
                 <span style={{
-                  position: "absolute", top: 6, right: 6,
-                  width: 7, height: 7, borderRadius: "50%",
+                  position: "absolute", top: 4, right: 4,
+                  width: 8, height: 8, borderRadius: "50%",
                   background: "#ef4444", border: "2px solid #fff",
                 }} />
               )}
             </Link>
 
-            {/* Wishlist */}
-            <Link href="/library/wishlist" title="My Wishlist" style={{
-              width: 34, height: 34, borderRadius: 8,
+            {/* Wishlist - Hide on very small mobile */}
+            <Link href="/library/wishlist" title="My Wishlist" className="hidden sm:flex" style={{
+              width: 40, height: 40, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
               textDecoration: "none",
             }}
               onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <Heart size={17} color="#6b7280" />
+              <Heart size={18} color="#6b7280" />
             </Link>
 
             {/* Avatar */}
             <Link href="/profile" title="View Profile" style={{ textDecoration: "none", display: "flex" }}>
               <div style={{
-                width: 32, height: 32, borderRadius: "50%",
+                width: 36, height: 36, borderRadius: "50%",
                 background: "var(--avatar-theme-color)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
