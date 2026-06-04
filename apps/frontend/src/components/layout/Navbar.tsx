@@ -62,7 +62,10 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => { 
+    setMobileOpen(false);
+    setDropdownOpen(false);
+  }, [pathname]);
 
   const isLibrarianOrAdmin = ["librarian", "admin"].includes(user?.role ?? "");
 
@@ -176,11 +179,14 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
 
                       {dropdownOpen && (
                         <div
-                          className="absolute right-0 mt-1 w-56 rounded-md border shadow-lg animate-scale-in overflow-hidden z-50"
+                          className="absolute rounded-md border shadow-lg animate-scale-in overflow-hidden z-50 max-sm:fixed max-sm:inset-4 max-sm:bottom-auto max-sm:top-16 max-sm:w-auto max-sm:right-0"
                           style={{
                             background: "var(--color-canvas-default)",
                             borderColor: "var(--color-border-default)",
                             boxShadow: "0 1px 3px rgba(31,35,40,0.12), 0 8px 24px rgba(66,74,83,0.12)",
+                            right: 0,
+                            marginTop: 4,
+                            width: 280,
                           }}
                           role="menu"
                         >
@@ -286,13 +292,13 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
         {mobileOpen && (
           <div
             className="md:hidden border-t animate-slide-down"
-            style={{ borderColor: "rgba(255,255,255,0.1)", background: "#24292f" }}
+            style={{ borderColor: "rgba(255,255,255,0.1)", background: "#24292f", animation: "slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards" }}
           >
             <div className="page-container py-2 space-y-0.5">
               {/* Mobile search */}
               <button
                 onClick={() => { setCmdOpen(true); setMobileOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors duration-200"
               >
                 <Search size={14} />
                 Search…
@@ -301,8 +307,9 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "block px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "block px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150",
                     pathname.startsWith(link.href)
                       ? "bg-white/15 text-white"
                       : "text-white/70 hover:text-white hover:bg-white/10"
@@ -317,6 +324,18 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
       </header>
 
       <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   );
 }

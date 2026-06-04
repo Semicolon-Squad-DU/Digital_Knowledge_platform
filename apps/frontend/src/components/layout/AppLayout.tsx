@@ -106,7 +106,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
                   fontWeight: active ? 600 : 500,
                   color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
                   background: active ? "var(--avatar-theme-color)" : "transparent",
-                  transition: "all 0.1s",
+                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; } }}
@@ -147,6 +147,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
                 padding: "7px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
                 background: "transparent", cursor: "pointer",
                 fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.7)",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
@@ -186,7 +187,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           flexDirection: "column",
           zIndex: 40,
           transform: mobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.3s ease",
+          transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
           overflowY: "auto",
         }}
       >
@@ -226,7 +227,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
                   fontWeight: active ? 600 : 500,
                   color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
                   background: active ? "var(--avatar-theme-color)" : "transparent",
-                  transition: "all 0.1s",
+                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}>
                   <Icon size={16} />
                   <span>{label}</span>
@@ -267,7 +268,10 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
                 padding: "10px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
                 background: "transparent", cursor: "pointer",
                 fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
             >
               <LogOut size={14} /> Sign Out
             </button>
@@ -301,7 +305,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
               borderRadius: "6px",
               cursor: "pointer",
               color: "#374151",
-              transition: "all 0.2s ease",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               flexShrink: 0,
             }}
             onMouseOver={(e) => {
@@ -315,36 +319,6 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-
-          {/* Back button */}
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 40,
-              height: 40,
-              background: "#f3f4f6",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              color: "#374151",
-              transition: "all 0.2s ease",
-              flexShrink: 0,
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#e5e7eb";
-              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#f3f4f6";
-              e.currentTarget.style.color = "#374151";
-            }}
-            aria-label="Go back"
-          >
-            <ArrowLeft size={18} />
           </button>
 
 

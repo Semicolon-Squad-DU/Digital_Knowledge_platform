@@ -172,11 +172,28 @@ export default function TermsPage() {
           {/* Section 8 */}
           <section style={{ marginBottom: "32px" }}>
             <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              8. Governing Law
+              6. Contact Information
             </h2>
             <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              These terms and conditions are governed by and construed in accordance with the laws of Bangladesh, and you irrevocably submit to the exclusive jurisdiction of the courts in that location.
+              For questions about these Terms, contact us:
             </p>
+            <div style={{ background: "rgba(26, 86, 219, 0.05)", padding: "16px", borderRadius: "8px", borderLeft: "3px solid var(--avatar-theme-color, #1a56db)" }}>
+              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
+                <strong>Development Team:</strong> Semicolon-Squad-DU
+              </p>
+              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
+                <strong>Team Members & Contacts:</strong>
+              </p>
+              <ul style={{ fontSize: "13px", color: "#495057", marginLeft: "20px", margin: 0 }}>
+                <li>Fariha Yasmin: <a href="mailto:fariayasmin19@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>fariayasmin19@gmail.com</a> | <a href="https://github.com/fariayasmin" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@fariayasmin</a></li>
+                <li>Yuki Bhuiyan: <a href="mailto:yukibhuiyan@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>yukibhuiyan@gmail.com</a> | <a href="https://github.com/Yukii9291" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@Yukii9291</a></li>
+                <li>Nuruzzaman: <a href="mailto:nuruzzaman@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>nuruzzaman@gamil.com</a> | <a href="https://github.com/prolexcsedu" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@prolexcsedu</a></li>
+                <li>Hasibul Islam: <a href="mailto:hasibulislam@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>hasibulislam@gamil.com</a> | <a href="https://github.com/enol5423" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@enol5423</a></li>
+              </ul>
+              <p style={{ fontSize: "13px", color: "#495057", marginTop: "12px", margin: "12px 0 0 0" }}>
+                <strong>GitHub Organization:</strong> <a href="https://github.com/Semicolon-Squad-DU" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>github.com/Semicolon-Squad-DU</a>
+              </p>
+            </div>
           </section>
 
           {/* Section 9 */}
@@ -185,7 +202,7 @@ export default function TermsPage() {
               9. Contact Information
             </h2>
             <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              If you have any questions about these Terms of Service, please contact us at:
+              For questions about these Terms, contact us:
             </p>
             <p style={{ fontSize: "14px", color: "#495057" }}>
               Email: support@dkp.edu.bd<br />

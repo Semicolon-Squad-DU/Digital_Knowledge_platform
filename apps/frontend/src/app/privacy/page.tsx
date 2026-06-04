@@ -170,13 +170,22 @@ export default function PrivacyPage() {
               6. Contact Us
             </h2>
             <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              If you have questions or comments about this Privacy Policy, please contact us at:
+              Contact us with questions about this Privacy Policy:
             </p>
-            <p style={{ fontSize: "14px", color: "#495057" }}>
-              Email: privacy@dkp.edu.bd<br />
-              Address: University of Dhaka, Dhaka, Bangladesh<br />
-              Phone: +880-2-XXXX-XXXX
-            </p>
+            <div style={{ background: "rgba(26, 86, 219, 0.05)", padding: "16px", borderRadius: "8px", marginBottom: "16px", borderLeft: "3px solid var(--avatar-theme-color, #1a56db)" }}>
+              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
+                <strong>Team:</strong> Semicolon-Squad-DU
+              </p>
+              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
+                <strong>Email Contacts:</strong>
+              </p>
+              <ul style={{ fontSize: "13px", color: "#495057", marginLeft: "20px", margin: 0 }}>
+                <li>Fariha Yasmin: <a href="mailto:fariayasmin19@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>fariayasmin19@gmail.com</a> | <a href="https://github.com/fariayasmin" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@fariayasmin</a></li>
+                <li>Yuki Bhuiyan: <a href="mailto:yukibhuiyan@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>yukibhuiyan@gmail.com</a> | <a href="https://github.com/Yukii9291" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@Yukii9291</a></li>
+                <li>Nuruzzaman: <a href="mailto:nuruzzaman@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>nuruzzaman@gamil.com</a> | <a href="https://github.com/prolexcsedu" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@prolexcsedu</a></li>
+                <li>Hasibul Islam: <a href="mailto:hasibulislam@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>hasibulislam@gamil.com</a> | <a href="https://github.com/enol5423" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@enol5423</a></li>
+              </ul>
+            </div>
           </section>
 
           {/* Section 7 */}

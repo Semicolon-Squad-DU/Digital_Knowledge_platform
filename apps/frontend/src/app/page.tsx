@@ -742,8 +742,6 @@ export default function HomePage() {
           </div>
         </section>
 
-
-
         {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
         <footer style={{ background: "#f1f3f5", borderTop: "1px solid #dee2e6" }}>
           <div style={{
@@ -751,8 +749,7 @@ export default function HomePage() {
             margin: "0 auto",
             padding: "32px 32px",
             display: "grid",
-            gridTemplateColumns: "200px 1fr auto",
-            alignItems: "start",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             gap: "32px",
           }} className="home-footer">
             {/* Brand */}
@@ -760,22 +757,28 @@ export default function HomePage() {
               <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color)", lineHeight: 1.55, margin: "0 0 6px" }}>
                 Digital Knowledge Platform
               </p>
-              <p style={{ fontSize: "12px", color: "#6c757d", margin: 0 }}>
+              <p style={{ fontSize: "12px", color: "#6c757d", margin: "0 0 8px 0" }}>
                 © 2026 Digital Knowledge Platform. All rights reserved.
+              </p>
+              <p style={{ fontSize: "12px", color: "#6c757d", margin: 0 }}>
+                Built by <strong>Semicolon-Squad-DU</strong>
               </p>
             </div>
 
-            {/* Links */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              <div style={{ display: "flex", gap: "24px" }}>
+            {/* Quick Links */}
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px", margin: "0 0 12px 0" }}>
+                Resources
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {[
                   { label: "Privacy Policy", href: "/privacy" },
                   { label: "Terms of Service", href: "/terms" },
                   { label: "Contact Us", href: "/contact" }
                 ].map((l) => (
-                  <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                    onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                  <Link key={l.label} href={l.href} style={{ fontSize: "12px", color: "#495057", textDecoration: "none", transition: "color 0.2s" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#495057")}
                   >
                     {l.label}
                   </Link>
@@ -783,10 +786,20 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Globe icons */}
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "#adb5bd" }}>language</span>
-              <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "#adb5bd" }}>public</span>
+            {/* Team */}
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px", margin: "0 0 12px 0" }}>
+                Team
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <p style={{ fontSize: "12px", color: "#6c757d", margin: 0, fontWeight: 600 }}>Semicolon-Squad-DU</p>
+                <div style={{ fontSize: "11px", color: "#6c757d" }}>
+                  <p style={{ margin: "4px 0" }}>Fariha Yasmin</p>
+                  <p style={{ margin: "4px 0" }}>Yuki Bhuiyan</p>
+                  <p style={{ margin: "4px 0" }}>Nuruzzaman</p>
+                  <p style={{ margin: "4px 0" }}>Hasibul Islam</p>
+                </div>
+              </div>
             </div>
           </div>
         </footer>
