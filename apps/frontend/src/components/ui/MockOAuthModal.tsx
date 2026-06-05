@@ -166,6 +166,13 @@ const ROLES = [
   { value: "admin", label: "Admin" },
 ];
 
+const GOOGLE_ACCOUNTS = [
+  { email: "student@dku.edu.bd", name: "Student User", role: "student_author", dept: "Computer Science & Engineering" },
+  { email: "researcher@dku.edu.bd", name: "Researcher User", role: "researcher", dept: "Computer Science & Engineering" },
+  { email: "librarian@dku.edu.bd", name: "Librarian User", role: "librarian", dept: "Library Services" },
+  { email: "member@dku.edu.bd", name: "Member User", role: "member", dept: "General" },
+];
+
 export function MockOAuthModal({ isOpen, onClose, provider, onAuthorize }: MockOAuthModalProps) {
   const [selectedPresetIndex, setSelectedPresetIndex] = useState<number | null>(0);
   const [customEmail, setCustomEmail] = useState("");
