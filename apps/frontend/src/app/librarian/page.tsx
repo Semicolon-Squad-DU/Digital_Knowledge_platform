@@ -24,10 +24,11 @@ import toast from "react-hot-toast";
 function IssueBookForm({
   onIssue, isIssuing, onCancel,
 }: {
-  onIssue: (catalogId: string, memberId: string) => Promise<void>;
+  onIssue: (payload: { catalog_id?: string; barcode?: string; member_id: string }) => Promise<void>;
   isIssuing: boolean;
   onCancel: () => void;
 }) {
+  const [mode, setMode] = useState<"search" | "manual">("manual");
   const [memberSearch, setMemberSearch] = useState("");
   const [bookSearch,   setBookSearch]   = useState("");
   const [members,      setMembers]      = useState<{ user_id: string; name: string; email: string }[]>([]);
@@ -35,6 +36,10 @@ function IssueBookForm({
   const [selectedMember, setSelectedMember] = useState<{ user_id: string; name: string; email: string } | null>(null);
   const [selectedBook,   setSelectedBook]   = useState<{ catalog_id: string; title: string; available_copies: number } | null>(null);
   const [searching, setSearching] = useState({ member: false, book: false });
+
+  // Manual Mode state
+  const [barcode, setBarcode] = useState("");
+  const [memberId, setMemberId] = useState("");
 
   const loanDays = 14;
   const dueDate  = new Date();
@@ -61,112 +66,169 @@ function IssueBookForm({
   };
 
   const handleSubmit = async () => {
-    if (!selectedMember) { toast.error("Please select a member"); return; }
-    if (!selectedBook)   { toast.error("Please select a book");   return; }
-    await onIssue(selectedBook.catalog_id, selectedMember.user_id);
+    if (mode === "search") {
+      if (!selectedMember) { toast.error("Please select a member"); return; }
+      if (!selectedBook)   { toast.error("Please select a book");   return; }
+      await onIssue({ catalog_id: selectedBook.catalog_id, member_id: selectedMember.user_id });
+    } else {
+      if (!barcode.trim()) { toast.error("Please enter a book barcode"); return; }
+      if (!memberId.trim()) { toast.error("Please enter a member ID or email"); return; }
+      await onIssue({ barcode: barcode.trim(), member_id: memberId.trim() });
+    }
   };
 
   return (
     <div className="space-y-5">
-      {/* Member search */}
-      <div>
-        <label className="form-label flex items-center gap-1.5"><User size={13} /> Member</label>
-        {selectedMember ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
-            <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedMember.name}</p>
-              <p className="text-xs text-[var(--color-fg-muted)]">{selectedMember.email}</p>
-            </div>
-            <button onClick={() => { setSelectedMember(null); setMemberSearch(""); setMembers([]); }}
-              className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]">
-              <X size={14} />
-            </button>
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="search-bar">
-              <Search className="search-bar-icon" size={14} />
-              <input
-                type="text"
-                value={memberSearch}
-                onChange={e => { setMemberSearch(e.target.value); searchMembers(e.target.value); }}
-                placeholder="Search by name or email…"
-                className="form-input pl-9"
-              />
-            </div>
-            {members.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
-                {members.map(m => (
-                  <button key={m.user_id} onClick={() => { setSelectedMember(m); setMembers([]); setMemberSearch(""); }}
-                    className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-fg-default)]">{m.name}</p>
-                      <p className="text-xs text-[var(--color-fg-muted)]">{m.email}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            {searching.member && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
-          </div>
-        )}
+      {/* Mode Toggle */}
+      <div className="flex gap-2 p-1 rounded-lg bg-slate-100 border border-slate-200">
+        <button
+          onClick={() => setMode("manual")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "manual"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Scan / Manual Input
+        </button>
+        <button
+          onClick={() => setMode("search")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "search"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Search Autocomplete
+        </button>
       </div>
 
-      {/* Book search */}
-      <div>
-        <label className="form-label flex items-center gap-1.5"><BookOpen size={13} /> Book</label>
-        {selectedBook ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
-            <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedBook.title}</p>
-              <p className="text-xs text-[var(--color-fg-muted)]">{selectedBook.available_copies} copies available</p>
-            </div>
-            <button onClick={() => { setSelectedBook(null); setBookSearch(""); setBooks([]); }}
-              className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]">
-              <X size={14} />
-            </button>
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="search-bar">
-              <Search className="search-bar-icon" size={14} />
-              <input
-                type="text"
-                value={bookSearch}
-                onChange={e => { setBookSearch(e.target.value); searchBooks(e.target.value); }}
-                placeholder="Search by title…"
-                className="form-input pl-9"
-              />
-            </div>
-            {books.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
-                {books.map(b => (
-                  <button key={b.catalog_id} onClick={() => { setSelectedBook(b); setBooks([]); setBookSearch(""); }}
-                    className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-fg-default)]">{b.title}</p>
-                      <p className="text-xs text-[var(--color-fg-muted)]">{b.authors?.join(", ")} · {b.available_copies} available</p>
-                    </div>
-                  </button>
-                ))}
+      {mode === "manual" ? (
+        <div className="space-y-4">
+          <Input
+            label="Book Barcode"
+            value={barcode}
+            onChange={e => setBarcode(e.target.value)}
+            placeholder="Scan or type book barcode..."
+            required
+          />
+          <Input
+            label="Member ID / Email"
+            value={memberId}
+            onChange={e => setMemberId(e.target.value)}
+            placeholder="Enter member's email or user UUID..."
+            required
+            hint="Can scan a member's barcode containing their UUID or type email"
+          />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Member search */}
+          <div>
+            <label className="form-label flex items-center gap-1.5"><User size={13} /> Member</label>
+            {selectedMember ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
+                <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedMember.name}</p>
+                  <p className="text-xs text-[var(--color-fg-muted)]">{selectedMember.email}</p>
+                </div>
+                <button onClick={() => { setSelectedMember(null); setMemberSearch(""); setMembers([]); }}
+                  className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)] bg-transparent border-none cursor-pointer">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="search-bar">
+                  <Search className="search-bar-icon" size={14} />
+                  <input
+                    type="text"
+                    value={memberSearch}
+                    onChange={e => { setMemberSearch(e.target.value); searchMembers(e.target.value); }}
+                    placeholder="Search by name or email…"
+                    className="form-input pl-9"
+                  />
+                </div>
+                {members.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
+                    {members.map(m => (
+                      <button key={m.user_id} onClick={() => { setSelectedMember(m); setMembers([]); setMemberSearch(""); }}
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors border-none bg-transparent cursor-pointer">
+                        <div>
+                          <p className="text-sm font-medium text-[var(--color-fg-default)]">{m.name}</p>
+                          <p className="text-xs text-[var(--color-fg-muted)]">{m.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searching.member && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
               </div>
             )}
-            {searching.book && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
           </div>
-        )}
-      </div>
+
+          {/* Book search */}
+          <div>
+            <label className="form-label flex items-center gap-1.5"><BookOpen size={13} /> Book</label>
+            {selectedBook ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
+                <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedBook.title}</p>
+                  <p className="text-xs text-[var(--color-fg-muted)]">{selectedBook.available_copies} copies available</p>
+                </div>
+                <button onClick={() => { setSelectedBook(null); setBookSearch(""); setBooks([]); }}
+                  className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)] bg-transparent border-none cursor-pointer">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="search-bar">
+                  <Search className="search-bar-icon" size={14} />
+                  <input
+                    type="text"
+                    value={bookSearch}
+                    onChange={e => { setBookSearch(e.target.value); searchBooks(e.target.value); }}
+                    placeholder="Search by title…"
+                    className="form-input pl-9"
+                  />
+                </div>
+                {books.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
+                    {books.map(b => (
+                      <button key={b.catalog_id} onClick={() => { setSelectedBook(b); setBooks([]); setBookSearch(""); }}
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors border-none bg-transparent cursor-pointer">
+                        <div>
+                          <p className="text-sm font-medium text-[var(--color-fg-default)]">{b.title}</p>
+                          <p className="text-xs text-[var(--color-fg-muted)]">{b.authors?.join(", ")} · {b.available_copies} available</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searching.book && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
-      {selectedMember && selectedBook && (
+      {((mode === "search" && selectedMember && selectedBook) || (mode === "manual" && barcode && memberId)) && (
         <div className="p-4 rounded-xl bg-[var(--color-accent-subtle)] border border-[var(--color-accent-fg)] space-y-1.5 text-sm">
           <p className="font-semibold text-[var(--color-accent-fg)]">Issue Summary</p>
-          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Member:</span> {selectedMember.name}</p>
-          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Book:</span> {selectedBook.title}</p>
+          <p className="text-[var(--color-fg-default)]">
+            <span className="text-[var(--color-fg-muted)]">Member:</span>{" "}
+            {mode === "search" ? selectedMember?.name : memberId}
+          </p>
+          <p className="text-[var(--color-fg-default)]">
+            <span className="text-[var(--color-fg-muted)]">Book/Barcode:</span>{" "}
+            {mode === "search" ? selectedBook?.title : barcode}
+          </p>
           <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Issue Date:</span> {new Date().toDateString()}</p>
           <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Due Date:</span> {dueDate.toDateString()} ({loanDays} days)</p>
-          <p className="text-xs text-[var(--color-fg-muted)] mt-1">Member will receive an email notification.</p>
         </div>
       )}
 
@@ -176,10 +238,96 @@ function IssueBookForm({
           variant="primary"
           onClick={handleSubmit}
           loading={isIssuing}
-          disabled={!selectedMember || !selectedBook}
+          disabled={mode === "search" ? (!selectedMember || !selectedBook) : (!barcode.trim() || !memberId.trim())}
           icon={<BookOpen size={14} />}
         >
           Issue Book
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ReturnBookForm({
+  onReturn, isReturning, onCancel,
+}: {
+  onReturn: (payload: { transaction_id?: string; barcode?: string; member_id?: string }) => Promise<void>;
+  isReturning: boolean;
+  onCancel: () => void;
+}) {
+  const [mode, setMode] = useState<"barcode" | "txn">("barcode");
+  const [transactionId, setTransactionId] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [memberId, setMemberId] = useState("");
+
+  const handleSubmit = async () => {
+    if (mode === "txn") {
+      if (!transactionId.trim()) { toast.error("Transaction ID is required"); return; }
+      await onReturn({ transaction_id: transactionId.trim() });
+    } else {
+      if (!barcode.trim()) { toast.error("Book barcode is required"); return; }
+      await onReturn({ barcode: barcode.trim(), member_id: memberId.trim() || undefined });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Mode Toggle */}
+      <div className="flex gap-2 p-1 rounded-lg bg-slate-100 border border-slate-200">
+        <button
+          onClick={() => setMode("barcode")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "barcode"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Barcode & Member ID
+        </button>
+        <button
+          onClick={() => setMode("txn")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "txn"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Transaction ID
+        </button>
+      </div>
+
+      {mode === "txn" ? (
+        <Input
+          label="Transaction ID"
+          value={transactionId}
+          onChange={(e) => setTransactionId(e.target.value)}
+          placeholder="e.g. 9f8e7d6c-…"
+          required
+          hint="The UUID of the lending transaction"
+        />
+      ) : (
+        <div className="space-y-4">
+          <Input
+            label="Book Barcode"
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            placeholder="Scan or enter book barcode..."
+            required
+          />
+          <Input
+            label="Member ID / Email (Optional)"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            placeholder="Enter member's email or UUID..."
+            hint="Optional: helps find the correct transaction if multiple copies exist"
+          />
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
+        <Button variant="invisible" onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSubmit} loading={isReturning}>
+          Process Return
         </Button>
       </div>
     </div>
@@ -676,15 +824,14 @@ export default function LibrarianDashboardPage() {
         isOpen={issueModal}
         onClose={() => { setIssueModal(false); setCatalogId(""); setMemberId(""); }}
         title="Issue Book to Member"
-        description="Search for a member and book, then issue."
+        description="Search for a member and book, or scan/type barcodes directly."
         size="md"
       >
         <IssueBookForm
-          onIssue={async (cid, mid) => {
-            await issueBook({ catalog_id: cid, member_id: mid });
+          onIssue={async (payload) => {
+            await issueBook(payload);
             toast.success("Book issued successfully! Member notified via email.");
             setIssueModal(false);
-            setCatalogId(""); setMemberId("");
             refetch();
           }}
           isIssuing={isIssuing}
@@ -697,23 +844,24 @@ export default function LibrarianDashboardPage() {
         isOpen={returnModal}
         onClose={() => setReturnModal(false)}
         title="Process Return"
-        description="Enter the transaction ID to process a book return."
-        size="sm"
+        description="Process a return using the lending transaction ID or book barcode."
+        size="md"
       >
-        <div className="space-y-4">
-          <Input
-            label="Transaction ID"
-            value={transactionId}
-            onChange={(e) => setTransactionId(e.target.value)}
-            placeholder="e.g. 9f8e7d6c-…"
-            required
-            hint="The UUID of the lending transaction"
-          />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setReturnModal(false)}>Cancel</Button>
-            <Button onClick={handleReturn} loading={isReturning}>Process Return</Button>
-          </div>
-        </div>
+        <ReturnBookForm
+          onReturn={async (payload) => {
+            const result = await returnBook(payload);
+            const fine = result.fine_amount;
+            toast.success(
+              fine > 0
+                ? `Book returned. Fine applied: Tk ${fine.toFixed(2)}`
+                : "Book returned successfully"
+            );
+            setReturnModal(false);
+            refetch();
+          }}
+          isReturning={isReturning}
+          onCancel={() => setReturnModal(false)}
+        />
       </Modal>
 
       {/* Adjust Fine Modal */}

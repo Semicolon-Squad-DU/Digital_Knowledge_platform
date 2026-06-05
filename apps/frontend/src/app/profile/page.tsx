@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/hooks/useLibrary";
 import toast from "react-hot-toast";
 
 const AVATAR_COLORS = [
@@ -26,6 +27,11 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [sessionTime, setSessionTime] = useState("");
+
+  const { data: history, isLoading: histLoading } = useBorrowingHistory(user?.user_id ?? "");
+  const { data: holds, isLoading: holdsLoading } = useMemberHolds(user?.user_id ?? "");
+  const { data: fineData, isLoading: finesLoading } = useMemberFines(user?.user_id ?? "");
+  const { data: wishlist, isLoading: wishlistLoading } = useWishlist();
 
   
   // Custom Bio states
@@ -597,6 +603,147 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
+
+              {/* SECTION 2.5: LIBRARY ACCOUNT STATUS */}
+              {user?.role === "member" && (
+                <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
+                  <h3 style={{
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#111827",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    margin: "0 0 20px"
+                  }}>
+                    Library Account Status
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Left Column: Active Loans & Holds */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                      <div style={{ padding: "18px 20px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b", margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+                          Currently Borrowed Items
+                        </h4>
+                        {histLoading ? (
+                          <p style={{ fontSize: "12px", color: "#64748b" }}>Loading active loans...</p>
+                        ) : !history || history.filter((h: any) => h.status !== "returned").length === 0 ? (
+                          <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>No books currently borrowed.</p>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            {history.filter((h: any) => h.status !== "returned").map((loan: any) => {
+                              const isOverdue = loan.status === "overdue" || new Date(loan.due_date) < new Date();
+                              return (
+                                <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>
+                                  <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+                                    <span style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={loan.title}>
+                                      {loan.title}
+                                    </span>
+                                    <span style={{ fontSize: "11px", color: isOverdue ? "#ef4444" : "#64748b", fontWeight: 500 }}>
+                                      Due: {new Date(loan.due_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                    </span>
+                                  </div>
+                                  <span style={{
+                                    padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, textTransform: "uppercase",
+                                    background: isOverdue ? "#fee2e2" : "#dcfce7", color: isOverdue ? "#991b1b" : "#166534"
+                                  }}>
+                                    {isOverdue ? "Overdue" : "Active"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ padding: "18px 20px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b", margin: "0 0 12px" }}>
+                          Active Hold Requests (Queue)
+                        </h4>
+                        {holdsLoading ? (
+                          <p style={{ fontSize: "12px", color: "#64748b" }}>Loading holds...</p>
+                        ) : !holds || holds.length === 0 ? (
+                          <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>No active hold requests.</p>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            {holds.map((hold: any) => (
+                              <div key={hold.hold_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>
+                                <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+                                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={hold.title}>
+                                    {hold.title}
+                                  </span>
+                                  <span style={{ fontSize: "11px", color: "#64748b" }}>
+                                    Requested: {new Date(hold.request_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                                  </span>
+                                </div>
+                                <span style={{
+                                  padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, textTransform: "uppercase",
+                                  background: hold.status === "available" ? "#dcfce7" : "#dbeafe", color: hold.status === "available" ? "#166534" : "#1e40af"
+                                }}>
+                                  {hold.status}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Column: Fines & History */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                      <div style={{ padding: "18px 20px", background: "#fffdfa", borderRadius: "8px", border: "1px solid #fef08a" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#854d0e", margin: "0 0 12px" }}>
+                          Overdue Fine Tracking
+                        </h4>
+                        {finesLoading ? (
+                          <p style={{ fontSize: "12px", color: "#854d0e" }}>Loading fines...</p>
+                        ) : !fineData || fineData.total_pending === 0 ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <CheckCircle2 size={16} color="#16a34a" />
+                            <p style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600, margin: 0 }}>No outstanding fines. All clear!</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: "22px", fontWeight: 800, color: "#dc2626", marginBottom: "12px" }}>
+                              BDT {fineData.total_pending.toFixed(2)}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              {fineData.fines?.filter((f: any) => f.status === "pending").map((fine: any) => (
+                                <div key={fine.fine_id} style={{ fontSize: "12px", color: "#475569", borderBottom: "1px solid #fef08a", paddingBottom: "6px" }}>
+                                  <div style={{ fontWeight: 600, color: "#1e293b" }}>{fine.book_title}</div>
+                                  <div style={{ color: "#64748b" }}>Reason: {fine.reason} ({fine.amount} BDT)</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ padding: "18px 20px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b", margin: "0 0 12px" }}>
+                          Borrowing History
+                        </h4>
+                        {histLoading ? (
+                          <p style={{ fontSize: "12px", color: "#64748b" }}>Loading history...</p>
+                        ) : !history || history.filter((h: any) => h.status === "returned").length === 0 ? (
+                          <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>No previous history found.</p>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "180px", overflowY: "auto" }}>
+                            {history.filter((h: any) => h.status === "returned").map((loan: any) => (
+                              <div key={loan.transaction_id} style={{ fontSize: "12px", color: "#334155", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>
+                                <div style={{ fontWeight: 600, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={loan.title}>{loan.title}</div>
+                                <div style={{ color: "#64748b", fontSize: "11px" }}>
+                                  Returned: {new Date(loan.return_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* SECTION 3: DATA PROCESSING PREFERENCES (GDPR ARTICLE 21) */}
               <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>

@@ -86,8 +86,9 @@ export function useIssueBook() {
 export function useReturnBook() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (transaction_id: string) => {
-      const { data } = await api.post("/library/return", { transaction_id });
+    mutationFn: async (payload: string | { transaction_id?: string; barcode?: string; member_id?: string }) => {
+      const body = typeof payload === "string" ? { transaction_id: payload } : payload;
+      const { data } = await api.post("/library/return", body);
       return data.data;
     },
     onSuccess: () => {

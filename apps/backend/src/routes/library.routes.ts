@@ -225,27 +225,58 @@ router.post(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { catalog_id, member_id } = req.body as { catalog_id: string; member_id: string };
-    if (!catalog_id || !member_id) throw new AppError(400, "catalog_id and member_id required");
+    const { catalog_id, barcode, member_id } = req.body as { catalog_id?: string; barcode?: string; member_id: string };
+    if ((!catalog_id && !barcode) || !member_id) {
+      throw new AppError(400, "catalog_id or barcode, and member_id required");
+    }
 
     const transaction = await withTransaction(async (client) => {
-      const [item] = (await client.query(
-        "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL FOR UPDATE",
-        [catalog_id]
-      )).rows;
-      if (!item) throw new AppError(404, "Catalog item not found");
+      let item;
+      if (barcode) {
+        [item] = (await client.query(
+          "SELECT * FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL FOR UPDATE",
+          [barcode.trim()]
+        )).rows;
+      } else {
+        [item] = (await client.query(
+          "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL FOR UPDATE",
+          [catalog_id]
+        )).rows;
+      }
+
+      if (!item) {
+        throw new AppError(404, barcode ? `Book with barcode "${barcode}" not found` : "Catalog item not found");
+      }
       if (item.available_copies < 1) throw new AppError(409, "No copies available. Consider placing a hold.");
 
-      const [member] = (await client.query(
-        "SELECT user_id, name, email, membership_status FROM users WHERE user_id = $1",
-        [member_id]
-      )).rows;
+      let member;
+      const cleanMemberId = member_id.trim();
+      if (cleanMemberId.includes("@")) {
+        [member] = (await client.query(
+          "SELECT user_id, name, email, membership_status FROM users WHERE email = $1",
+          [cleanMemberId]
+        )).rows;
+      } else {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(cleanMemberId)) {
+          [member] = (await client.query(
+            "SELECT user_id, name, email, membership_status FROM users WHERE user_id = $1",
+            [cleanMemberId]
+          )).rows;
+        } else {
+          [member] = (await client.query(
+            "SELECT user_id, name, email, membership_status FROM users WHERE name = $1 OR email = $1",
+            [cleanMemberId]
+          )).rows;
+        }
+      }
+
       if (!member) throw new AppError(404, "Member not found");
       if (member.membership_status !== "active") throw new AppError(403, "Member account is not active");
 
       const [{ count }] = (await client.query(
         "SELECT COUNT(*) FROM lending_transactions WHERE member_id = $1 AND status = 'active'",
-        [member_id]
+        [member.user_id]
       )).rows;
       if (parseInt(count) >= config.library.maxBorrowLimit) {
         throw new AppError(409, `Borrow limit reached (max ${config.library.maxBorrowLimit} items)`);
@@ -253,7 +284,7 @@ router.post(
 
       const [fineResult] = (await client.query(
         "SELECT COALESCE(SUM(amount), 0) as total FROM fines WHERE member_id = $1 AND status = 'pending'",
-        [member_id]
+        [member.user_id]
       )).rows;
       if (parseFloat(fineResult.total) > 100) {
         throw new AppError(403, "Outstanding fines exceed limit. Please clear dues first.");
@@ -265,24 +296,24 @@ router.post(
       const [txn] = (await client.query(
         `INSERT INTO lending_transactions (catalog_id, member_id, due_date)
          VALUES ($1, $2, $3) RETURNING *`,
-        [catalog_id, member_id, dueDate.toISOString().split("T")[0]]
+        [item.catalog_id, member.user_id, dueDate.toISOString().split("T")[0]]
       )).rows;
 
       await client.query(
         "UPDATE catalog_items SET available_copies = available_copies - 1 WHERE catalog_id = $1",
-        [catalog_id]
+        [item.catalog_id]
       );
 
       await client.query(
         `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
          VALUES ($1, 'CREATE', 'lending_transaction', $2, $3, $4)`,
-        [req.user!.user_id, txn.transaction_id, JSON.stringify({ catalog_id, member_id }), req.ip]
+        [req.user!.user_id, txn.transaction_id, JSON.stringify({ catalog_id: item.catalog_id, member_id: member.user_id }), req.ip]
       );
 
       client.query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
          VALUES ($1, 'due_date_reminder', $2, $3, $4)`,
-        [member_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, "/dashboard"]
+        [member.user_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, "/dashboard"]
       ).catch(() => {});
 
       return { transaction: txn, member, item };
@@ -308,18 +339,64 @@ router.post(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { transaction_id } = req.body as { transaction_id: string };
-    if (!transaction_id) throw new AppError(400, "transaction_id required");
+    const { transaction_id, barcode, member_id } = req.body as { transaction_id?: string; barcode?: string; member_id?: string };
+    if (!transaction_id && !barcode) {
+      throw new AppError(400, "transaction_id or barcode required");
+    }
 
     const result = await withTransaction(async (client) => {
-      const [txn] = (await client.query(
-        `SELECT lt.*, ci.title as book_title
-         FROM lending_transactions lt
-         JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-         WHERE lt.transaction_id = $1 AND lt.status = 'active'
-         FOR UPDATE`,
-        [transaction_id]
-      )).rows;
+      let txn;
+      if (transaction_id) {
+        [txn] = (await client.query(
+          `SELECT lt.*, ci.title as book_title
+           FROM lending_transactions lt
+           JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+           WHERE lt.transaction_id = $1 AND lt.status = 'active'
+           FOR UPDATE`,
+          [transaction_id]
+        )).rows;
+      } else if (barcode) {
+        const [item] = (await client.query(
+          "SELECT catalog_id FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL",
+          [barcode.trim()]
+        )).rows;
+        if (!item) throw new AppError(404, `Book with barcode "${barcode}" not found`);
+
+        if (member_id) {
+          let memberUser;
+          const cleanMemberId = member_id.trim();
+          if (cleanMemberId.includes("@")) {
+            [memberUser] = (await client.query("SELECT user_id FROM users WHERE email = $1", [cleanMemberId])).rows;
+          } else {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (uuidRegex.test(cleanMemberId)) {
+              [memberUser] = (await client.query("SELECT user_id FROM users WHERE user_id = $1", [cleanMemberId])).rows;
+            } else {
+              [memberUser] = (await client.query("SELECT user_id FROM users WHERE name = $1 OR email = $1", [cleanMemberId])).rows;
+            }
+          }
+          if (!memberUser) throw new AppError(404, "Member not found");
+
+          [txn] = (await client.query(
+            `SELECT lt.*, ci.title as book_title
+             FROM lending_transactions lt
+             JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+             WHERE lt.catalog_id = $1 AND lt.member_id = $2 AND lt.status = 'active'
+             FOR UPDATE`,
+            [item.catalog_id, memberUser.user_id]
+          )).rows;
+        } else {
+          [txn] = (await client.query(
+            `SELECT lt.*, ci.title as book_title
+             FROM lending_transactions lt
+             JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+             WHERE lt.catalog_id = $1 AND lt.status = 'active'
+             ORDER BY lt.issue_date ASC LIMIT 1
+             FOR UPDATE`,
+            [item.catalog_id]
+          )).rows;
+        }
+      }
 
       if (!txn) throw new AppError(404, "Active transaction not found");
 
@@ -336,7 +413,7 @@ router.post(
         `UPDATE lending_transactions
          SET return_date = CURRENT_DATE, fine_amount = $1, status = 'returned'
          WHERE transaction_id = $2 RETURNING *`,
-        [fineAmount, transaction_id]
+        [fineAmount, txn.transaction_id]
       )).rows;
 
       await client.query(
@@ -347,7 +424,7 @@ router.post(
       if (fineAmount > 0) {
         await client.query(
           `INSERT INTO fines (member_id, transaction_id, amount, reason) VALUES ($1, $2, $3, $4)`,
-          [txn.member_id, transaction_id, fineAmount, `Overdue fine for "${txn.book_title}"`]
+          [txn.member_id, txn.transaction_id, fineAmount, `Overdue fine for "${txn.book_title}"`]
         );
       }
 
