@@ -155,6 +155,10 @@ export default function HomePage() {
         @keyframes slideDownToBottom { from { transform: translateY(0); } to { transform: translateY(100%); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) {
+          .home-partner-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
       `}} />
 
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
@@ -277,46 +281,7 @@ export default function HomePage() {
                     <LogOut size={13} /> Sign Out
                   </button>
                 </>
-              ) : (
-                <>
-                  {/* Guest: sign in + register */}
-                  <Link
-                    href="/login"
-                    style={{
-                      padding: "7px 16px",
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#495057",
-                      textDecoration: "none",
-                      borderRadius: "6px",
-                      border: "1px solid #dee2e6",
-                      background: "#ffffff",
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; }}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/register"
-                    style={{
-                      padding: "7px 16px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#ffffff",
-                      background: "var(--avatar-theme-color)",
-                      borderRadius: "6px",
-                      textDecoration: "none",
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "0.9"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "1"; }}
-                  >
-                    Register
-                  </Link>
-                </>
-              )}
+              ) : null}
 
               {/* Mobile Sidebar */}
               {sidebarOpen && (
@@ -482,60 +447,7 @@ export default function HomePage() {
                             Profile
                           </button>
                         </>
-                      ) : (
-                        <>
-                          <Link
-                            href="/login"
-                            onClick={handleCloseSidebar}
-                            style={{
-                              display: "block",
-                              padding: "14px 20px",
-                              fontSize: "14px",
-                              fontWeight: 500,
-                              color: "#4b5563",
-                              textDecoration: "none",
-                              transition: "all 0.2s",
-                              borderLeft: "3px solid transparent",
-                              borderBottom: "1px solid #f0f0f0"
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = "#f8f9fa";
-                              e.currentTarget.style.borderLeftColor = "var(--avatar-theme-color)";
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = "transparent";
-                              e.currentTarget.style.borderLeftColor = "transparent";
-                            }}
-                          >
-                            Sign In
-                          </Link>
-                          <Link
-                            href="/register"
-                            onClick={handleCloseSidebar}
-                            style={{
-                              display: "block",
-                              padding: "14px 20px",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              color: "var(--avatar-theme-color)",
-                              textDecoration: "none",
-                              transition: "all 0.2s",
-                              borderLeft: "3px solid transparent",
-                              borderBottom: "1px solid #f0f0f0"
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = "#f8f9fa";
-                              e.currentTarget.style.borderLeftColor = "var(--avatar-theme-color)";
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = "transparent";
-                              e.currentTarget.style.borderLeftColor = "transparent";
-                            }}
-                          >
-                            Register
-                          </Link>
-                        </>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Sign Out Button (for authenticated users) */}
@@ -595,7 +507,6 @@ export default function HomePage() {
                   margin: 0,
                   textTransform: "uppercase",
                   wordBreak: "break-word",
-                  flex: "1 1 min-content"
                 }}>
                   The  Digital<br />Knowledge  Platform
                 </h1>
@@ -702,6 +613,115 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ── AUTH CARD - Sign In & Register (For Guests) ── */}
+        {!isAuthenticated && (
+          <section style={{ background: "#ffffff", padding: "60px 32px", borderTop: "1px solid #e5e7eb" }}>
+            <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "32px" }}>
+                <div style={{ textAlign: "center", maxWidth: "600px" }}>
+                  <h2 style={{
+                    fontSize: "clamp(1.5rem, 3vw, 2.25rem)",
+                    fontWeight: 800,
+                    color: "#111827",
+                    margin: "0 0 12px 0",
+                    letterSpacing: "-0.02em"
+                  }}>
+                    Ready to Join Us?
+                  </h2>
+                  <p style={{
+                    fontSize: "clamp(0.95rem, 1.5vw, 1.1rem)",
+                    color: "#6b7280",
+                    lineHeight: 1.6,
+                    margin: 0
+                  }}>
+                    Access academic resources, collaborate with researchers, and explore knowledge from the university.
+                  </p>
+                </div>
+
+                {/* Auth Buttons */}
+                <div style={{
+                  display: "flex",
+                  gap: "16px",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  width: "100%"
+                }}>
+                  {/* Sign In Button */}
+                  <Link
+                    href="/login"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      padding: "14px 32px",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "var(--avatar-theme-color, #1a56db)",
+                      background: "#ffffff",
+                      border: "2px solid var(--avatar-theme-color, #1a56db)",
+                      borderRadius: "10px",
+                      textDecoration: "none",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--avatar-theme-color, #1a56db)";
+                      e.currentTarget.style.color = "#ffffff";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 6px 16px rgba(26, 86, 219, 0.25)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#ffffff";
+                      e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
+                    }}
+                  >
+                    Sign In
+                  </Link>
+
+                  {/* Register Button */}
+                  <Link
+                    href="/register"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      padding: "14px 32px",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      color: "#ffffff",
+                      background: "var(--avatar-theme-color, #1a56db)",
+                      border: "2px solid var(--avatar-theme-color, #1a56db)",
+                      borderRadius: "10px",
+                      textDecoration: "none",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(26, 86, 219, 0.3)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(26, 86, 219, 0.9)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 8px 20px rgba(26, 86, 219, 0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "var(--avatar-theme-color, #1a56db)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(26, 86, 219, 0.3)";
+                    }}
+                  >
+                    <span>Sign Up</span>
+                    <ArrowRight size={18} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── PARTNER NETWORK ────────────────────────────────────────────────── */}
         <section id="network-section" style={{ background: "var(--theme-sidebar-gradient)", padding: "72px 32px" }} className="home-partner-section">

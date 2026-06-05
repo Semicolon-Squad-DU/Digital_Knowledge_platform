@@ -91,19 +91,20 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
       {/* GitHub-style dark header */}
       <header 
         className={cn(
-          "gh-navbar sticky top-0 z-40 transition-all duration-300",
-          isScrolled ? "shadow-lg backdrop-blur-md" : ""
+          "gh-navbar sticky top-0 z-40 transition-all duration-300"
         )}
         style={{
           background: isScrolled 
-            ? "rgba(36, 41, 47, 0.95)" 
+            ? "rgba(36, 41, 47, 0.98)" 
             : "#24292f",
-          backdropFilter: isScrolled ? "blur(8px)" : "none"
+          backdropFilter: isScrolled ? "blur(12px)" : "none",
+          boxShadow: isScrolled ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "none",
+          padding: isScrolled ? "6px 0" : "8px 0",
         }}
         role="banner"
       >
         <div className="page-container">
-          <div className="flex items-center gap-4 h-14">
+          <div className={cn("flex items-center gap-4", isScrolled ? "h-12" : "h-14")}>
 
             {/* Back Button if showBack is true */}
             {showBack && (
@@ -339,27 +340,6 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
                   {link.label}
                 </Link>
               ))}
-
-              {/* Mobile Auth Links - highlighted section */}
-              {!isAuthenticated && (
-                <>
-                  <div className="border-t border-white/10 my-2 pt-2" />
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 rounded-md text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 rounded-md text-sm font-bold text-[#1f2328] bg-white hover:bg-white/90 transition-colors duration-150 shadow-sm"
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
             </div>
           </div>
         )}

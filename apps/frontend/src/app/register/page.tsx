@@ -298,12 +298,12 @@ export default function RegisterPage() {
       </header>
 
       {/* ── Main ── */}
-      <main style={{ flex: 1, padding: "48px 32px", position: "relative", zIndex: 2 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "340px 1fr", gap: "40px", alignItems: "start" }}>
+      <main style={{ flex: 1, padding: "32px 16px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "40px", alignItems: "start" }}>
 
           {/* ── LEFT COLUMN ── */}
-          <div>
-            <h1 style={{ fontSize: "36px", fontWeight: 800, color: "#ffffff", lineHeight: 1.15, marginBottom: "16px", letterSpacing: "-0.02em", transition: "color 0.2s" }}>
+          <div style={{ minWidth: "280px" }}>
+            <h1 style={{ fontSize: "clamp(28px, 6vw, 36px)", fontWeight: 800, color: "#ffffff", lineHeight: 1.15, marginBottom: "16px", letterSpacing: "-0.02em", transition: "color 0.2s" }}>
               Join the Platform.
             </h1>
             <p style={{ fontSize: "14px", color: "#e5e7eb", lineHeight: 1.7, marginBottom: "28px" }}>
@@ -311,7 +311,7 @@ export default function RegisterPage() {
             </p>
 
             {/* Role selector card */}
-            <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px", transition: "background 0.3s" }}>
+            <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px", transition: "background 0.3s", overflowY: "auto", maxHeight: "500px" }}>
               <label style={{ ...labelStyle, marginBottom: "12px", color: "#ffffff" }}>
                 I am registering as <span style={{ color: "#ef4444" }}></span>
               </label>
@@ -338,7 +338,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
               <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px", transition: "background 0.3s" }}>
                 <ShieldCheck size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
                 <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
@@ -361,11 +361,11 @@ export default function RegisterPage() {
           </div>
 
           {/* ── RIGHT COLUMN — Form card ── */}
-          <div style={{ background: "rgba(255, 255, 255, 0.9)", border: "1px solid rgba(229, 231, 235, 0.9)", borderRadius: "12px", padding: "36px 36px 32px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+          <div style={{ background: "rgba(255, 255, 255, 0.9)", border: "1px solid rgba(229, 231, 235, 0.9)", borderRadius: "12px", padding: "clamp(20px, 5vw, 36px)", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", minWidth: "280px", maxWidth: "100%", overflowX: "hidden" }}>
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
               {/* Row 1: Full Name + Email */}
-              <div className="register-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "18px" }}>
+              <div className="register-form-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "16px", marginBottom: "18px" }}>
                 <div>
                   <label style={labelStyle}>Full Name</label>
                   <input
