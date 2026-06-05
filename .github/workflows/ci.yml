@@ -26,9 +26,6 @@ jobs:
     needs: block-bot-commits
     name: Backend — lint & build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/backend
 
     steps:
       - uses: actions/checkout@v4
@@ -42,26 +39,23 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint
+        run: npm run -w @dkp/backend lint
 
       - name: Build
-        run: npm run build
+        run: npm run -w @dkp/backend build
 
       - name: Check seed file is not empty
         run: |
-          if [ ! -s src/db/seed.ts ]; then
+          if [ ! -s apps/backend/src/db/seed.ts ]; then
             echo "ERROR: seed.ts is empty!"
             exit 1
           fi
-          echo "seed.ts OK ($(wc -l < src/db/seed.ts) lines)"
+          echo "seed.ts OK ($(wc -l < apps/backend/src/db/seed.ts) lines)"
 
   frontend:
     needs: block-bot-commits
     name: Frontend — lint & build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -75,9 +69,9 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint
+        run: npm run -w @dkp/frontend lint
 
       - name: Build
-        run: npm run build
+        run: npm run -w @dkp/frontend build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000/api
