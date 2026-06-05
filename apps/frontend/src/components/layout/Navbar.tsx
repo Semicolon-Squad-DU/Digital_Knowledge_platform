@@ -41,6 +41,7 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { dark, toggle: toggleDark } = useDarkMode();
   const { data: notifData } = useNotifications(1, true, isAuthenticated);
@@ -52,6 +53,14 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -80,7 +89,19 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
   return (
     <>
       {/* GitHub-style dark header */}
-      <header className="gh-navbar sticky top-0 z-40" role="banner">
+      <header 
+        className={cn(
+          "gh-navbar sticky top-0 z-40 transition-all duration-300",
+          isScrolled ? "shadow-lg backdrop-blur-md" : ""
+        )}
+        style={{
+          background: isScrolled 
+            ? "rgba(36, 41, 47, 0.95)" 
+            : "#24292f",
+          backdropFilter: isScrolled ? "blur(8px)" : "none"
+        }}
+        role="banner"
+      >
         <div className="page-container">
           <div className="flex items-center gap-4 h-14">
 
@@ -318,6 +339,27 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
                   {link.label}
                 </Link>
               ))}
+
+              {/* Mobile Auth Links - highlighted section */}
+              {!isAuthenticated && (
+                <>
+                  <div className="border-t border-white/10 my-2 pt-2" />
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 rounded-md text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 rounded-md text-sm font-bold text-[#1f2328] bg-white hover:bg-white/90 transition-colors duration-150 shadow-sm"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

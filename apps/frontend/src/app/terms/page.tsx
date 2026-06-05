@@ -82,7 +82,7 @@ export default function TermsPage() {
       </header>
 
       {/* Main Content */}
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "48px 32px", position: "relative", zIndex: 2 }}>
+      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "48px 24px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
         <h1 style={{ fontSize: "40px", fontWeight: 800, color: "#111827", marginBottom: "12px", lineHeight: 1.2 }}>
           Terms of Service
         </h1>
@@ -213,15 +213,14 @@ export default function TermsPage() {
       </main>
 
       {/* Footer */}
-      <footer style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2 }}>
+      <footer style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
         <div style={{
           maxWidth: "1100px",
           margin: "0 auto",
-          padding: "32px 32px",
-          display: "grid",
-          gridTemplateColumns: "200px 1fr auto",
-          alignItems: "start",
-          gap: "32px",
+          padding: "32px 24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
         }}>
           <div>
             <p style={{ fontSize: "13px", fontWeight: 700, color: "#ffffff", lineHeight: 1.55, margin: "0 0 6px" }}>
@@ -231,14 +230,14 @@ export default function TermsPage() {
               © 2026 Digital Knowledge Platform. All rights reserved.
             </p>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <div style={{ display: "flex", gap: "24px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", textAlign: "center", flexWrap: "wrap" }}>
               {[
                 { label: "Privacy Policy", href: "/privacy" },
                 { label: "Terms of Service", href: "/terms" },
                 { label: "Contact Us", href: "/contact" }
               ].map((l) => (
-                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.8)", textDecoration: "none" }}
+                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.8)", textDecoration: "none", transition: "all 0.2s", display: "inline-block" }}
                   onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                   onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                 >
@@ -248,6 +247,27 @@ export default function TermsPage() {
             </div>
           </div>
         </div>
+        <style>{`
+          @media (min-width: 768px) {
+            footer > div {
+              display: grid;
+              grid-template-columns: 200px 1fr auto;
+              align-items: start;
+              gap: 32px;
+            }
+            footer > div > div:nth-child(2) {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 8px;
+            }
+            footer > div > div:nth-child(2) > div {
+              display: flex;
+              gap: 24px;
+              flex-direction: row;
+            }
+          }
+        `}</style>
       </footer>
     </div>
   );

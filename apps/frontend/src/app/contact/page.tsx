@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 const TEAM_MEMBERS = [
   { name: "Faria Yasmin", email: "fariayasmin19@gmail.com", github: "fariayasmin" },
   { name: "Yuki Bhuiyan", email: "yukibhuiyan@gmail.com", github: "Yukii9291" },
-  { name: "Nuruzzaman", email: "nuruzzaman@gamil.com", github: "prolexcsedu" },
+  { name: "Md. Nuruzzaman", email: "nuruzzaman@gamil.com", github: "prolexcsedu" },
   { name: "Hasibul Islam", email: "hasibulislam@gamil.com", github: "enol5423" },
 ];
 
@@ -101,7 +101,8 @@ export default function ContactPage() {
         backdropFilter: "blur(15px)",
         WebkitBackdropFilter: "blur(15px)",
         position: "relative",
-        zIndex: 2
+        zIndex: 2,
+        overflowX: "hidden"
       }}>
         <Link
           href="/"
@@ -126,12 +127,13 @@ export default function ContactPage() {
       {/* Main Content */}
       <main style={{
         flex: 1,
-        padding: "32px 16px",
+        padding: "32px 24px",
         position: "relative",
         zIndex: 2,
-        overflowY: "auto"
+        overflowY: "auto",
+        overflowX: "hidden"
       }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%", overflowX: "hidden" }}>
           {/* Hero Section */}
           <div style={{ textAlign: "center", marginBottom: "48px" }}>
             <h1 style={{

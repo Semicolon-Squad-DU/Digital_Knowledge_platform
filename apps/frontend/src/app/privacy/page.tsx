@@ -59,7 +59,8 @@ export default function PrivacyPage() {
         backdropFilter: "blur(15px)",
         WebkitBackdropFilter: "blur(15px)",
         position: "relative",
-        zIndex: 2
+        zIndex: 2,
+        overflowX: "hidden"
       }}>
         <Link
           href="/"
@@ -82,7 +83,7 @@ export default function PrivacyPage() {
       </header>
 
       {/* Main Content */}
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "48px 32px", position: "relative", zIndex: 2 }}>
+      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "48px 24px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
         <h1 style={{ fontSize: "40px", fontWeight: 800, color: "#111827", marginBottom: "12px", lineHeight: 1.2 }}>
           Privacy Policy
         </h1>
@@ -218,15 +219,14 @@ export default function PrivacyPage() {
       </main>
 
       {/* Footer */}
-      <footer className="privacy-footer" style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2 }}>
+      <footer className="privacy-footer" style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
         <div className="privacy-footer-content" style={{
           maxWidth: "1100px",
           margin: "0 auto",
-          padding: "32px 32px",
-          display: "grid",
-          gridTemplateColumns: "200px 1fr auto",
-          alignItems: "start",
-          gap: "32px",
+          padding: "32px 24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
         }}>
           <div>
             <p className="privacy-footer-brand" style={{ fontSize: "13px", fontWeight: 700, color: "#d1d5db", lineHeight: 1.55, margin: "0 0 6px" }}>
@@ -236,14 +236,14 @@ export default function PrivacyPage() {
               © 2026 Digital Knowledge Platform. All rights reserved.
             </p>
           </div>
-          <div className="privacy-footer-links-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <div className="privacy-footer-links" style={{ display: "flex", gap: "24px" }}>
+          <div className="privacy-footer-links-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
+            <div className="privacy-footer-links" style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", textAlign: "center", flexWrap: "wrap" }}>
               {[
                 { label: "Privacy Policy", href: "/privacy" },
                 { label: "Terms of Service", href: "/terms" },
                 { label: "Contact Us", href: "/contact" }
               ].map((l) => (
-                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "#d1d5db", textDecoration: "none" }}
+                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "#d1d5db", textDecoration: "none", transition: "all 0.2s", display: "inline-block" }}
                   onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                   onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                 >
@@ -253,6 +253,27 @@ export default function PrivacyPage() {
             </div>
           </div>
         </div>
+        <style>{`
+          @media (min-width: 768px) {
+            .privacy-footer-content {
+              display: grid !important;
+              grid-template-columns: 200px 1fr auto;
+              align-items: start;
+              gap: 32px;
+            }
+            .privacy-footer-links-container {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 8px;
+            }
+            .privacy-footer-links {
+              display: flex;
+              gap: 24px;
+              flex-direction: row;
+            }
+          }
+        `}</style>
       </footer>
     </div>
   );
