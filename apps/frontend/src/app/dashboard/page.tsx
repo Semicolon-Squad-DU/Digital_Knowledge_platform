@@ -177,39 +177,92 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+          {fineData?.total_pending > 0 && (
+            <div style={{
+              background: "#fee2e2",
+              border: "1px solid #fca5a5",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              color: "#991b1b",
+              fontSize: "13px",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 20
+            }}>
+              <AlertTriangle size={16} />
+              You have outstanding library fines totaling BDT {fineData.total_pending}. Please clear them soon.
+            </div>
+          )}
 
           {/* ── STAT CARDS ── */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }} className="dashboard-stat-grid">
-            <StatCard
-              label="Total Documents"
-              value={totalDocs.toLocaleString()}
-              sub={archiveData ? `+${archiveData.items?.length ?? 0} this month` : undefined}
-              subIcon={TrendingUp}
-              subColor="#16a34a"
-              loading={archLoading}
-            />
-            <StatCard
-              label="Published Items"
-              value={publishedItems.toLocaleString()}
-              sub={publishedItems > 0 ? "Verified & Indexed" : "No published items"}
-              subIcon={CheckCircle}
-              subColor="#6b7280"
-              loading={resLoading}
-            />
-            <StatCard
-              label="Pending Reviews"
-              value={pendingReviews}
-              sub={pendingReviews > 0 ? `${pendingReviews} urgent actions` : "No pending reviews"}
-              subColor={pendingReviews > 0 ? "#ef4444" : "#6b7280"}
-              loading={showLoading}
-            />
-            <StatCard
-              label="Archived Items"
-              value={archivedItems.toLocaleString()}
-              sub="Legacy data storage"
-              subColor="#6b7280"
-              loading={histLoading}
-            />
+            {user?.role === "member" ? (
+              <>
+                <StatCard
+                  label="Active Loans"
+                  value={(history ?? []).filter((t: Loan) => t.status === "active").length}
+                  sub="Books currently in possession"
+                  subColor="#6b7280"
+                  loading={histLoading}
+                />
+                <StatCard
+                  label="Overdue Books"
+                  value={overdueLoans.length}
+                  sub={overdueLoans.length > 0 ? "Fines accumulating" : "No overdue books"}
+                  subColor={overdueLoans.length > 0 ? "#ef4444" : "#6b7280"}
+                  loading={histLoading}
+                />
+                <StatCard
+                  label="Outstanding Fines"
+                  value={`BDT ${fineData?.total_pending ?? 0}`}
+                  sub="Due to late returns"
+                  subColor={fineData?.total_pending > 0 ? "#ef4444" : "#6b7280"}
+                  loading={histLoading}
+                />
+                <StatCard
+                  label="Wishlist Saved"
+                  value={wishlist?.length ?? 0}
+                  sub="Books saved for later"
+                  subColor="#6b7280"
+                  loading={histLoading}
+                />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  label="Total Documents"
+                  value={totalDocs.toLocaleString()}
+                  sub={archiveData ? `+${archiveData.items?.length ?? 0} this month` : undefined}
+                  subIcon={TrendingUp}
+                  subColor="#16a34a"
+                  loading={archLoading}
+                />
+                <StatCard
+                  label="Published Items"
+                  value={publishedItems.toLocaleString()}
+                  sub={publishedItems > 0 ? "Verified & Indexed" : "No published items"}
+                  subIcon={CheckCircle}
+                  subColor="#6b7280"
+                  loading={resLoading}
+                />
+                <StatCard
+                  label="Pending Reviews"
+                  value={pendingReviews}
+                  sub={pendingReviews > 0 ? `${pendingReviews} urgent actions` : "No pending reviews"}
+                  subColor={pendingReviews > 0 ? "#ef4444" : "#6b7280"}
+                  loading={showLoading}
+                />
+                <StatCard
+                  label="Archived Items"
+                  value={archivedItems.toLocaleString()}
+                  sub="Legacy data storage"
+                  subColor="#6b7280"
+                  loading={histLoading}
+                />
+              </>
+            )}
           </div>
 
           {/* ── MIDDLE ROW ── */}
