@@ -625,7 +625,7 @@ function LoginForm() {
                   Select Your Role
                 </h2>
                 <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                  Choose how you'll use the platform
+                  Choose how you&apos;ll use the platform
                 </p>
               </div>
               <button
