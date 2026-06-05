@@ -8,12 +8,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { ArrowLeft, LogIn, Lock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, LogIn, Lock, ShieldCheck, X } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { Input } from "@/components/ui/Input";
 import api from "@/lib/api";
-import { MockOAuthModal } from "@/components/ui/MockOAuthModal";
-import { GoogleConfigModal } from "@/components/ui/GoogleConfigModal";
+
+// ── Role options ──────────────────────────────────────────────────────────────
+const ROLES = [
+  { value: "member", label: "Member", desc: "Browse and access published content" },
+  { value: "student_author", label: "Student Author", desc: "Submit projects to the showcase" },
+  { value: "researcher", label: "Researcher", desc: "Publish research outputs and manage labs" },
+  { value: "archivist", label: "Archivist", desc: "Upload and manage archive documents" },
+  { value: "librarian", label: "Librarian", desc: "Manage library catalog and lending" },
+  { value: "admin", label: "Admin", desc: "Full platform access and user management" },
+] as const;
+type RoleValue = typeof ROLES[number]["value"];
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
@@ -38,9 +47,15 @@ function LoginForm() {
   const redirectTo = searchParams.get("redirect") ?? "/admin";
   const { login, setUser } = useAuthStore();
   const [error, setError] = useState("");
-  const [oauthModalOpen, setOauthModalOpen] = useState(false);
-  const [googleConfigModalOpen, setGoogleConfigModalOpen] = useState(false);
-  const [oauthProvider, setOauthProvider] = useState<"google" | "sso">("google");
+  const [googleProfile, setGoogleProfile] = useState<{
+    email: string;
+    name: string;
+    sub: string;
+  } | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleError, setRoleError] = useState("");
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
 
   const {
     register,
@@ -69,8 +84,6 @@ function LoginForm() {
     providerId: string;
     department?: string;
   }) => {
-    setOauthModalOpen(false);
-    setGoogleConfigModalOpen(false);
     try {
       const res = await api.post("/auth/oauth-login", oauthData);
       const { access_token, refresh_token, user } = res.data.data;
@@ -80,14 +93,15 @@ function LoginForm() {
       toast.success(`Welcome back, ${user.name}!`);
       router.push(redirectTo);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to sign in via OAuth");
+      // Error is already handled in handleRoleConfirm
+      throw err;
     }
   };
 
   const handleGoogleSignIn = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      setGoogleConfigModalOpen(true);
+      toast.error("Google Client ID not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local");
       return;
     }
 
@@ -106,14 +120,10 @@ function LoginForm() {
                 const profile = await profileRes.json();
                 toast.dismiss(loadingToast);
                 
-                await handleOAuthAuthorize({
-                  email: profile.email,
-                  name: profile.name,
-                  role: "member",
-                  provider: "google",
-                  providerId: `google_${profile.sub}`,
-                  department: "",
-                });
+                // Store profile and show role selection modal
+                setGoogleProfile(profile);
+                setSelectedRole("member"); // Reset to default
+                setShowRoleModal(true);
               } catch (e) {
                 toast.dismiss(loadingToast);
                 toast.error("Failed to fetch user profile from Google");
@@ -127,6 +137,32 @@ function LoginForm() {
       }
     } else {
       toast.error("Google SDK is still loading. Please try again in a moment.");
+    }
+  };
+
+  const handleRoleConfirm = async () => {
+    if (!googleProfile) return;
+
+    setRoleError("");
+    setIsSubmittingRole(true);
+    
+    try {
+      await handleOAuthAuthorize({
+        email: googleProfile.email,
+        name: googleProfile.name,
+        role: selectedRole,
+        provider: "google",
+        providerId: `google_${googleProfile.sub}`,
+        department: "",
+      });
+
+      setShowRoleModal(false);
+      setGoogleProfile(null);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || "Failed to complete sign-in";
+      setRoleError(errorMsg);
+      setIsSubmittingRole(false);
+      toast.error(errorMsg);
     }
   };
 
@@ -293,7 +329,7 @@ function LoginForm() {
                   id="login-email"
                   type="email"
                   autoComplete="email"
-                  placeholder="e.g. researcher@institution.edu"
+                  placeholder=""
                   aria-invalid={!!errors.email}
                   style={{
                     display: "block",
@@ -470,32 +506,6 @@ function LoginForm() {
               Sign in with Google
             </button>
 
-            {/* Institutional SSO button */}
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2.5 transition-colors hover:bg-gray-50 login-button"
-              style={{
-                padding: "11px 16px",
-                fontSize: "12px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                background: "#ffffff",
-                color: "#374151",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                cursor: "pointer",
-                marginTop: "10px",
-              }}
-              onClick={() => {
-                setOauthProvider("sso");
-                setOauthModalOpen(true);
-              }}
-            >
-              <ShieldCheck size={16} color="#374151" />
-              Sign in with Institutional SSO
-            </button>
-
             {/* Bottom divider */}
             <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 20px" }} />
 
@@ -584,22 +594,207 @@ function LoginForm() {
         </div>
       </footer>
 
-      <MockOAuthModal
-        isOpen={oauthModalOpen}
-        onClose={() => setOauthModalOpen(false)}
-        provider={oauthProvider}
-        onAuthorize={handleOAuthAuthorize}
-      />
+      {/* Role Selection Modal for Google Sign-In */}
+      {showRoleModal && googleProfile && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "12px",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            maxWidth: "500px",
+            width: "90%",
+            maxHeight: "90vh",
+            overflow: "auto",
+            padding: "32px",
+          }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "24px" }}>
+              <div>
+                <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: "0 0 8px 0" }}>
+                  Select Your Role
+                </h2>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                  Choose how you'll use the platform
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRoleModal(false);
+                  setGoogleProfile(null);
+                  setRoleError("");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  color: "#6b7280",
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-      <GoogleConfigModal
-        isOpen={googleConfigModalOpen}
-        onClose={() => setGoogleConfigModalOpen(false)}
-        onUseMock={() => {
-          setGoogleConfigModalOpen(false);
-          setOauthProvider("google");
-          setOauthModalOpen(true);
-        }}
-      />
+            {/* Google Profile Info */}
+            <div style={{
+              background: "#f9fafb",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginBottom: "24px",
+            }}>
+              <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 4px 0" }}>Signing in as</p>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0 }}>
+                {googleProfile.name} ({googleProfile.email})
+              </p>
+            </div>
+
+            {/* Role Options */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
+              {ROLES.map((role) => (
+                <button
+                  key={role.value}
+                  onClick={() => setSelectedRole(role.value)}
+                  style={{
+                    padding: "12px 16px",
+                    border: `2px solid ${selectedRole === role.value ? "#1a1a2e" : "#e5e7eb"}`,
+                    background: selectedRole === role.value ? "#f0f0f5" : "#ffffff",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = "#1a1a2e";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = selectedRole === role.value ? "#1a1a2e" : "#e5e7eb";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between" }}>
+                    <div>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: "0 0 4px 0" }}>
+                        {role.label}
+                      </p>
+                      <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
+                        {role.desc}
+                      </p>
+                    </div>
+                    <div style={{
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      border: `2px solid ${selectedRole === role.value ? "#1a1a2e" : "#d1d5db"}`,
+                      background: selectedRole === role.value ? "#1a1a2e" : "transparent",
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                      {selectedRole === role.value && (
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <path d="M2 5L4.5 7.5L8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Error Message */}
+            {roleError && (
+              <div style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "6px",
+                padding: "12px 16px",
+                marginBottom: "20px",
+              }}>
+                <p style={{ fontSize: "12px", color: "#dc2626", margin: 0, lineHeight: 1.5 }}>
+                  {roleError}
+                </p>
+                <p style={{ fontSize: "11px", color: "#991b1b", margin: "8px 0 0 0" }}>
+                  ℹ️ Your role is permanently tied to your account and cannot be changed. Please use your registered role or contact an administrator if you need to change it.
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => {
+                  setShowRoleModal(false);
+                  setGoogleProfile(null);
+                  setRoleError("");
+                }}
+                disabled={isSubmittingRole}
+                style={{
+                  flex: 1,
+                  padding: "10px 16px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: isSubmittingRole ? "not-allowed" : "pointer",
+                  opacity: isSubmittingRole ? 0.6 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRoleConfirm}
+                disabled={isSubmittingRole}
+                style={{
+                  flex: 1,
+                  padding: "10px 16px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  background: "linear-gradient(135deg, #1a1a2e 0%, #111116 100%)",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: isSubmittingRole ? "not-allowed" : "pointer",
+                  opacity: isSubmittingRole ? 0.8 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSubmittingRole ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Signing In...
+                  </>
+                ) : (
+                  "Continue"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
 

@@ -18,20 +18,143 @@ interface MockOAuthModalProps {
   }) => void;
 }
 
-const GOOGLE_ACCOUNTS = [
-  { name: "John Doe", email: "john.doe@gmail.com", role: "member", dept: "English" },
-  { name: "Prof. Julian Archer", email: "j.archer@institution.edu", role: "researcher", dept: "Computer Science & Engineering" },
-  { name: "Alice Student", email: "alice.s@university.edu", role: "student_author", dept: "Electrical & Electronic Engineering" },
-  { name: "Librarian Jenkins", email: "jenkins@dkp.edu.bd", role: "librarian", dept: "Library Sciences" },
-  { name: "System Administrator", email: "admin@dkp.edu.bd", role: "admin", dept: "Information Technology" },
-];
-
 const INSTITUTIONS = [
+  // Bangladesh
   "University of Dhaka",
-  "BUET",
-  "MIT",
-  "Oxford University",
+  "Bangladesh University of Engineering and Technology (BUET)",
+  "Jahangirnagar University",
+  "University of Rajshahi",
+  "Chittagong University",
+  "Khulna University",
+  "Islamic University of Technology",
+  "Daffodil International University",
+  "BRAC University",
+  "North South University",
+  "Dhaka University of Engineering and Technology",
+  "Shahjalal University of Science and Technology",
+  "Mawlana Bhashani Science and Technology University",
+  "Rajshahi University of Engineering and Technology",
+  "Sylhet International University",
+  "Pabna Science and Technology University",
+  "Independent University Bangladesh",
+  "American International University-Bangladesh",
+  "East West University",
+  
+  // United Kingdom
+  "University of Oxford",
+  "University of Cambridge",
+  "Imperial College London",
+  "UCL (University College London)",
+  "London School of Economics (LSE)",
+  "University of Edinburgh",
+  "University of Manchester",
+  "King's College London",
+  "University of Bristol",
+  "University of Warwick",
+  "University of Southampton",
+  "University of Bath",
+  "University of Leeds",
+  "University of Durham",
+  "University of Glasgow",
+  "University of Sheffield",
+  "University of Nottingham",
+  "University of Birmingham",
+  "University of Liverpool",
+  "Queen Mary University of London",
+  
+  // United States
+  "Harvard University",
   "Stanford University",
+  "MIT (Massachusetts Institute of Technology)",
+  "California Institute of Technology",
+  "Princeton University",
+  "Yale University",
+  "University of Chicago",
+  "Columbia University",
+  "University of Pennsylvania",
+  "Northwestern University",
+  "Duke University",
+  "University of Michigan",
+  "University of California, Berkeley",
+  "University of California, Los Angeles",
+  "University of Southern California",
+  "Cornell University",
+  "University of Texas at Austin",
+  "Carnegie Mellon University",
+  "University of Washington",
+  "University of Wisconsin-Madison",
+  
+  // Canada
+  "University of Toronto",
+  "McGill University",
+  "University of British Columbia",
+  "McMaster University",
+  "University of Alberta",
+  "University of Montreal",
+  "University of Waterloo",
+  "Western University",
+  "University of Ottawa",
+  "University of Calgary",
+  
+  // Australia
+  "University of Melbourne",
+  "University of Sydney",
+  "University of New South Wales",
+  "University of Queensland",
+  "Australian National University",
+  "University of Western Australia",
+  "Monash University",
+  "University of Adelaide",
+  "University of Technology Sydney",
+  "RMIT University",
+  
+  // Germany
+  "Heidelberg University",
+  "Ludwig Maximilian University of Munich",
+  "Technical University of Munich",
+  "University of Berlin",
+  "University of Hamburg",
+  "University of Frankfurt",
+  "University of Cologne",
+  "University of Mannheim",
+  "Karlsruhe Institute of Technology",
+  "University of Bonn",
+  
+  // France
+  "Sorbonne University",
+  "Paris-Saclay University",
+  "PSL University",
+  "University of Lyon",
+  "University of Toulouse",
+  "University of Marseille",
+  "University of Montpellier",
+  "University of Paris-Cité",
+  "INSEAD",
+  "HEC Paris",
+  
+  // Japan
+  "University of Tokyo",
+  "Kyoto University",
+  "Osaka University",
+  "Tokyo Institute of Technology",
+  "Tohoku University",
+  "Keio University",
+  "Waseda University",
+  "Hitotsubashi University",
+  "University of Tsukuba",
+  "Nagoya University",
+  
+  // India
+  "Indian Institute of Technology (IIT) Delhi",
+  "Indian Institute of Technology (IIT) Bombay",
+  "Indian Institute of Science (IISc)",
+  "University of Delhi",
+  "Jawaharlal Nehru University",
+  "Banaras Hindu University",
+  "University of Mumbai",
+  "University of Calcutta",
+  "Aligarh Muslim University",
+  "Anna University",
 ];
 
 const ROLES = [
@@ -184,7 +307,7 @@ export function MockOAuthModal({ isOpen, onClose, provider, onAuthorize }: MockO
               <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-fg-default)" }}>Full Name</label>
               <input
                 type="text"
-                placeholder="e.g. Dr. Julian Archer"
+                placeholder=""
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid var(--color-border-default)", borderRadius: "6px", background: "var(--color-canvas-default)" }}
@@ -195,7 +318,7 @@ export function MockOAuthModal({ isOpen, onClose, provider, onAuthorize }: MockO
               <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-fg-default)" }}>Email Address</label>
               <input
                 type="email"
-                placeholder="e.g. user@institution.edu"
+                placeholder=""
                 value={customEmail}
                 onChange={(e) => setCustomEmail(e.target.value)}
                 style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid var(--color-border-default)", borderRadius: "6px", background: "var(--color-canvas-default)" }}
@@ -206,7 +329,7 @@ export function MockOAuthModal({ isOpen, onClose, provider, onAuthorize }: MockO
               <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-fg-default)" }}>Department / Faculty</label>
               <input
                 type="text"
-                placeholder="e.g. Physics"
+                placeholder=""
                 value={customDept}
                 onChange={(e) => setCustomDept(e.target.value)}
                 style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid var(--color-border-default)", borderRadius: "6px", background: "var(--color-canvas-default)" }}

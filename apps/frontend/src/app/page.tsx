@@ -814,7 +814,7 @@ export default function HomePage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <p style={{ fontSize: "12px", color: "#6c757d", margin: 0, fontWeight: 600 }}>Semicolon-Squad-DU</p>
                 <div style={{ fontSize: "11px", color: "#6c757d" }}>
-                  <p style={{ margin: "4px 0" }}>Fariha Yasmin</p>
+                  <p style={{ margin: "4px 0" }}>Faria Yasmin</p>
                   <p style={{ margin: "4px 0" }}>Yuki Bhuiyan</p>
                   <p style={{ margin: "4px 0" }}>Nuruzzaman</p>
                   <p style={{ margin: "4px 0" }}>Hasibul Islam</p>

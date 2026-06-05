@@ -12,7 +12,6 @@ import { Eye, EyeOff, ShieldCheck, BookCopy, ArrowLeft } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { MockOAuthModal } from "@/components/ui/MockOAuthModal";
-import { GoogleConfigModal } from "@/components/ui/GoogleConfigModal";
 
 // ── Role options ──────────────────────────────────────────────────────────────
 const ROLES = [
@@ -110,7 +109,6 @@ export default function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [oauthModalOpen, setOauthModalOpen] = useState(false);
-  const [googleConfigModalOpen, setGoogleConfigModalOpen] = useState(false);
   const [oauthProvider, setOauthProvider] = useState<"google" | "sso">("google");
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, watch } =
@@ -165,7 +163,7 @@ export default function RegisterPage() {
   const handleGoogleSignIn = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      setGoogleConfigModalOpen(true);
+      toast.error("Google Client ID not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local");
       return;
     }
 
@@ -371,7 +369,7 @@ export default function RegisterPage() {
                   <input
                     type="text"
                     autoComplete="name"
-                    placeholder="Dr. Julian Archer"
+                    placeholder=""
                     aria-invalid={!!errors.name}
                     style={inputStyle(!!errors.name)}
                     onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
@@ -384,7 +382,7 @@ export default function RegisterPage() {
                   <input
                     type="email"
                     autoComplete="email"
-                    placeholder="j.archer@institution.edu"
+                    placeholder=""
                     aria-invalid={!!errors.email}
                     style={inputStyle(!!errors.email)}
                     onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
@@ -399,7 +397,7 @@ export default function RegisterPage() {
                 <label style={labelStyle}>Department / Faculty</label>
                 <input
                   type="text"
-                  placeholder="e.g. Computer Science & Engineering"
+                  placeholder=""
                   aria-invalid={!!errors.department}
                   style={inputStyle(!!errors.department)}
                   onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
@@ -617,16 +615,6 @@ export default function RegisterPage() {
         onClose={() => setOauthModalOpen(false)}
         provider={oauthProvider}
         onAuthorize={handleOAuthAuthorize}
-      />
-
-      <GoogleConfigModal
-        isOpen={googleConfigModalOpen}
-        onClose={() => setGoogleConfigModalOpen(false)}
-        onUseMock={() => {
-          setGoogleConfigModalOpen(false);
-          setOauthProvider("google");
-          setOauthModalOpen(true);
-        }}
       />
 
       <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />

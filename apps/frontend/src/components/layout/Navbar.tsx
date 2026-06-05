@@ -42,7 +42,10 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
+  const scrollThreshold = useRef(50);
   const { dark, toggle: toggleDark } = useDarkMode();
   const { data: notifData } = useNotifications(1, true, isAuthenticated);
   const unreadCount = notifData?.unread_count ?? 0;
@@ -57,8 +60,27 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      const currentScrollY = window.scrollY;
+      
+      // Show navbar when at top of page
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+        setIsScrolled(false);
+      } else if (currentScrollY > scrollThreshold.current) {
+        // Scrolling down - hide navbar
+        if (currentScrollY > lastScrollY.current) {
+          setIsVisible(false);
+        } 
+        // Scrolling up - show navbar
+        else {
+          setIsVisible(true);
+        }
+        setIsScrolled(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
     };
+    
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -100,6 +122,9 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
           backdropFilter: isScrolled ? "blur(12px)" : "none",
           boxShadow: isScrolled ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "none",
           padding: isScrolled ? "6px 0" : "8px 0",
+          transform: isVisible ? "translateY(0)" : "translateY(-100%)",
+          opacity: isVisible ? 1 : 0,
+          visibility: isVisible ? "visible" : "hidden",
         }}
         role="banner"
       >

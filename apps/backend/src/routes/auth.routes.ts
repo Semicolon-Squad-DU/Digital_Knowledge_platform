@@ -242,15 +242,17 @@ router.post(
         throw new AppError(403, "Account suspended. Contact administrator.");
       }
 
-      // Update OAuth provider info if not set
-      if (!user.oauth_provider || !user.oauth_id) {
-        await query(
-          "UPDATE users SET oauth_provider = $1, oauth_id = $2 WHERE user_id = $3",
-          [provider, providerId, user.user_id]
-        );
-        user.oauth_provider = provider;
-        user.oauth_id = providerId;
+      // User already exists - check if role matches
+      // Each user has ONE role, it should not change
+      if (user.role !== role) {
+        throw new AppError(400, `Your account is registered as "${user.role.replace(/_/g, " ")}". You cannot change your role at login. If you need a different role, contact the administrator.`);
       }
+
+      // Only update name and OAuth info if they changed
+      await query(
+        "UPDATE users SET oauth_provider = $1, oauth_id = $2, name = $3 WHERE user_id = $4",
+        [provider, providerId, name, user.user_id]
+      );
     } else {
       // Create new user
       user = await queryOne<{
