@@ -829,7 +829,11 @@ export default function LibrarianDashboardPage() {
       >
         <IssueBookForm
           onIssue={async (payload) => {
-            await issueBook(payload);
+            if (!payload.catalog_id && !payload.barcode) {
+              toast.error("Please provide either a catalog ID or barcode");
+              return;
+            }
+            await issueBook(payload as { catalog_id: string; member_id: string });
             toast.success("Book issued successfully! Member notified via email.");
             setIssueModal(false);
             refetch();
