@@ -146,7 +146,6 @@ export default function RegisterPage() {
     department?: string;
   }) => {
     setOauthModalOpen(false);
-    setGoogleConfigModalOpen(false);
     try {
       const res = await api.post("/auth/oauth-login", oauthData);
       const { access_token, refresh_token, user } = res.data.data;
