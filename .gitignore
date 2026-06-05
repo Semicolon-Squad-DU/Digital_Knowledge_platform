@@ -13,11 +13,6 @@ uploads/
 # Generated CSS
 apps/frontend/src/app/tailwind.generated.css
 
-# Large binary/lock files
-package-lock.json
-apps/frontend/package-lock.json
-apps/backend/package-lock.json
-
 # Stray root files (npm/npx symlinks)
 /concurrently
 /npm
