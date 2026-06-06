@@ -1,0 +1,85 @@
+/* Dashboard responsive styles - Mobile only improvements */
+
+.dashboard_container {
+  padding: 28px 32px;
+}
+
+.dashboard_heading {
+  font-size: 40px;
+}
+
+.dashboard_stat_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard_middle_row {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.dashboard_promo_cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard_status_bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ─── MOBILE IMPROVEMENTS (max-width: 768px) ─── */
+@media (max-width: 768px) {
+  .dashboard_container {
+    padding: 16px;
+  }
+
+  .dashboard_heading {
+    font-size: 24px;
+  }
+
+  .dashboard_stat_grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .dashboard_middle_row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .dashboard_promo_cards {
+    gap: 12px;
+  }
+
+  .dashboard_status_bar {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard_status_bar > div {
+    border-right: none !important;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .dashboard_status_bar > div:last-child {
+    border-bottom: none;
+  }
+}
+
+/* ─── TABLET (769px - 1023px) ─── */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .dashboard_stat_grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard_status_bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

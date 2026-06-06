@@ -15,6 +15,7 @@ import { useResearchList } from "@/hooks/useResearch";
 import { useShowcaseGallery } from "@/hooks/useShowcase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { timeAgo, cn } from "@/lib/utils";
+import styles from "./dashboard.module.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Loan       { transaction_id: string; title: string; due_date: string; status: string; }

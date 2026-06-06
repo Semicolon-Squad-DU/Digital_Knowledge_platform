@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   FileText, RefreshCw, Pencil, Trash2, Filter, ChevronLeft, ChevronRight,
   Users, HardDrive, AlertCircle, Search, BookOpen, Lock, Check, X,
@@ -24,6 +25,18 @@ import toast from "react-hot-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AdminTab = "overview" | "users" | "audit" | "config" | "backups" | "alerts" | "announcements";
+
+// ── Responsive helper ─────────────────────────────────────────────────────────
+const getResponsiveStyle = (isMobile: boolean) => ({
+  containerPadding: isMobile ? "16px" : "28px 32px",
+  statGridCols: isMobile ? 1 : 2,
+  quickActionGridCols: isMobile ? 1 : 3,
+  analyticsGridCols: isMobile ? 1 : 2,
+  configGridCols: isMobile ? 1 : 2,
+  headingFontSize: isMobile ? 22 : 28,
+  tabGap: isMobile ? 0 : 2,
+  tabPadding: isMobile ? "8px 12px" : "10px 16px",
+});
 
 // ── Status pill map ───────────────────────────────────────────────────────────
 const PILL: Record<string, { bg: string; color: string }> = {
@@ -175,6 +188,8 @@ function ActionBtn({ icon: Icon, label, color = "#374151", bg = "#f3f4f6", onCli
 
 // ── Tab: Overview ─────────────────────────────────────────────────────────────
 function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: any; statsLoading: boolean; setActiveTab: (tab: any) => void }) {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
   const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
   const { mutateAsync: reviewRequest } = useReviewAccessRequest();
   const [denyRequestId, setDenyRequestId] = useState<string | null>(null);
@@ -208,20 +223,22 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
     }
   };
 
+  const statGridCols = isMobile ? 1 : isTablet ? 2 : 4;
+
   return (
     <div>
       <SectionHeader title="Platform Overview" desc="Real-time snapshot of platform activity, security audit trail, and analytical insights." />
 
-      {/* Stat grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
+      {/* Stat grid - responsive */}
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${statGridCols}, 1fr)`, gap: isMobile ? 12 : 16, marginBottom: 28 }}>
         <StatCard label="Total Users" value={statsLoading ? "—" : (adminStats?.totalUsers ?? 0).toLocaleString()} sub="registered accounts" icon={Users} />
         <StatCard label="Total Documents" value={statsLoading ? "—" : (adminStats?.totalDocuments ?? 0).toLocaleString()} sub="archive & library" icon={FileText} />
         <StatCard label="Active This Month" value={statsLoading ? "—" : (adminStats?.activeUsers ?? 0).toLocaleString()} sub="unique logins" icon={Activity} />
         <StatCard label="Storage Used" value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 1}%`} sub="of total capacity" icon={HardDrive} accent="#dc2626" />
       </div>
 
-      {/* Analytics Dashboards & Trends */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20, marginBottom: 28 }}>
+      {/* Analytics Dashboards & Trends - responsive */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 20, marginBottom: 28 }}>
         {/* Upload and Download Trends (Sleek Visual SVG Chart) */}
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Engagement & Transfer Trends</h3>
@@ -302,14 +319,14 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
         </div>
       </div>
 
-      {/* Quick action cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
+      {/* Quick action cards - responsive */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
         {[
           { icon: UserCog, label: "User Management", desc: "View, edit, and manage all registered users", tab: "users", color: "var(--avatar-theme-color)" },
           { icon: ClipboardList, label: "Audit Logs", desc: "Browse and export immutable activity records", tab: "audit", color: "#7c3aed" },
           { icon: Settings, label: "System Config", desc: "Manage session, password, and platform settings", tab: "config", color: "#0891b2" },
         ].map(item => (
-          <div key={item.tab} onClick={() => setActiveTab(item.tab)} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
+          <div key={item.tab} onClick={() => setActiveTab(item.tab)} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: isMobile ? "16px" : "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
           >
@@ -377,8 +394,8 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
 
       {/* Rejection Message Modal */}
       {denyRequestId && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <form onSubmit={handleDenySubmit} style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+          <form onSubmit={handleDenySubmit} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Deny Access Request</h3>
               <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
@@ -408,6 +425,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
 
 // ── Tab: Users ────────────────────────────────────────────────────────────────
 function UsersTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -499,15 +517,16 @@ function UsersTab() {
         title="User Management"
         desc="View, edit roles, and control account status for all registered users."
         action={
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, flexDirection: isMobile ? "column" : "row", width: isMobile ? "100%" : "auto" }}>
             <span style={{ fontSize: 12, color: "#6b7280" }}>{usersData?.total || 0} total users</span>
             <button
               onClick={() => setCreateUserModal(true)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 6,
-                padding: "8px 14px",
+                padding: isMobile ? "10px 12px" : "8px 14px",
                 borderRadius: 7,
                 border: "none",
                 background: "var(--avatar-theme-color)",
@@ -515,6 +534,7 @@ function UsersTab() {
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
+                width: isMobile ? "100%" : "auto",
               }}
             >
               + Create User
@@ -523,22 +543,22 @@ function UsersTab() {
         }
       />
 
-      {/* Filters */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
+      {/* Filters - responsive */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
+        <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
           <input type="text" placeholder="Search by name or email…" value={search} onChange={e => setSearch(e.target.value)}
             style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", width: "100%" }} />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Roles</option>
           {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
             <option key={r} value={r}>{r.replace("_"," ")}</option>
           ))}
         </select>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
@@ -546,13 +566,15 @@ function UsersTab() {
         </select>
       </div>
 
-      {/* Table */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
-          {["USER","EMAIL","ROLE","STATUS","JOINED","ACTIONS"].map(c => (
-            <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
-          ))}
-        </div>
+      {/* Table/Card layout - responsive */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: isMobile ? "visible" : "hidden" }}>
+        {!isMobile && (
+          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+            {["USER","EMAIL","ROLE","STATUS","JOINED","ACTIONS"].map(c => (
+              <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
+            ))}
+          </div>
+        )}
 
         {isLoading ? (
           <div style={{ padding: "40px", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -565,42 +587,71 @@ function UsersTab() {
             <Users size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No users match your filters</p>
           </div>
-        ) : filtered.map((u: any, i: number) => (
-          <div key={u.user_id} style={{
-            display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr",
-            gap: 12, alignItems: "center", padding: "14px 20px",
-            borderBottom: i < filtered.length - 1 ? "1px solid #f3f4f6" : "none",
-            transition: "background 0.1s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                {(u.name || "U")[0].toUpperCase()}
+        ) : isMobile ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
+            {filtered.map((u: any) => (
+              <div key={u.user_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                    {(u.name || "U")[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#111827", wordBreak: "break-word" }}>{u.name}</p>
+                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>{u.department || "No Department"}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[u.role]?.color ?? "#6b7280"} />
+                  <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f3f4f6"} color={PILL[u.membership_status]?.color ?? "#6b7280"} />
+                </div>
+                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>Joined: {new Date(u.created_at).toLocaleDateString()}</p>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                  <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
+                  <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
+                  <ActionBtn icon={Trash2} label="Delete" bg="#fde8e8" color="#c81e1e" onClick={() => setDeleteModal(u)} />
+                </div>
               </div>
-              <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{u.department || "No Department"}</p>
-              </div>
-            </div>
-            <p style={{ margin: 0, fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
-            <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[u.role]?.color ?? "#6b7280"} />
-            <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f3f4f6"} color={PILL[u.membership_status]?.color ?? "#6b7280"} />
-            <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{new Date(u.created_at).toLocaleDateString()}</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
-              <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
-              <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
-              <ActionBtn icon={Trash2} label="Delete" bg="#fde8e8" color="#c81e1e" onClick={() => setDeleteModal(u)} />
-            </div>
+            ))}
           </div>
-        ))}
+        ) : (
+          filtered.map((u: any, i: number) => (
+            <div key={u.user_id} style={{
+              display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr",
+              gap: 12, alignItems: "center", padding: "14px 20px",
+              borderBottom: i < filtered.length - 1 ? "1px solid #f3f4f6" : "none",
+              transition: "background 0.1s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                  {(u.name || "U")[0].toUpperCase()}
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{u.department || "No Department"}</p>
+                </div>
+              </div>
+              <p style={{ margin: 0, fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
+              <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[u.role]?.color ?? "#6b7280"} />
+              <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f3f4f6"} color={PILL[u.membership_status]?.color ?? "#6b7280"} />
+              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{new Date(u.created_at).toLocaleDateString()}</p>
+              <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
+                <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
+                <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
+                <ActionBtn icon={Trash2} label="Delete" bg="#fde8e8" color="#c81e1e" onClick={() => setDeleteModal(u)} />
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Create User Modal */}
       {createUserModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <form onSubmit={handleCreateUser} style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+          <form onSubmit={handleCreateUser} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Create New User Account</h3>
               <button type="button" onClick={() => setCreateUserModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
@@ -641,8 +692,8 @@ function UsersTab() {
 
       {/* Edit Modal */}
       {editUser && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <form onSubmit={handleUpdateUser} style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+          <form onSubmit={handleUpdateUser} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Edit User Profile</h3>
               <button type="button" onClick={() => setEditUser(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
@@ -687,8 +738,8 @@ function UsersTab() {
 
       {/* Delete Modal */}
       {deleteModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#fde8e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Trash2 size={18} color="#dc2626" />
@@ -728,6 +779,7 @@ function UsersTab() {
 
 // ── Tab: Audit Logs ───────────────────────────────────────────────────────────
 function AuditTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
@@ -898,6 +950,7 @@ function AuditTab() {
 
 // ── Tab: System Config ────────────────────────────────────────────────────────
 function ConfigTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: configsList, isLoading } = useAdminConfigs();
   const updateMutation = useUpdateAdminConfigs();
   const [config, setConfig] = useState<Record<string, string>>({});
@@ -933,9 +986,9 @@ function ConfigTab() {
           <Skeleton className="h-[60px] w-full" />
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
           {currentConfigs.map((item: any) => (
-            <div key={item.key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "18px 20px" }}>
+            <div key={item.key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: isMobile ? "14px 16px" : "18px 20px" }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
                 {item.key.replace(/_/g, " ")}
               </label>
@@ -975,8 +1028,8 @@ function ConfigTab() {
         </div>
       )}
 
-      <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={handleSave} disabled={updateMutation.isPending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ marginTop: 20, display: "flex", justifyContent: isMobile ? "stretch" : "flex-end" }}>
+        <button onClick={handleSave} disabled={updateMutation.isPending} style={{ padding: isMobile ? "12px 16px" : "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: isMobile ? "100%" : "auto" }}>
           <Check size={14} /> {saved ? "Saved!" : updateMutation.isPending ? "Saving..." : "Save Configuration"}
         </button>
       </div>
@@ -987,6 +1040,7 @@ function ConfigTab() {
 
 // ── Tab: Backups ──────────────────────────────────────────────────────────────
 function BackupsTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [generating, setGenerating] = useState(false);
 
   const handleGenerate = () => {
@@ -1076,6 +1130,7 @@ function BackupsTab() {
 
 // ── Tab: Alerts ───────────────────────────────────────────────────────────────
 function AlertsTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: healthData, isLoading } = useAdminHealth();
   const [readAlertIds, setReadAlertIds] = useState<string[]>([]);
   const [slackOpen, setSlackOpen] = useState(false);
@@ -1184,8 +1239,8 @@ function AlertsTab() {
 
       {/* Slack Webhook Modal */}
       {slackOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "16px" }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: isMobile ? "24px 20px" : "24px", width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left", maxHeight: "90vh", overflowY: "auto" }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Configure Slack Notifications</h3>
             <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.4 }}>Set the Slack Webhook URL to stream real-time platform system health alerts directly to your channels.</p>
             <form onSubmit={(e) => {
@@ -1214,8 +1269,8 @@ function AlertsTab() {
 
       {/* Email Recipient Modal */}
       {emailOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "16px" }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: isMobile ? "24px 20px" : "24px", width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left", maxHeight: "90vh", overflowY: "auto" }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Configure Email Alerts</h3>
             <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.4 }}>Set the administrative email recipient address for high-priority infrastructure downtime alerts.</p>
             <form onSubmit={(e) => {
@@ -1310,6 +1365,7 @@ function AlertsTab() {
 
 // ── Tab: Broadcast Announcements ──────────────────────────────────────────────
 function AnnouncementsTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [targetRole, setTargetRole] = useState("all");
@@ -1436,42 +1492,45 @@ export default function AdminPage() {
       { id: "announcements", label: "Announcements", icon: Zap },
     ];
 
+    const isMobile = useMediaQuery("(max-width: 768px)");
+    const isTablet = useMediaQuery("(max-width: 1024px)");
+
     return (
       <AppLayout>
-        <div style={{ padding: "28px 32px" }}>
-          {/* Page heading */}
-          <div style={{ marginBottom: 24 }}>
+        <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "28px 32px", maxWidth: isMobile ? "100%" : "1600px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+          {/* Page heading - responsive */}
+          <div style={{ marginBottom: isMobile ? 16 : 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ShieldCheck size={18} color="#fff" />
+              <div style={{ width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: 8, background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={isMobile ? 16 : 18} color="#fff" />
               </div>
-              <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2 }}>
+              <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2 }}>
                 Platform Administration
               </h1>
             </div>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: 0, paddingLeft: 46 }}>
+            <p style={{ fontSize: isMobile ? 12 : 13, color: "#6b7280", margin: 0, paddingLeft: isMobile ? 42 : 46 }}>
               Monitor platform activity, manage users, and configure system settings.
             </p>
           </div>
 
-          {/* Tab bar */}
-          <div style={{ display: "flex", gap: 2, borderBottom: "2px solid #e5e7eb", marginBottom: 28 }}>
+          {/* Tab bar - scrollable on mobile */}
+          <div style={{ display: "flex", gap: isMobile ? 0 : 2, borderBottom: "2px solid #e5e7eb", marginBottom: isMobile ? 20 : 28, overflowX: isMobile ? "auto" : "visible", overflowY: "hidden", scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}>
             {TABS.map(tab => {
               const active = activeTab === tab.id;
               return (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "10px 16px", border: "none", background: "transparent",
-                  fontSize: 13, fontWeight: active ? 700 : 500,
+                  display: "flex", alignItems: "center", gap: isMobile ? 4 : 6,
+                  padding: isMobile ? "8px 10px" : "10px 16px", border: "none", background: "transparent",
+                  fontSize: isMobile ? 12 : 13, fontWeight: active ? 700 : 500,
                   color: active ? "var(--avatar-theme-color)" : "#6b7280",
                   cursor: "pointer", borderBottom: active ? "2px solid var(--avatar-theme-color)" : "2px solid transparent",
-                  marginBottom: -2, transition: "all 0.15s",
+                  marginBottom: -2, transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
                 }}
                   onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#374151"; }}
                   onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#6b7280"; }}
                 >
-                  <tab.icon size={14} />
-                  {tab.label}
+                  <tab.icon size={isMobile ? 12 : 14} />
+                  {!isMobile && tab.label}
                   {tab.id === "alerts" && MOCK_ALERTS.filter(a => !a.read).length > 0 && (
                     <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {MOCK_ALERTS.filter(a => !a.read).length}
@@ -1496,6 +1555,9 @@ export default function AdminPage() {
   }
 
   // ── NON-ADMIN: original unchanged layout ─────────────────────────────────
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
+  
   const roleTitle = isStudent ? "Admin panel" : ({
     researcher: "My Submissions", member: "Member Dashboard",
     student: "Student Portal", student_author: "Student Submissions",
@@ -1519,14 +1581,14 @@ export default function AdminPage() {
 
   return (
     <AppLayout>
-      <div style={{ padding: "28px 32px" }}>
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2 }}>{roleTitle}</h1>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>{roleDescription}</p>
+      <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "28px 32px" }}>
+        <div style={{ marginBottom: isMobile ? 16 : 28 }}>
+          <h1 style={{ fontSize: isMobile ? 24 : 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2 }}>{roleTitle}</h1>
+          <p style={{ fontSize: isMobile ? 12 : 13, color: "#6b7280", marginTop: isMobile ? 4 : 6 }}>{roleDescription}</p>
         </div>
 
         {/* Stat Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: user?.role === "researcher" ? "repeat(1, 1fr)" : "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : user?.role === "researcher" ? "repeat(1, 1fr)" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
           {isStudent ? (
             <>
               <StatCard label="Borrowed Books" value={docsLoading ? "—" : activeLoansCount} sub="currently borrowed" icon={BookOpen} />
@@ -1545,23 +1607,24 @@ export default function AdminPage() {
         </div>
 
         {/* Search & Filter Bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, justifyContent: "space-between" }}>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, marginBottom: 20, justifyContent: "space-between", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+          <div style={{ flex: 1, minWidth: isMobile ? "100%" : "auto", display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 12px" }}>
             <Search size={14} color="#9ca3af" />
-            <input type="text" placeholder="Search by title, author, or DOI..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            <input type="text" placeholder={isMobile ? "Search..." : "Search by title, author, or DOI..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#1f2937", width: "100%" }} />
           </div>
           <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-            style={{ padding: "10px 14px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#374151", outline: "none", cursor: "pointer" }}>
+            style={{ padding: "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "#374151", outline: "none", cursor: "pointer", minWidth: isMobile ? "auto" : "140px" }}>
             <option value="all">All Statuses</option>
             {isStudent ? (<><option value="active">Active Borrowed</option><option value="overdue">Overdue Books</option><option value="returned">Returned Books</option><option value="pending">Pending Hold</option><option value="available">Available Hold</option></>) : (<><option value="published">Published</option><option value="pending_review">Pending Review</option><option value="changes_requested">Changes Requested</option><option value="draft">Draft</option></>)}
           </select>
           <button onClick={() => { setFilterStatus("all"); setSearchQuery(""); setCurrentPage(1); }}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", background: (filterStatus !== "all" || searchQuery) ? "var(--avatar-theme-color)" : "#fff", border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: (filterStatus !== "all" || searchQuery) ? "#fff" : "#6b7280" }}>
-            <Filter size={14} />{(filterStatus !== "all" || searchQuery) ? "Clear" : "Filter"}
+            style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 6, padding: isMobile ? "10px 8px" : "10px 14px", background: (filterStatus !== "all" || searchQuery) ? "var(--avatar-theme-color)" : "#fff", border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", fontSize: isMobile ? 11 : 13, fontWeight: 600, color: (filterStatus !== "all" || searchQuery) ? "#fff" : "#6b7280", whiteSpace: "nowrap" }}>
+            <Filter size={14} />{!isMobile && ((filterStatus !== "all" || searchQuery) ? "Clear" : "Filter")}
           </button>
-          <button onClick={handleRefresh} style={{ width: 36, height: 36, padding: 0, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button onClick={handleRefresh} style={{ width: isMobile ? 36 : "auto", height: 36, padding: isMobile ? 0 : "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 0 : 6, fontSize: isMobile ? 11 : 13, fontWeight: isMobile ? 600 : 500, color: "#6b7280" }}>
             <RefreshCw size={14} color="#6b7280" />
+            {!isMobile && "Refresh"}
           </button>
         </div>
 
@@ -1606,6 +1669,32 @@ export default function AdminPage() {
           ) : isStudent ? (
             !filteredCombinedItems || filteredCombinedItems.length === 0 ? (
               <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}><p>No borrowed or reserved books found</p></div>
+            ) : isMobile ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
+                {filteredCombinedItems.map((item: any) => {
+                  const isHold = "hold_id" in item;
+                  let pillStyle = { bg: "#f3f4f6", color: "#6b7280" };
+                  if (item.status === "active") pillStyle = { bg: "#e6f4ea", color: "#1e7e34" };
+                  else if (item.status === "overdue") pillStyle = { bg: "#fde8e8", color: "#c81e1e" };
+                  else if (item.status === "pending") pillStyle = { bg: "#e8f0fe", color: "#1a56db" };
+                  else if (item.status === "available") pillStyle = { bg: "#e6f4ea", color: "#1e7e34" };
+                  const durationText = isHold ? `Reserved on ${new Date(item.request_date).toLocaleDateString()}` : item.status === "returned" && item.return_date ? `Issued: ${new Date(item.issue_date).toLocaleDateString()} | Returned: ${new Date(item.return_date).toLocaleDateString()}` : `Issued: ${new Date(item.issue_date).toLocaleDateString()} | Due: ${new Date(item.due_date).toLocaleDateString()}`;
+                  return (
+                    <div key={isHold ? item.hold_id : item.transaction_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#1f2937", fontSize: 14 }}>{item.title}</p>
+                        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>{Array.isArray(item.authors) ? item.authors.join(", ") : item.authors ?? "Unknown"}</p>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", background: pillStyle.bg, color: pillStyle.color }}>{item.status}</span>
+                        <span style={{ fontWeight: 500, color: "#4b5563", fontSize: 12 }}>{isHold ? "Reservation" : "Borrow"}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>{durationText}</div>
+                      <div style={{ textAlign: "right", fontWeight: 700, color: item.status === "overdue" ? "#dc2626" : "#6b7280", fontSize: 13 }}>{item.status === "overdue" ? "100 TK fine" : "No fine"}</div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 2fr 1fr", gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>
@@ -1634,6 +1723,35 @@ export default function AdminPage() {
             )
           ) : !documentsData?.items || documentsData.items.length === 0 ? (
             <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}><p>No documents found</p></div>
+          ) : isMobile ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
+              {documentsData.items.map((doc: any) => {
+                const statusStyle = PILL[doc.status] || PILL.draft;
+                return (
+                  <div key={doc.id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600, color: "#1f2937", fontSize: 14 }}>{doc.title}</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.download_count || 0} downloads</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 500, color: "#374151", fontSize: 12 }}>{typeof doc.authors === "string" ? doc.authors : Array.isArray(doc.authors) ? doc.authors.join(", ") : "—"}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.department}</p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+                      <span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 5, fontSize: 11, fontWeight: 700, textTransform: "uppercase", background: statusStyle.bg, color: statusStyle.color }}>{doc.status}</span>
+                      <span style={{ fontSize: 12, color: "#6b7280", textTransform: "capitalize" }}>{doc.access}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#6b7280" }}>
+                      <span>{doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : "—"}</span>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => toast.success("Access level updated")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#f3f4f6", cursor: "pointer", display: "flex", alignItems: "center" }}><Eye size={16} color="#6b7280" /></button>
+                        <button onClick={() => toast.success("Document removed")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#fde8e8", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={16} color="#dc2626" /></button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>
