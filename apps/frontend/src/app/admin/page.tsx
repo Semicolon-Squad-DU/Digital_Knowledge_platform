@@ -1473,6 +1473,10 @@ export default function AdminPage() {
   const documentsData = user?.role === "researcher" ? researchSubmissionsData : user?.role === "archivist" ? archiveDocsData : catalogDocsData;
   const docsLoading = isStudent ? (borrowLoading || holdsLoading || finesLoading) : (user?.role === "researcher" ? researchLoading : user?.role === "archivist" ? archiveLoading : catalogDocsLoading);
 
+  // ── Move all hooks to top before any conditional logic ──
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
+
   useEffect(() => {
     if (!isAuthenticated) { router.push("/login"); return; }
     if (user?.role === "librarian") { router.push("/librarian"); return; }
@@ -1491,9 +1495,6 @@ export default function AdminPage() {
       { id: "alerts",   label: "Alerts",   icon: Bell },
       { id: "announcements", label: "Announcements", icon: Zap },
     ];
-
-    const isMobile = useMediaQuery("(max-width: 768px)");
-    const isTablet = useMediaQuery("(max-width: 1024px)");
 
     return (
       <AppLayout>
@@ -1555,9 +1556,6 @@ export default function AdminPage() {
   }
 
   // ── NON-ADMIN: original unchanged layout ─────────────────────────────────
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const isTablet = useMediaQuery("(max-width: 1024px)");
-  
   const roleTitle = isStudent ? "Admin panel" : ({
     researcher: "My Submissions", member: "Member Dashboard",
     student: "Student Portal", student_author: "Student Submissions",
