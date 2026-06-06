@@ -306,9 +306,9 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
               },
             ].map(res => (
               <div key={res.label}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{res.label}</span>
-                  <span style={{ fontSize: 11, color: "#9ca3af" }}>{res.count}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", marginBottom: 6, gap: isMobile ? 4 : 0 }}>
+                  <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#374151", flex: isMobile ? 1 : "auto" }}>{res.label}</span>
+                  <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, whiteSpace: "nowrap" }}>{res.count}</span>
                 </div>
                 <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${Math.max(3, res.pct)}%`, background: res.color, borderRadius: 3 }} />
@@ -352,7 +352,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {pendingRequests.map((req: any) => (
-              <div key={req.request_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+              <div key={req.request_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 20px", display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 16 }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#111827" }}>
                     Request by: <span style={{ color: "#2563eb" }}>{req.user_name}</span> ({req.user_email})
@@ -364,13 +364,13 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                     &ldquo;{req.reason}&rdquo;
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 8, flexDirection: isMobile ? "column" : "row", width: isMobile ? "100%" : "auto" }}>
                   <button
                     onClick={() => handleApprove(req.request_id)}
                     style={{
                       padding: "8px 14px", borderRadius: 6, border: "none",
                       background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 4
+                      display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
                     }}
                   >
                     <Check size={12} /> Approve
@@ -380,7 +380,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                     style={{
                       padding: "8px 14px", borderRadius: 6, border: "1px solid #fca5a5",
                       background: "#fee2e2", color: "#991b1b", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 4
+                      display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
                     }}
                   >
                     <X size={12} /> Deny

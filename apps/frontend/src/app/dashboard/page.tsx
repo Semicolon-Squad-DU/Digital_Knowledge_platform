@@ -7,6 +7,7 @@ import {
   PenLine, AlertTriangle, FolderOpen, HardDrive, Lock, Database,
   ArrowRight, TrendingUp, CheckCircle,
 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useBorrowingHistory, useMemberFines, useWishlist } from "@/hooks/useLibrary";
@@ -110,6 +111,7 @@ function StatCard({ label, value, sub, subIcon, subColor, loading }:{
 export default function DashboardPage() {
   const router = useRouter();
   const { user, ready } = useAuthGuard();
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const { data: history,     isLoading: histLoading  } = useBorrowingHistory(user?.user_id ?? "");
   const { data: fineData                              } = useMemberFines(user?.user_id ?? "");
@@ -389,7 +391,7 @@ export default function DashboardPage() {
           {/* ── BOTTOM STATUS BAR ── */}
           <div style={{
             background:"#fff", border:"1px solid #e5e7eb", borderRadius:8,
-            display:"grid", gridTemplateColumns:"repeat(3,1fr)",
+            display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)",
           }}>
             {[
               {
@@ -413,7 +415,8 @@ export default function DashboardPage() {
               <div key={item.label} style={{
                 display:"flex", alignItems:"center", gap:14,
                 padding:"16px 24px",
-                borderRight: i < 2 ? "1px solid #e5e7eb" : "none",
+                borderRight: isMobile || i >= 2 ? "none" : "1px solid #e5e7eb",
+                borderBottom: isMobile && i < 2 ? "1px solid #e5e7eb" : "none",
               }}>
                 <div style={{
                   width:36, height:36, borderRadius:6, flexShrink:0,
