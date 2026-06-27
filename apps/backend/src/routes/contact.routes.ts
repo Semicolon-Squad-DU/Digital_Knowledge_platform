@@ -56,10 +56,10 @@ router.post(
           subject: `New Contact Form: ${data.subject}`,
           html: `
             <h2>New Contact Message</h2>
-            <p><strong>From:</strong> ${data.name} (${data.email})</p>
-            <p><strong>Subject:</strong> ${data.subject}</p>
+            <p><strong>From:</strong> ${escapeHtml(data.name)} (${escapeHtml(data.email)})</p>
+            <p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>
             <p><strong>Message:</strong></p>
-            <p>${data.message.replace(/\n/g, "<br>")}</p>
+            <p>${escapeHtml(data.message).replace(/\n/g, "<br>")}</p>
             <hr>
             <p><small>IP Address: ${req.ip || "unknown"}</small></p>
             <p><small>Received: ${new Date().toISOString()}</small></p>
