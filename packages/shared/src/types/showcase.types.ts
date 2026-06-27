@@ -21,6 +21,8 @@ export interface StudentProject {
   thumbnail_url?: string;
   status: ProjectStatus;
   advisor_comments?: string;
+  advisor_name?: string;
+  submitted_by_name?: string;
   submitted_by: string;
   created_at: string;
   updated_at: string;
@@ -38,6 +40,8 @@ export interface ShowcaseFilterParams {
   semester?: string;
   technology?: string;
   advisor_id?: string;
+  submitted_by?: string;
+  status?: string;
   query?: string;
   page?: number;
   limit?: number;

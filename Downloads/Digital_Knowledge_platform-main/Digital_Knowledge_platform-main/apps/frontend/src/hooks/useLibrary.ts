@@ -2,11 +2,45 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { CatalogSearchParams } from "@dkp/shared";
 
+export function useAddCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: FormData | Record<string, unknown>) => {
+      const isFormData = payload instanceof FormData;
+      const { data } = await api.post("/library/catalog", payload, {
+        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
+      });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
+}
+
+export function useDeleteCatalogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (catalogId: string) => {
+      const { data } = await api.delete(`/library/catalog/${catalogId}`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
+    },
+  });
+}
+
 export function useCatalogSearch(params: CatalogSearchParams) {
   return useQuery({
     queryKey: ["catalog", "search", params],
     queryFn: async () => {
-      const { data } = await api.get("/library/catalog/search", { params });
+      // Backend uses 'q' for title search
+      const { query, ...rest } = params;
+      const apiParams = { ...rest, ...(query ? { q: query } : {}) };
+      const { data } = await api.get("/library/catalog/search", { params: apiParams });
       return data.data;
     },
     staleTime: 30_000,
@@ -52,8 +86,9 @@ export function useIssueBook() {
 export function useReturnBook() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (transaction_id: string) => {
-      const { data } = await api.post("/library/return", { transaction_id });
+    mutationFn: async (payload: string | { transaction_id?: string; barcode?: string; member_id?: string }) => {
+      const body = typeof payload === "string" ? { transaction_id: payload } : payload;
+      const { data } = await api.post("/library/return", body);
       return data.data;
     },
     onSuccess: () => {
@@ -68,6 +103,17 @@ export function useBorrowingHistory(memberId: string) {
     queryKey: ["library", "history", memberId],
     queryFn: async () => {
       const { data } = await api.get(`/library/member/${memberId}/history`);
+      return data.data;
+    },
+    enabled: !!memberId,
+  });
+}
+
+export function useMemberHolds(memberId: string) {
+  return useQuery({
+    queryKey: ["library", "holds", memberId],
+    queryFn: async () => {
+      const { data } = await api.get(`/library/member/${memberId}/holds`);
       return data.data;
     },
     enabled: !!memberId,
@@ -168,31 +214,6 @@ export function useWaiveFine() {
   });
 }
 
-export function useCreateCatalogItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: {
-      title: string;
-      isbn?: string;
-      authors?: string[];
-      publisher?: string;
-      edition?: string;
-      year?: number;
-      category?: string;
-      total_copies: number;
-      shelf_location?: string;
-      description?: string;
-    }) => {
-      const { data } = await api.post("/library/catalog", payload);
-      return data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog"] });
-      queryClient.invalidateQueries({ queryKey: ["library"] });
-    },
-  });
-}
-
 export function useUpdateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -219,19 +240,3 @@ export function useUpdateCatalogItem() {
     },
   });
 }
-
-export function useDeleteCatalogItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (catalog_id: string) => {
-      const { data } = await api.delete(`/library/catalog/${catalog_id}`);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["catalog"] });
-      queryClient.invalidateQueries({ queryKey: ["library"] });
-    },
-  });
-}
-
-

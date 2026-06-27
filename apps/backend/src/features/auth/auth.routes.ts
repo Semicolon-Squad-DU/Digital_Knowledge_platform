@@ -12,12 +12,14 @@ const router = Router();
 
 const registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
-  body("email").isEmail().normalizeEmail().withMessage("Valid email required"),
+  body("email").isEmail().toLowerCase().withMessage("Valid email required"),
   body("password")
     .isLength({ min: 8 })
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .withMessage("Password must be 8+ chars with uppercase, lowercase, digit, and special char"),
   body("department").optional().trim(),
+  body("role").optional().isIn(["member", "student_author", "researcher", "archivist", "librarian", "admin"])
+    .withMessage("Invalid role selected"),
 ];
 
 // POST /api/auth/register
@@ -28,11 +30,12 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
     return;
   }
 
-  const { name, email, password, department } = req.body as {
+  const { name, email, password, department, role } = req.body as {
     name: string;
     email: string;
     password: string;
     department?: string;
+    role?: string;
   };
 
   const existing = await queryOne("SELECT user_id FROM users WHERE email = $1", [email]);
@@ -41,16 +44,21 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
   }
 
   const password_hash = await bcrypt.hash(password, 12);
+
+  // Allow role selection including admin
+  const allowedRoles = ["member", "student_author", "researcher", "archivist", "librarian", "admin"];
+  const assignedRole = role && allowedRoles.includes(role) ? role : "member";
+
   const user = await queryOne<{
     user_id: string;
     name: string;
     email: string;
     role: string;
   }>(
-    `INSERT INTO users (name, email, password_hash, department)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO users (name, email, password_hash, department, role)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING user_id, name, email, role, department, membership_status, created_at`,
-    [name, email, password_hash, department ?? null]
+    [name, email, password_hash, department ?? null, assignedRole]
   );
 
   const tokens = generateTokens(user!.user_id, user!.email, user!.role as never);
@@ -64,7 +72,7 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
 router.post(
   "/login",
   [
-    body("email").isEmail().normalizeEmail(),
+    body("email").isEmail().toLowerCase(),
     body("password").notEmpty(),
   ],
   asyncHandler(async (req: Request, res: Response) => {
@@ -160,6 +168,24 @@ router.get("/advisors", asyncHandler(async (_req: Request, res: Response) => {
   res.json({ success: true, data: advisors });
 }));
 
+// GET /api/auth/members/search — search members by name or email (librarian use)
+router.get("/members/search", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { q } = req.query as { q: string };
+  if (!q?.trim()) { res.json({ success: true, data: [] }); return; }
+
+  const members = await query(
+    `SELECT user_id, name, email, department, membership_status
+     FROM users
+     WHERE deleted_at IS NULL
+       AND membership_status = 'active'
+       AND (name ILIKE $1 OR email ILIKE $1)
+     ORDER BY name ASC
+     LIMIT 10`,
+    [`%${q.trim()}%`]
+  );
+  res.json({ success: true, data: members });
+}));
+
 // GET /api/auth/me
 router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = await queryOne(
@@ -169,6 +195,89 @@ router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Respo
   );
   res.json({ success: true, data: user });
 }));
+
+// POST /api/auth/oauth-login
+router.post(
+  "/oauth-login",
+  [
+    body("email").isEmail().toLowerCase().withMessage("Valid email required"),
+    body("name").trim().notEmpty().withMessage("Name is required"),
+    body("role").isIn(["member", "student_author", "researcher", "archivist", "librarian", "admin"]),
+    body("provider").isIn(["google", "sso"]),
+    body("providerId").trim().notEmpty(),
+  ],
+  asyncHandler(async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { email, name, role, provider, providerId, department } = req.body as {
+      email: string;
+      name: string;
+      role: string;
+      provider: string;
+      providerId: string;
+      department?: string;
+    };
+
+    // Check if user already exists
+    let user = await queryOne<{
+      user_id: string;
+      name: string;
+      email: string;
+      role: string;
+      membership_status: string;
+      oauth_provider: string;
+      oauth_id: string;
+    }>(
+      `SELECT user_id, name, email, role, membership_status, oauth_provider, oauth_id
+       FROM users WHERE email = $1 AND deleted_at IS NULL`,
+      [email]
+    );
+
+    if (user) {
+      if (user.membership_status === "suspended") {
+        throw new AppError(403, "Account suspended. Contact administrator.");
+      }
+
+      // User already exists - check if role matches
+      // Each user has ONE role, it should not change
+      if (user.role !== role) {
+        throw new AppError(400, `Your account is registered as "${user.role.replace(/_/g, " ")}". You cannot change your role at login. If you need a different role, contact the administrator.`);
+      }
+
+      // Only update name and OAuth info if they changed
+      await query(
+        "UPDATE users SET oauth_provider = $1, oauth_id = $2, name = $3 WHERE user_id = $4",
+        [provider, providerId, name, user.user_id]
+      );
+    } else {
+      // Create new user
+      user = await queryOne<{
+        user_id: string;
+        name: string;
+        email: string;
+        role: string;
+        membership_status: string;
+        oauth_provider: string;
+        oauth_id: string;
+      }>(
+        `INSERT INTO users (name, email, role, oauth_provider, oauth_id, department, membership_status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'active')
+         RETURNING user_id, name, email, role, membership_status, oauth_provider, oauth_id`,
+        [name, email, role, provider, providerId, department ?? null]
+      );
+    }
+
+    const tokens = generateTokens(user!.user_id, user!.email, user!.role as never);
+    await storeRefreshToken(user!.user_id, tokens.refresh_token);
+
+    logger.info("OAuth Login Successful", { user_id: user!.user_id, email, provider });
+    res.json({ success: true, data: { ...tokens, user } });
+  })
+);
 
 function generateTokens(user_id: string, email: string, role: string) {
   const access_token = jwt.sign(

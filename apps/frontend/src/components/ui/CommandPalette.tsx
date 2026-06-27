@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Archive, BookOpen, GraduationCap, FlaskConical, ArrowRight, Clock, Hash, X } from "lucide-react";
+import { Search, Archive, BookOpen, GraduationCap, FlaskConical, ArrowRight, Clock, Hash, X, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CommandPaletteProps {
@@ -15,6 +15,7 @@ const QUICK_LINKS = [
   { icon: FlaskConical,  label: "Research", href: "/research", desc: "Papers & publications" },
   { icon: GraduationCap, label: "Student Showcase",    href: "/showcase", desc: "Student projects gallery" },
   { icon: BookOpen,      label: "Library Catalog",     href: "/library",  desc: "Books & borrowing" },
+  { icon: Calendar,      label: "Academic Seminars",   href: "/events",   desc: "Seminars & seat RSVP" },
 ];
 
 const RECENT_SEARCHES = [

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X } from "lucide-react";
-import { useAuthStore } from "@/store/auth.store";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine } from "@/features/library/hooks/useLibrary";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User } from "lucide-react";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useAddCatalogItem } from "@/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,19 +15,330 @@ import { SkeletonStatCard, SkeletonTableRow } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { formatDate } from "@/lib/utils";
+import api from "@/lib/api";
 import toast from "react-hot-toast";
+
+// ---------------------------------------------------------------------------
+// Issue Book Form — searchable member + book
+// ---------------------------------------------------------------------------
+function IssueBookForm({
+  onIssue, isIssuing, onCancel,
+}: {
+  onIssue: (payload: { catalog_id?: string; barcode?: string; member_id: string }) => Promise<void>;
+  isIssuing: boolean;
+  onCancel: () => void;
+}) {
+  const [mode, setMode] = useState<"search" | "manual">("manual");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [bookSearch,   setBookSearch]   = useState("");
+  const [members,      setMembers]      = useState<{ user_id: string; name: string; email: string }[]>([]);
+  const [books,        setBooks]        = useState<{ catalog_id: string; title: string; available_copies: number; authors: string[] }[]>([]);
+  const [selectedMember, setSelectedMember] = useState<{ user_id: string; name: string; email: string } | null>(null);
+  const [selectedBook,   setSelectedBook]   = useState<{ catalog_id: string; title: string; available_copies: number } | null>(null);
+  const [searching, setSearching] = useState({ member: false, book: false });
+
+  // Manual Mode state
+  const [barcode, setBarcode] = useState("");
+  const [memberId, setMemberId] = useState("");
+
+  const loanDays = 14;
+  const dueDate  = new Date();
+  dueDate.setDate(dueDate.getDate() + loanDays);
+
+  const searchMembers = async (q: string) => {
+    if (!q.trim()) { setMembers([]); return; }
+    setSearching(s => ({ ...s, member: true }));
+    try {
+      const { data } = await api.get("/auth/members/search", { params: { q } });
+      setMembers(data.data ?? []);
+    } catch { setMembers([]); }
+    finally { setSearching(s => ({ ...s, member: false })); }
+  };
+
+  const searchBooks = async (q: string) => {
+    if (!q.trim()) { setBooks([]); return; }
+    setSearching(s => ({ ...s, book: true }));
+    try {
+      const { data } = await api.get("/library/catalog/search", { params: { q, availability: "available" } });
+      setBooks(data.data?.items ?? []);
+    } catch { setBooks([]); }
+    finally { setSearching(s => ({ ...s, book: false })); }
+  };
+
+  const handleSubmit = async () => {
+    if (mode === "search") {
+      if (!selectedMember) { toast.error("Please select a member"); return; }
+      if (!selectedBook)   { toast.error("Please select a book");   return; }
+      await onIssue({ catalog_id: selectedBook.catalog_id, member_id: selectedMember.user_id });
+    } else {
+      if (!barcode.trim()) { toast.error("Please enter a book barcode"); return; }
+      if (!memberId.trim()) { toast.error("Please enter a member ID or email"); return; }
+      await onIssue({ barcode: barcode.trim(), member_id: memberId.trim() });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Mode Toggle */}
+      <div className="flex gap-2 p-1 rounded-lg bg-slate-100 border border-slate-200">
+        <button
+          onClick={() => setMode("manual")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "manual"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Scan / Manual Input
+        </button>
+        <button
+          onClick={() => setMode("search")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "search"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Search Autocomplete
+        </button>
+      </div>
+
+      {mode === "manual" ? (
+        <div className="space-y-4">
+          <Input
+            label="Book Barcode"
+            value={barcode}
+            onChange={e => setBarcode(e.target.value)}
+            placeholder="Scan or type book barcode..."
+            required
+          />
+          <Input
+            label="Member ID / Email"
+            value={memberId}
+            onChange={e => setMemberId(e.target.value)}
+            placeholder="Enter member's email or user UUID..."
+            required
+            hint="Can scan a member's barcode containing their UUID or type email"
+          />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Member search */}
+          <div>
+            <label className="form-label flex items-center gap-1.5"><User size={13} /> Member</label>
+            {selectedMember ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
+                <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedMember.name}</p>
+                  <p className="text-xs text-[var(--color-fg-muted)]">{selectedMember.email}</p>
+                </div>
+                <button onClick={() => { setSelectedMember(null); setMemberSearch(""); setMembers([]); }}
+                  className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)] bg-transparent border-none cursor-pointer">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="search-bar">
+                  <Search className="search-bar-icon" size={14} />
+                  <input
+                    type="text"
+                    value={memberSearch}
+                    onChange={e => { setMemberSearch(e.target.value); searchMembers(e.target.value); }}
+                    placeholder="Search by name or email…"
+                    className="form-input pl-9"
+                  />
+                </div>
+                {members.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
+                    {members.map(m => (
+                      <button key={m.user_id} onClick={() => { setSelectedMember(m); setMembers([]); setMemberSearch(""); }}
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors border-none bg-transparent cursor-pointer">
+                        <div>
+                          <p className="text-sm font-medium text-[var(--color-fg-default)]">{m.name}</p>
+                          <p className="text-xs text-[var(--color-fg-muted)]">{m.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searching.member && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
+              </div>
+            )}
+          </div>
+
+          {/* Book search */}
+          <div>
+            <label className="form-label flex items-center gap-1.5"><BookOpen size={13} /> Book</label>
+            {selectedBook ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-success-fg)] bg-[var(--color-success-subtle)]">
+                <CheckCircle size={16} className="text-[var(--color-success-fg)] flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-fg-default)]">{selectedBook.title}</p>
+                  <p className="text-xs text-[var(--color-fg-muted)]">{selectedBook.available_copies} copies available</p>
+                </div>
+                <button onClick={() => { setSelectedBook(null); setBookSearch(""); setBooks([]); }}
+                  className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)] bg-transparent border-none cursor-pointer">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="search-bar">
+                  <Search className="search-bar-icon" size={14} />
+                  <input
+                    type="text"
+                    value={bookSearch}
+                    onChange={e => { setBookSearch(e.target.value); searchBooks(e.target.value); }}
+                    placeholder="Search by title…"
+                    className="form-input pl-9"
+                  />
+                </div>
+                {books.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
+                    {books.map(b => (
+                      <button key={b.catalog_id} onClick={() => { setSelectedBook(b); setBooks([]); setBookSearch(""); }}
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-[var(--color-canvas-subtle)] transition-colors border-none bg-transparent cursor-pointer">
+                        <div>
+                          <p className="text-sm font-medium text-[var(--color-fg-default)]">{b.title}</p>
+                          <p className="text-xs text-[var(--color-fg-muted)]">{b.authors?.join(", ")} · {b.available_copies} available</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searching.book && <p className="text-xs text-[var(--color-fg-muted)] mt-1">Searching…</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Summary */}
+      {((mode === "search" && selectedMember && selectedBook) || (mode === "manual" && barcode && memberId)) && (
+        <div className="p-4 rounded-xl bg-[var(--color-accent-subtle)] border border-[var(--color-accent-fg)] space-y-1.5 text-sm">
+          <p className="font-semibold text-[var(--color-accent-fg)]">Issue Summary</p>
+          <p className="text-[var(--color-fg-default)]">
+            <span className="text-[var(--color-fg-muted)]">Member:</span>{" "}
+            {mode === "search" ? selectedMember?.name : memberId}
+          </p>
+          <p className="text-[var(--color-fg-default)]">
+            <span className="text-[var(--color-fg-muted)]">Book/Barcode:</span>{" "}
+            {mode === "search" ? selectedBook?.title : barcode}
+          </p>
+          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Issue Date:</span> {new Date().toDateString()}</p>
+          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Due Date:</span> {dueDate.toDateString()} ({loanDays} days)</p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
+        <Button variant="invisible" onClick={onCancel}>Cancel</Button>
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          loading={isIssuing}
+          disabled={mode === "search" ? (!selectedMember || !selectedBook) : (!barcode.trim() || !memberId.trim())}
+          icon={<BookOpen size={14} />}
+        >
+          Issue Book
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ReturnBookForm({
+  onReturn, isReturning, onCancel,
+}: {
+  onReturn: (payload: { transaction_id?: string; barcode?: string; member_id?: string }) => Promise<void>;
+  isReturning: boolean;
+  onCancel: () => void;
+}) {
+  const [mode, setMode] = useState<"barcode" | "txn">("barcode");
+  const [transactionId, setTransactionId] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [memberId, setMemberId] = useState("");
+
+  const handleSubmit = async () => {
+    if (mode === "txn") {
+      if (!transactionId.trim()) { toast.error("Transaction ID is required"); return; }
+      await onReturn({ transaction_id: transactionId.trim() });
+    } else {
+      if (!barcode.trim()) { toast.error("Book barcode is required"); return; }
+      await onReturn({ barcode: barcode.trim(), member_id: memberId.trim() || undefined });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Mode Toggle */}
+      <div className="flex gap-2 p-1 rounded-lg bg-slate-100 border border-slate-200">
+        <button
+          onClick={() => setMode("barcode")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "barcode"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Barcode & Member ID
+        </button>
+        <button
+          onClick={() => setMode("txn")}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            mode === "txn"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Transaction ID
+        </button>
+      </div>
+
+      {mode === "txn" ? (
+        <Input
+          label="Transaction ID"
+          value={transactionId}
+          onChange={(e) => setTransactionId(e.target.value)}
+          placeholder="e.g. 9f8e7d6c-…"
+          required
+          hint="The UUID of the lending transaction"
+        />
+      ) : (
+        <div className="space-y-4">
+          <Input
+            label="Book Barcode"
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            placeholder="Scan or enter book barcode..."
+            required
+          />
+          <Input
+            label="Member ID / Email (Optional)"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            placeholder="Enter member's email or UUID..."
+            hint="Optional: helps find the correct transaction if multiple copies exist"
+          />
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
+        <Button variant="invisible" onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSubmit} loading={isReturning}>
+          Process Return
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 type Tab = "overview" | "overdue";
 
 export default function LibrarianDashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated || !["librarian", "admin"].includes(user?.role ?? "")) {
-      router.push("/");
-    }
-  }, [isAuthenticated, user, router]);
+  const { user, ready } = useAuthGuard();
 
   const { data: stats, isLoading, refetch } = useLibrarianDashboard();
   const { data: overdueData, isLoading: overdueLoading, refetch: refetchOverdue } = useOverdueTransactions();
@@ -39,12 +351,47 @@ export default function LibrarianDashboardPage() {
   const [issueModal, setIssueModal] = useState(false);
   const [returnModal, setReturnModal] = useState(false);
   const [adjustModal, setAdjustModal] = useState(false);
+  const [addBookModal, setAddBookModal] = useState(false);
   const [catalogId, setCatalogId] = useState("");
   const [memberId, setMemberId] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [selectedFineId, setSelectedFineId] = useState<string | null>(null);
   const [newAmount, setNewAmount] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
+
+  // Add book form state
+  const [bookForm, setBookForm] = useState({
+    title: "", isbn: "", authors: "", publisher: "",
+    edition: "", year: "", category: "General",
+    total_copies: "1", shelf_location: "", description: "",
+  });
+  const { mutateAsync: addCatalogItem, isPending: isAddingBook } = useAddCatalogItem();
+
+  const handleAddBook = async () => {
+    if (!bookForm.title.trim()) { toast.error("Title is required"); return; }
+    if (!bookForm.total_copies || parseInt(bookForm.total_copies) < 1) { toast.error("At least 1 copy required"); return; }
+    try {
+      await addCatalogItem({
+        title: bookForm.title.trim(),
+        isbn: bookForm.isbn.trim() || undefined,
+        authors: bookForm.authors ? bookForm.authors.split(",").map(a => a.trim()).filter(Boolean) : [],
+        publisher: bookForm.publisher.trim() || undefined,
+        edition: bookForm.edition.trim() || undefined,
+        year: bookForm.year ? parseInt(bookForm.year) : undefined,
+        category: bookForm.category,
+        total_copies: parseInt(bookForm.total_copies),
+        shelf_location: bookForm.shelf_location.trim() || undefined,
+        description: bookForm.description.trim() || undefined,
+      });
+      toast.success("Book added to catalog!");
+      setAddBookModal(false);
+      setBookForm({ title: "", isbn: "", authors: "", publisher: "", edition: "", year: "", category: "General", total_copies: "1", shelf_location: "", description: "" });
+      refetch();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to add book");
+    }
+  };
 
   const handleIssue = async () => {
     if (!catalogId.trim() || !memberId.trim()) {
@@ -129,30 +476,20 @@ export default function LibrarianDashboardPage() {
 
 
   const statCards = [
-    { label: "On Loan", value: stats?.on_loan ?? 0, icon: BookOpen, iconClass: "bg-primary/15 text-primary" },
-    {
-      label: "Overdue",
-      value: stats?.overdue ?? 0,
-      icon: AlertTriangle,
-      iconClass: (stats?.overdue ?? 0) > 0 ? "bg-error/15 text-error" : "bg-surface-container-high text-on-surface-variant",
-    },
-    { label: "Returns Today", value: stats?.returns_today ?? 0, icon: RotateCcw, iconClass: "bg-tertiary/15 text-tertiary" },
-    {
-      label: "Holds Pending",
-      value: stats?.holds_pending ?? 0,
-      icon: Clock,
-      iconClass: "bg-secondary-container text-on-secondary-container",
-    },
-    {
-      label: "Fines (Tk)",
-      value: (stats?.total_fines_amount ?? 0).toFixed(0),
-      icon: Banknote,
-      iconClass: "bg-error/10 text-error",
-    },
+    { label: "On Loan",       value: stats?.on_loan ?? 0,           icon: BookOpen,      iconClass: "bg-blue-50 text-blue-600" },
+    { label: "Overdue",       value: stats?.overdue ?? 0,           icon: AlertTriangle, iconClass: (stats?.overdue ?? 0) > 0 ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-400" },
+    { label: "Returns Today", value: stats?.returns_today ?? 0,     icon: RotateCcw,     iconClass: "bg-green-50 text-green-600" },
+    { label: "Holds Pending", value: stats?.holds_pending ?? 0,     icon: Clock,         iconClass: "bg-amber-50 text-amber-600" },
+    { label: "Fines (Tk)",    value: (stats?.total_fines_amount ?? 0).toFixed(0), icon: Banknote, iconClass: "bg-orange-50 text-orange-600" },
   ];
 
+  if (!ready || !["librarian", "admin"].includes(user?.role ?? "")) {
+    if (ready) router.push("/");
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <AppLayout>
       <div className="page-container py-8">
       <PageHeader
         title="Librarian Dashboard"
@@ -162,10 +499,7 @@ export default function LibrarianDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                refetch();
-                refetchOverdue();
-              }}
+              onClick={() => { refetch(); refetchOverdue(); }}
               icon={<RefreshCw size={14} />}
               aria-label="Refresh dashboard"
             >
@@ -179,6 +513,13 @@ export default function LibrarianDashboardPage() {
               Process Return
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setAddBookModal(true)}
+              icon={<BookMarked size={15} />}
+            >
+              Add Book
+            </Button>
+            <Button
               onClick={() => setIssueModal(true)}
               icon={<Plus size={15} />}
             >
@@ -189,13 +530,13 @@ export default function LibrarianDashboardPage() {
       />
 
       {/* Tab Navigation */}
-      <div className="flex gap-4 mb-6 border-b border-outline-variant">
+      <div className="flex gap-4 mb-6 border-b border-slate-200">
         <button
           onClick={() => setActiveTab("overview")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "overview"
-              ? "border-primary text-primary"
-              : "border-transparent text-on-surface-variant hover:text-on-surface"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
           }`}
         >
           Overview
@@ -204,8 +545,8 @@ export default function LibrarianDashboardPage() {
           onClick={() => setActiveTab("overdue")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "overdue"
-              ? "border-primary text-primary"
-              : "border-transparent text-on-surface-variant hover:text-on-surface"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
           }`}
         >
           Overdue & Fines
@@ -234,7 +575,7 @@ export default function LibrarianDashboardPage() {
 
           {/* Recent transactions */}
           <Card padding="none">
-            <div className="px-6 py-4 border-b border-outline-variant">
+            <div className="px-6 py-4 border-b border-slate-100">
               <CardTitle>Recent Transactions</CardTitle>
             </div>
             <div className="overflow-x-auto">
@@ -271,13 +612,13 @@ export default function LibrarianDashboardPage() {
                       due_date: string;
                     }) => (
                       <tr key={txn.transaction_id}>
-                        <td className="text-on-surface-variant text-xs">{formatDate(txn.created_at)}</td>
-                        <td className="font-medium text-on-surface">{txn.member_name}</td>
+                        <td className="text-slate-500 text-xs">{formatDate(txn.created_at)}</td>
+                        <td className="font-medium text-slate-900">{txn.member_name}</td>
                         <td className="max-w-xs">
-                          <span className="line-clamp-1 text-on-surface">{txn.title}</span>
+                          <span className="line-clamp-1 text-slate-700">{txn.title}</span>
                         </td>
                         <td><StatusBadge status={txn.status} /></td>
-                        <td className="text-on-surface-variant text-xs">{formatDate(txn.due_date)}</td>
+                        <td className="text-slate-500 text-xs">{formatDate(txn.due_date)}</td>
                       </tr>
                     ))
                   )}
@@ -291,7 +632,7 @@ export default function LibrarianDashboardPage() {
       {/* Overdue & Fines Tab */}
       {activeTab === "overdue" && (
         <Card padding="none">
-          <div className="px-6 py-4 border-b border-outline-variant">
+          <div className="px-6 py-4 border-b border-slate-100">
             <CardTitle>Overdue Items & Fines</CardTitle>
           </div>
           <div className="overflow-x-auto">
@@ -333,11 +674,11 @@ export default function LibrarianDashboardPage() {
                     fine_status: string;
                   }) => (
                     <tr key={`${item.transaction_id}-${item.fine_id}`}>
-                      <td className="font-medium text-on-surface">{item.member_name}</td>
+                      <td className="font-medium text-slate-900">{item.member_name}</td>
                       <td className="max-w-xs">
-                        <span className="line-clamp-1 text-on-surface">{item.title}</span>
+                        <span className="line-clamp-1 text-slate-700">{item.title}</span>
                       </td>
-                      <td className="text-on-surface-variant text-sm">{formatDate(item.due_date)}</td>
+                      <td className="text-slate-500 text-sm">{formatDate(item.due_date)}</td>
                       <td className="text-red-600 font-medium">{item.days_overdue} days</td>
                       <td className="text-orange-600 font-medium">{item.fine_amount.toFixed(2)}</td>
                       <td><StatusBadge status={item.fine_status} /></td>
@@ -380,36 +721,126 @@ export default function LibrarianDashboardPage() {
       )}
 
 
+      {/* Add Book Modal */}
+      <Modal
+        isOpen={addBookModal}
+        onClose={() => setAddBookModal(false)}
+        title="Add Book to Catalog"
+        description="Fill in the book details to add it to the library catalog."
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Title"
+              required
+              value={bookForm.title}
+              onChange={(e) => setBookForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="e.g. Introduction to Algorithms"
+            />
+            <Input
+              label="ISBN"
+              value={bookForm.isbn}
+              onChange={(e) => setBookForm(f => ({ ...f, isbn: e.target.value }))}
+              placeholder="e.g. 978-0-262-03384-8"
+            />
+          </div>
+          <Input
+            label="Authors"
+            value={bookForm.authors}
+            onChange={(e) => setBookForm(f => ({ ...f, authors: e.target.value }))}
+            placeholder="Author 1, Author 2, ..."
+            hint="Comma-separated"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Publisher"
+              value={bookForm.publisher}
+              onChange={(e) => setBookForm(f => ({ ...f, publisher: e.target.value }))}
+              placeholder="e.g. MIT Press"
+            />
+            <Input
+              label="Edition"
+              value={bookForm.edition}
+              onChange={(e) => setBookForm(f => ({ ...f, edition: e.target.value }))}
+              placeholder="e.g. 3rd"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input
+              label="Year"
+              type="number"
+              value={bookForm.year}
+              onChange={(e) => setBookForm(f => ({ ...f, year: e.target.value }))}
+              placeholder="e.g. 2023"
+            />
+            <div className="space-y-1.5">
+              <label className="form-label">Category</label>
+              <select
+                value={bookForm.category}
+                onChange={(e) => setBookForm(f => ({ ...f, category: e.target.value }))}
+                className="form-select"
+              >
+                {["General","Textbook","Reference","Fiction","Non-Fiction","Science","Technology","Mathematics","History","Other"]
+                  .map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <Input
+              label="Total Copies"
+              type="number"
+              required
+              min="1"
+              value={bookForm.total_copies}
+              onChange={(e) => setBookForm(f => ({ ...f, total_copies: e.target.value }))}
+            />
+          </div>
+          <Input
+            label="Shelf Location"
+            value={bookForm.shelf_location}
+            onChange={(e) => setBookForm(f => ({ ...f, shelf_location: e.target.value }))}
+            placeholder="e.g. A-12, Floor 2"
+          />
+          <div className="space-y-1.5">
+            <label className="form-label">Description</label>
+            <textarea
+              value={bookForm.description}
+              onChange={(e) => setBookForm(f => ({ ...f, description: e.target.value }))}
+              rows={3}
+              className="form-textarea"
+              placeholder="Brief description of the book..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setAddBookModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleAddBook} loading={isAddingBook} icon={<BookMarked size={14} />}>
+              Add to Catalog
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Issue Modal */}
       <Modal
         isOpen={issueModal}
-        onClose={() => setIssueModal(false)}
-        title="Issue Book"
-        description="Enter the catalog item ID and member ID to issue a book."
-        size="sm"
+        onClose={() => { setIssueModal(false); setCatalogId(""); setMemberId(""); }}
+        title="Issue Book to Member"
+        description="Search for a member and book, or scan/type barcodes directly."
+        size="md"
       >
-        <div className="space-y-4">
-          <Input
-            label="Catalog ID"
-            value={catalogId}
-            onChange={(e) => setCatalogId(e.target.value)}
-            placeholder="e.g. 3f2a1b4c-…"
-            required
-            hint="The UUID of the catalog item"
-          />
-          <Input
-            label="Member ID"
-            value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-            placeholder="e.g. a1b2c3d4-…"
-            required
-            hint="The UUID of the member's user account"
-          />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setIssueModal(false)}>Cancel</Button>
-            <Button onClick={handleIssue} loading={isIssuing}>Issue Book</Button>
-          </div>
-        </div>
+        <IssueBookForm
+          onIssue={async (payload) => {
+            if (!payload.catalog_id && !payload.barcode) {
+              toast.error("Please provide either a catalog ID or barcode");
+              return;
+            }
+            await issueBook(payload as { catalog_id: string; member_id: string });
+            toast.success("Book issued successfully! Member notified via email.");
+            setIssueModal(false);
+            refetch();
+          }}
+          isIssuing={isIssuing}
+          onCancel={() => setIssueModal(false)}
+        />
       </Modal>
 
       {/* Return Modal */}
@@ -417,23 +848,24 @@ export default function LibrarianDashboardPage() {
         isOpen={returnModal}
         onClose={() => setReturnModal(false)}
         title="Process Return"
-        description="Enter the transaction ID to process a book return."
-        size="sm"
+        description="Process a return using the lending transaction ID or book barcode."
+        size="md"
       >
-        <div className="space-y-4">
-          <Input
-            label="Transaction ID"
-            value={transactionId}
-            onChange={(e) => setTransactionId(e.target.value)}
-            placeholder="e.g. 9f8e7d6c-…"
-            required
-            hint="The UUID of the lending transaction"
-          />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setReturnModal(false)}>Cancel</Button>
-            <Button onClick={handleReturn} loading={isReturning}>Process Return</Button>
-          </div>
-        </div>
+        <ReturnBookForm
+          onReturn={async (payload) => {
+            const result = await returnBook(payload);
+            const fine = result.fine_amount;
+            toast.success(
+              fine > 0
+                ? `Book returned. Fine applied: Tk ${fine.toFixed(2)}`
+                : "Book returned successfully"
+            );
+            setReturnModal(false);
+            refetch();
+          }}
+          isReturning={isReturning}
+          onCancel={() => setReturnModal(false)}
+        />
       </Modal>
 
       {/* Adjust Fine Modal */}
@@ -461,14 +893,14 @@ export default function LibrarianDashboardPage() {
             required
           />
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1">Reason for Adjustment</label>
+            <label className="block text-sm font-medium text-slate-900 mb-1">Reason for Adjustment</label>
             <textarea
               value={adjustReason}
               onChange={(e) => setAdjustReason(e.target.value)}
               placeholder="e.g. Waived due to hardship, Adjusted due to error..."
               required
               rows={3}
-              className="w-full px-3 py-2 border border-outline-variant rounded-md text-sm bg-surface-container text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
           <div className="flex justify-end gap-3 pt-2">
@@ -489,8 +921,8 @@ export default function LibrarianDashboardPage() {
           </div>
         </div>
       </Modal>
-      </div>
     </div>
+    </AppLayout>
   );
 }
 

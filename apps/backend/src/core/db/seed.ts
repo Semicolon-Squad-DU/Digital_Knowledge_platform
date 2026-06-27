@@ -6,53 +6,53 @@ const passwordHash = bcrypt.hashSync("Test@123456", 10);
 
 // ─── Users (16, all 7 roles) ────────────────────────────────────────────────
 const users = [
-  { user_id: "11111111-1111-1111-1111-111111111101", name: "Admin User",        email: "admin@dkp.edu.bd",       role: "admin",          department: "ICT",              bio: "Platform administrator" },
-  { user_id: "11111111-1111-1111-1111-111111111102", name: "Librarian Karim",   email: "librarian@dkp.edu.bd",   role: "librarian",      department: "Library",          bio: "Head librarian" },
-  { user_id: "11111111-1111-1111-1111-111111111103", name: "Archivist Rina",    email: "archivist@dkp.edu.bd",   role: "archivist",      department: "Archive",          bio: "Digital archivist" },
-  { user_id: "11111111-1111-1111-1111-111111111104", name: "Researcher Hasan",  email: "researcher@dkp.edu.bd",  role: "researcher",     department: "Computer Science", bio: "Senior researcher" },
-  { user_id: "11111111-1111-1111-1111-111111111105", name: "Student Mitu",      email: "student@dkp.edu.bd",     role: "student_author", department: "Computer Science", bio: "Final year student" },
-  { user_id: "11111111-1111-1111-1111-111111111106", name: "Member Rafiq",      email: "member@dkp.edu.bd",      role: "member",         department: "Business",         bio: "Regular member" },
-  { user_id: "11111111-1111-1111-1111-111111111107", name: "Admin Nadia",       email: "admin2@dkp.edu.bd",      role: "admin",          department: "ICT",              bio: "Secondary admin" },
-  { user_id: "11111111-1111-1111-1111-111111111108", name: "Librarian Sumon",   email: "librarian2@dkp.edu.bd",  role: "librarian",      department: "Library",          bio: "Assistant librarian" },
-  { user_id: "11111111-1111-1111-1111-111111111109", name: "Archivist Tania",   email: "archivist2@dkp.edu.bd",  role: "archivist",      department: "Archive",          bio: "Junior archivist" },
-  { user_id: "11111111-1111-1111-1111-111111111110", name: "Researcher Farhan", email: "researcher2@dkp.edu.bd", role: "researcher",     department: "EEE",              bio: "Lab researcher" },
-  { user_id: "11111111-1111-1111-1111-111111111111", name: "Student Rafi",      email: "student2@dkp.edu.bd",    role: "student_author", department: "CSE",              bio: "3rd year student" },
-  { user_id: "11111111-1111-1111-1111-111111111112", name: "Student Priya",     email: "student3@dkp.edu.bd",    role: "student_author", department: "EEE",              bio: "2nd year student" },
-  { user_id: "11111111-1111-1111-1111-111111111113", name: "Member Jahid",      email: "member2@dkp.edu.bd",     role: "member",         department: "BBA",              bio: "Faculty member" },
-  { user_id: "11111111-1111-1111-1111-111111111114", name: "Member Sadia",      email: "member3@dkp.edu.bd",     role: "member",         department: "English",          bio: "Staff member" },
-  { user_id: "11111111-1111-1111-1111-111111111115", name: "Researcher Lina",   email: "researcher3@dkp.edu.bd", role: "researcher",     department: "Physics",          bio: "Physics researcher" },
-  { user_id: "11111111-1111-1111-1111-111111111116", name: "Student Tanvir",    email: "student4@dkp.edu.bd",    role: "student_author", department: "CSE",              bio: "Final year CSE" },
+  { user_id: "11111111-1111-1111-1111-111111111101", name: "Admin User", email: "admin@dkp.edu.bd", role: "admin", department: "ICT", bio: "Platform administrator" },
+  { user_id: "11111111-1111-1111-1111-111111111102", name: "Librarian Karim", email: "librarian@dkp.edu.bd", role: "librarian", department: "Library", bio: "Head librarian" },
+  { user_id: "11111111-1111-1111-1111-111111111103", name: "Archivist Rina", email: "archivist@dkp.edu.bd", role: "archivist", department: "Archive", bio: "Digital archivist" },
+  { user_id: "11111111-1111-1111-1111-111111111104", name: "Researcher Hasan", email: "researcher@dkp.edu.bd", role: "researcher", department: "Computer Science", bio: "Senior researcher" },
+  { user_id: "11111111-1111-1111-1111-111111111105", name: "Student Mitu", email: "student@dkp.edu.bd", role: "student_author", department: "Computer Science", bio: "Final year student" },
+  { user_id: "11111111-1111-1111-1111-111111111106", name: "Member Rafiq", email: "member@dkp.edu.bd", role: "member", department: "Business", bio: "Regular member" },
+  { user_id: "11111111-1111-1111-1111-111111111107", name: "Admin Nadia", email: "admin2@dkp.edu.bd", role: "admin", department: "ICT", bio: "Secondary admin" },
+  { user_id: "11111111-1111-1111-1111-111111111108", name: "Librarian Sumon", email: "librarian2@dkp.edu.bd", role: "librarian", department: "Library", bio: "Assistant librarian" },
+  { user_id: "11111111-1111-1111-1111-111111111109", name: "Archivist Tania", email: "archivist2@dkp.edu.bd", role: "archivist", department: "Archive", bio: "Junior archivist" },
+  { user_id: "11111111-1111-1111-1111-111111111110", name: "Researcher Farhan", email: "researcher2@dkp.edu.bd", role: "researcher", department: "EEE", bio: "Lab researcher" },
+  { user_id: "11111111-1111-1111-1111-111111111111", name: "Student Rafi", email: "student2@dkp.edu.bd", role: "student_author", department: "CSE", bio: "3rd year student" },
+  { user_id: "11111111-1111-1111-1111-111111111112", name: "Student Priya", email: "student3@dkp.edu.bd", role: "student_author", department: "EEE", bio: "2nd year student" },
+  { user_id: "11111111-1111-1111-1111-111111111113", name: "Member Jahid", email: "member2@dkp.edu.bd", role: "member", department: "BBA", bio: "Faculty member" },
+  { user_id: "11111111-1111-1111-1111-111111111114", name: "Member Sadia", email: "member3@dkp.edu.bd", role: "member", department: "English", bio: "Staff member" },
+  { user_id: "11111111-1111-1111-1111-111111111115", name: "Researcher Lina", email: "researcher3@dkp.edu.bd", role: "researcher", department: "Physics", bio: "Physics researcher" },
+  { user_id: "11111111-1111-1111-1111-111111111116", name: "Student Tanvir", email: "student4@dkp.edu.bd", role: "student_author", department: "CSE", bio: "Final year CSE" },
 ];
 
 // ─── Tags (20) ───────────────────────────────────────────────────────────────
 const tags = [
-  { tag_id: "22222222-2222-2222-2222-222222222201", name_en: "thesis",          name_bn: "থিসিস" },
-  { tag_id: "22222222-2222-2222-2222-222222222202", name_en: "research",        name_bn: "গবেষণা" },
-  { tag_id: "22222222-2222-2222-2222-222222222203", name_en: "archive",         name_bn: "আর্কাইভ" },
-  { tag_id: "22222222-2222-2222-2222-222222222204", name_en: "machine-learning",name_bn: "মেশিন লার্নিং" },
-  { tag_id: "22222222-2222-2222-2222-222222222205", name_en: "database",        name_bn: "ডেটাবেস" },
-  { tag_id: "22222222-2222-2222-2222-222222222206", name_en: "networking",      name_bn: "নেটওয়ার্কিং" },
+  { tag_id: "22222222-2222-2222-2222-222222222201", name_en: "thesis", name_bn: "থিসিস" },
+  { tag_id: "22222222-2222-2222-2222-222222222202", name_en: "research", name_bn: "গবেষণা" },
+  { tag_id: "22222222-2222-2222-2222-222222222203", name_en: "archive", name_bn: "আর্কাইভ" },
+  { tag_id: "22222222-2222-2222-2222-222222222204", name_en: "machine-learning", name_bn: "মেশিন লার্নিং" },
+  { tag_id: "22222222-2222-2222-2222-222222222205", name_en: "database", name_bn: "ডেটাবেস" },
+  { tag_id: "22222222-2222-2222-2222-222222222206", name_en: "networking", name_bn: "নেটওয়ার্কিং" },
   { tag_id: "22222222-2222-2222-2222-222222222207", name_en: "web-development", name_bn: "ওয়েব ডেভেলপমেন্ট" },
-  { tag_id: "22222222-2222-2222-2222-222222222208", name_en: "iot",             name_bn: "আইওটি" },
-  { tag_id: "22222222-2222-2222-2222-222222222209", name_en: "cybersecurity",   name_bn: "সাইবার নিরাপত্তা" },
-  { tag_id: "22222222-2222-2222-2222-222222222210", name_en: "data-science",    name_bn: "ডেটা বিজ্ঞান" },
-  { tag_id: "22222222-2222-2222-2222-222222222211", name_en: "algorithms",      name_bn: "অ্যালগরিদম" },
+  { tag_id: "22222222-2222-2222-2222-222222222208", name_en: "iot", name_bn: "আইওটি" },
+  { tag_id: "22222222-2222-2222-2222-222222222209", name_en: "cybersecurity", name_bn: "সাইবার নিরাপত্তা" },
+  { tag_id: "22222222-2222-2222-2222-222222222210", name_en: "data-science", name_bn: "ডেটা বিজ্ঞান" },
+  { tag_id: "22222222-2222-2222-2222-222222222211", name_en: "algorithms", name_bn: "অ্যালগরিদম" },
   { tag_id: "22222222-2222-2222-2222-222222222212", name_en: "cloud-computing", name_bn: "ক্লাউড কম্পিউটিং" },
-  { tag_id: "22222222-2222-2222-2222-222222222213", name_en: "embedded-systems",name_bn: "এমবেডেড সিস্টেম" },
-  { tag_id: "22222222-2222-2222-2222-222222222214", name_en: "nlp",             name_bn: "এনএলপি" },
+  { tag_id: "22222222-2222-2222-2222-222222222213", name_en: "embedded-systems", name_bn: "এমবেডেড সিস্টেম" },
+  { tag_id: "22222222-2222-2222-2222-222222222214", name_en: "nlp", name_bn: "এনএলপি" },
   { tag_id: "22222222-2222-2222-2222-222222222215", name_en: "computer-vision", name_bn: "কম্পিউটার ভিশন" },
-  { tag_id: "22222222-2222-2222-2222-222222222216", name_en: "robotics",        name_bn: "রোবোটিক্স" },
-  { tag_id: "22222222-2222-2222-2222-222222222217", name_en: "blockchain",      name_bn: "ব্লকচেইন" },
-  { tag_id: "22222222-2222-2222-2222-222222222218", name_en: "mobile-app",      name_bn: "মোবাইল অ্যাপ" },
-  { tag_id: "22222222-2222-2222-2222-222222222219", name_en: "signal-processing",name_bn: "সিগন্যাল প্রসেসিং" },
-  { tag_id: "22222222-2222-2222-2222-222222222220", name_en: "bioinformatics",  name_bn: "বায়োইনফরমেটিক্স" },
+  { tag_id: "22222222-2222-2222-2222-222222222216", name_en: "robotics", name_bn: "রোবোটিক্স" },
+  { tag_id: "22222222-2222-2222-2222-222222222217", name_en: "blockchain", name_bn: "ব্লকচেইন" },
+  { tag_id: "22222222-2222-2222-2222-222222222218", name_en: "mobile-app", name_bn: "মোবাইল অ্যাপ" },
+  { tag_id: "22222222-2222-2222-2222-222222222219", name_en: "signal-processing", name_bn: "সিগন্যাল প্রসেসিং" },
+  { tag_id: "22222222-2222-2222-2222-222222222220", name_en: "bioinformatics", name_bn: "বায়োইনফরমেটিক্স" },
 ];
 
 // ─── Labs (3) ────────────────────────────────────────────────────────────────
 const labs = [
-  { lab_id: "33333333-3333-3333-3333-333333333301", name: "CSE Research Lab",     description: "Core CS research lab",          head: users[3].user_id },
-  { lab_id: "33333333-3333-3333-3333-333333333302", name: "EEE Innovation Lab",   description: "Electronics and embedded systems", head: users[9].user_id },
-  { lab_id: "33333333-3333-3333-3333-333333333303", name: "Data Science Lab",     description: "ML and data analytics research", head: users[14].user_id },
+  { lab_id: "33333333-3333-3333-3333-333333333301", name: "CSE Research Lab", description: "Core CS research lab", head: users[3].user_id },
+  { lab_id: "33333333-3333-3333-3333-333333333302", name: "EEE Innovation Lab", description: "Electronics and embedded systems", head: users[9].user_id },
+  { lab_id: "33333333-3333-3333-3333-333333333303", name: "Data Science Lab", description: "ML and data analytics research", head: users[14].user_id },
 ];
 
 // ─── Archive items (30) ──────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ const researchOutputs = Array.from({ length: 25 }, (_, i) => ({
   doi: `10.1234/dkp.2026.${String(i + 1).padStart(3, "0")}`,
   dkp_identifier: `DKP-RES-2026-${String(i + 1).padStart(3, "0")}`,
   file_url: `research/output-${i + 1}.pdf`,
-  output_type: ["journal_article", "conference_paper", "technical_report", "book_chapter", "preprint"][i % 5],
+  output_type: ["journal", "conference", "thesis", "dataset", "report"][i % 5],
   lab_id: labs[i % 3].lab_id,
   published_date: `2025-${String((i % 12) + 1).padStart(2, "0")}-15`,
   journal_name: `Journal of ${tags[i % 20].name_en}`,
@@ -183,11 +183,11 @@ const notifications = Array.from({ length: 20 }, (_, i) => ({
 
 // ─── Announcements (5) ───────────────────────────────────────────────────────
 const announcements = [
-  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc01", title: "Welcome to DKP",              body: "The Digital Knowledge Platform is now live. Explore the archive, library, and research sections.", target_role: null },
-  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc02", title: "Library Hours Updated",       body: "The library is now open from 8 AM to 10 PM on weekdays.", target_role: "member" },
-  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc03", title: "New Research Submissions",    body: "Researchers can now submit outputs directly through the platform.", target_role: "researcher" },
-  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc04", title: "Showcase Deadline Reminder",  body: "Student project submissions close on May 15, 2026.", target_role: "student_author" },
-  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc05", title: "System Maintenance Notice",   body: "Scheduled maintenance on Sunday 2 AM - 4 AM. Services may be unavailable.", target_role: null },
+  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc01", title: "Welcome to DKP", body: "The Digital Knowledge Platform is now live. Explore the archive, library, and research sections.", target_role: null },
+  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc02", title: "Library Hours Updated", body: "The library is now open from 8 AM to 10 PM on weekdays.", target_role: "member" },
+  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc03", title: "New Research Submissions", body: "Researchers can now submit outputs directly through the platform.", target_role: "researcher" },
+  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc04", title: "Showcase Deadline Reminder", body: "Student project submissions close on May 15, 2026.", target_role: "student_author" },
+  { announcement_id: "cccccccc-cccc-cccc-cccc-cccccccccc05", title: "System Maintenance Notice", body: "Scheduled maintenance on Sunday 2 AM - 4 AM. Services may be unavailable.", target_role: null },
 ];
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -243,9 +243,9 @@ async function main() {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
          ON CONFLICT (item_id) DO NOTHING`,
         [item.item_id, item.title_en, item.title_bn, item.description,
-         item.authors, item.category, item.language, item.access_tier,
-         item.status, item.file_url, item.file_type, item.file_size,
-         item.version, item.uploaded_by]
+        item.authors, item.category, item.language, item.access_tier,
+        item.status, item.file_url, item.file_type, item.file_size,
+        item.version, item.uploaded_by]
       );
       for (const tag_id of item.tag_ids) {
         await client.query(
@@ -269,8 +269,8 @@ async function main() {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          ON CONFLICT (catalog_id) DO NOTHING`,
         [c.catalog_id, c.title, c.isbn, c.authors, c.publisher, c.edition,
-         c.year, c.category, c.total_copies, c.available_copies,
-         c.shelf_location, c.barcode, c.description]
+        c.year, c.category, c.total_copies, c.available_copies,
+        c.shelf_location, c.barcode, c.description]
       );
     }
 
@@ -284,8 +284,8 @@ async function main() {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          ON CONFLICT (output_id) DO NOTHING`,
         [r.output_id, r.title, r.abstract, r.authors, r.keywords, r.doi,
-         r.dkp_identifier, r.file_url, r.output_type, r.lab_id,
-         r.published_date, r.journal_name, r.volume, r.issue, r.pages, r.uploaded_by]
+        r.dkp_identifier, r.file_url, r.output_type, r.lab_id,
+        r.published_date, r.journal_name, r.volume, r.issue, r.pages, r.uploaded_by]
       );
     }
 
@@ -299,8 +299,8 @@ async function main() {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
          ON CONFLICT (project_id) DO NOTHING`,
         [p.project_id, p.title, p.abstract, p.team_members, p.advisor_id,
-         p.semester, p.department, p.technologies, p.report_url, p.video_url,
-         p.source_code_url, p.thumbnail_url, p.status, p.advisor_comments, p.submitted_by]
+        p.semester, p.department, p.technologies, p.report_url, p.video_url,
+        p.source_code_url, p.thumbnail_url, p.status, p.advisor_comments, p.submitted_by]
       );
     }
 
@@ -312,7 +312,7 @@ async function main() {
          VALUES ($1,$2,$3,$4,$5,$6,$7)
          ON CONFLICT (transaction_id) DO NOTHING`,
         [lt.transaction_id, lt.member_id, lt.catalog_id, lt.due_date,
-         lt.returned_date, lt.status, lt.renewed_count]
+        lt.returned_date, lt.status, lt.renewed_count]
       );
     }
 

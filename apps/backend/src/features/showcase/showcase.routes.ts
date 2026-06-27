@@ -1,21 +1,29 @@
 import { Router, Response } from "express";
-import { query, queryOne } from "../../core/db/pool";
-import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
-import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
-import { uploadSingle } from "../../core/middleware/upload.middleware";
-import { uploadToS3, generateS3Key } from "../../infrastructure/s3.service";
-import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
+import { query, queryOne } from "../db/pool";
+import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
+import { AppError, asyncHandler } from "../middleware/error.middleware";
+import { uploadSingle } from "../middleware/upload.middleware";
+import { uploadToS3, generateS3Key } from "../services/s3.service";
+import { sendEmail, projectApprovalEmail } from "../services/email.service";
+import { logger } from "../config/logger";
 
 const router = Router();
 
 // GET /api/showcase
 router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { department, semester, technology, advisor_id, q, page = "1", limit = "12" } =
+  const { department, semester, technology, advisor_id, submitted_by, q, page = "1", limit = "12" } =
     req.query as Record<string, string>;
 
-  const conditions: string[] = ["sp.status = 'published'"];
+  const conditions: string[] = [];
   const params: unknown[] = [];
   let paramIdx = 1;
+
+  if (submitted_by) {
+    conditions.push(`sp.submitted_by = $${paramIdx++}`);
+    params.push(submitted_by);
+  } else {
+    conditions.push("sp.status = 'published'");
+  }
 
   if (department) { conditions.push(`sp.department = $${paramIdx++}`); params.push(department); }
   if (semester) { conditions.push(`sp.semester = $${paramIdx++}`); params.push(semester); }
@@ -173,6 +181,7 @@ router.patch(
 
     const project = await queryOne<{
       project_id: string; title: string; advisor_id: string; submitted_by: string; status: string;
+      team_members: unknown; abstract: string; report_url: string | null;
     }>(
       "SELECT * FROM student_projects WHERE project_id = $1",
       [req.params.id]
@@ -188,6 +197,37 @@ router.patch(
       "UPDATE student_projects SET status = $1, advisor_comments = $2 WHERE project_id = $3 RETURNING *",
       [newStatus, comments || null, req.params.id]
     );
+
+    // Auto-archive: Create archive item when project is published
+    if (action === "approve") {
+      try {
+        const archiveTitle = `${project.title} - Student Project`;
+        const teamMemberNames = Array.isArray(project.team_members as unknown[])
+          ? (project.team_members as unknown[]).map((m: unknown) =>
+              typeof m === "object" && m !== null && "name" in m ? (m as { name: string }).name : String(m)
+            )
+          : [];
+        const archiveDescription = project.abstract || `Student project: ${project.title}`;
+        
+        await query(
+          `INSERT INTO archive_items
+             (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            archiveTitle, archiveDescription,
+            teamMemberNames, "Student Project", "en",
+            "member", "published", project.report_url || null, "application/pdf", 0,
+            req.user!.user_id, "showcase", project.project_id
+          ]
+        );
+      } catch (archiveErr) {
+        logger.warn("Failed to auto-archive published project", {
+          project_id: project.project_id,
+          error: (archiveErr as Error).message,
+        });
+        // Continue despite archive failure
+      }
+    }
 
     const student = await queryOne<{ name: string; email: string }>(
       "SELECT name, email FROM users WHERE user_id = $1",
@@ -215,6 +255,95 @@ router.patch(
     }
 
     res.json({ success: true, data: updated });
+  })
+);
+
+// PATCH /api/showcase/:id
+router.patch(
+  "/:id",
+  authenticate,
+  requireRole("student_author", "admin"),
+  uploadSingle,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const body = req.body as Record<string, unknown>;
+
+    // 1. Fetch current project to verify ownership and review status
+    const project = await queryOne<{
+      project_id: string;
+      submitted_by: string;
+      status: string;
+      report_url: string | null;
+    }>("SELECT project_id, submitted_by, status, report_url FROM student_projects WHERE project_id = $1", [id]);
+
+    if (!project) throw new AppError(404, "Project not found");
+    if (project.submitted_by !== req.user!.user_id && req.user!.role !== "admin") {
+      throw new AppError(403, "You can only edit your own submissions");
+    }
+    if (project.status === "published" && req.user!.role !== "admin") {
+      throw new AppError(400, "Approved projects cannot be edited. Please contact your advisor.");
+    }
+
+    // 2. Parse fields
+    const title = body.title as string | undefined;
+    const abstract = body.abstract as string | undefined;
+    const advisor_id = body.advisor_id as string | undefined;
+    const semester = body.semester as string | undefined;
+    const department = body.department as string | undefined;
+    const source_code_url = body.source_code_url as string | undefined;
+
+    let team_members: unknown[] | undefined;
+    let technologies: string[] | undefined;
+
+    if (body.team_members) {
+      try {
+        const tm = body.team_members;
+        team_members = typeof tm === "string" ? JSON.parse(tm) : Array.isArray(tm) ? tm : [];
+      } catch {
+        throw new AppError(400, "Invalid team_members format");
+      }
+    }
+
+    if (body.technologies) {
+      try {
+        const tech = body.technologies;
+        technologies = typeof tech === "string" ? JSON.parse(tech) : Array.isArray(tech) ? tech : [];
+      } catch {
+        throw new AppError(400, "Invalid technologies format");
+      }
+    }
+
+    let report_url = project.report_url;
+    if (req.file) {
+      const key = generateS3Key("showcase/reports", req.file.originalname, req.file.mimetype);
+      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+      report_url = key;
+    }
+
+    // 3. Build dynamic update query
+    const updates: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+
+    if (title !== undefined) { updates.push(`title = $${idx++}`); params.push(title); }
+    if (abstract !== undefined) { updates.push(`abstract = $${idx++}`); params.push(abstract); }
+    if (advisor_id !== undefined) { updates.push(`advisor_id = $${idx++}`); params.push(advisor_id); }
+    if (semester !== undefined) { updates.push(`semester = $${idx++}`); params.push(semester); }
+    if (department !== undefined) { updates.push(`department = $${idx++}`); params.push(department); }
+    if (source_code_url !== undefined) { updates.push(`source_code_url = $${idx++}`); params.push(source_code_url || null); }
+    if (team_members !== undefined) { updates.push(`team_members = $${idx++}`); params.push(JSON.stringify(team_members)); }
+    if (technologies !== undefined) { updates.push(`technologies = $${idx++}`); params.push(technologies); }
+    if (report_url !== undefined) { updates.push(`report_url = $${idx++}`); params.push(report_url); }
+
+    // Reset status to pending_review when student edits/re-submits
+    updates.push(`status = $${idx++}`);
+    params.push("pending_review");
+
+    params.push(id);
+    const queryStr = `UPDATE student_projects SET ${updates.join(", ")} WHERE project_id = $${idx} RETURNING *`;
+    const updatedProject = await queryOne(queryStr, params);
+
+    res.json({ success: true, data: updatedProject });
   })
 );
 

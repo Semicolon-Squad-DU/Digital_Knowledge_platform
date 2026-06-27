@@ -1,7 +1,8 @@
 import { Router, Response } from "express";
-import { query, queryOne } from "../../core/db/pool";
-import { authenticate, requireRole, AuthRequest } from "../../core/middleware/auth.middleware";
-import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { query, queryOne } from "../db/pool";
+import { authenticate, requireRole, AuthRequest } from "../middleware/auth.middleware";
+import { AppError, asyncHandler } from "../middleware/error.middleware";
+import { sendEmail } from "../services/email.service";
 
 const router = Router();
 
@@ -81,13 +82,14 @@ router.post(
     );
 
     const userQuery = target_role
-      ? "SELECT user_id FROM users WHERE role = $1 AND deleted_at IS NULL"
-      : "SELECT user_id FROM users WHERE deleted_at IS NULL";
+      ? "SELECT user_id, email, name FROM users WHERE role = $1 AND deleted_at IS NULL"
+      : "SELECT user_id, email, name FROM users WHERE deleted_at IS NULL";
     const userParams = target_role ? [target_role] : [];
 
-    const users = await query<{ user_id: string }>(userQuery, userParams);
+    const users = await query<{ user_id: string; email: string; name: string }>(userQuery, userParams);
 
     if (users.length > 0) {
+      // 1. Deliver In-app Notifications
       const values = users
         .map((_, i) => `($${i * 4 + 1}, 'announcement', $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
         .join(", ");
@@ -96,9 +98,30 @@ router.post(
         `INSERT INTO notifications (user_id, type, title, message, action_url) VALUES ${values}`,
         params
       );
+
+      // 2. Deliver Email Notifications
+      const emailAddresses = users.map(u => u.email).filter(Boolean);
+      if (emailAddresses.length > 0) {
+        sendEmail({
+          to: emailAddresses,
+          subject: `[DKP Announcement] ${title}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <h2 style="color: #1a56db; margin-top: 0;">Digital Knowledge Platform</h2>
+              <h3 style="color: #111827;">${title}</h3>
+              <p style="color: #374151; line-height: 1.6; white-space: pre-wrap;">${body}</p>
+              <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+              <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">Digital Knowledge Platform — University of Dhaka, CSE Department</p>
+            </div>
+          `,
+        }).catch(err => {
+          console.error("Failed to broadcast announcement emails:", err);
+        });
+      }
     }
 
     res.status(201).json({ success: true, data: announcement });
+
   })
 );
 

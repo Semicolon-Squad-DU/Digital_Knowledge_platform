@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,13 +13,67 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
+import { DiscussionSection } from "@/components/community/DiscussionSection";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 type CitationFormat = "apa" | "mla" | "bibtex";
 
 // ---------------------------------------------------------------------------
+// Open file button — generates presigned URL then opens PDF
+// ---------------------------------------------------------------------------
+function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleOpen = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/research/${outputId}/download-url`);
+      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
+      window.open(downloadUrl, "_blank");
+    } catch {
+      window.open(`http://127.0.0.1:9000/dkp-files/${fileKey}`, "_blank");
+      toast("Opening via direct link");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      onClick={handleOpen}
+      loading={loading}
+      icon={<ExternalLink size={13} />}
+      style={{
+        background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+        color: "#ffffff",
+        border: "none",
+        boxShadow: "0 2px 6px rgba(26, 26, 46, 0.15)",
+        transition: "all 0.2s ease",
+      }}
+      onMouseOver={(e) => {
+        if (!loading) {
+          e.currentTarget.style.filter = "brightness(1.15)";
+          e.currentTarget.style.transform = "translateY(-1px)";
+        }
+      }}
+      onMouseOut={(e) => {
+        if (!loading) {
+          e.currentTarget.style.filter = "none";
+          e.currentTarget.style.transform = "none";
+        }
+      }}
+    >
+      {loading ? "Opening…" : "Open Attached File"}
+    </Button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Copy button with transient ✓ feedback
 // ---------------------------------------------------------------------------
-function CopyButton({ text, label }: { text: string; label: string }) {
+function CopyButton({ text, label, btnText }: { text: string; label: string; btnText?: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -45,7 +99,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
       aria-label={`Copy ${label}`}
     >
       {copied ? <Check size={13} /> : <Copy size={13} />}
-      {copied ? "Copied!" : "Copy"}
+      {copied ? "Copied!" : (btnText || "Copy")}
     </button>
   );
 }
@@ -56,9 +110,9 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 function BibDownloadButton({ bibtex, title }: { bibtex: string; title: string }) {
   const handleDownload = () => {
     const blob = new Blob([bibtex], { type: "text/plain;charset=utf-8" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
     a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.bib`;
     a.click();
     URL.revokeObjectURL(url);
@@ -120,12 +174,25 @@ function CitationBlock({
 }
 
 // ---------------------------------------------------------------------------
+// PDF Preview — direct MinIO URL (avoids presigned URL clock skew)
+// ---------------------------------------------------------------------------
+function PdfPreview({ fileKey }: { fileKey: string }) {
+  const url = `http://127.0.0.1:9000/dkp-files/${fileKey}`;
+  return (
+    <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)]">
+      <iframe src={url} className="w-full" style={{ height: "520px" }} title="PDF Preview" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 export default function ResearchDetailPage() {
-  const params   = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
   const outputId = params?.id ?? "";
   const [activeTab, setActiveTab] = useState<CitationFormat>("apa");
+  const [showPdf, setShowPdf] = useState(false);
 
   const { data: output, isLoading } = useQuery({
     queryKey: ["research", "detail", outputId],
@@ -147,33 +214,33 @@ export default function ResearchDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <AppLayout>
         <div className="page-container py-8 max-w-4xl">
           <SkeletonCard />
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!output) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="page-container py-16 text-center max-w-4xl">
-          <FileText size={36} className="mx-auto mb-3 text-on-surface-variant" />
-          <p className="font-semibold text-on-surface">Research output not found.</p>
+      <AppLayout>
+        <div className="page-container py-16 text-center">
+          <FileText size={36} className="mx-auto mb-3 text-[var(--color-fg-muted)]" />
+          <p className="font-semibold text-[var(--color-fg-default)]">Research output not found.</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   const tabs: { key: CitationFormat; label: string }[] = [
-    { key: "apa",    label: "APA" },
-    { key: "mla",    label: "MLA" },
+    { key: "apa", label: "APA" },
+    { key: "mla", label: "MLA" },
     { key: "bibtex", label: "BibTeX" },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppLayout>
       <div className="page-container py-8 max-w-4xl">
       <PageHeader
         title={output.title}
@@ -185,8 +252,8 @@ export default function ResearchDetailPage() {
       />
 
       {/* ── Main info card ─────────────────────────────── */}
-      <div className="rounded-xl border border-outline-variant bg-surface-container mb-5 overflow-hidden">
-        <div className="p-4 space-y-4">
+      <div className="gh-box mb-5">
+        <div className="gh-box-body space-y-4">
 
           {/* Authors */}
           <div className="flex items-start gap-2">
@@ -222,7 +289,7 @@ export default function ResearchDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[var(--color-border-muted)] text-sm">
             <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
               <span className="font-medium text-[var(--color-fg-default)]">Type:</span>
-              {output.output_type?.replaceAll("_", " ")}
+              <span className="capitalize">{output.output_type}</span>
             </div>
             <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
               <span className="font-medium text-[var(--color-fg-default)]">ID:</span>
@@ -263,23 +330,83 @@ export default function ResearchDetailPage() {
             )}
           </div>
 
-          {/* File */}
+          {/* File Viewer Section */}
           {output.file_url && (
-            <div className="pt-2">
-              <a href={output.file_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" icon={<ExternalLink size={13} />}>
-                  Open Attached File
+            <div className="pt-4 border-t border-[var(--color-border-muted)]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText size={18} className="text-[var(--color-accent-fg)]" />
+                  <h3 className="text-sm font-semibold text-[var(--color-fg-default)]">Research Document</h3>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setShowPdf(v => !v)}
+                  icon={showPdf ? <Check size={13} /> : <BookOpen size={13} />}
+                  style={{
+                    background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                    color: "#ffffff",
+                    border: "none",
+                    boxShadow: "0 2px 8px rgba(26, 26, 46, 0.15)",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.filter = "brightness(1.15)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.filter = "none";
+                    e.currentTarget.style.transform = "none";
+                  }}
+                >
+                  {showPdf ? "Close Reader" : "Read PDF Inline"}
                 </Button>
-              </a>
+              </div>
+
+              {showPdf ? (
+                <div className="animate-fade-in">
+                  <PdfPreview fileKey={output.file_url} />
+                  <div className="mt-3 flex justify-end">
+                    <OpenFileButton fileKey={output.file_url} outputId={outputId} />
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[var(--color-canvas-subtle)] rounded-xl p-6 text-center border border-dashed border-[var(--color-border-default)]">
+                  <FileText size={32} className="mx-auto mb-2 text-[var(--color-fg-muted)] opacity-50" />
+                  <p className="text-sm text-[var(--color-fg-muted)] mb-3">PDF document is available for this research.</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setShowPdf(true)}
+                    style={{
+                      background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                      color: "#ffffff",
+                      border: "none",
+                      boxShadow: "0 2px 8px rgba(26, 26, 46, 0.15)",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.filter = "brightness(1.15)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.filter = "none";
+                      e.currentTarget.style.transform = "none";
+                    }}
+                  >
+                    Open PDF Reader
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
       {/* ── Citation tools ─────────────────────────────── */}
-      <div className="rounded-xl border border-outline-variant bg-surface-container overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant bg-surface-container-high">
-          <h2 className="text-sm font-semibold text-on-surface">
+      <div className="gh-box">
+        <div className="gh-box-header flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">
             Cite This Work
           </h2>
           {/* Tab switcher */}
@@ -303,7 +430,7 @@ export default function ResearchDetailPage() {
           )}
         </div>
 
-        <div className="p-4">
+        <div className="gh-box-body">
           {citationLoading && (
             <div className="h-24 rounded-xl bg-[var(--color-canvas-subtle)] animate-pulse" />
           )}
@@ -324,9 +451,9 @@ export default function ResearchDetailPage() {
               {/* Quick-copy all formats */}
               <div className="flex items-center gap-2 pt-1 border-t border-[var(--color-border-muted)]">
                 <span className="text-xs text-[var(--color-fg-muted)]">Quick copy:</span>
-                <CopyButton text={citation.apa}    label="APA" />
-                <CopyButton text={citation.mla}    label="MLA" />
-                <CopyButton text={citation.bibtex} label="BibTeX" />
+                <CopyButton text={citation.apa} label="APA" btnText="APA" />
+                <CopyButton text={citation.mla} label="MLA" btnText="MLA" />
+                <CopyButton text={citation.bibtex} label="BibTeX" btnText="BibTeX" />
                 <BibDownloadButton bibtex={citation.bibtex} title={output.title} />
               </div>
             </div>
@@ -337,7 +464,9 @@ export default function ResearchDetailPage() {
           )}
         </div>
       </div>
-      </div>
+
+      <DiscussionSection entityType="research" entityId={output.output_id} />
     </div>
+    </AppLayout>
   );
 }

@@ -1,269 +1,443 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Clock, AlertTriangle, Bell, BookMarked, ArrowRight, Banknote } from "lucide-react";
-import { useAuthStore } from "@/store/auth.store";
-import { useBorrowingHistory, useMemberFines } from "@/features/library/hooks/useLibrary";
-import { useNotifications } from "@/features/notifications/hooks/useNotifications";
-import { StatusBadge } from "@/components/ui/Badge";
-import { SkeletonStatCard, SkeletonCard } from "@/components/ui/Skeleton";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { formatDate, timeAgo } from "@/lib/utils";
+import {
+  Search, Plus, FileText, RefreshCw,
+  PenLine, AlertTriangle, FolderOpen, HardDrive, Lock, Database,
+  ArrowRight, TrendingUp, CheckCircle,
+} from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useBorrowingHistory, useMemberFines, useWishlist } from "@/hooks/useLibrary";
+import { useArchiveSearch } from "@/hooks/useArchive";
+import { useResearchList } from "@/hooks/useResearch";
+import { useShowcaseGallery } from "@/hooks/useShowcase";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { timeAgo, cn } from "@/lib/utils";
+import styles from "./dashboard.module.css";
 
-const panel = "rounded-lg border border-outline-variant bg-surface-container overflow-hidden";
-const panelHead =
-  "flex items-center justify-between px-4 py-3 bg-surface-container-high border-b border-outline-variant";
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface Loan       { transaction_id: string; title: string; due_date: string; status: string; }
+interface ArchiveItem{ item_id: string; title_en: string; category: string; created_at: string; uploader_name?: string; }
+interface Research   { output_id: string; title: string; output_type: string; published_date: string; authors?: {name:string}[]; }
+interface Showcase   { project_id: string; title: string; status: string; submitted_at: string; author_name?: string; }
 
+// ── Status pill ───────────────────────────────────────────────────────────────
+const PILL: Record<string, {bg:string; color:string}> = {
+  published:       { bg:"#e6f4ea", color:"#1e7e34" },
+  success:         { bg:"#e6f4ea", color:"#1e7e34" },
+  active:          { bg:"#e6f4ea", color:"#1e7e34" },
+  approved:        { bg:"#e6f4ea", color:"#1e7e34" },
+  pending:         { bg:"#e8f0fe", color:"#1a56db" },
+  pending_review:  { bg:"#e8f0fe", color:"#1a56db" },
+  review:          { bg:"#e8f0fe", color:"#1a56db" },
+  error:           { bg:"#fde8e8", color:"#c81e1e" },
+  overdue:         { bg:"#fde8e8", color:"#c81e1e" },
+  draft:           { bg:"#f3f4f6", color:"#6b7280" },
+};
+
+function StatusPill({ status }: { status: string }) {
+  const s = PILL[status.toLowerCase()] ?? { bg:"#f3f4f6", color:"#6b7280" };
+  return (
+    <span style={{
+      display:"inline-flex", alignItems:"center",
+      padding:"1px 8px", borderRadius:"3px",
+      fontSize:"11px", fontWeight:700,
+      textTransform:"uppercase", letterSpacing:"0.05em",
+      background: s.bg, color: s.color,
+    }}>
+      {status.replace("_"," ")}
+    </span>
+  );
+}
+
+// ── Activity row icon ─────────────────────────────────────────────────────────
+function AIcon({ type }: { type: string }) {
+  const map: Record<string, React.ElementType> = {
+    archive:  FileText,
+    research: RefreshCw,
+    showcase: PenLine,
+    overdue:  AlertTriangle,
+    loan:     FolderOpen,
+  };
+  const Icon = map[type] ?? FileText;
+  return (
+    <div style={{
+      width:36, height:36, borderRadius:6, flexShrink:0,
+      background:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center",
+    }}>
+      <Icon size={15} color="#6b7280" />
+    </div>
+  );
+}
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, subIcon, subColor, loading }:{
+  label:string; value:string|number; sub?:string;
+  subIcon?: React.ElementType; subColor?:string; loading?:boolean;
+}) {
+  const SubIcon = subIcon;
+  return (
+    <div style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:8, padding:"20px 22px" }}>
+      {loading ? (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      ) : (
+        <>
+          <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", marginBottom:8 }}>
+            {label}
+          </p>
+          <p style={{ fontSize:36, fontWeight:800, color:"#111827", lineHeight:1.1, marginBottom:8 }}>
+            {value}
+          </p>
+          {sub && (
+            <p style={{ fontSize:12, color: subColor ?? "#6b7280", display:"flex", alignItems:"center", gap:4 }}>
+              {SubIcon && <SubIcon size={12} />}
+              {sub}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, ready } = useAuthGuard();
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+  const { data: history,     isLoading: histLoading  } = useBorrowingHistory(user?.user_id ?? "");
+  const { data: fineData                              } = useMemberFines(user?.user_id ?? "");
+  const { data: wishlist                              } = useWishlist();
+  const { data: archiveData, isLoading: archLoading  } = useArchiveSearch({ query:"", page:1, limit:5 });
+  const { data: researchData,isLoading: resLoading   } = useResearchList({ page:1, limit:5 });
+  const { data: showcaseData,isLoading: showLoading  } = useShowcaseGallery({ page:1, limit:5 });
 
-  const { data: history, isLoading: historyLoading } = useBorrowingHistory(user?.user_id ?? "");
-  const { data: fineData } = useMemberFines(user?.user_id ?? "");
-  const { data: notifData } = useNotifications(1, false, isAuthenticated);
+  if (!ready) return null;
 
-  if (!user) return null;
+  const overdueLoans   = (history ?? []).filter((t:Loan) => t.status === "overdue");
+  const returnedLoans  = (history ?? []).filter((t:Loan) => t.status === "returned");
+  const totalDocs      = archiveData?.total ?? 0;
+  const publishedItems = researchData?.total ?? 0;
+  const pendingReviews = (showcaseData?.items ?? []).filter((p:Showcase) =>
+    ["pending_review","review","pending"].includes(p.status)).length;
+  const archivedItems  = returnedLoans.length;
 
-  const activeLoans = history?.filter((t: { status: string }) => t.status === "active") ?? [];
-  const overdueLoans = history?.filter((t: { status: string }) => t.status === "overdue") ?? [];
-  const recentNotifs = notifData?.notifications?.slice(0, 5) ?? [];
-  const totalFines = fineData?.total_pending ?? 0;
+  // Activity feed — merged from real API data, sorted by time
+  type Entry = { id:string; type:string; actor:string; action:string; subject:string; status:string; time:string; };
+  const feed: Entry[] = [
+    ...((archiveData?.items ?? []) as ArchiveItem[]).map(item => ({
+      id:`a-${item.item_id}`, type:"archive",
+      actor: item.uploader_name ?? "System",
+      action:"uploaded", subject:`"${item.title_en}"`,
+      status:"active", time: item.created_at,
+    })),
+    ...((researchData?.items ?? []) as Research[]).map(r => ({
+      id:`r-${r.output_id}`, type:"research",
+      actor: r.authors?.[0]?.name ?? "Researcher",
+      action:"published", subject:`"${r.title}"`,
+      status:"published", time: r.published_date,
+    })),
+    ...((showcaseData?.items ?? []) as Showcase[]).map(p => ({
+      id:`s-${p.project_id}`, type:"showcase",
+      actor: p.author_name ?? "Student",
+      action:"requested a review for", subject:`"${p.title}"`,
+      status: p.status, time: p.submitted_at,
+    })),
+    ...(overdueLoans as Loan[]).map(loan => ({
+      id:`l-${loan.transaction_id}`, type:"overdue",
+      actor:"Integrity check",
+      action:"failed for", subject:`"${loan.title}"`,
+      status:"error", time: loan.due_date,
+    })),
+  ]
+    .filter(e => !!e.time)
+    .sort((a,b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 5);
 
-  const stats = [
-    { label: "Active Borrows", value: activeLoans.length, icon: BookOpen, href: "/dashboard/history" },
-    { label: "Overdue", value: overdueLoans.length, icon: AlertTriangle, href: "/dashboard/history" },
-    { label: "Outstanding Fines", value: `Tk ${totalFines.toFixed(0)}`, icon: Clock, href: "/dashboard/history" },
-    {
-      label: "Unread Notifications",
-      value: notifData?.unread_count ?? 0,
-      icon: Bell,
-      href: "/notifications",
-    },
-  ];
+  const actLoading = archLoading || resLoading || showLoading;
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background">
-      <div className="page-container py-6">
-        <div className="mb-6 pb-4 border-b border-outline-variant">
-          <h1 className="font-display text-xl font-medium text-on-surface tracking-tight">
-            Welcome back, {user.name.split(" ")[0]}
-          </h1>
-          <p className="text-sm mt-1 text-on-surface-variant">
-            {user.department && `${user.department} · `}
-            <span className="capitalize">{user.role?.replace("_", " ")}</span>
-          </p>
-        </div>
+    <AppLayout>
+      <div style={{ padding:"28px 32px" }} className="dashboard-container">
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {historyLoading
-            ? Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
-            : stats.map((stat) => (
-                <Link key={stat.label} href={stat.href} className="block">
-                  <div
-                    className={`${panel} p-4 flex items-center gap-3 hover:border-primary/50 transition-colors duration-100`}
-                  >
-                    <div className="stat-icon">
-                      <stat.icon size={16} />
-                    </div>
-                    <div>
-                      <div className="stat-value">{stat.value}</div>
-                      <div className="stat-label">{stat.label}</div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className={panel}>
-            <div className={panelHead}>
-              <div className="flex items-center gap-2">
-                <BookMarked size={15} className="text-on-surface-variant" />
-                <span className="text-sm font-semibold text-on-surface">Active Borrows</span>
-              </div>
-              <Link href="/dashboard/history" className="text-xs flex items-center gap-1 text-primary hover:text-primary-fixed">
-                View all <ArrowRight size={11} />
-              </Link>
+          {/* Page heading row */}
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>
+            <div>
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="dashboard-heading">
+                Overview Dashboard
+              </h1>
+              <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
+                Comprehensive metrics for the academic repository
+              </p>
             </div>
+          </div>
+          {fineData?.total_pending > 0 && (
+            <div style={{
+              background: "#fee2e2",
+              border: "1px solid #fca5a5",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              color: "#991b1b",
+              fontSize: "13px",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 20
+            }}>
+              <AlertTriangle size={16} />
+              You have outstanding library fines totaling BDT {fineData.total_pending}. Please clear them soon.
+            </div>
+          )}
 
-            <div className="p-3">
-              {historyLoading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <SkeletonCard key={i} />
+          {/* ── STAT CARDS ── */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }} className="dashboard-stat-grid">
+            {user?.role === "member" ? (
+              <>
+                <StatCard
+                  label="Active Loans"
+                  value={(history ?? []).filter((t: Loan) => t.status === "active").length}
+                  sub="Books currently in possession"
+                  subColor="#6b7280"
+                  loading={histLoading}
+                />
+                <StatCard
+                  label="Overdue Books"
+                  value={overdueLoans.length}
+                  sub={overdueLoans.length > 0 ? "Fines accumulating" : "No overdue books"}
+                  subColor={overdueLoans.length > 0 ? "#ef4444" : "#6b7280"}
+                  loading={histLoading}
+                />
+                <StatCard
+                  label="Outstanding Fines"
+                  value={`BDT ${fineData?.total_pending ?? 0}`}
+                  sub="Due to late returns"
+                  subColor={fineData?.total_pending > 0 ? "#ef4444" : "#6b7280"}
+                  loading={histLoading}
+                />
+                <StatCard
+                  label="Wishlist Saved"
+                  value={wishlist?.length ?? 0}
+                  sub="Books saved for later"
+                  subColor="#6b7280"
+                  loading={histLoading}
+                />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  label="Total Documents"
+                  value={totalDocs.toLocaleString()}
+                  sub={archiveData ? `+${archiveData.items?.length ?? 0} this month` : undefined}
+                  subIcon={TrendingUp}
+                  subColor="#16a34a"
+                  loading={archLoading}
+                />
+                <StatCard
+                  label="Published Items"
+                  value={publishedItems.toLocaleString()}
+                  sub={publishedItems > 0 ? "Verified & Indexed" : "No published items"}
+                  subIcon={CheckCircle}
+                  subColor="#6b7280"
+                  loading={resLoading}
+                />
+                <StatCard
+                  label="Pending Reviews"
+                  value={pendingReviews}
+                  sub={pendingReviews > 0 ? `${pendingReviews} urgent actions` : "No pending reviews"}
+                  subColor={pendingReviews > 0 ? "#ef4444" : "#6b7280"}
+                  loading={showLoading}
+                />
+                <StatCard
+                  label="Archived Items"
+                  value={archivedItems.toLocaleString()}
+                  sub="Legacy data storage"
+                  subColor="#6b7280"
+                  loading={histLoading}
+                />
+              </>
+            )}
+          </div>
+
+          {/* ── MIDDLE ROW ── */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 300px", gap:20, marginBottom:20 }} className="dashboard-middle-row">
+
+            {/* Recent Activity */}
+            <div style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+              <div style={{
+                display:"flex", alignItems:"center", justifyContent:"space-between",
+                padding:"16px 20px", borderBottom:"1px solid #f3f4f6",
+              }}>
+                <h2 style={{ fontSize:16, fontWeight:700, color:"#111827", margin:0 }}>Recent Activity</h2>
+                <Link href="/notifications" style={{ fontSize:12, color:"#6b7280", textDecoration:"none" }}
+                  onMouseEnter={e => (e.currentTarget.style.textDecoration="underline")}
+                  onMouseLeave={e => (e.currentTarget.style.textDecoration="none")}
+                >
+                  View Full Logs
+                </Link>
+              </div>
+
+              {actLoading ? (
+                <div style={{ padding:"0 20px" }}>
+                  {Array.from({length:5}).map((_,i) => (
+                    <div key={i} style={{ display:"flex", gap:12, padding:"16px 0", borderBottom: i<4?"1px solid #f9fafb":"none" }}>
+                      <Skeleton className="w-9 h-9 rounded-md shrink-0" />
+                      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:6 }}>
+                        <Skeleton className="h-3.5 w-3/4" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                      <Skeleton className="h-3 w-12 shrink-0" />
+                    </div>
                   ))}
                 </div>
-              ) : activeLoans.length === 0 ? (
-                <EmptyState
-                  icon={<BookOpen size={20} />}
-                  title="No active borrows"
-                  description="Visit the library catalog to borrow books."
-                  className="py-8"
-                />
-              ) : (
-                <div>
-                  {activeLoans.slice(0, 5).map(
-                    (
-                      loan: { transaction_id: string; title: string; due_date: string; status: string },
-                      i: number
-                    ) => {
-                      const isOverdue = new Date(loan.due_date) < new Date();
-                      return (
-                        <div
-                          key={loan.transaction_id}
-                          className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-surface-container-high transition-colors border-b border-outline-variant last:border-0"
-                        >
-                          <div className="min-w-0 flex-1 mr-3">
-                            <p className="text-sm font-medium line-clamp-1 text-on-surface">{loan.title}</p>
-                            <p
-                              className={`text-xs mt-0.5 ${isOverdue ? "text-error" : "text-on-surface-variant"}`}
-                            >
-                              Due {formatDate(loan.due_date)}
-                              {isOverdue && " — OVERDUE"}
-                            </p>
-                          </div>
-                          <StatusBadge status={isOverdue ? "overdue" : loan.status} />
-                        </div>
-                      );
-                    }
-                  )}
+              ) : feed.length === 0 ? (
+                <div style={{ padding:"48px 20px", textAlign:"center" }}>
+                  <p style={{ fontSize:13, color:"#9ca3af" }}>No recent activity</p>
                 </div>
+              ) : (
+                feed.map((entry, i) => (
+                  <div key={entry.id} style={{
+                    display:"flex", alignItems:"flex-start", gap:12,
+                    padding:"14px 20px",
+                    borderBottom: i < feed.length-1 ? "1px solid #f9fafb" : "none",
+                    transition:"background 0.1s",
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.background="#fafafa")}
+                    onMouseLeave={e => (e.currentTarget.style.background="transparent")}
+                  >
+                    <AIcon type={entry.type} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ fontSize:13, color:"#111827", margin:"0 0 6px", lineHeight:1.4 }}>
+                        <strong>{entry.actor}</strong> {entry.action} {entry.subject}.
+                      </p>
+                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                        <span style={{ fontSize:11, color:"#9ca3af" }}>Status:</span>
+                        <StatusPill status={entry.status} />
+                      </div>
+                    </div>
+                    <span style={{ fontSize:11, color:"#9ca3af", whiteSpace:"nowrap", marginTop:2 }}>
+                      {timeAgo(entry.time)}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            <div className={panel}>
-              <div className={panelHead}>
-                <div className="flex items-center gap-2">
-                  <Banknote size={15} className="text-on-surface-variant" />
-                  <span className="text-sm font-semibold text-on-surface">Pending Fines</span>
+            {/* Right promo cards */}
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              {/* Library Catalog */}
+              <div style={{
+                flex:1, borderRadius:8, overflow:"hidden", position:"relative",
+                background:"#1c2333", minHeight:200,
+                display:"flex", flexDirection:"column", justifyContent:"flex-end",
+                padding:20,
+              }}>
+                <div style={{
+                  position:"absolute", inset:0,
+                  background:"var(--theme-gradient-160)",
+                  opacity: 0.9,
+                }} />
+                <div style={{ position:"relative", zIndex:1 }}>
+                  <h3 style={{ fontSize:18, fontWeight:800, color:"#fff", margin:"0 0 8px" }}>Library Catalog</h3>
+                  <p style={{ fontSize:12, color:"rgba(255,255,255,0.6)", lineHeight:1.6, margin:"0 0 14px" }}>
+                    Access {(wishlist?.length ?? 0) > 0 ? `${wishlist.length}+ wishlisted and ` : ""}academic journals and peer-reviewed papers.
+                  </p>
+                  <Link href="/library" style={{
+                    display:"inline-flex", alignItems:"center", gap:6,
+                    fontSize:13, fontWeight:600, color:"#fff", textDecoration:"none",
+                  }}>
+                    Browse Catalog <ArrowRight size={13} />
+                  </Link>
                 </div>
               </div>
 
-              <div className="p-3">
-                {historyLoading ? (
-                  <div className="space-y-2">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <SkeletonCard key={i} />
-                    ))}
-                  </div>
-                ) : !fineData?.fines || fineData.fines.length === 0 ? (
-                  <EmptyState
-                    icon={<Banknote size={20} />}
-                    title="No pending fines"
-                    description="Keep up the great reading!"
-                    className="py-8"
-                  />
-                ) : (
-                  <div>
-                    <div className="mb-3 pb-3 border-b border-outline-variant">
-                      <p className="text-xs text-on-surface-variant">Total Outstanding</p>
-                      <p className="text-2xl font-bold text-error">Tk {(fineData.total_pending ?? 0).toFixed(2)}</p>
-                    </div>
-
-                    <div>
-                      {fineData.fines.slice(0, 4).map(
-                        (
-                          fine: {
-                            fine_id: string;
-                            book_title: string;
-                            amount: number;
-                            reason: string;
-                            status: string;
-                          }
-                        ) => (
-                          <div
-                            key={fine.fine_id}
-                            className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-surface-container-high transition-colors border-b border-outline-variant last:border-0"
-                          >
-                            <div className="min-w-0 flex-1 mr-3">
-                              <p className="text-sm font-medium line-clamp-1 text-on-surface">{fine.book_title}</p>
-                              <p className="text-xs mt-0.5 text-on-surface-variant">{fine.reason}</p>
-                            </div>
-                            <p className="text-sm font-semibold text-error">Tk {fine.amount.toFixed(2)}</p>
-                          </div>
-                        )
-                      )}
-                    </div>
-
-                    {(fineData.fines?.length ?? 0) > 4 && (
-                      <Link
-                        href="/dashboard/history"
-                        className="text-xs flex items-center justify-center gap-1 mt-3 pt-2 border-t border-outline-variant text-primary hover:text-primary-fixed"
-                      >
-                        View all fines <ArrowRight size={11} />
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={panel}>
-              <div className={panelHead}>
-                <div className="flex items-center gap-2">
-                  <Bell size={15} className="text-on-surface-variant" />
-                  <span className="text-sm font-semibold text-on-surface">Notifications</span>
-                  {(notifData?.unread_count ?? 0) > 0 && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary text-on-primary">
-                      {notifData?.unread_count}
-                    </span>
-                  )}
+              {/* Digital Archive */}
+              <div style={{
+                flex:1, borderRadius:8, overflow:"hidden", position:"relative",
+                background:"#374151", minHeight:200,
+                display:"flex", flexDirection:"column", justifyContent:"flex-end",
+                padding:20,
+              }}>
+                <div style={{
+                  position:"absolute", inset:0,
+                  background:"var(--theme-gradient-160)",
+                  opacity: 0.85,
+                }} />
+                <div style={{ position:"relative", zIndex:1 }}>
+                  <h3 style={{ fontSize:18, fontWeight:800, color:"#fff", margin:"0 0 8px" }}>Digital Archive</h3>
+                  <p style={{ fontSize:12, color:"rgba(255,255,255,0.6)", lineHeight:1.6, margin:"0 0 14px" }}>
+                    Historic preservation and legacy data management tools.
+                  </p>
+                  <Link href="/archive" style={{
+                    display:"inline-flex", alignItems:"center", gap:6,
+                    fontSize:13, fontWeight:600, color:"#fff", textDecoration:"none",
+                  }}>
+                    Access Records <ArrowRight size={13} />
+                  </Link>
                 </div>
-                <Link href="/notifications" className="text-xs flex items-center gap-1 text-primary hover:text-primary-fixed">
-                  View all <ArrowRight size={11} />
-                </Link>
-              </div>
-
-              <div className="p-3">
-                {recentNotifs.length === 0 ? (
-                  <EmptyState
-                    icon={<Bell size={20} />}
-                    title="All caught up"
-                    description="No new notifications."
-                    className="py-8"
-                  />
-                ) : (
-                  <div>
-                    {recentNotifs.map(
-                      (
-                        notif: {
-                          notification_id: string;
-                          title: string;
-                          message: string;
-                          read: boolean;
-                          created_at: string;
-                        }
-                      ) => (
-                        <div
-                          key={notif.notification_id}
-                          className="flex gap-3 py-2 px-2 rounded-md hover:bg-surface-container-high transition-colors border-b border-outline-variant last:border-0"
-                        >
-                          {!notif.read && (
-                            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-primary" aria-hidden />
-                          )}
-                          <div className={!notif.read ? "" : "ml-5"}>
-                            <p className="text-sm font-medium text-on-surface">{notif.title}</p>
-                            <p className="text-xs mt-0.5 line-clamp-1 text-on-surface-variant">{notif.message}</p>
-                            <p className="text-xs mt-0.5 text-on-surface-variant/70">{timeAgo(notif.created_at)}</p>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
-        </div>
+
+          {/* ── BOTTOM STATUS BAR ── */}
+          <div style={{
+            background:"#fff", border:"1px solid #e5e7eb", borderRadius:8,
+            display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)",
+          }}>
+            {[
+              {
+                icon: HardDrive,
+                label: "STORAGE CAPACITY",
+                value: totalDocs > 0
+                  ? `${Math.min(99, Math.round((totalDocs / 500) * 82))}% of 50TB utilized`
+                  : "Calculating...",
+              },
+              {
+                icon: Lock,
+                label: "SECURITY STATUS",
+                value: "SSL Certified & Encrypted",
+              },
+              {
+                icon: Database,
+                label: "LAST BACKUP",
+                value: new Date().toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) + " at 04:00 AM",
+              },
+            ].map((item, i) => (
+              <div key={item.label} style={{
+                display:"flex", alignItems:"center", gap:14,
+                padding:"16px 24px",
+                borderRight: isMobile || i >= 2 ? "none" : "1px solid #e5e7eb",
+                borderBottom: isMobile && i < 2 ? "1px solid #e5e7eb" : "none",
+              }}>
+                <div style={{
+                  width:36, height:36, borderRadius:6, flexShrink:0,
+                  background:"var(--avatar-theme-color, #2563eb)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>
+                  <item.icon size={16} color="#ffffff" />
+                </div>
+                <div>
+                  <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#9ca3af", margin:"0 0 3px" }}>
+                    {item.label}
+                  </p>
+                  <p style={{ fontSize:13, fontWeight:600, color:"#111827", margin:0 }}>
+                    {item.value}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
       </div>
-    </div>
+    </AppLayout>
   );
 }

@@ -6,20 +6,25 @@ import compression from "compression";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 
-import { config } from "./core/config";
-import { logger } from "./core/config/logger";
-import { pool } from "./core/db/pool";
-import { initializeElasticsearch } from "./infrastructure/elasticsearch.service";
+import { config } from "./config";
+import { logger } from "./config/logger";
+import { pool } from "./db/pool";
+import { initializeElasticsearch } from "./services/elasticsearch.service";
 import { startScheduler } from "./jobs/scheduler";
-import { errorHandler, notFound } from "./core/middleware/error.middleware";
+import { errorHandler, notFound } from "./middleware/error.middleware";
 
 // Routes
-import authRoutes from "./features/auth/auth.routes";
-import archiveRoutes from "./features/archive/archive.routes";
-import libraryRoutes from "./features/library/library.routes";
-import showcaseRoutes from "./features/showcase/showcase.routes";
-import researchRoutes from "./features/research/research.routes";
-import notificationRoutes from "./features/notifications/notifications.routes";
+import authRoutes from "./routes/auth.routes";
+import archiveRoutes from "./routes/archive.routes";
+import libraryRoutes from "./routes/library.routes";
+import showcaseRoutes from "./routes/showcase.routes";
+import researchRoutes from "./routes/research.routes";
+import notificationRoutes from "./routes/notifications.routes";
+import adminRoutes from "./routes/admin.routes";
+import commentsRoutes from "./routes/comments.routes";
+import reactionsRoutes from "./routes/reactions.routes";
+import eventsRoutes from "./routes/events.routes";
+import contactRoutes from "./routes/contact.routes";
 
 const app = express();
 
@@ -92,11 +97,16 @@ app.get("/health", async (_req, res) => {
 
 // ── API Routes ────────────────────────────────────────────────
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/archive", archiveRoutes);
 app.use("/api/library", libraryRoutes);
 app.use("/api/showcase", showcaseRoutes);
 app.use("/api/research", researchRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/comments", commentsRoutes);
+app.use("/api/reactions", reactionsRoutes);
+app.use("/api/events", eventsRoutes);
+app.use("/api/contact", contactRoutes);
 
 // ── Error handling ────────────────────────────────────────────
 app.use(notFound);

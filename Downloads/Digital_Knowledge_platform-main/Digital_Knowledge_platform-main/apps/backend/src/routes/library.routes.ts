@@ -2,32 +2,86 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
 import { AppError, asyncHandler } from "../middleware/error.middleware";
+import { uploadSingle } from "../middleware/upload.middleware";
 import { searchCatalog } from "../services/elasticsearch.service";
 import { config } from "../config";
+import { logger } from "../config/logger";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../services/email.service";
 
 const router = Router();
 
 // GET /api/library/catalog/search
 router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { q, author, isbn, category, availability, year_from, year_to, page, limit } =
+  const { q, author, isbn, category, availability, year_from, year_to, page = "1", limit = "20" } =
     req.query as Record<string, string>;
 
-  const result = await searchCatalog({
-    query: q, author, isbn, category,
-    availability: availability as "available" | "on_loan" | "all",
-    year_from: year_from ? parseInt(year_from) : undefined,
-    year_to: year_to ? parseInt(year_to) : undefined,
-    page: page ? parseInt(page) : 1,
-    limit: limit ? parseInt(limit) : 20,
-  });
+  const pageNum  = parseInt(page);
+  const limitNum = parseInt(limit);
+  const offset   = (pageNum - 1) * limitNum;
+
+  const where: string[] = ["deleted_at IS NULL"];
+  const values: unknown[] = [];
+  let i = 1;
+
+  if (q) {
+    where.push(`title ILIKE $${i}`);
+    values.push(`%${q}%`);
+    i++;
+  }
+  if (author) {
+    where.push(`array_to_string(authors, ' ') ILIKE $${i}`);
+    values.push(`%${author}%`);
+    i++;
+  }
+  if (isbn) {
+    where.push(`isbn ILIKE $${i}`);
+    values.push(`%${isbn}%`);
+    i++;
+  }
+  if (category) {
+    where.push(`category = $${i}`);
+    values.push(category);
+    i++;
+  }
+  if (availability === "available") {
+    where.push("available_copies > 0");
+  } else if (availability === "on_loan") {
+    where.push("available_copies = 0");
+  }
+  if (year_from) {
+    where.push(`year >= $${i}`);
+    values.push(parseInt(year_from));
+    i++;
+  }
+  if (year_to) {
+    where.push(`year <= $${i}`);
+    values.push(parseInt(year_to));
+    i++;
+  }
+
+  const whereClause = where.join(" AND ");
+
+  const [{ total }] = await query<{ total: string }>(
+    `SELECT COUNT(*)::text as total FROM catalog_items WHERE ${whereClause}`,
+    values
+  );
+
+  const items = await query(
+    `SELECT * FROM catalog_items
+     WHERE ${whereClause}
+     ORDER BY title ASC
+     LIMIT $${i} OFFSET $${i + 1}`,
+    [...values, limitNum, offset]
+  );
 
   res.json({
     success: true,
     data: {
-      items: result.hits, total: result.total,
-      page: page ? parseInt(page) : 1, limit: limit ? parseInt(limit) : 20,
-      total_pages: Math.ceil(result.total / (limit ? parseInt(limit) : 20)),
+      items,
+      total: parseInt(total),
+      page: pageNum,
+      limit: limitNum,
+      total_pages: Math.ceil(parseInt(total) / limitNum),
     },
   });
 }));
@@ -171,27 +225,58 @@ router.post(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { catalog_id, member_id } = req.body as { catalog_id: string; member_id: string };
-    if (!catalog_id || !member_id) throw new AppError(400, "catalog_id and member_id required");
+    const { catalog_id, barcode, member_id } = req.body as { catalog_id?: string; barcode?: string; member_id: string };
+    if ((!catalog_id && !barcode) || !member_id) {
+      throw new AppError(400, "catalog_id or barcode, and member_id required");
+    }
 
     const transaction = await withTransaction(async (client) => {
-      const [item] = (await client.query(
-        "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL FOR UPDATE",
-        [catalog_id]
-      )).rows;
-      if (!item) throw new AppError(404, "Catalog item not found");
+      let item;
+      if (barcode) {
+        [item] = (await client.query(
+          "SELECT * FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL FOR UPDATE",
+          [barcode.trim()]
+        )).rows;
+      } else {
+        [item] = (await client.query(
+          "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL FOR UPDATE",
+          [catalog_id]
+        )).rows;
+      }
+
+      if (!item) {
+        throw new AppError(404, barcode ? `Book with barcode "${barcode}" not found` : "Catalog item not found");
+      }
       if (item.available_copies < 1) throw new AppError(409, "No copies available. Consider placing a hold.");
 
-      const [member] = (await client.query(
-        "SELECT user_id, name, email, membership_status FROM users WHERE user_id = $1",
-        [member_id]
-      )).rows;
+      let member;
+      const cleanMemberId = member_id.trim();
+      if (cleanMemberId.includes("@")) {
+        [member] = (await client.query(
+          "SELECT user_id, name, email, membership_status FROM users WHERE email = $1",
+          [cleanMemberId]
+        )).rows;
+      } else {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(cleanMemberId)) {
+          [member] = (await client.query(
+            "SELECT user_id, name, email, membership_status FROM users WHERE user_id = $1",
+            [cleanMemberId]
+          )).rows;
+        } else {
+          [member] = (await client.query(
+            "SELECT user_id, name, email, membership_status FROM users WHERE name = $1 OR email = $1",
+            [cleanMemberId]
+          )).rows;
+        }
+      }
+
       if (!member) throw new AppError(404, "Member not found");
       if (member.membership_status !== "active") throw new AppError(403, "Member account is not active");
 
       const [{ count }] = (await client.query(
         "SELECT COUNT(*) FROM lending_transactions WHERE member_id = $1 AND status = 'active'",
-        [member_id]
+        [member.user_id]
       )).rows;
       if (parseInt(count) >= config.library.maxBorrowLimit) {
         throw new AppError(409, `Borrow limit reached (max ${config.library.maxBorrowLimit} items)`);
@@ -199,7 +284,7 @@ router.post(
 
       const [fineResult] = (await client.query(
         "SELECT COALESCE(SUM(amount), 0) as total FROM fines WHERE member_id = $1 AND status = 'pending'",
-        [member_id]
+        [member.user_id]
       )).rows;
       if (parseFloat(fineResult.total) > 100) {
         throw new AppError(403, "Outstanding fines exceed limit. Please clear dues first.");
@@ -211,24 +296,24 @@ router.post(
       const [txn] = (await client.query(
         `INSERT INTO lending_transactions (catalog_id, member_id, due_date)
          VALUES ($1, $2, $3) RETURNING *`,
-        [catalog_id, member_id, dueDate.toISOString().split("T")[0]]
+        [item.catalog_id, member.user_id, dueDate.toISOString().split("T")[0]]
       )).rows;
 
       await client.query(
         "UPDATE catalog_items SET available_copies = available_copies - 1 WHERE catalog_id = $1",
-        [catalog_id]
+        [item.catalog_id]
       );
 
       await client.query(
         `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
          VALUES ($1, 'CREATE', 'lending_transaction', $2, $3, $4)`,
-        [req.user!.user_id, txn.transaction_id, JSON.stringify({ catalog_id, member_id }), req.ip]
+        [req.user!.user_id, txn.transaction_id, JSON.stringify({ catalog_id: item.catalog_id, member_id: member.user_id }), req.ip]
       );
 
       client.query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
          VALUES ($1, 'due_date_reminder', $2, $3, $4)`,
-        [member_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, "/dashboard"]
+        [member.user_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, "/dashboard"]
       ).catch(() => {});
 
       return { transaction: txn, member, item };
@@ -254,18 +339,64 @@ router.post(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { transaction_id } = req.body as { transaction_id: string };
-    if (!transaction_id) throw new AppError(400, "transaction_id required");
+    const { transaction_id, barcode, member_id } = req.body as { transaction_id?: string; barcode?: string; member_id?: string };
+    if (!transaction_id && !barcode) {
+      throw new AppError(400, "transaction_id or barcode required");
+    }
 
     const result = await withTransaction(async (client) => {
-      const [txn] = (await client.query(
-        `SELECT lt.*, ci.title as book_title
-         FROM lending_transactions lt
-         JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-         WHERE lt.transaction_id = $1 AND lt.status = 'active'
-         FOR UPDATE`,
-        [transaction_id]
-      )).rows;
+      let txn;
+      if (transaction_id) {
+        [txn] = (await client.query(
+          `SELECT lt.*, ci.title as book_title
+           FROM lending_transactions lt
+           JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+           WHERE lt.transaction_id = $1 AND lt.status = 'active'
+           FOR UPDATE`,
+          [transaction_id]
+        )).rows;
+      } else if (barcode) {
+        const [item] = (await client.query(
+          "SELECT catalog_id FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL",
+          [barcode.trim()]
+        )).rows;
+        if (!item) throw new AppError(404, `Book with barcode "${barcode}" not found`);
+
+        if (member_id) {
+          let memberUser;
+          const cleanMemberId = member_id.trim();
+          if (cleanMemberId.includes("@")) {
+            [memberUser] = (await client.query("SELECT user_id FROM users WHERE email = $1", [cleanMemberId])).rows;
+          } else {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (uuidRegex.test(cleanMemberId)) {
+              [memberUser] = (await client.query("SELECT user_id FROM users WHERE user_id = $1", [cleanMemberId])).rows;
+            } else {
+              [memberUser] = (await client.query("SELECT user_id FROM users WHERE name = $1 OR email = $1", [cleanMemberId])).rows;
+            }
+          }
+          if (!memberUser) throw new AppError(404, "Member not found");
+
+          [txn] = (await client.query(
+            `SELECT lt.*, ci.title as book_title
+             FROM lending_transactions lt
+             JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+             WHERE lt.catalog_id = $1 AND lt.member_id = $2 AND lt.status = 'active'
+             FOR UPDATE`,
+            [item.catalog_id, memberUser.user_id]
+          )).rows;
+        } else {
+          [txn] = (await client.query(
+            `SELECT lt.*, ci.title as book_title
+             FROM lending_transactions lt
+             JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+             WHERE lt.catalog_id = $1 AND lt.status = 'active'
+             ORDER BY lt.issue_date ASC LIMIT 1
+             FOR UPDATE`,
+            [item.catalog_id]
+          )).rows;
+        }
+      }
 
       if (!txn) throw new AppError(404, "Active transaction not found");
 
@@ -282,7 +413,7 @@ router.post(
         `UPDATE lending_transactions
          SET return_date = CURRENT_DATE, fine_amount = $1, status = 'returned'
          WHERE transaction_id = $2 RETURNING *`,
-        [fineAmount, transaction_id]
+        [fineAmount, txn.transaction_id]
       )).rows;
 
       await client.query(
@@ -293,7 +424,7 @@ router.post(
       if (fineAmount > 0) {
         await client.query(
           `INSERT INTO fines (member_id, transaction_id, amount, reason) VALUES ($1, $2, $3, $4)`,
-          [txn.member_id, transaction_id, fineAmount, `Overdue fine for "${txn.book_title}"`]
+          [txn.member_id, txn.transaction_id, fineAmount, `Overdue fine for "${txn.book_title}"`]
         );
       }
 
@@ -351,6 +482,28 @@ router.get(
     );
 
     res.json({ success: true, data: transactions });
+  })
+);
+
+// GET /api/library/member/:id/holds
+router.get(
+  "/member/:id/holds",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (req.user!.role === "member" && req.user!.user_id !== req.params.id) {
+      throw new AppError(403, "Access denied");
+    }
+
+    const holds = await query(
+      `SELECT hr.*, ci.title, ci.authors, ci.isbn
+       FROM hold_requests hr
+       JOIN catalog_items ci ON hr.catalog_id = ci.catalog_id
+       WHERE hr.member_id = $1
+       ORDER BY hr.request_date DESC`,
+      [req.params.id]
+    );
+
+    res.json({ success: true, data: holds });
   })
 );
 
@@ -449,21 +602,78 @@ router.post(
   "/catalog",
   authenticate,
   requireRole("librarian", "admin"),
+  uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description } =
-      req.body as Record<string, unknown>;
+    const body = req.body as Record<string, string>;
+    const { title, isbn, publisher, edition, year, category,
+            total_copies, shelf_location, description } = body;
 
     if (!title) throw new AppError(400, "Title is required");
-    if (!total_copies || (total_copies as number) < 1) throw new AppError(400, "At least 1 copy required");
+    if (!total_copies || parseInt(total_copies) < 1) throw new AppError(400, "At least 1 copy required");
+
+    // Check for duplicate ISBN BEFORE uploading file
+    if (isbn && isbn.trim()) {
+      const existing = await queryOne(
+        "SELECT catalog_id FROM catalog_items WHERE isbn = $1 AND deleted_at IS NULL",
+        [isbn.trim()]
+      );
+      if (existing) throw new AppError(409, `A book with ISBN "${isbn}" already exists. Leave ISBN blank to add another copy.`);
+    }
+
+    const authors = body.authors
+      ? (typeof body.authors === "string" && body.authors.startsWith("[")
+          ? JSON.parse(body.authors)
+          : body.authors.split(",").map((a: string) => a.trim()).filter(Boolean))
+      : [];
+
+    // Upload PDF to S3 if provided
+    let file_url: string | null = null;
+    if (req.file) {
+      const { generateS3Key, uploadToS3 } = await import("../services/s3.service");
+      const key = generateS3Key("library/books", req.file.originalname, req.file.mimetype);
+      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+      file_url = key;
+    }
 
     const item = await queryOne(
       `INSERT INTO catalog_items
-         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10)
+         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, cover_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
        RETURNING *`,
-      [title, isbn || null, authors || [], publisher || null, edition || null, year || null,
-       category || "General", total_copies, shelf_location || null, description || null]
+      [title, isbn?.trim() || null, authors, publisher || null, edition || null,
+       year ? parseInt(year) : null, category || "General",
+       parseInt(total_copies), shelf_location || null, description || null,
+       file_url]
     );
+
+    if (!item) throw new AppError(500, "Failed to create catalog item");
+
+    // Auto-archive: Create archive item from catalog
+    if (file_url && req.file) {
+      try {
+        const archiveTitle = `${title}${edition ? ` (Edition ${edition})` : ""}`;
+        const archiveAuthors = Array.isArray(authors) ? authors : [];
+        const archiveCategory = category || "General";
+        
+        await query(
+          `INSERT INTO archive_items
+             (title_en, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, source_type, source_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            archiveTitle, description || `From Library Catalog: ${title}`,
+            archiveAuthors, archiveCategory, "en",
+            "member", "published", file_url, req.file.mimetype || "application/pdf", req.file.size,
+            req.user!.user_id, "library", item.catalog_id
+          ]
+        );
+      } catch (archiveErr) {
+        logger.warn("Failed to auto-archive library item", {
+          catalog_id: item.catalog_id,
+          error: (archiveErr as Error).message,
+        });
+        // Continue despite archive failure
+      }
+    }
 
     res.status(201).json({ success: true, data: item });
   })

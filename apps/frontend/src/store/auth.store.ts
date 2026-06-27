@@ -7,6 +7,8 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
@@ -15,10 +17,12 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      _hasHydrated: false,
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
 
       login: async (email, password) => {
         set({ isLoading: true });
@@ -61,6 +65,10 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "dkp-auth",
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      // Called once rehydration from localStorage is complete
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

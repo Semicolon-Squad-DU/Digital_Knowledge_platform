@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "styles:build": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css",
-    "dev": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next dev -H 0.0.0.0 -p ${PORT:-3000}",
+    "dev": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next dev -H 0.0.0.0 -p 3000",
     "build": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next build",
     "start": "next start",
     "lint": "next lint"
@@ -12,12 +12,13 @@
   "dependencies": {
     "@dkp/shared": "*",
     "@hookform/resolvers": "^3.3.4",
+    "@lottiefiles/react-lottie-player": "^3.6.0",
     "@tanstack/react-query": "^5.28.4",
     "@tanstack/react-query-devtools": "^5.28.4",
     "axios": "^1.6.8",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
-    "geist": "^1.7.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.363.0",
     "next": "^14.2.35",
     "nodemailer": "8.0.5",
@@ -31,6 +32,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/jspdf": "^1.3.3",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.73",
     "@types/react-dom": "^18.2.22",

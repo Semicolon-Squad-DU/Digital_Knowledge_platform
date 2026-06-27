@@ -1,35 +1,105 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FlaskConical, Search, ExternalLink, Calendar, Tag } from "lucide-react";
+import {
+  Search, Plus, FlaskConical, ExternalLink, Calendar,
+} from "lucide-react";
 import api from "@/lib/api";
-import { Button } from "@/components/ui/Button";
-import { SkeletonCard } from "@/components/ui/Skeleton";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Pagination } from "@/components/ui/Pagination";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { cn, formatDate } from "@/lib/utils";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { formatDate } from "@/lib/utils";
+import toast from "react-hot-toast";
 
-const OUTPUT_TYPES = [
-  { value: "",                  label: "All Types" },
-  { value: "journal_article",   label: "Journal" },
-  { value: "conference_paper",  label: "Conference" },
-  { value: "thesis",            label: "Thesis" },
-  { value: "dataset",           label: "Dataset" },
-  { value: "technical_report",  label: "Report" },
-];
-
-const TYPE_BADGE: Record<string, { label: string; className: string }> = {
-  journal_article:  { label: "Journal",    className: "bg-primary/15 text-primary border-primary/30" },
-  conference_paper: { label: "Conference", className: "bg-tertiary/15 text-tertiary border-tertiary/30" },
-  thesis:           { label: "Thesis",     className: "bg-primary-container/40 text-primary-fixed border-primary/25" },
-  dataset:          { label: "Dataset",    className: "bg-tertiary-container/30 text-tertiary-fixed border-tertiary/30" },
-  technical_report: { label: "Report",     className: "bg-surface-container-high text-on-surface-variant border-outline-variant" },
+// ── Status pill ───────────────────────────────────────────────────────────────
+const PILL: Record<string, {bg:string; color:string}> = {
+  published:  { bg:"#e6f4ea", color:"#1e7e34" },
+  journal:    { bg:"#e8f0fe", color:"#1a56db" },
+  conference: { bg:"#e8f0fe", color:"#1a56db" },
+  thesis:     { bg:"#f3f4f6", color:"#6b7280" },
+  dataset:    { bg:"#e6f4ea", color:"#1e7e34" },
+  report:     { bg:"#f3f4f6", color:"#6b7280" },
 };
 
+function ResearchCard({ item, onView }: {
+  item: {
+    output_id: string;
+    title: string;
+    abstract?: string;
+    authors?: Array<{ name: string }>;
+    output_type: string;
+    published_date: string;
+    journal_name?: string;
+    doi?: string;
+    dkp_identifier: string;
+  };
+  onView: (id: string) => void;
+}) {
+  const typePill = PILL[item.output_type] ?? { bg:"#f3f4f6", color:"#6b7280" };
+  return (
+    <div style={{
+      background:"#fff", border:"1px solid #e5e7eb", borderRadius:10,
+      padding:"16px", cursor:"pointer",
+      transition:"all 0.2s", display:"flex", gap:12,
+    }} onClick={() => onView(item.output_id)}>
+      <div style={{
+        width:42, height:42, borderRadius:8, background:typePill.bg,
+        display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+      }}>
+        <FlaskConical size={20} color={typePill.color} />
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:6 }}>
+          <span style={{
+            display:"inline-block", fontSize:10, fontWeight:700, textTransform:"uppercase",
+            padding:"2px 8px", borderRadius:4, background:typePill.bg, color:typePill.color,
+          }}>
+            {item.output_type}
+          </span>
+          {item.published_date && (
+            <span style={{ fontSize:12, color:"#9ca3af", display:"flex", alignItems:"center", gap:4 }}>
+              <Calendar size={12} /> {formatDate(item.published_date)}
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize:14, fontWeight:600, color:"#111827", margin:"0 0 4px 0" }}>
+          {item.title}
+        </p>
+        {item.authors && (
+          <p style={{ fontSize:12, color:"#6b7280", margin:0 }}>
+            {item.authors.map(a => a.name).join(", ")}
+          </p>
+        )}
+        {item.abstract && (
+          <p style={{ fontSize:12, color:"#6b7280", margin:"6px 0 0 0", lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as any }}>
+            {item.abstract}
+          </p>
+        )}
+      </div>
+      {item.doi && (
+        <a
+          href={`https://doi.org/${item.doi}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display:"flex", alignItems:"center", gap:4, fontSize:12, color:"#1a56db",
+            textDecoration:"none", fontWeight:500, flexShrink:0,
+          }}
+        >
+          DOI <ExternalLink size={12} />
+        </a>
+      )}
+    </div>
+  );
+}
+
 export default function ResearchPage() {
+  const router = useRouter();
+  const { user, ready } = useAuthGuard();
   const [params, setParams] = useState({ q: "", output_type: "", page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState("");
 
@@ -39,203 +109,206 @@ export default function ResearchPage() {
       const { data } = await api.get("/research", { params });
       return data.data;
     },
+    enabled: ready,
   });
+
+  const canUpload = ready && ["researcher", "admin"].includes(user?.role ?? "");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setParams((p) => ({ ...p, q: searchInput, page: 1 }));
   };
 
-  return (
-    <div className="bg-background min-h-full">
-    <div className="page-container py-8">
-      <PageHeader
-        title="Research"
-        subtitle="Discover faculty research, publications, and datasets"
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Research" }]}
+  const handleView = (id: string) => {
+    router.push(`/research/${id}`);
+  };
+
+  if (!ready) return null;
+
+  const topbarSearch = (
+    <div style={{
+      display:"flex", alignItems:"center", gap:8,
+      background:"#f9fafb", border:"1px solid #e5e7eb",
+      borderRadius:8, padding:"7px 14px",
+      flex:1, maxWidth:340,
+    }}>
+      <Search size={14} color="#9ca3af" />
+      <input
+        type="text"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        placeholder="Search research…"
+        style={{
+          border:"none", background:"transparent",
+          fontSize:13, color:"#6b7280", width:"100%",
+          outline:"none",
+        }}
       />
+    </div>
+  );
 
-      {/* Search + type filter */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-5">
-        <div className="search-bar flex-1">
-          <Search className="search-bar-icon" size={17} aria-hidden="true" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by title, author, or keyword…"
-            className="form-input pl-10"
-            aria-label="Search research outputs"
-          />
-        </div>
-        <Button type="submit" className="bg-primary text-on-primary border-primary hover:opacity-90">Search</Button>
-      </form>
+  return (
+    <AppLayout topbarSearch={topbarSearch}>
+      <div style={{ padding:"28px 32px" }} className="research-container">
 
-      {/* Type filter chips */}
-      <div className="flex flex-wrap gap-1.5 mb-6" role="group" aria-label="Filter by output type">
-        {OUTPUT_TYPES.map((t) => {
-          const active = params.output_type === t.value;
-          return (
+          {/* Page heading */}
+          <div style={{ marginBottom:24 }}>
+            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="research-heading">
+              Research Repository
+            </h1>
+            <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
+              Discover faculty research, publications, and datasets
+            </p>
+          </div>
+
+          {/* Search bar */}
+          <form onSubmit={handleSearch} style={{ display:"flex", gap:8, marginBottom:20 }} className="research-search-form">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by title, author, or keyword…"
+              style={{
+                flex:1, padding:"10px 14px", border:"1px solid #e5e7eb",
+                borderRadius:8, fontSize:13, outline:"none",
+                fontFamily:"inherit",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#1a56db"}
+              onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+            />
             <button
-              key={t.value}
-              onClick={() => setParams((p) => ({ ...p, output_type: t.value, page: 1 }))}
-              className={cn("filter-chip", active && "filter-chip-active")}
-              aria-pressed={active}
+              type="submit"
+              style={{
+                padding:"10px 20px", borderRadius:8, border:"none",
+                background:"var(--theme-gradient-160)",
+                color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer",
+              }}
             >
-              {t.label}
+              Search
             </button>
-          );
-        })}
-      </div>
+            {canUpload && (
+              <Link href="/research/upload" style={{
+                display:"flex", alignItems:"center", gap:6,
+                padding:"10px 16px", borderRadius:8,
+                background:"var(--theme-gradient-160)",
+                color:"#fff", fontSize:13, fontWeight:600,
+                textDecoration:"none", cursor:"pointer",
+              }}>
+                <Plus size={14} /> Upload
+              </Link>
+            )}
+          </form>
 
-      {/* Count */}
-      <div className="mb-4 min-h-[1.5rem]">
-        {!isLoading && data && (
-          <p className="text-sm text-on-surface-variant">
-            <span className="font-medium text-on-surface">{data.total.toLocaleString()}</span> outputs
-          </p>
-        )}
-        {isLoading && <p className="text-sm text-on-surface-variant">Searching…</p>}
-      </div>
-
-      {isError && (
-        <div className="rounded-lg border border-error/40 bg-error-container/20 text-error px-4 py-3 mb-4 text-sm" role="alert">
-          Failed to load research outputs.
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="space-y-4" aria-busy="true">
-          {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
-
-      {!isLoading && !isError && data?.items?.length === 0 && (
-        <EmptyState
-          icon={<FlaskConical size={26} />}
-          title="No research outputs found"
-          description="Try different search terms or clear the type filter."
-        />
-      )}
-
-      {!isLoading && data?.items && data.items.length > 0 && (
-        <>
-          <div className="space-y-3">
-            {data.items.map((output: {
-              output_id: string;
-              title: string;
-              abstract: string;
-              authors: Array<{ name: string }>;
-              keywords: string[];
-              output_type: string;
-              published_date: string;
-              journal_name: string;
-              doi: string;
-              dkp_identifier: string;
-              lab_name: string;
-            }) => {
-              const typeMeta = TYPE_BADGE[output.output_type] ?? {
-                label: output.output_type,
-                className: "bg-surface-container-high text-on-surface-variant border-outline-variant",
-              };
+          {/* Type filter chips */}
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:20 }}>
+            {[
+              { value: "", label: "All Types" },
+              { value: "journal", label: "Journal" },
+              { value: "conference", label: "Conference" },
+              { value: "thesis", label: "Thesis" },
+              { value: "dataset", label: "Dataset" },
+              { value: "report", label: "Report" },
+            ].map((t) => {
+              const active = params.output_type === t.value;
               return (
-                <div
-                  key={output.output_id}
-                  className="bg-surface-container border border-outline-variant rounded-xl p-5 hover:border-primary/40 transition-all duration-200"
+                <button
+                  key={t.value}
+                  onClick={() => setParams((p) => ({ ...p, output_type: t.value, page: 1 }))}
+                  style={{
+                    padding:"6px 14px", borderRadius:6, border: active ? "none" : "1px solid #e5e7eb",
+                    background: active ? "var(--theme-gradient-160)" : "#fff",
+                    color: active ? "#fff" : "#6b7280",
+                    fontSize:12, fontWeight: active ? 600 : 500,
+                    cursor:"pointer", transition:"all 0.2s",
+                  }}
                 >
-                  <div className="flex items-start gap-4">
-                    {/* Left */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2 flex-wrap mb-1">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${typeMeta.className}`}>
-                          {typeMeta.label}
-                        </span>
-                        {output.published_date && (
-                          <span className="flex items-center gap-1 text-xs text-on-surface-variant">
-                            <Calendar size={11} />
-                            {formatDate(output.published_date)}
-                          </span>
-                        )}
-                      </div>
-
-                      <Link
-                        href={`/research/${output.output_id}`}
-                        className="font-semibold text-on-surface hover:text-primary transition-colors leading-snug block mt-1"
-                      >
-                        {output.title}
-                      </Link>
-
-                      <p className="text-sm text-on-surface-variant mt-1">
-                        {output.authors?.map((a) => a.name).join(", ")}
-                      </p>
-
-                      {output.abstract && (
-                        <p className="text-sm text-on-surface-variant mt-2 line-clamp-2 leading-relaxed">
-                          {output.abstract}
-                        </p>
-                      )}
-
-                      {/* Keywords */}
-                      {output.keywords?.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          <Tag size={11} className="text-on-surface-variant mt-0.5 flex-shrink-0" />
-                          {output.keywords.slice(0, 5).map((kw) => (
-                            <span key={kw} className="text-xs text-on-surface-variant bg-surface-container-high border border-outline-variant px-2 py-0.5 rounded-md">
-                              {kw}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right */}
-                    <div className="flex-shrink-0 flex flex-col items-end gap-2 text-right">
-                      {output.doi && (
-                        <a
-                          href={`https://doi.org/${output.doi}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-fixed font-medium"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink size={11} /> DOI
-                        </a>
-                      )}
-                      {output.journal_name && (
-                        <p className="text-xs text-on-surface-variant max-w-[140px] text-right line-clamp-2">
-                          {output.journal_name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center gap-3 mt-3 pt-3 border-t border-outline-variant text-xs text-on-surface-variant">
-                    <span className="font-mono">{output.dkp_identifier}</span>
-                    {output.lab_name && (
-                      <>
-                        <span>·</span>
-                        <span>{output.lab_name}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                  {t.label}
+                </button>
               );
             })}
           </div>
 
-          <div className="mt-6">
-            <Pagination
-              page={params.page}
-              totalPages={data.total_pages}
-              total={data.total}
-              limit={params.limit}
-              onPageChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
-            />
-          </div>
-        </>
-      )}
-    </div>
-    </div>
+          {/* Results count */}
+          {!isLoading && data && (
+            <p style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>
+              <span style={{ fontWeight:600, color:"#111827" }}>{data.total}</span> research output{data.total !== 1 ? "s" : ""}
+            </p>
+          )}
+
+          {/* Loading */}
+          {isLoading && (
+            <div>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ marginBottom:12 }}>
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {isError && (
+            <div style={{
+              background:"#fde8e8", border:"1px solid #fce1e1",
+              borderRadius:8, padding:12, color:"#c81e1e", fontSize:13,
+            }}>
+              Failed to load research outputs. Please try again.
+            </div>
+          )}
+
+          {/* Empty */}
+          {!isLoading && !isError && (!data?.items || data.items.length === 0) && (
+            <div style={{ textAlign:"center", padding:"60px 20px" }}>
+              <FlaskConical size={48} color="#d1d5db" style={{ margin:"0 auto 16px" }} />
+              <p style={{ fontSize:16, fontWeight:600, color:"#111827", margin:0 }}>
+                No research outputs found
+              </p>
+              <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
+                Try different search terms or clear the type filter.
+              </p>
+            </div>
+          )}
+
+          {/* Results */}
+          {!isLoading && data?.items && data.items.length > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              {data.items.map((item: any) => (
+                <ResearchCard key={item.output_id} item={item} onView={handleView} />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && data?.total_pages && data.total_pages > 1 && (
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginTop:24 }}>
+              <button
+                onClick={() => setParams((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
+                disabled={params.page === 1}
+                style={{
+                  padding:"8px 12px", borderRadius:6, border:"1px solid #e5e7eb",
+                  background:"#fff", color:"#6b7280", fontSize:12, cursor: params.page === 1 ? "not-allowed" : "pointer",
+                  opacity: params.page === 1 ? 0.5 : 1,
+                }}
+              >
+                Previous
+              </button>
+              <span style={{ fontSize:12, color:"#6b7280" }}>
+                Page {params.page} of {data.total_pages}
+              </span>
+              <button
+                onClick={() => setParams((p) => ({ ...p, page: Math.min(data.total_pages, p.page + 1) }))}
+                disabled={params.page === data.total_pages}
+                style={{
+                  padding:"8px 12px", borderRadius:6, border:"1px solid #e5e7eb",
+                  background:"#fff", color:"#6b7280", fontSize:12, cursor: params.page === data.total_pages ? "not-allowed" : "pointer",
+                  opacity: params.page === data.total_pages ? 0.5 : 1,
+                }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+      </div>
+    </AppLayout>
   );
 }

@@ -1,34 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, SlidersHorizontal, X, Archive } from "lucide-react";
-import { useArchiveSearch } from "@/features/archive/hooks/useArchive";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Search, Plus, Upload, X, ChevronLeft, ChevronRight, Archive as ArchiveIcon,
+} from "lucide-react";
+import { useArchiveSearch, useDownloadArchiveItem } from "@/hooks/useArchive";
 import { useAuthStore } from "@/store/auth.store";
-import { ArchiveVaultCard } from "@/features/archive/components/ArchiveVaultCard";
-import { UploadModal } from "@/features/archive/components/UploadModal";
-import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Input";
-import { SkeletonCard } from "@/components/ui/Skeleton";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { ArchiveCard } from "@/components/archive/ArchiveCard";
+import { UploadModal } from "@/components/archive/UploadModal";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Pagination } from "@/components/ui/Pagination";
-import type { ArchiveItem } from "@dkp/shared";
+import { timeAgo } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 const CATEGORY_OPTIONS = [
-  { value: "", label: "All categories" },
-  ...["General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other"].map((c) => ({
-    value: c,
-    label: c,
-  })),
+  "General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other"
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: "", label: "All languages" },
   { value: "en", label: "English" },
   { value: "bn", label: "Bangla" },
 ];
 
 const FILE_TYPE_OPTIONS = [
-  { value: "", label: "All types" },
   { value: "application/pdf", label: "PDF" },
   { value: "image/jpeg", label: "Image" },
   { value: "audio/mpeg", label: "Audio" },
@@ -36,188 +33,477 @@ const FILE_TYPE_OPTIONS = [
 ];
 
 export default function ArchivePage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterLanguage, setFilterLanguage] = useState("");
+  const [filterFileType, setFilterFileType] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [params, setParams] = useState({
-    query: "",
-    category: "",
-    language: "",
-    file_type: "",
-    page: 1,
-    limit: 12,
+    query: "", category: "", language: "", file_type: "", page: 1, limit: 20,
   });
 
   const { data, isLoading, isError } = useArchiveSearch(params);
+  const { mutateAsync: download } = useDownloadArchiveItem();
 
-  const canUpload = isAuthenticated && ["archivist", "librarian", "admin"].includes(user?.role ?? "");
-  const hasFilters = Boolean(params.query || params.category || params.language || params.file_type);
-  const activeFilterCount = [params.category, params.language, params.file_type].filter(Boolean).length;
+  const canUpload = _hasHydrated && isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = () => {
     setParams((p) => ({ ...p, query: searchInput, page: 1 }));
+    setCurrentPage(1);
   };
 
-  const clearFilters = () => {
-    setParams({ query: "", category: "", language: "", file_type: "", page: 1, limit: 12 });
-    setSearchInput("");
+  const handleCategoryChange = (cat: string) => {
+    const newCategory = cat === "" ? "" : cat;
+    setFilterCategory(newCategory);
+    setParams((p) => ({
+      ...p,
+      category: newCategory,
+      page: 1,
+    }));
+    setCurrentPage(1);
   };
+
+  const handleLanguageChange = (lang: string) => {
+    setFilterLanguage(lang);
+    setParams((p) => ({
+      ...p,
+      language: lang,
+      page: 1,
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleFileTypeChange = (type: string) => {
+    setFilterFileType(type);
+    setParams((p) => ({
+      ...p,
+      file_type: type,
+      page: 1,
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSearchInput("");
+    setFilterCategory("");
+    setFilterLanguage("");
+    setFilterFileType("");
+    setParams({ query: "", category: "", language: "", file_type: "", page: 1, limit: 20 });
+    setCurrentPage(1);
+  };
+
+  const handleDownload = async (id: string) => {
+    try {
+      const url = await download(id);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Download failed or access denied");
+    }
+  };
+
+  const hasActiveFilters = filterCategory || filterLanguage || filterFileType || searchInput;
+
+  if (!_hasHydrated) return null;
+
+  const totalPages = data?.total_pages || 1;
+
+  const topbarSearch = <div />; // Empty div to hide default search
 
   return (
-    <div className="bg-surface-container-lowest min-h-full">
-      <header className="w-full border-b-2 border-outline-variant py-10 md:py-12 px-4 sm:px-6 flex flex-col items-center justify-center bg-surface relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-primary" aria-hidden />
-        <p className="text-xs font-mono tracking-widest text-on-surface-variant uppercase mb-3 border-b border-outline-variant pb-2 inline-block">
-          Daily digest · University archive · Open catalog
-        </p>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-black tracking-tighter text-on-surface uppercase text-center mb-6 leading-none">
-          The Archive Gazette
-        </h1>
-        <div className="flex items-center gap-2 sm:gap-3 bg-surface-container px-3 sm:px-4 py-2 border border-outline-variant shadow-[2px_2px_0_0_#27272a]">
-          <span className="material-symbols-outlined text-tertiary text-xl">fork_right</span>
-          <span className="text-xs sm:text-sm font-mono text-on-surface-variant">branch:</span>
-          <select
-            className="bg-transparent border-none text-on-surface font-bold text-xs sm:text-sm focus:ring-0 cursor-pointer appearance-none pr-6 font-mono max-w-[12rem] sm:max-w-none"
-            aria-label="Archive branch"
-            defaultValue="main"
-          >
-            <option value="main">main</option>
-            <option value="v1-legacy">v1-legacy</option>
-            <option value="theses">theses</option>
-          </select>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col lg:flex-row gap-8 lg:gap-10">
-        <aside className={`w-full lg:w-64 shrink-0 space-y-8 ${showFilters ? "" : "hidden lg:block"}`}>
-          <div>
-            <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider mb-3 border-b border-outline-variant pb-2">
-              Quick filters
-            </h3>
-            <p className="text-xs text-on-surface-variant mb-4">Narrow results by classification metadata.</p>
-            <div className="space-y-4">
-              <Select
-                label="Category"
-                value={params.category}
-                onChange={(e) => setParams((p) => ({ ...p, category: e.target.value, page: 1 }))}
-                options={CATEGORY_OPTIONS}
-              />
-              <Select
-                label="Language"
-                value={params.language}
-                onChange={(e) => setParams((p) => ({ ...p, language: e.target.value, page: 1 }))}
-                options={LANGUAGE_OPTIONS}
-              />
-              <Select
-                label="File type"
-                value={params.file_type}
-                onChange={(e) => setParams((p) => ({ ...p, file_type: e.target.value, page: 1 }))}
-                options={FILE_TYPE_OPTIONS}
-              />
-              <Button type="button" variant="ghost" size="sm" onClick={clearFilters} disabled={!hasFilters} icon={<X size={14} />}>
-                Clear filters
-              </Button>
-            </div>
-          </div>
-        </aside>
-
-        <div className="flex-1 min-w-0 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-outline-variant pb-4">
+    <AppLayout topbarSearch={topbarSearch}>
+      <div style={{ padding:"28px 32px" }} className="archive-container">
+          {/* Title Section */}
+          <div style={{ marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }} className="archive-heading">
             <div>
-              <h2 className="text-2xl font-display font-bold text-on-surface tracking-tight">Archive index</h2>
-              <p className="text-sm text-on-surface-variant mt-1 font-mono">
-                {isLoading ? "Searching…" : data ? `${data.total.toLocaleString()} entr${data.total !== 1 ? "ies" : "y"}` : ""}
+              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                Archive Repository
+              </h1>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "8px 0 0 0" }}>
+                Find institutional documents and media
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {canUpload && (
-                <Button onClick={() => setUploadOpen(true)} icon={<Upload size={15} />} className="bg-primary text-on-primary border-primary hover:opacity-90">
-                  New entry
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                className="border-outline-variant text-on-surface lg:hidden"
-                onClick={() => setShowFilters((v) => !v)}
+            {canUpload && (
+              <button
+                onClick={() => setUploadOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 16px",
+                  background: "var(--theme-gradient-160)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
               >
-                <SlidersHorizontal size={15} />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="ml-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-primary text-on-primary text-xs flex items-center justify-center font-bold">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-            </div>
+                <Upload size={14} />
+                Upload
+              </button>
+            )}
           </div>
 
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
-            <div className="relative flex-1">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">
-                search
-              </span>
+          {/* Search & Filter Bar */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 24,
+            flexWrap: "wrap",
+          }}>
+            <div style={{
+              flex: 1,
+              minWidth: 300,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              padding: "10px 12px",
+            }}>
+              <Search size={14} color="#9ca3af" />
               <input
-                type="search"
+                type="text"
+                placeholder="Search documents..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search in Bangla or English…"
-                className="w-full bg-surface-container border border-outline-variant rounded-md py-2.5 pl-11 pr-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                aria-label="Search archive"
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontSize: 13,
+                  color: "#1f2937",
+                  width: "100%",
+                }}
               />
             </div>
-            <Button type="submit" className="shrink-0 bg-primary text-on-primary border-primary hover:opacity-90">
+            <button
+              onClick={handleSearch}
+              style={{
+                padding: "10px 16px",
+                background: "var(--theme-gradient-160)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Search size={14} />
               Search
-            </Button>
-          </form>
+            </button>
+          </div>
 
-          {isError && (
-            <div className="rounded-lg border border-error/40 bg-error-container/20 px-4 py-3 text-sm text-error" role="alert">
-              Failed to load results. Please try again.
+          {/* Filter Section - Redesigned */}
+          <div style={{
+            background: "#f9fafb",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            padding: "20px",
+            marginBottom: 24,
+          }}>
+            {/* Category Filter */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#111827", display: "block", marginBottom: 12 }}>
+                Category
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["All", ...CATEGORY_OPTIONS].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat === "All" ? "" : cat)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? "none" : "1px solid #d1d5db",
+                      background: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? "var(--avatar-theme-color)" : "#ffffff",
+                      color: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? "#ffffff" : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: (cat === "All" ? filterCategory === "" : filterCategory === cat) ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!((cat === "All" ? filterCategory === "" : filterCategory === cat))) {
+                        e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                        e.currentTarget.style.color = "var(--avatar-theme-color)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!((cat === "All" ? filterCategory === "" : filterCategory === cat))) {
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                        e.currentTarget.style.color = "#6b7280";
+                      }
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Language Filter */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#111827", display: "block", marginBottom: 12 }}>
+                Language
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[{ value: "", label: "All" }, ...LANGUAGE_OPTIONS].map((lang) => (
+                  <button
+                    key={lang.value}
+                    onClick={() => handleLanguageChange(lang.value)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: filterLanguage === lang.value ? "none" : "1px solid #d1d5db",
+                      background: filterLanguage === lang.value ? "var(--avatar-theme-color)" : "#ffffff",
+                      color: filterLanguage === lang.value ? "#ffffff" : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: filterLanguage === lang.value ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filterLanguage !== lang.value) {
+                        e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                        e.currentTarget.style.color = "var(--avatar-theme-color)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filterLanguage !== lang.value) {
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                        e.currentTarget.style.color = "#6b7280";
+                      }
+                    }}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* File Type Filter */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#111827", display: "block", marginBottom: 12 }}>
+                File Type
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[{ value: "", label: "All" }, ...FILE_TYPE_OPTIONS].map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => handleFileTypeChange(type.value)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: filterFileType === type.value ? "none" : "1px solid #d1d5db",
+                      background: filterFileType === type.value ? "var(--avatar-theme-color)" : "#ffffff",
+                      color: filterFileType === type.value ? "#ffffff" : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: filterFileType === type.value ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filterFileType !== type.value) {
+                        e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
+                        e.currentTarget.style.color = "var(--avatar-theme-color)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filterFileType !== type.value) {
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                        e.currentTarget.style.color = "#6b7280";
+                      }
+                    }}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={handleClearFilters}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#ffffff",
+                    color: "#6b7280",
+                    border: "1px solid #d1d5db",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#f3f4f6";
+                    e.currentTarget.style.borderColor = "#9ca3af";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#ffffff";
+                    e.currentTarget.style.borderColor = "#d1d5db";
+                  }}
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Results Info */}
+          {!isLoading && data && (
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+              {data.total.toLocaleString()} result{data.total !== 1 ? "s" : ""} found
+            </p>
           )}
 
+          {/* Loading State */}
           {isLoading && (
-            <div className="space-y-3" aria-busy="true" aria-label="Loading results">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <SkeletonCard key={i} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
           )}
 
-          {!isLoading && !isError && data?.items?.length === 0 && (
+          {/* Error State */}
+          {isError && (
+            <div style={{
+              padding: 16,
+              background: "#fee2e2",
+              border: "1px solid #fecaca",
+              borderRadius: 8,
+              color: "#991b1b",
+              fontSize: 13,
+            }}>
+              Failed to load results. Please try again.
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !isError && (!data || data.items.length === 0) && (
             <EmptyState
-              icon={<Archive size={28} />}
+              icon={<ArchiveIcon size={32} />}
               title="No documents found"
-              description={hasFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
-              action={hasFilters ? { label: "Clear filters", onClick: clearFilters, variant: "outline" } : undefined}
+              description={hasActiveFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
             />
           )}
 
-          {!isLoading && data?.items && data.items.length > 0 && (
+          {/* Results Grid */}
+          {!isLoading && data && data.items.length > 0 && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
-                {data.items.map((item: ArchiveItem) => (
-                  <ArchiveVaultCard key={item.item_id} item={item} />
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                gap: 16,
+                marginBottom: 24,
+              }}>
+                {data.items.map((item: any) => (
+                  <ArchiveCard
+                    key={item.item_id}
+                    item={item}
+                    onDownload={handleDownload}
+                  />
                 ))}
               </div>
-              <div className="pt-4">
-                <Pagination
-                  page={params.page}
-                  totalPages={data.total_pages}
-                  total={data.total}
-                  limit={params.limit}
-                  onPageChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
-                />
-              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  marginTop: 24,
+                }}>
+                  <button
+                    onClick={() => {
+                      setCurrentPage(Math.max(1, currentPage - 1));
+                      setParams((p) => ({ ...p, page: Math.max(1, currentPage - 1) }));
+                    }}
+                    disabled={currentPage === 1}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 4,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                    }}
+                  >
+                    <ChevronLeft size={14} color="#6b7280" />
+                  </button>
+                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => {
+                          setCurrentPage(page);
+                          setParams((p) => ({ ...p, page }));
+                        }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 4,
+                          border: page === currentPage ? "none" : "1px solid #e5e7eb",
+                          background: page === currentPage ? "var(--theme-gradient-160)" : "#fff",
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: page === currentPage ? "#fff" : "#6b7280",
+                        }}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => {
+                      setCurrentPage(Math.min(totalPages, currentPage + 1));
+                      setParams((p) => ({ ...p, page: Math.min(totalPages, currentPage + 1) }));
+                    }}
+                    disabled={currentPage >= totalPages}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 4,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      cursor: currentPage >= totalPages ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: currentPage >= totalPages ? 0.5 : 1,
+                    }}
+                  >
+                    <ChevronRight size={14} color="#6b7280" />
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
-      </div>
 
       <UploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
-    </div>
+    </AppLayout>
   );
 }
