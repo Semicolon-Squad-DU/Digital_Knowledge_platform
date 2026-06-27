@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { query, queryOne } from "../core/db/pool";
 import { logger } from "../core/config/logger";
 import { sendEmail } from "../infrastructure/email.service";
+import { authenticate, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { z } from "zod";
 
 const router = Router();
@@ -13,6 +14,15 @@ const contactSchema = z.object({
   subject: z.string().min(5, "Subject required"),
   message: z.string().min(10, "Message required"),
 });
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 /**
  * POST /api/contact/submit
@@ -89,18 +99,10 @@ router.post(
  */
 router.get(
   "/messages",
-  async (req: Request, res: Response) => {
+  authenticate,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
     try {
-      const userId = (req as any).userId;
-      const userRole = (req as any).userRole;
-
-      if (!userId || userRole !== "admin") {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied. Admin only.",
-        });
-      }
-
       const result = await query(
         `SELECT id, name, email, subject, message, ip_address, is_read, created_at
          FROM contact_messages
@@ -129,18 +131,10 @@ router.get(
  */
 router.patch(
   "/messages/:id/read",
-  async (req: Request, res: Response) => {
+  authenticate,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
     try {
-      const userId = (req as any).userId;
-      const userRole = (req as any).userRole;
-
-      if (!userId || userRole !== "admin") {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied. Admin only.",
-        });
-      }
-
       const { id } = req.params;
 
       await query(
@@ -168,18 +162,10 @@ router.patch(
  */
 router.delete(
   "/messages/:id",
-  async (req: Request, res: Response) => {
+  authenticate,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
     try {
-      const userId = (req as any).userId;
-      const userRole = (req as any).userRole;
-
-      if (!userId || userRole !== "admin") {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied. Admin only.",
-        });
-      }
-
       const { id } = req.params;
 
       await query(`DELETE FROM contact_messages WHERE id = $1`, [id]);
