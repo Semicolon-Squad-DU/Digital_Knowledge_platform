@@ -218,23 +218,26 @@ router.post(
         [result.rows[0].item_id, key, JSON.stringify(result.rows[0]), req.user!.user_id]
       );
 
-      // Handle tags
+      // Handle tags — batched into 2 round trips instead of 2-per-tag
       if (tags) {
         const tagNames: string[] = typeof tags === "string" ? JSON.parse(tags) : tags;
-        for (const tagName of tagNames) {
-          const trimmed = tagName.trim();
-          if (!trimmed) continue;
-          // Upsert tag
+        const uniqueNames = [...new Set(tagNames.map((t) => t.trim()).filter(Boolean))];
+
+        if (uniqueNames.length > 0) {
+          const tagPlaceholders = uniqueNames.map((_, i) => `($${i + 1})`).join(", ");
           const tagResult = await client.query(
-            `INSERT INTO tags (name_en) VALUES ($1)
+            `INSERT INTO tags (name_en) VALUES ${tagPlaceholders}
              ON CONFLICT (name_en) DO UPDATE SET name_en = EXCLUDED.name_en
              RETURNING tag_id`,
-            [trimmed]
+            uniqueNames
           );
-          // Link to item
+
+          const linkValues = tagResult.rows
+            .map((_, i) => `($1, $${i + 2})`)
+            .join(", ");
           await client.query(
-            `INSERT INTO archive_item_tags (item_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-            [result.rows[0].item_id, tagResult.rows[0].tag_id]
+            `INSERT INTO archive_item_tags (item_id, tag_id) VALUES ${linkValues} ON CONFLICT DO NOTHING`,
+            [result.rows[0].item_id, ...tagResult.rows.map((r) => r.tag_id)]
           );
         }
       }
