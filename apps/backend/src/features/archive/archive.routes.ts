@@ -84,7 +84,7 @@ router.get("/download-url", authenticate, asyncHandler(async (req: AuthRequest, 
 
 // GET /api/archive/meta/tags
 router.get("/meta/tags", asyncHandler(async (_req, res: Response) => {
-  const tags = await query("SELECT * FROM tags ORDER BY name_en");
+  const tags = await query("SELECT * FROM tags ORDER BY name_en LIMIT 500");
   res.json({ success: true, data: tags });
 }));
 
