@@ -18,7 +18,7 @@ const registerValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .withMessage("Password must be 8+ chars with uppercase, lowercase, digit, and special char"),
   body("department").optional().trim(),
-  body("role").optional().isIn(["member", "student_author", "researcher", "archivist", "librarian", "admin"])
+  body("role").optional().isIn(["member", "student_author", "researcher"])
     .withMessage("Invalid role selected"),
 ];
 
@@ -45,8 +45,8 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
 
   const password_hash = await bcrypt.hash(password, 12);
 
-  // Allow role selection including admin
-  const allowedRoles = ["member", "student_author", "researcher", "archivist", "librarian", "admin"];
+  // Privileged roles (archivist/librarian/admin) can only be granted via POST /api/admin/users
+  const allowedRoles = ["member", "student_author", "researcher"];
   const assignedRole = role && allowedRoles.includes(role) ? role : "member";
 
   const user = await queryOne<{
@@ -254,7 +254,11 @@ router.post(
         [provider, providerId, name, user.user_id]
       );
     } else {
-      // Create new user
+      // New OAuth signups can only self-assign non-privileged roles.
+      // archivist/librarian/admin accounts are created via POST /api/admin/users.
+      const selfServiceRoles = ["member", "student_author", "researcher"];
+      const newUserRole = selfServiceRoles.includes(role) ? role : "member";
+
       user = await queryOne<{
         user_id: string;
         name: string;
@@ -267,7 +271,7 @@ router.post(
         `INSERT INTO users (name, email, role, oauth_provider, oauth_id, department, membership_status)
          VALUES ($1, $2, $3, $4, $5, $6, 'active')
          RETURNING user_id, name, email, role, membership_status, oauth_provider, oauth_id`,
-        [name, email, role, provider, providerId, department ?? null]
+        [name, email, newUserRole, provider, providerId, department ?? null]
       );
     }
 
