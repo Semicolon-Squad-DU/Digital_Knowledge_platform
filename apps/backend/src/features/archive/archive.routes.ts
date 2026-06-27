@@ -54,10 +54,30 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
   });
 }));
 
-// GET /api/archive/download-url?key=... — generate presigned URL for any S3 key
+// GET /api/archive/download-url?key=... — generate presigned URL, scoped to the caller's access tier
 router.get("/download-url", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const { key } = req.query as { key: string };
   if (!key) throw new AppError(400, "key is required");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+
+  const item = await queryOne<{ item_id: string; access_tier: AccessTier }>(
+    `SELECT item_id, access_tier FROM archive_items WHERE file_url = $1`,
+    [key]
+  );
+  if (!item) throw new AppError(404, "File not found");
+
+  if (!allowedTiers.includes(item.access_tier)) {
+    const accessReq = await queryOne<{ status: string }>(
+      `SELECT status FROM access_requests WHERE user_id = $1 AND item_id = $2`,
+      [req.user!.user_id, item.item_id]
+    );
+    if (!accessReq || accessReq.status !== "approved") {
+      throw new AppError(403, "Access denied. You may request access to this document.");
+    }
+  }
+
   const url = await getPresignedUrl(key, 300); // 5 min expiry
   res.json({ success: true, data: { url } });
 }));
