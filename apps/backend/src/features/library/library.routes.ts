@@ -4,6 +4,7 @@ import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { searchCatalog } from "../../infrastructure/elasticsearch.service";
 import { config } from "../../core/config";
+import { BorrowService } from "./borrow.service";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
 
 const router = Router();
@@ -42,9 +43,9 @@ router.get(
       on_loan: string; overdue: string; returns_today: string; holds_pending: string;
     }>(
       `SELECT
-         (SELECT COUNT(*) FROM lending_transactions WHERE status = 'active') as on_loan,
-         (SELECT COUNT(*) FROM lending_transactions WHERE status = 'active' AND due_date < CURRENT_DATE) as overdue,
-         (SELECT COUNT(*) FROM lending_transactions WHERE return_date = CURRENT_DATE) as returns_today,
+         (SELECT COUNT(*) FROM borrows WHERE borrow_status = 'active') as on_loan,
+         (SELECT COUNT(*) FROM borrows WHERE borrow_status = 'overdue') as overdue,
+         (SELECT COUNT(*) FROM borrows WHERE return_date = CURRENT_DATE) as returns_today,
          (SELECT COUNT(*) FROM hold_requests WHERE status = 'pending') as holds_pending`
     );
 
@@ -53,11 +54,11 @@ router.get(
     );
 
     const recentTransactions = await query(
-      `SELECT lt.*, ci.title, u.name as member_name
-       FROM lending_transactions lt
-       JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-       JOIN users u ON lt.member_id = u.user_id
-       ORDER BY lt.created_at DESC LIMIT 10`
+      `SELECT b.id as transaction_id, b.user_id as member_id, b.resource_id as catalog_id, b.due_date, b.return_date, b.borrow_status as status, b.created_at, ci.title, u.name as member_name
+       FROM borrows b
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       JOIN users u ON b.user_id = u.user_id
+       ORDER BY b.created_at DESC LIMIT 10`
     );
 
     res.json({
@@ -81,24 +82,24 @@ router.get(
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     const overdueTransactions = await query(
       `SELECT 
-         lt.transaction_id,
-         lt.member_id,
+         b.id as transaction_id,
+         b.user_id as member_id,
          u.name as member_name,
          u.email as member_email,
          ci.catalog_id,
          ci.title,
          ci.isbn,
-         lt.due_date,
-         CURRENT_DATE - lt.due_date as days_overdue,
-         COALESCE(f.amount, 0) as fine_amount,
+         b.due_date,
+         CURRENT_DATE - b.due_date as days_overdue,
+         COALESCE(b.fine_amount, 0) as fine_amount,
          f.fine_id,
          f.status as fine_status,
-         lt.status
-       FROM lending_transactions lt
-       JOIN users u ON lt.member_id = u.user_id
-       JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-       LEFT JOIN fines f ON lt.transaction_id = f.transaction_id
-       WHERE lt.status = 'active' AND lt.due_date < CURRENT_DATE
+         b.borrow_status as status
+       FROM borrows b
+       JOIN users u ON b.user_id = u.user_id
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       LEFT JOIN fines f ON b.id = f.borrow_id
+       WHERE b.borrow_status IN ('active', 'overdue') AND b.due_date < CURRENT_DATE
        ORDER BY days_overdue DESC`
     );
 
@@ -174,77 +175,18 @@ router.post(
     const { catalog_id, member_id } = req.body as { catalog_id: string; member_id: string };
     if (!catalog_id || !member_id) throw new AppError(400, "catalog_id and member_id required");
 
-    const transaction = await withTransaction(async (client) => {
-      const [item] = (await client.query(
-        "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL FOR UPDATE",
-        [catalog_id]
-      )).rows;
-      if (!item) throw new AppError(404, "Catalog item not found");
-      if (item.available_copies < 1) throw new AppError(409, "No copies available. Consider placing a hold.");
+    const result = await BorrowService.issueResource(catalog_id, member_id, req.user!.user_id, req.ip || '');
 
-      const [member] = (await client.query(
-        "SELECT user_id, name, email, membership_status FROM users WHERE user_id = $1",
-        [member_id]
-      )).rows;
-      if (!member) throw new AppError(404, "Member not found");
-      if (member.membership_status !== "active") throw new AppError(403, "Member account is not active");
+    // Map borrow to transaction for frontend compatibility
+    const transaction = {
+      ...result.borrow,
+      transaction_id: result.borrow.id,
+      member_id: result.borrow.user_id,
+      catalog_id: result.borrow.resource_id,
+      status: result.borrow.borrow_status
+    };
 
-      const [{ count }] = (await client.query(
-        "SELECT COUNT(*) FROM lending_transactions WHERE member_id = $1 AND status = 'active'",
-        [member_id]
-      )).rows;
-      if (parseInt(count) >= config.library.maxBorrowLimit) {
-        throw new AppError(409, `Borrow limit reached (max ${config.library.maxBorrowLimit} items)`);
-      }
-
-      const [fineResult] = (await client.query(
-        "SELECT COALESCE(SUM(amount), 0) as total FROM fines WHERE member_id = $1 AND status = 'pending'",
-        [member_id]
-      )).rows;
-      if (parseFloat(fineResult.total) > 100) {
-        throw new AppError(403, "Outstanding fines exceed limit. Please clear dues first.");
-      }
-
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + config.library.loanPeriodDays);
-
-      const [txn] = (await client.query(
-        `INSERT INTO lending_transactions (catalog_id, member_id, due_date)
-         VALUES ($1, $2, $3) RETURNING *`,
-        [catalog_id, member_id, dueDate.toISOString().split("T")[0]]
-      )).rows;
-
-      await client.query(
-        "UPDATE catalog_items SET available_copies = available_copies - 1 WHERE catalog_id = $1",
-        [catalog_id]
-      );
-
-      await client.query(
-        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
-         VALUES ($1, 'CREATE', 'lending_transaction', $2, $3, $4)`,
-        [req.user!.user_id, txn.transaction_id, JSON.stringify({ catalog_id, member_id }), req.ip]
-      );
-
-      client.query(
-        `INSERT INTO notifications (user_id, type, title, message, action_url)
-         VALUES ($1, 'due_date_reminder', $2, $3, $4)`,
-        [member_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, "/dashboard"]
-      ).catch(() => {});
-
-      return { transaction: txn, member, item };
-    });
-
-    sendEmail({
-      to: transaction.member.email,
-      subject: "Book Issued Successfully",
-      html: dueDateReminderEmail(
-        transaction.member.name, transaction.item.title,
-        new Date(transaction.transaction.due_date).toDateString(),
-        config.library.loanPeriodDays
-      ),
-    }).catch(() => {});
-
-    res.status(201).json({ success: true, data: transaction.transaction });
+    res.status(201).json({ success: true, data: transaction });
   })
 );
 
@@ -257,78 +199,18 @@ router.post(
     const { transaction_id } = req.body as { transaction_id: string };
     if (!transaction_id) throw new AppError(400, "transaction_id required");
 
-    const result = await withTransaction(async (client) => {
-      const [txn] = (await client.query(
-        `SELECT lt.*, ci.title as book_title
-         FROM lending_transactions lt
-         JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-         WHERE lt.transaction_id = $1 AND lt.status = 'active'
-         FOR UPDATE`,
-        [transaction_id]
-      )).rows;
+    const result = await BorrowService.returnResource(transaction_id);
 
-      if (!txn) throw new AppError(404, "Active transaction not found");
+    // Map borrow to transaction for frontend compatibility
+    const updated = {
+      ...result.borrow,
+      transaction_id: result.borrow.id,
+      member_id: result.borrow.user_id,
+      catalog_id: result.borrow.resource_id,
+      status: result.borrow.borrow_status
+    };
 
-      const today = new Date();
-      const dueDate = new Date(txn.due_date);
-      let fineAmount = 0;
-
-      if (today > dueDate) {
-        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        fineAmount = daysOverdue * config.library.fineRatePerDay;
-      }
-
-      const [updated] = (await client.query(
-        `UPDATE lending_transactions
-         SET return_date = CURRENT_DATE, fine_amount = $1, status = 'returned'
-         WHERE transaction_id = $2 RETURNING *`,
-        [fineAmount, transaction_id]
-      )).rows;
-
-      await client.query(
-        "UPDATE catalog_items SET available_copies = available_copies + 1 WHERE catalog_id = $1",
-        [txn.catalog_id]
-      );
-
-      if (fineAmount > 0) {
-        await client.query(
-          `INSERT INTO fines (member_id, transaction_id, amount, reason) VALUES ($1, $2, $3, $4)`,
-          [txn.member_id, transaction_id, fineAmount, `Overdue fine for "${txn.book_title}"`]
-        );
-      }
-
-      const [nextHold] = (await client.query(
-        `SELECT hr.*, u.email, u.name FROM hold_requests hr
-         JOIN users u ON hr.member_id = u.user_id
-         WHERE hr.catalog_id = $1 AND hr.status = 'pending'
-         ORDER BY hr.request_date ASC LIMIT 1`,
-        [txn.catalog_id]
-      )).rows;
-
-      if (nextHold) {
-        await client.query(
-          "UPDATE hold_requests SET status = 'available' WHERE hold_id = $1",
-          [nextHold.hold_id]
-        );
-        await client.query(
-          `INSERT INTO notifications (user_id, type, title, message, action_url)
-           VALUES ($1, 'hold_available', $2, $3, $4)`,
-          [nextHold.member_id, "Hold Available", `"${txn.book_title}" is now available`, "/dashboard"]
-        );
-
-        const pickupDeadline = new Date();
-        pickupDeadline.setDate(pickupDeadline.getDate() + 3);
-        sendEmail({
-          to: nextHold.email,
-          subject: "Your Hold is Available",
-          html: holdAvailableEmail(nextHold.name, txn.book_title, pickupDeadline.toDateString()),
-        }).catch(() => {});
-      }
-
-      return { transaction: updated, fine_amount: fineAmount };
-    });
-
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: { transaction: updated, fine_amount: result.fine_amount } });
   })
 );
 
@@ -342,11 +224,11 @@ router.get(
     }
 
     const transactions = await query(
-      `SELECT lt.*, ci.title, ci.authors, ci.isbn
-       FROM lending_transactions lt
-       JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-       WHERE lt.member_id = $1
-       ORDER BY lt.created_at DESC`,
+      `SELECT b.id as transaction_id, b.user_id as member_id, b.resource_id as catalog_id, b.due_date, b.return_date, b.borrow_status as status, b.created_at, ci.title, ci.authors, ci.isbn
+       FROM borrows b
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       WHERE b.user_id = $1
+       ORDER BY b.created_at DESC`,
       [req.params.id]
     );
 
@@ -361,10 +243,10 @@ router.get("/fines/:member_id", authenticate, asyncHandler(async (req: AuthReque
   }
 
   const fines = await query(
-    `SELECT f.*, lt.due_date, ci.title as book_title
+    `SELECT f.*, b.due_date, ci.title as book_title
      FROM fines f
-     JOIN lending_transactions lt ON f.transaction_id = lt.transaction_id
-     JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
+     JOIN borrows b ON f.borrow_id = b.id
+     JOIN catalog_items ci ON b.resource_id = ci.catalog_id
      WHERE f.member_id = $1
      ORDER BY f.created_at DESC`,
     [req.params.member_id]
