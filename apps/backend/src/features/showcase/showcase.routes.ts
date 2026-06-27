@@ -1,11 +1,11 @@
 import { Router, Response } from "express";
-import { query, queryOne } from "../db/pool";
-import { authenticate, requireRole, optionalAuth, AuthRequest } from "../middleware/auth.middleware";
-import { AppError, asyncHandler } from "../middleware/error.middleware";
-import { uploadSingle } from "../middleware/upload.middleware";
-import { uploadToS3, generateS3Key } from "../services/s3.service";
-import { sendEmail, projectApprovalEmail } from "../services/email.service";
-import { logger } from "../config/logger";
+import { query, queryOne } from "../../core/db/pool";
+import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
+import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { uploadSingle } from "../../core/middleware/upload.middleware";
+import { uploadToS3, generateS3Key } from "../../infrastructure/s3.service";
+import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
+import { logger } from "../../core/config/logger";
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { query, queryOne } from "../db/pool";
-import { logger } from "../config/logger";
-import { sendEmail } from "../services/email.service";
+import { query, queryOne } from "../core/db/pool";
+import { logger } from "../core/config/logger";
+import { sendEmail } from "../infrastructure/email.service";
 import { z } from "zod";
 
 const router = Router();

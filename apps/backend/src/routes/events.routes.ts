@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
-import { query, queryOne, withTransaction } from "../db/pool";
-import { authenticate, optionalAuth, requireRole, AuthRequest } from "../middleware/auth.middleware";
-import { AppError, asyncHandler } from "../middleware/error.middleware";
+import { query, queryOne, withTransaction } from "../core/db/pool";
+import { authenticate, optionalAuth, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
+import { AppError, asyncHandler } from "../core/middleware/error.middleware";
 
 const router = Router();
 
