@@ -30,11 +30,10 @@ const app = express();
 
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet());
+const isProduction = config.env === "production";
 const allowedOrigins = [
   config.frontendUrl,
-  "http://localhost:3000",
-  "http://0.0.0.0:3000",
-  "http://127.0.0.1:3000",
+  ...(isProduction ? [] : ["http://localhost:3000", "http://0.0.0.0:3000", "http://127.0.0.1:3000"]),
 ];
 
 app.use(
@@ -43,8 +42,8 @@ app.use(
       // allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      // allow any request from the same subnet (LAN access)
-      if (/^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return callback(null, true);
+      // allow any request from the same subnet (LAN access) — dev only
+      if (!isProduction && /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return callback(null, true);
       callback(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
