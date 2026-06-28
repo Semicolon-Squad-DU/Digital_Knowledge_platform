@@ -7,18 +7,9 @@ import { uploadToS3, getPresignedUrl, generateS3Key, deleteFromS3 } from "../../
 import { indexArchiveItem, searchArchive } from "../../infrastructure/elasticsearch.service";
 import { logger } from "../../core/config/logger";
 import { AccessTier } from "@dkp/shared";
+import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 
 const router = Router();
-
-const ALLOWED_TIERS_BY_ROLE: Record<string, AccessTier[]> = {
-  guest: ["public"],
-  member: ["public", "member"],
-  student_author: ["public", "member"],
-  researcher: ["public", "member", "staff"],
-  archivist: ["public", "member", "staff", "restricted"],
-  librarian: ["public", "member", "staff"],
-  admin: ["public", "member", "staff", "restricted"],
-};
 
 // GET /api/archive/search
 router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
