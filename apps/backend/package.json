@@ -5,7 +5,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/apps/backend/src/server.js",
-    "test": "jest --passWithNoTests",
+    "test": "jest",
     "lint": "eslint src --ext .ts",
     "db:migrate": "node -r tsx/cjs src/core/db/migrate.ts",
     "db:seed": "node -r tsx/cjs src/core/db/seed.ts"
