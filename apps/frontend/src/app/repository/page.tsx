@@ -183,7 +183,7 @@ export default function RepositoryVault() {
 <div className="columns-1 md:columns-2 gap-8 text-on-surface-variant text-sm leading-relaxed text-justify">
 <p className="mb-4">This paper examines the enduring impact of the 1952 Language Movement in East Bengal on the morphological and syntactic structures of modern spoken and written Bengali. We argue that the sociopolitical friction of the era catalyzed an accelerated divergence from Sanskritized syntax, favoring indigenous vernacular patterns.</p>
 <p className="mb-4">Through a computational analysis of 10,000 texts spanning 1947 to 2020, we identify a distinct grammatical shift that correlates directly with peaks in nationalistic sentiment. The study highlights how political resistance can fundamentally alter the structural trajectory of a language within a single generation.</p>
-<p>Furthermore, we document the emergence of 'resistance morphology'—specific prefixes and suffixes that gained prominence as markers of linguistic identity, offering a novel framework for understanding the intersection of historical trauma and language evolution.</p>
+<p>Furthermore, we document the emergence of &lsquo;resistance morphology&rsquo;—specific prefixes and suffixes that gained prominence as markers of linguistic identity, offering a novel framework for understanding the intersection of historical trauma and language evolution.</p>
 </div>
 </div>
 {/* Action Buttons */}
