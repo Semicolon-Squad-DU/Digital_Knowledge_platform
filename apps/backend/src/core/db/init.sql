@@ -219,6 +219,7 @@ CREATE TABLE catalog_items (
   shelf_location   VARCHAR(100),
   barcode          VARCHAR(50) UNIQUE,
   cover_url        TEXT,
+  document_url     TEXT,
   description      TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -2,7 +2,9 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { uploadSingle } from "../../core/middleware/upload.middleware";
 import { searchCatalog } from "../../infrastructure/elasticsearch.service";
+import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
 import { config } from "../../core/config";
 import { BorrowService } from "./borrow.service";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
@@ -196,10 +198,44 @@ router.post(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { transaction_id } = req.body as { transaction_id: string };
-    if (!transaction_id) throw new AppError(400, "transaction_id required");
+    const { transaction_id, barcode, member_id } = req.body as {
+      transaction_id?: string;
+      barcode?: string;
+      member_id?: string;
+    };
 
-    const result = await BorrowService.returnResource(transaction_id);
+    let resolvedTransactionId = transaction_id;
+
+    if (!resolvedTransactionId && barcode) {
+      const catalogItem = await queryOne<{ catalog_id: string }>(
+        "SELECT catalog_id FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL",
+        [barcode]
+      );
+      if (!catalogItem) throw new AppError(404, "No catalog item found for that barcode");
+
+      const conditions = ["resource_id = $1", "borrow_status IN ('active', 'overdue')"];
+      const params: unknown[] = [catalogItem.catalog_id];
+      if (member_id) {
+        params.push(member_id);
+        conditions.push(`user_id IN (SELECT user_id FROM users WHERE user_id::text = $${params.length} OR email = $${params.length})`);
+      }
+
+      const matches = await query<{ id: string }>(
+        `SELECT id FROM borrows WHERE ${conditions.join(" AND ")} ORDER BY created_at ASC`,
+        params
+      );
+
+      if (matches.length === 0) throw new AppError(404, "No active borrow found for that barcode");
+      if (matches.length > 1) {
+        throw new AppError(409, "Multiple active borrows match this barcode — provide the member's ID or email to disambiguate");
+      }
+
+      resolvedTransactionId = matches[0].id;
+    }
+
+    if (!resolvedTransactionId) throw new AppError(400, "transaction_id or barcode is required");
+
+    const result = await BorrowService.returnResource(resolvedTransactionId);
 
     // Map borrow to transaction for frontend compatibility
     const updated = {
@@ -233,6 +269,28 @@ router.get(
     );
 
     res.json({ success: true, data: transactions });
+  })
+);
+
+// GET /api/library/member/:id/holds
+router.get(
+  "/member/:id/holds",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (req.user!.role === "member" && req.user!.user_id !== req.params.id) {
+      throw new AppError(403, "Access denied");
+    }
+
+    const holds = await query(
+      `SELECT h.hold_id, h.catalog_id, h.member_id, h.request_date, h.status, ci.title, ci.authors, ci.isbn
+       FROM hold_requests h
+       JOIN catalog_items ci ON h.catalog_id = ci.catalog_id
+       WHERE h.member_id = $1
+       ORDER BY h.request_date DESC`,
+      [req.params.id]
+    );
+
+    res.json({ success: true, data: holds });
   })
 );
 
@@ -331,25 +389,48 @@ router.post(
   "/catalog",
   authenticate,
   requireRole("librarian", "admin"),
+  uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description } =
-      req.body as Record<string, unknown>;
+    const { title, isbn, publisher, edition, year, category, total_copies, shelf_location, description } =
+      req.body as Record<string, string>;
+    const rawAuthors = req.body.authors;
+    const authors = Array.isArray(rawAuthors) ? rawAuthors : rawAuthors ? JSON.parse(rawAuthors) : [];
+    const totalCopies = parseInt(total_copies as unknown as string, 10);
 
     if (!title) throw new AppError(400, "Title is required");
-    if (!total_copies || (total_copies as number) < 1) throw new AppError(400, "At least 1 copy required");
+    if (!totalCopies || totalCopies < 1) throw new AppError(400, "At least 1 copy required");
+
+    let documentUrl: string | null = null;
+    if (req.file) {
+      const key = generateS3Key("catalog", req.file.originalname, req.file.mimetype);
+      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+      documentUrl = key;
+    }
 
     const item = await queryOne(
       `INSERT INTO catalog_items
-         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10)
+         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
        RETURNING *`,
-      [title, isbn || null, authors || [], publisher || null, edition || null, year || null,
-       category || "General", total_copies, shelf_location || null, description || null]
+      [title, isbn || null, authors, publisher || null, edition || null, year ? parseInt(year, 10) : null,
+       category || "General", totalCopies, shelf_location || null, description || null, documentUrl]
     );
 
     res.status(201).json({ success: true, data: item });
   })
 );
+
+// GET /api/library/catalog/:id/download-url
+router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req, res: Response) => {
+  const item = await queryOne<{ document_url: string | null }>(
+    "SELECT document_url FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
+    [req.params.id]
+  );
+  if (!item || !item.document_url) throw new AppError(404, "No document attached to this catalog item");
+
+  const url = await getPresignedUrl(item.document_url);
+  res.json({ success: true, data: { url } });
+}));
 
 // PUT /api/library/catalog/:id
 router.put(
