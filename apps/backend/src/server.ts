@@ -94,6 +94,16 @@ app.get("/health", async (_req, res) => {
   }
 });
 
+// ── Readiness check (for orchestrators: don't route traffic until bootstrap completes) ──
+let isReady = false;
+app.get("/ready", (_req, res) => {
+  if (isReady) {
+    res.json({ status: "ready" });
+  } else {
+    res.status(503).json({ status: "starting" });
+  }
+});
+
 // ── API Routes ────────────────────────────────────────────────
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -123,12 +133,31 @@ async function bootstrap(): Promise<void> {
       startScheduler();
     }
 
-    app.listen(config.port, "0.0.0.0", () => {
+    const server = app.listen(config.port, "0.0.0.0", () => {
+      isReady = true;
       logger.info(`DKP API running on port ${config.port}`, {
         env: config.env,
         port: config.port,
       });
     });
+
+    const shutdown = (signal: string) => {
+      logger.info(`${signal} received, shutting down gracefully`);
+      isReady = false;
+      server.close(async () => {
+        try {
+          await pool.end();
+          logger.info("Shutdown complete");
+          process.exit(0);
+        } catch (err) {
+          logger.error("Error during shutdown", { error: (err as Error).message });
+          process.exit(1);
+        }
+      });
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
   } catch (err) {
     console.error("Full startup error:", err);
     logger.error("Failed to start server", { error: (err as Error).message || err });
