@@ -363,7 +363,7 @@ export default function ContactPage() {
               marginBottom: "8px",
               margin: "0 0 8px 0"
             }}>
-              Mail Us
+              Send Us a Message
             </h2>
             <p style={{
               fontSize: "14px",
@@ -371,38 +371,67 @@ export default function ContactPage() {
               marginBottom: "24px",
               margin: "0 0 24px 0"
             }}>
-              Send an email to any team member:
+              Fill out the form below and we&apos;ll get back to you.
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {TEAM_MEMBERS.map((member) => (
-                <a
-                  key={member.email}
-                  href={`mailto:${member.email}`}
-                  style={{
-                    fontSize: "14px",
-                    color: "var(--avatar-theme-color, #1a56db)",
-                    textDecoration: "none",
-                    padding: "12px",
-                    background: "#f9fafb",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    transition: "all 0.2s"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(26, 86, 219, 0.08)";
-                    e.currentTarget.style.borderColor = "var(--avatar-theme-color, #1a56db)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#f9fafb";
-                    e.currentTarget.style.borderColor = "#e5e7eb";
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: "4px" }}>{member.name}</div>
-                  <div style={{ fontSize: "12px", opacity: 0.8 }}>{member.email}</div>
-                </a>
-              ))}
-            </div>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <input
+                type="text"
+                placeholder="Your name"
+                value={formData.name}
+                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                style={{
+                  padding: "12px", borderRadius: "8px",
+                  border: "1px solid #e5e7eb", fontSize: "14px",
+                }}
+              />
+              <input
+                type="email"
+                placeholder="Your email"
+                value={formData.email}
+                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                style={{
+                  padding: "12px", borderRadius: "8px",
+                  border: "1px solid #e5e7eb", fontSize: "14px",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Subject"
+                value={formData.subject}
+                onChange={(e) => setFormData((f) => ({ ...f, subject: e.target.value }))}
+                style={{
+                  padding: "12px", borderRadius: "8px",
+                  border: "1px solid #e5e7eb", fontSize: "14px",
+                }}
+              />
+              <textarea
+                placeholder="Your message"
+                value={formData.message}
+                onChange={(e) => setFormData((f) => ({ ...f, message: e.target.value }))}
+                rows={5}
+                style={{
+                  padding: "12px", borderRadius: "8px",
+                  border: "1px solid #e5e7eb", fontSize: "14px",
+                  resize: "vertical", fontFamily: "inherit",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  padding: "12px", borderRadius: "8px", border: "none",
+                  background: "var(--avatar-theme-color, #1a56db)", color: "#fff",
+                  fontSize: "14px", fontWeight: 700,
+                  cursor: isLoading ? "not-allowed" : "pointer",
+                  opacity: isLoading ? 0.7 : 1,
+                }}
+              >
+                <Send size={16} />
+                {isLoading ? "Sending…" : "Send Message"}
+              </button>
+            </form>
           </div>
         </div>
       </main>
