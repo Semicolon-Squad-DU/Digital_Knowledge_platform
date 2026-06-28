@@ -77,7 +77,7 @@ function AccessBadge({ tier, copies }: { tier?: string; copies: number }) {
 }
 
 // ── Result card ───────────────────────────────────────────────────────────────
-function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenticated }: {
+export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenticated }: {
   item: CatalogItem; onDelete?: () => void;
   onWishlist?: () => void; isLibrarian: boolean; isAuthenticated: boolean;
 }) {
