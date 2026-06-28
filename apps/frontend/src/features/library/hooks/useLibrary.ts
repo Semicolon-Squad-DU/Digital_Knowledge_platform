@@ -52,8 +52,8 @@ export function useIssueBook() {
 export function useReturnBook() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (transaction_id: string) => {
-      const { data } = await api.post("/library/return", { transaction_id });
+    mutationFn: async (payload: { transaction_id?: string; barcode?: string; member_id?: string }) => {
+      const { data } = await api.post("/library/return", payload);
       return data.data;
     },
     onSuccess: () => {
@@ -68,6 +68,17 @@ export function useBorrowingHistory(memberId: string) {
     queryKey: ["library", "history", memberId],
     queryFn: async () => {
       const { data } = await api.get(`/library/member/${memberId}/history`);
+      return data.data;
+    },
+    enabled: !!memberId,
+  });
+}
+
+export function useMemberHolds(memberId: string) {
+  return useQuery({
+    queryKey: ["library", "holds", memberId],
+    queryFn: async () => {
+      const { data } = await api.get(`/library/member/${memberId}/holds`);
       return data.data;
     },
     enabled: !!memberId,
@@ -171,7 +182,7 @@ export function useWaiveFine() {
 export function useCreateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: {
+    mutationFn: async (payload: FormData | {
       title: string;
       isbn?: string;
       authors?: string[];
@@ -183,7 +194,10 @@ export function useCreateCatalogItem() {
       shelf_location?: string;
       description?: string;
     }) => {
-      const { data } = await api.post("/library/catalog", payload);
+      const isFormData = payload instanceof FormData;
+      const { data } = await api.post("/library/catalog", payload, {
+        headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+      });
       return data.data;
     },
     onSuccess: () => {
