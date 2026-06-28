@@ -174,7 +174,7 @@ The app will be available at `http://localhost:3000`.
 
 ### Demo Credentials
 
-All demo users have password: `password123`
+All demo users have password: `Test@123456`
 
 | Role | Email |
 |---|---|

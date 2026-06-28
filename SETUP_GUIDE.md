@@ -88,7 +88,7 @@ Both connect to the **same shared Supabase database**, so you'll all see identic
 
 ## Demo Credentials
 
-All users have password: `password123`
+All users have password: `Test@123456`
 
 - **Admin:** admin@dkp.edu.bd
 - **Librarian:** librarian@dkp.edu.bd
