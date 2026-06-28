@@ -21,18 +21,16 @@ type CitationFormat = "apa" | "mla" | "bibtex";
 // ---------------------------------------------------------------------------
 // Open file button — generates presigned URL then opens PDF
 // ---------------------------------------------------------------------------
-function OpenFileButton({ fileKey, outputId }: { fileKey: string; outputId: string }) {
+function OpenFileButton({ outputId }: { outputId: string }) {
   const [loading, setLoading] = useState(false);
 
   const handleOpen = async () => {
     setLoading(true);
     try {
       const { data } = await api.get(`/research/${outputId}/download-url`);
-      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
-      window.open(downloadUrl, "_blank");
+      window.open(data.data.url, "_blank");
     } catch {
-      window.open(`http://127.0.0.1:9000/dkp-files/${fileKey}`, "_blank");
-      toast("Opening via direct link");
+      toast.error("Could not open file. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -174,10 +172,27 @@ function CitationBlock({
 }
 
 // ---------------------------------------------------------------------------
-// PDF Preview — direct MinIO URL (avoids presigned URL clock skew)
+// PDF Preview — fetches a presigned URL from the backend
 // ---------------------------------------------------------------------------
-function PdfPreview({ fileKey }: { fileKey: string }) {
-  const url = `http://127.0.0.1:9000/dkp-files/${fileKey}`;
+function PdfPreview({ outputId }: { outputId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/research/${outputId}/download-url`)
+      .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
+      .catch(() => { if (!cancelled) setUrl(null); });
+    return () => { cancelled = true; };
+  }, [outputId]);
+
+  if (!url) {
+    return (
+      <div className="rounded-xl border border-[var(--color-border-default)] flex items-center justify-center" style={{ height: "520px" }}>
+        <p className="text-sm text-[var(--color-fg-muted)]">Loading preview…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)]">
       <iframe src={url} className="w-full" style={{ height: "520px" }} title="PDF Preview" />
@@ -365,9 +380,9 @@ export default function ResearchDetailPage() {
 
               {showPdf ? (
                 <div className="animate-fade-in">
-                  <PdfPreview fileKey={output.file_url} />
+                  <PdfPreview outputId={outputId} />
                   <div className="mt-3 flex justify-end">
-                    <OpenFileButton fileKey={output.file_url} outputId={outputId} />
+                    <OpenFileButton outputId={outputId} />
                   </div>
                 </div>
               ) : (

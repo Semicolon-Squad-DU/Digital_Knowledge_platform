@@ -10,22 +10,16 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
 
-function DownloadReportButton({ reportKey }: { reportKey: string }) {
+function DownloadReportButton({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/archive/download-url", {
-        params: { key: reportKey },
-      });
-      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
-      window.open(downloadUrl, "_blank");
+      const { data } = await api.get(`/showcase/${projectId}/download-url`);
+      window.open(data.data.url, "_blank");
     } catch {
-      // Fallback: try direct MinIO URL
-      const minioUrl = `http://127.0.0.1:9000/dkp-files/${reportKey}`;
-      window.open(minioUrl, "_blank");
-      toast("Opening report via direct link");
+      toast.error("Could not open report. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -140,7 +134,7 @@ export default function ShowcaseDetailPage() {
             </a>
           )}
           {project.report_url && (
-            <DownloadReportButton reportKey={project.report_url} />
+            <DownloadReportButton projectId={projectId} />
           )}
           {(project.status === "pending_review" || project.status === "changes_requested") && (
             <Link href={`/showcase/review/${project.project_id}`} className="text-[var(--color-accent-fg)] hover:underline">
