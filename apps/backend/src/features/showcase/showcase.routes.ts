@@ -3,7 +3,7 @@ import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { uploadSingle } from "../../core/middleware/upload.middleware";
-import { uploadToS3, generateS3Key } from "../../infrastructure/s3.service";
+import { uploadToS3, generateS3Key, getPresignedUrl } from "../../infrastructure/s3.service";
 import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
 
@@ -92,6 +92,18 @@ router.get("/:id", optionalAuth, asyncHandler(async (req, res: Response) => {
   );
   if (!project) throw new AppError(404, "Project not found");
   res.json({ success: true, data: project });
+}));
+
+// GET /api/showcase/:id/download-url
+router.get("/:id/download-url", optionalAuth, asyncHandler(async (req, res: Response) => {
+  const project = await queryOne<{ report_url: string | null }>(
+    "SELECT report_url FROM student_projects WHERE project_id = $1",
+    [req.params.id]
+  );
+  if (!project || !project.report_url) throw new AppError(404, "File not found");
+
+  const url = await getPresignedUrl(project.report_url);
+  res.json({ success: true, data: { url } });
 }));
 
 // POST /api/showcase
