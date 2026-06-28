@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useAddCatalogItem } from "@/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useCreateCatalogItem } from "@/features/library/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -365,7 +365,7 @@ export default function LibrarianDashboardPage() {
     edition: "", year: "", category: "General",
     total_copies: "1", shelf_location: "", description: "",
   });
-  const { mutateAsync: addCatalogItem, isPending: isAddingBook } = useAddCatalogItem();
+  const { mutateAsync: addCatalogItem, isPending: isAddingBook } = useCreateCatalogItem();
 
   const handleAddBook = async () => {
     if (!bookForm.title.trim()) { toast.error("Title is required"); return; }
@@ -417,7 +417,7 @@ export default function LibrarianDashboardPage() {
       return;
     }
     try {
-      const result = await returnBook(transactionId.trim());
+      const result = await returnBook({ transaction_id: transactionId.trim() });
       const fine = result.fine_amount;
       toast.success(
         fine > 0
