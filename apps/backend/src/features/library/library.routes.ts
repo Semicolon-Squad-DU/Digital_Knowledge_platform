@@ -376,8 +376,8 @@ router.patch(
 
 // GET /api/library/catalog/:id
 router.get("/catalog/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const item = await queryOne(
-    "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
+  const item = await queryOne<{ view_count: number }>(
+    "UPDATE catalog_items SET view_count = view_count + 1 WHERE catalog_id = $1 AND deleted_at IS NULL RETURNING *",
     [req.params.id]
   );
   if (!item) throw new AppError(404, "Catalog item not found");

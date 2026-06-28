@@ -220,6 +220,7 @@ CREATE TABLE catalog_items (
   barcode          VARCHAR(50) UNIQUE,
   cover_url        TEXT,
   document_url     TEXT,
+  view_count       INTEGER NOT NULL DEFAULT 0,
   description      TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),

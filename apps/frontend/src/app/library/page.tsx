@@ -32,6 +32,7 @@ interface CatalogItem {
   total_copies: number;
   created_at: string;
   access_tier?: string;
+  view_count?: number;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenticated }
   const typeLabel = item.category ?? "Article";
   const dateStr   = item.year ? String(item.year) : (item.created_at ? formatDate(item.created_at) : "");
   const citations = item.total_copies ?? 0;
-  const views     = item.available_copies * 47 + (item.catalog_id.charCodeAt(0) * 13);
+  const views     = item.view_count ?? 0;
 
   const handleWishlist = () => {
     if (!isAuthenticated) { toast.error("Sign in to add to wishlist"); return; }
