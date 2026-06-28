@@ -145,7 +145,7 @@ export default function RepositoryVault() {
 {/* Right: Detail View */}
 <div className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-8 relative overflow-hidden">
 {/* Subtle background texture */}
-<div className="absolute inset-0 opacity-5 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, #a78bfa 0, #a78bfa 1px, transparent 0, transparent 50%); background-size: 10px 10px;"></div>
+<div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: "repeating-linear-gradient(45deg, #a78bfa 0, #a78bfa 1px, transparent 0, transparent 50%)", backgroundSize: "10px 10px" }}></div>
 <div className="relative z-10">
 <div className="flex justify-between items-start mb-6">
 <div className="flex gap-2">
