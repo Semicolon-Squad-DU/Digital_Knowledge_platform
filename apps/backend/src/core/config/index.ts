@@ -1,5 +1,17 @@
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+
+// Load apps/backend/.env by absolute path so config doesn't silently fall back
+// to defaults when the process is launched from a different working directory.
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
 export const config = {
   env: process.env.NODE_ENV || "development",
@@ -8,11 +20,11 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
 
   db: {
-    url: process.env.DATABASE_URL || "postgresql://dkp_user:dkp_password@localhost:5432/dkp_db",
+    url: requireEnv("DATABASE_URL"),
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || "dev-secret-change-in-production",
+    secret: requireEnv("JWT_SECRET"),
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   },
