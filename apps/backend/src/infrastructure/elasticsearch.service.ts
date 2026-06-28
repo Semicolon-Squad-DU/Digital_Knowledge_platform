@@ -3,20 +3,33 @@ import { config } from "../core/config";
 import { logger } from "../core/config/logger";
 import { query as dbQuery } from "../core/db/pool";
 
-export const esClient = new Client({ node: config.elasticsearch.url });
+// Short timeout + no retries: when Elasticsearch is down, fail fast instead
+// of stalling every search request for ~9s (default client retries 3x with
+// a 30s request timeout each).
+export const esClient = new Client({
+  node: config.elasticsearch.url,
+  requestTimeout: 3000,
+  maxRetries: 0,
+});
 
 const ARCHIVE_INDEX = "dkp_archive";
 const CATALOG_INDEX = "dkp_catalog";
 const RESEARCH_INDEX = "dkp_research";
 
+// Set once at startup so per-request search/index calls can skip straight to
+// the PostgreSQL fallback instead of re-discovering "ES is down" every time.
+let isElasticsearchAvailable = false;
+
 export async function initializeElasticsearch(): Promise<void> {
   try {
     await esClient.ping();
+    isElasticsearchAvailable = true;
     logger.info("Elasticsearch connected");
     await createArchiveIndex();
     await createCatalogIndex();
     await createResearchIndex();
   } catch (err) {
+    isElasticsearchAvailable = false;
     logger.warn("Elasticsearch not available, search features degraded", {
       error: (err as Error).message,
     });
@@ -123,11 +136,19 @@ async function createResearchIndex(): Promise<void> {
 }
 
 export async function indexArchiveItem(item: Record<string, unknown>): Promise<void> {
-  await esClient.index({
-    index: ARCHIVE_INDEX,
-    id: item.item_id as string,
-    document: item,
-  });
+  if (!isElasticsearchAvailable) {
+    logger.warn("Skipping archive indexing — Elasticsearch unavailable", { item_id: item.item_id });
+    return;
+  }
+  try {
+    await esClient.index({
+      index: ARCHIVE_INDEX,
+      id: item.item_id as string,
+      document: item,
+    });
+  } catch (err) {
+    logger.warn("Archive indexing failed", { item_id: item.item_id, error: (err as Error).message });
+  }
 }
 
 export async function searchArchive(params: {
@@ -175,6 +196,7 @@ export async function searchArchive(params: {
   }
 
   try {
+    if (!isElasticsearchAvailable) throw new Error("Elasticsearch unavailable (skipped)");
     const result = await esClient.search({
       index: ARCHIVE_INDEX,
       from,
@@ -300,6 +322,7 @@ export async function searchCatalog(params: {
   }
 
   try {
+    if (!isElasticsearchAvailable) throw new Error("Elasticsearch unavailable (skipped)");
     const result = await esClient.search({
       index: CATALOG_INDEX,
       from,
