@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Github, ExternalLink, Send } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import api from "@/lib/api";
 
 const TEAM_MEMBERS = [
   { name: "Faria Yasmin", email: "fariayasmin19@gmail.com", github: "fariayasmin" },
@@ -25,22 +26,12 @@ export default function ContactPage() {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/contact/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to send message");
-      }
-
+      await api.post("/contact/submit", formData);
       toast.success("Message sent successfully!");
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to send message");
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(message || "Failed to send message");
     } finally {
       setIsLoading(false);
     }
