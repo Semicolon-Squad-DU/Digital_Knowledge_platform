@@ -10,10 +10,10 @@ import {
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useBorrowingHistory, useMemberFines, useWishlist } from "@/hooks/useLibrary";
-import { useArchiveSearch } from "@/hooks/useArchive";
-import { useResearchList } from "@/hooks/useResearch";
-import { useShowcaseGallery } from "@/hooks/useShowcase";
+import { useBorrowingHistory, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
+import { useArchiveSearch } from "@/features/archive/hooks/useArchive";
+import { useResearchList } from "@/features/research/hooks/useResearch";
+import { useShowcaseGallery } from "@/features/showcase/hooks/useShowcase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { timeAgo, cn } from "@/lib/utils";
 import styles from "./dashboard.module.css";

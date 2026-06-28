@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Heart, BookOpen, Trash2, BookMarked, ArrowRight, Plus } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useWishlist, useRemoveFromWishlist, usePlaceHold } from "@/hooks/useLibrary";
+import { useWishlist, useRemoveFromWishlist, usePlaceHold } from "@/features/library/hooks/useLibrary";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import toast from "react-hot-toast";

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, ArrowRight } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/hooks/useNotifications";
+import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/features/notifications/hooks/useNotifications";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { timeAgo } from "@/lib/utils";

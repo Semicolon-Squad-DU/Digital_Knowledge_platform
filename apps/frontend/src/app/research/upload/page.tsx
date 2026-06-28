@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useSubmitResearchOutput } from "@/hooks/useResearch";
+import { useSubmitResearchOutput } from "@/features/research/hooks/useResearch";
 import { useAuthStore } from "@/store/auth.store";
 import { cn, formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";

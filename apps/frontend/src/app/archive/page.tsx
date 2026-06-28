@@ -6,11 +6,11 @@ import Link from "next/link";
 import {
   Search, Plus, Upload, X, ChevronLeft, ChevronRight, Archive as ArchiveIcon,
 } from "lucide-react";
-import { useArchiveSearch, useDownloadArchiveItem } from "@/hooks/useArchive";
+import { useArchiveSearch, useDownloadArchiveItem } from "@/features/archive/hooks/useArchive";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ArchiveCard } from "@/components/archive/ArchiveCard";
-import { UploadModal } from "@/components/archive/UploadModal";
+import { ArchiveCard } from "@/features/archive/components/ArchiveCard";
+import { UploadModal } from "@/features/archive/components/UploadModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { timeAgo } from "@/lib/utils";

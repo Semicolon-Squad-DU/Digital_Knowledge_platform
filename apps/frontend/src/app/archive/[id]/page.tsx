@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle } from "lucide-react";
-import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUploadArchiveVersion, useDeleteArchiveItem } from "@/hooks/useArchive";
+import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUploadArchiveVersion, useDeleteArchiveItem } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "@/lib/utils";

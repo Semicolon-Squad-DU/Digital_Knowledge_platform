@@ -17,8 +17,8 @@ import {
   useAdminUsers, useCreateAdminUser, useUpdateAdminUser, useDeleteAdminUser,
   useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs, useAdminHealth
 } from "@/hooks/useAdmin";
-import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/hooks/useLibrary";
-import { usePendingAccessRequests, useReviewAccessRequest } from "@/hooks/useArchive";
+import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/library/hooks/useLibrary";
+import { usePendingAccessRequests, useReviewAccessRequest } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import toast from "react-hot-toast";

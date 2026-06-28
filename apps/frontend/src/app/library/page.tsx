@@ -8,7 +8,7 @@ import {
   FileText, Upload, Filter,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import { useCatalogSearch, useAddCatalogItem, useDeleteCatalogItem, useAddToWishlist } from "@/hooks/useLibrary";
+import { useCatalogSearch, useCreateCatalogItem, useDeleteCatalogItem, useAddToWishlist } from "@/features/library/hooks/useLibrary";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
@@ -267,7 +267,7 @@ export default function LibraryPage() {
   });
 
   const { data, isLoading, isError, refetch } = useCatalogSearch(params);
-  const { mutateAsync: addBook, isPending: isAdding }      = useAddCatalogItem();
+  const { mutateAsync: addBook, isPending: isAdding }      = useCreateCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
   const { mutateAsync: addToWishlist }                     = useAddToWishlist();
 

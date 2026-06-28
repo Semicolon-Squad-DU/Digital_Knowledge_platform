@@ -8,7 +8,7 @@ import {
   BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar, ArrowLeft, Menu, X
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 
 // ── Shared nav definition (single source of truth) ───────────────────────────
 export const APP_NAV = [

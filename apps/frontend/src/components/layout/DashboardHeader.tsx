@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Bell, Heart, Search } from "lucide-react";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useAuthStore } from "@/store/auth.store";
 
 interface DashboardHeaderProps {

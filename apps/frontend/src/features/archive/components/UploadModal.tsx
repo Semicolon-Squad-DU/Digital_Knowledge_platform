@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
-import { useUploadArchiveItem, useTags } from "@/hooks/useArchive";
+import { useUploadArchiveItem, useTags } from "@/features/archive/hooks/useArchive";
 import { formatFileSize, cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------

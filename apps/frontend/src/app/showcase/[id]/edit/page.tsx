@@ -10,7 +10,7 @@ import { useDropzone } from "react-dropzone";
 import { Plus, Trash2, Upload, FileText, X, GraduationCap, ArrowLeft, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input, Textarea } from "@/components/ui/Input";
-import { useShowcaseItem, useUpdateProject } from "@/hooks/useShowcase";
+import { useShowcaseItem, useUpdateProject } from "@/features/showcase/hooks/useShowcase";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { formatFileSize } from "@/lib/utils";

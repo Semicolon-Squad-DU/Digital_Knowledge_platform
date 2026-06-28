@@ -9,7 +9,7 @@ import {
 import {
   useCatalogItem, useAddToWishlist, usePlaceHold,
   useUpdateCatalogItem, useDeleteCatalogItem,
-} from "@/hooks/useLibrary";
+} from "@/features/library/hooks/useLibrary";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/Input";
@@ -181,14 +181,12 @@ export default function LibraryItemPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!item?.cover_url) return;
-    const cleanKey = item.cover_url.replace(/^local:\/\//, "");
+    if (!item?.document_url) return;
     try {
-      const { data } = await api.get("/archive/download-url", { params: { key: cleanKey } });
-      const downloadUrl = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
-      window.open(downloadUrl, "_blank");
+      const { data } = await api.get(`/library/catalog/${itemId}/download-url`);
+      window.open(data.data.url, "_blank");
     } catch {
-      window.open(`http://127.0.0.1:9000/dkp-files/${cleanKey}`, "_blank");
+      toast.error("Could not open document. Please try again.");
     }
   };
 
@@ -319,7 +317,7 @@ export default function LibraryItemPage() {
 
                 {/* Primary Actions */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {item.cover_url && (
+                  {item.document_url && (
                     <button
                       onClick={handleDownloadPdf}
                       style={{

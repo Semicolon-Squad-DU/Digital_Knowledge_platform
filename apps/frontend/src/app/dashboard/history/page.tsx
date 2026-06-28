@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { useBorrowingHistory } from "@/hooks/useLibrary";
+import { useBorrowingHistory } from "@/features/library/hooks/useLibrary";
 import { getStatusBadge, formatDate } from "@/lib/utils";
 
 export default function DashboardHistoryPage() {

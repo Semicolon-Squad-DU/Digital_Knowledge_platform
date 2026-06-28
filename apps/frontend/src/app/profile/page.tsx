@@ -12,7 +12,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/hooks/useLibrary";
+import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
 import toast from "react-hot-toast";
 
 const AVATAR_COLORS = [
