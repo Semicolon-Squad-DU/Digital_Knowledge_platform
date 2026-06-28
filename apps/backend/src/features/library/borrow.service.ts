@@ -2,6 +2,7 @@ import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { AppError } from "../../core/middleware/error.middleware";
 import { config } from "../../core/config";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
+import { calculateOverdueFine } from "./fine-calculator";
 
 export class BorrowService {
   /**
@@ -113,17 +114,8 @@ export class BorrowService {
 
       const today = new Date();
       const dueDate = new Date(borrow.due_date);
-      let fineAmount = parseFloat(borrow.fine_amount) || 0;
-
-      // Ensure overdue fine is calculated properly
-      if (today > dueDate) {
-        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        // If overdueDetection already set fines maybe don't double add, 
-        // but let's recalculate based strictly on daysOverdue
-        if (daysOverdue > 0) {
-           fineAmount = daysOverdue * config.library.fineRatePerDay;
-        }
-      }
+      const recalculated = calculateOverdueFine(dueDate, today, config.library.fineRatePerDay);
+      const fineAmount = recalculated > 0 ? recalculated : parseFloat(borrow.fine_amount) || 0;
 
       // Update borrow record
       const [updatedBorrow] = (await client.query(
