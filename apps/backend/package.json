@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/apps/backend/src/server.js",
     "test": "jest --passWithNoTests",
     "lint": "eslint src --ext .ts",
     "db:migrate": "node -r tsx/cjs src/core/db/migrate.ts",
@@ -27,7 +27,6 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "next": "14.2.35",
     "node-cron": "^3.0.3",
     "nodemailer": "^8.0.5",
     "pg": "^8.11.3",
