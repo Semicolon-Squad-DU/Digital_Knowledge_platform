@@ -10,7 +10,7 @@ import { logger } from "../../core/config/logger";
 
 const router = Router();
 
-const registerValidation = [
+export const registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
   body("email").isEmail().toLowerCase().withMessage("Valid email required"),
   body("password")
@@ -283,7 +283,7 @@ router.post(
   })
 );
 
-function generateTokens(user_id: string, email: string, role: string) {
+export function generateTokens(user_id: string, email: string, role: string) {
   const access_token = jwt.sign(
     { user_id, email, role },
     config.jwt.secret,
