@@ -41,10 +41,16 @@ function GoogleIcon() {
   );
 }
 
+function roleHome(role?: string): string {
+  if (role === "admin") return "/admin";
+  if (role === "librarian") return "/librarian";
+  return "/dashboard";
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") ?? "/admin";
+  const redirectParam = searchParams.get("redirect");
   const { login, setUser } = useAuthStore();
   const [error, setError] = useState("");
   const [googleProfile, setGoogleProfile] = useState<{
@@ -68,7 +74,8 @@ function LoginForm() {
     try {
       await login(data.email, data.password);
       toast.success("Welcome back!");
-      router.push(redirectTo);
+      const role = useAuthStore.getState().user?.role;
+      router.push(redirectParam ?? roleHome(role));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message;
@@ -91,7 +98,7 @@ function LoginForm() {
       localStorage.setItem("refresh_token", refresh_token);
       setUser(user);
       toast.success(`Welcome back, ${user.name}!`);
-      router.push(redirectTo);
+      router.push(redirectParam ?? roleHome(user.role));
     } catch (err: any) {
       // Error is already handled in handleRoleConfirm
       throw err;
