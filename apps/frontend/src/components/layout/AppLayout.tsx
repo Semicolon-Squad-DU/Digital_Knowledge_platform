@@ -73,7 +73,7 @@ function SidebarBrand({ onClose }: { onClose?: () => void }) {
     <div style={{
       height: 64, padding: "0 18px",
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      borderBottom: "1px solid rgba(255,255,255,0.09)", flexShrink: 0,
+      borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
     }}>
       <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{
@@ -84,8 +84,8 @@ function SidebarBrand({ onClose }: { onClose?: () => void }) {
           <GraduationCap size={15} color="#fff" />
         </div>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.2 }}>Digital Knowledge</p>
-          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", margin: "2px 0 0" }}>Academic Portal</p>
+          <p style={{ fontSize: 14.5, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.2, letterSpacing: "-0.02em" }}>Digital Knowledge</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "2px 0 0", letterSpacing: "0.01em" }}>Academic Portal</p>
         </div>
       </Link>
       {onClose && (
@@ -122,10 +122,10 @@ function UserFooter({ user, onLogout }: { user: any; onLogout: () => void }) {
             {user.name?.[0]?.toUpperCase()}
           </div>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>
               {user.name?.split(" ")[0]}
             </p>
-            <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", margin: 0, textTransform: "capitalize" }}>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "1px 0 0", textTransform: "capitalize", letterSpacing: "0.01em" }}>
               {user.role?.replace("_", " ")}
             </p>
           </div>
@@ -176,9 +176,12 @@ function NavList({ pathname, onNav }: { pathname: string; onNav?: () => void }) 
 const SIDEBAR_STYLE: React.CSSProperties = {
   width: 224, flexShrink: 0,
   background: "var(--theme-sidebar-gradient)",
-  borderRight: "1px solid rgba(255,255,255,0.07)",
+  borderRight: "none",
+  borderRadius: "0 18px 18px 0",
+  boxShadow: "4px 0 28px rgba(0,0,0,0.18)",
   display: "flex", flexDirection: "column",
   position: "sticky", top: 0, height: "100vh", overflowY: "auto",
+  overflow: "hidden",
 };
 
 // ── Layout ────────────────────────────────────────────────────────────────────
@@ -231,7 +234,10 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           <div style={{
             position: "fixed", left: 0, top: 0, width: 270, height: "100dvh",
             background: "var(--theme-sidebar-gradient)",
-            borderRight: "1px solid rgba(255,255,255,0.07)",
+            borderRight: "none",
+            borderRadius: "0 18px 18px 0",
+            boxShadow: "4px 0 32px rgba(0,0,0,0.22)",
+            overflow: "hidden",
             display: "flex", flexDirection: "column",
             zIndex: 40,
             transform: open ? "translateX(0)" : "translateX(-100%)",
@@ -319,7 +325,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
         </header>
 
         {/* PAGE CONTENT */}
-        <main style={{ flex: 1, overflowY: "auto" }}>
+        <main key={pathname} className="dkp-page-enter" style={{ flex: 1, overflowY: "auto" }}>
           {children}
         </main>
       </div>

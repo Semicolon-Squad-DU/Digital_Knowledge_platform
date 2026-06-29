@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   Search, BookOpen,
@@ -197,71 +197,77 @@ export default function LibraryPage() {
 
   return (
     <AppLayout topbarActions={topbarActions}>
-      <div style={{ padding: isMobile ? "20px 16px" : "28px 32px" }} className="library-container">
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
 
-          {/* Page heading */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }} className="library-heading-row">
-              <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", margin: 0, lineHeight: 1.2, letterSpacing: "-0.025em", fontFamily: "'Inter', -apple-system, sans-serif" }} className="library-heading">
-                Library Repository
-              </h1>
-              {isLibrarian && (
-                <button
-                  onClick={() => setAddModal(true)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "10px 20px",
-                    background: "var(--avatar-theme-color)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <Plus size={18} />
-                  Add Book
-                </button>
-              )}
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <BookOpen size={19} color="var(--avatar-theme-color, #6366f1)" />
+                </div>
+                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                  Library
+                </h1>
+              </div>
+              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+                Browse and reserve academic textbooks, journals &amp; articles
+              </p>
             </div>
-            <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-              Browse and reserve academic textbooks, journals, and articles
-            </p>
+            {isLibrarian && (
+              <button
+                onClick={() => setAddModal(true)}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0 }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+              >
+                <Plus size={14} /> Add Book
+              </button>
+            )}
           </div>
 
-          {/* Search bar */}
-          <form onSubmit={handleSearch} style={{ display:"flex", gap:0, marginBottom:20 }} className="library-search-form">
-            <div style={{ flex:1, position:"relative" }}>
-              <Search size={15} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }} />
-              <input
-                type="text" value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder="Search knowledge base..."
-                style={{ width:"100%", padding:"11px 14px 11px 40px", fontSize:14, border:"1px solid #e5e7eb", borderRight:"none", borderRadius:"8px 0 0 8px", outline:"none", boxSizing:"border-box", color:"#111827" }}
-              />
-            </div>
-            <button type="submit" style={{ padding:"11px 24px", background:"var(--avatar-theme-color)", color:"#fff", border:"none", borderRadius:"0 8px 8px 0", fontSize:14, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" }}>
+          {/* Integrated search */}
+          <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center", background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.07)", border: "1.5px solid #dde2ff" }}>
+            <Search size={16} color="#9ca3af" style={{ marginLeft: 16, flexShrink: 0 }} />
+            <input
+              type="text" value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              placeholder="Search by title, author, or ISBN…"
+              style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "13px 12px", color: "#1f2937", background: "transparent" }}
+            />
+            <button type="submit" style={{ margin: 5, padding: "9px 20px", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", transition: "opacity 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            >
               Search
             </button>
           </form>
+        </div>
 
-          {/* Category chips + year filter */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:20 }}>
-            {CATEGORIES.map(cat => (
-              <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page:1 }))}
-                style={{
-                  padding:"7px 16px", borderRadius:6, fontSize:13, fontWeight:500, cursor:"pointer",
-                  border: params.category === cat.value ? "none" : "1px solid #e5e7eb",
-                  background: params.category === cat.value ? "var(--avatar-theme-color)" : "#fff",
-                  color: params.category === cat.value ? "#fff" : "#374151",
-                }}>
-                {cat.label}
-              </button>
-            ))}
+        {/* ── Content ─────────────────────────────────────────────────────────── */}
+        <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
+
+          {/* Category pills + year filter */}
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "14px 16px", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>Category</span>
+              {CATEGORIES.map(cat => (
+                <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page: 1 }))}
+                  style={{
+                    padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: params.category === cat.value ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap",
+                    border: params.category === cat.value ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
+                    background: params.category === cat.value ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
+                    color: params.category === cat.value ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
               <span style={{ fontSize:12, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.08em" }}>Years:</span>
               {yearFilter ? (
@@ -283,29 +289,22 @@ export default function LibraryPage() {
               )}
             </div>
 
-            {/* Advanced Search Toggle Button */}
+            {/* Advanced Search Toggle */}
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "7px 14px",
-                borderRadius: 6,
-                border: "1px solid #e5e7eb",
-                background: showAdvanced ? "var(--avatar-theme-color)" : "#fff",
-                color: showAdvanced ? "#fff" : "#374151",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.15s",
+                padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: showAdvanced ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                border: showAdvanced ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
+                background: showAdvanced ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
+                color: showAdvanced ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
               }}
             >
-              <Filter size={13} />
-              {showAdvanced ? "Hide Filters" : "Advanced Search"}
+              <Filter size={12} />
+              {showAdvanced ? "Hide" : "Advanced"}
             </button>
-          </div>
+            </div>{/* closes inner flex row */}
+          </div>{/* closes outer pill card */}
 
           {/* Advanced Search Expandable Panel */}
           {showAdvanced && (
@@ -445,6 +444,7 @@ export default function LibraryPage() {
           {!isLoading && totalPages > 1 && (
             <Pager page={params.page} totalPages={totalPages} onChange={p => setParams(prev => ({ ...prev, page: p }))} />
           )}
+        </div>
       </div>
 
       {/* Add Book Modal */}

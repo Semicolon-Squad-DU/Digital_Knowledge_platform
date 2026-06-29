@@ -2,35 +2,23 @@
 
 import { useState, useEffect } from "react";
 
-/**
- * Hook to detect media query matches
- * @param query - Media query string (e.g., "(max-width: 768px)")
- * @returns boolean - whether the media query matches
- */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  // Lazy initialiser: on client-side navigations `window` is already
+  // available, so we get the correct value synchronously — no flash.
+  // On SSR `window` is undefined so we fall back to false.
+  const [matches, setMatches] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(query).matches;
+  });
 
   useEffect(() => {
-    // Check if window is defined (client-side only)
     if (typeof window === "undefined") return;
-
-    const mediaQueryList = window.matchMedia(query);
-    
-    // Set initial state
-    setMatches(mediaQueryList.matches);
-
-    // Create listener callback
-    const handleChange = (e: MediaQueryListEvent) => {
-      setMatches(e.matches);
-    };
-
-    // Add listener
-    mediaQueryList.addEventListener("change", handleChange);
-
-    // Cleanup
-    return () => {
-      mediaQueryList.removeEventListener("change", handleChange);
-    };
+    const mql = window.matchMedia(query);
+    // Sync in case the lazy value was wrong (e.g. first SSR paint)
+    setMatches(mql.matches);
+    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
   }, [query]);
 
   return matches;

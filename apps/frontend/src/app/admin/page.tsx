@@ -8,7 +8,7 @@ import {
   Users, HardDrive, AlertCircle, Search, BookOpen, Lock, Check, X,
   ShieldCheck, Settings, Database, Bell, Activity, UserCog, Eye,
   Download, UserCheck, Ban, RotateCcw, LayoutDashboard,
-  ClipboardList, Server, Zap, Mail, Slack, Calendar,
+  ClipboardList, Server, Zap, Mail, Slack, Calendar, FlaskConical, Archive,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
@@ -1498,21 +1498,24 @@ export default function AdminPage() {
 
     return (
       <AppLayout>
-        <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "28px 32px", maxWidth: isMobile ? "100%" : "1600px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-          {/* Page heading - responsive */}
-          <div style={{ marginBottom: isMobile ? 16 : 24 }}>
+        <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+          {/* Hero banner */}
+          <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)", borderBottom: "1px solid #e5e7eb", padding: isMobile ? "24px 18px 20px" : "32px 40px 28px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <div style={{ width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: 8, background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ShieldCheck size={isMobile ? 16 : 18} color="#fff" />
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={19} color="var(--avatar-theme-color, #6366f1)" />
               </div>
-              <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", margin: 0, lineHeight: 1.2 }}>
-                Platform Administration
+              <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", margin: 0 }}>
+                Administration
               </h1>
             </div>
-            <p style={{ fontSize: isMobile ? 12 : 13, color: "#6b7280", margin: 0, paddingLeft: isMobile ? 42 : 46 }}>
-              Monitor platform activity, manage users, and configure system settings.
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0, paddingLeft: 48 }}>
+              Monitor platform activity, manage users &amp; configure system settings.
             </p>
           </div>
+
+        <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "24px 40px", maxWidth: isMobile ? "100%" : "1600px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
 
           {/* Tab bar - scrollable on mobile */}
           <div style={{ display: "flex", gap: isMobile ? 0 : 2, borderBottom: "2px solid #e5e7eb", marginBottom: isMobile ? 20 : 28, overflowX: isMobile ? "auto" : "visible", overflowY: "hidden", scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}>
@@ -1551,6 +1554,7 @@ export default function AdminPage() {
           {activeTab === "alerts"   && <AlertsTab />}
           {activeTab === "announcements" && <AnnouncementsTab />}
         </div>
+        </div>
       </AppLayout>
     );
   }
@@ -1577,13 +1581,33 @@ export default function AdminPage() {
     toast.success("Data refreshed");
   };
 
+  const roleIcon = isStudent ? BookOpen : user?.role === "researcher" ? FlaskConical : user?.role === "archivist" ? Archive : UserCog;
+  const RoleIcon = roleIcon;
+
   return (
     <AppLayout>
-      <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "28px 32px" }}>
-        <div style={{ marginBottom: isMobile ? 16 : 28 }}>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", margin: 0, lineHeight: 1.2 }}>{roleTitle}</h1>
-          <p style={{ fontSize: isMobile ? 12 : 13, color: "#6b7280", marginTop: isMobile ? 4 : 6 }}>{roleDescription}</p>
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* Hero banner */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: isMobile ? "24px 18px 20px" : "32px 40px 28px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <RoleIcon size={19} color="var(--avatar-theme-color, #6366f1)" />
+            </div>
+            <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", margin: 0 }}>
+              {roleTitle}
+            </h1>
+          </div>
+          <p style={{ fontSize: 13, color: "#9ca3af", margin: 0, paddingLeft: 48 }}>
+            {roleDescription}
+          </p>
         </div>
+
+        <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "28px 32px" }}>
 
         {/* Stat Cards */}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : user?.role === "researcher" ? "repeat(1, 1fr)" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
@@ -1652,10 +1676,10 @@ export default function AdminPage() {
 
         {/* Student policy notice */}
         {isStudent && (
-          <div style={{ background: "linear-gradient(135deg, #fef2f2 0%, #ffe4e6 100%)", border: "1px solid #fca5a5", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-            <AlertCircle size={20} color="#dc2626" style={{ flexShrink: 0 }} />
-            <div style={{ fontSize: 13, color: "#991b1b", fontWeight: 500, lineHeight: 1.5 }}>
-              <span style={{ fontWeight: 700 }}>Library Policy Notice:</span> Books must be returned within the designated time duration. A flat fine of <span style={{ fontWeight: 700, color: "#b91c1c" }}>100 TK</span> will be charged per overdue book.
+          <div style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", border: "1px solid #fcd34d", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+            <AlertCircle size={20} color="#d97706" style={{ flexShrink: 0 }} />
+            <div style={{ fontSize: 13, color: "#92400e", fontWeight: 500, lineHeight: 1.5 }}>
+              <span style={{ fontWeight: 700 }}>Library Policy Notice:</span> Books must be returned within the designated time duration. A flat fine of <span style={{ fontWeight: 700, color: "#b45309" }}>100 TK</span> will be charged per overdue book.
             </div>
           </div>
         )}
@@ -1785,7 +1809,8 @@ export default function AdminPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>{/* closes padding div */}
+      </div>{/* closes background div */}
     </AppLayout>
   );
 }

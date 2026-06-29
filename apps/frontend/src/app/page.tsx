@@ -179,11 +179,11 @@ export default function HomePage() {
                 width: "30px", height: "30px", borderRadius: "8px",
                 background: "var(--avatar-theme-color, #111827)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, transition: "background 0.3s ease",
+                flexShrink: 0,
               }}>
                 <GraduationCap size={16} color="#ffffff" />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em", transition: "color 0.3s ease" }}>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>
                 DKP
               </span>
             </div>
@@ -227,58 +227,7 @@ export default function HomePage() {
 
               {isAuthenticated ? (
                 <>
-                  {/* Signed-in: show avatar circle + sign out */}
-                  {/* Dashboard button for logged in users */}
-                  <Link
-                    href="/dashboard"
-                    style={{
-                      padding: "7px 18px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#ffffff",
-                      background: "var(--avatar-theme-color)",
-                      borderRadius: "8px",
-                      textDecoration: "none",
-                      letterSpacing: "0.01em",
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "0.9"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "1"; }}
-                  >
-                    Dashboard
-                  </Link>
-                  <button
-                    onClick={() => router.push("/profile")}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 16,
-                      fontWeight: 700,
-                      color: "#111827",
-                      border: "2px solid #d1d5db",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      outline: "none",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                      position: "relative"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)";
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)";
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
-                    title="View Profile"
-                  >
-                    {user?.name?.[0]?.toUpperCase()}
-                  </button>
+                  {/* Signed-in: sign out only */}
                   <button
                     onClick={handleLogout}
                     style={{
@@ -510,7 +459,9 @@ export default function HomePage() {
           </div>
         </header>
 
+
         {/* ── GUEST HERO ── */}
+        {!isAuthenticated && (
         <section style={{ background: "#ffffff", padding: "20px 32px 0", display: "flex", flexDirection: "column" }}>
           <div style={{ maxWidth: "1400px", width: "100%", margin: "0 auto", textAlign: "left", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
@@ -640,6 +591,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        )}{/* end guest hero */}
 
         {/* ── AUTH CARD - Sign In & Register (For Guests) ── */}
         {!isAuthenticated && (
@@ -764,13 +716,13 @@ export default function HomePage() {
             {/* Section header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px", marginBottom: "48px" }}>
               <div>
-                <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", margin: "0 0 10px 0" }}>
+                <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", margin: "0 0 10px 0" }}>
                   Partnered Faculties
                 </p>
-                <h2 style={{ fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 800, color: "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.025em", lineHeight: 1.2 }}>
+                <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 800, color: "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.03em", lineHeight: 1.15 }}>
                   Our Faculty Network
                 </h2>
-                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", margin: 0, fontWeight: 400, lineHeight: 1.6, maxWidth: "460px" }}>
+                <p style={{ fontSize: "14.5px", color: "rgba(255,255,255,0.72)", margin: 0, fontWeight: 400, lineHeight: 1.65, maxWidth: "460px" }}>
                   Powering Innovation and Engineering Research at the University of Dhaka
                 </p>
               </div>
@@ -780,8 +732,8 @@ export default function HomePage() {
                   { value: "FET", label: "Faculty" },
                 ].map((s) => (
                   <div key={s.label} style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: "22px", fontWeight: 800, color: "#ffffff", margin: 0, letterSpacing: "-0.03em" }}>{s.value}</p>
-                    <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", margin: "2px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</p>
+                    <p style={{ fontSize: "24px", fontWeight: 800, color: "#ffffff", margin: 0, letterSpacing: "-0.03em" }}>{s.value}</p>
+                    <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.65)", margin: "2px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -821,16 +773,16 @@ export default function HomePage() {
                   <span style={{
                     alignSelf: "flex-start",
                     padding: "4px 10px",
-                    background: "rgba(255,255,255,0.16)",
+                    background: "rgba(255,255,255,0.18)",
                     borderRadius: "6px",
-                    fontSize: "11px",
+                    fontSize: "11.5px",
                     fontWeight: 800,
                     color: "#ffffff",
-                    letterSpacing: "0.08em",
+                    letterSpacing: "0.06em",
                   }}>
                     {p.name}
                   </span>
-                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5, fontWeight: 400 }}>
+                  <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.78)", margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
                     {p.full}
                   </p>
                 </div>
@@ -859,21 +811,21 @@ export default function HomePage() {
                 <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <GraduationCap size={14} color="#ffffff" />
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--avatar-theme-color)", letterSpacing: "-0.02em" }}>
+                <span style={{ fontSize: "15.5px", fontWeight: 800, color: "var(--avatar-theme-color)", letterSpacing: "-0.025em" }}>
                   Digital Knowledge Platform
                 </span>
               </div>
-              <p style={{ fontSize: "13px", color: "#6c757d", margin: "0 0 16px 0", lineHeight: 1.7, maxWidth: "280px" }}>
+              <p style={{ fontSize: "13.5px", color: "#4b5563", margin: "0 0 16px 0", lineHeight: 1.7, maxWidth: "280px" }}>
                 A unified academic knowledge system for archives, research, and library resources at the University of Dhaka.
               </p>
-              <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>
-                Built by <strong style={{ color: "#6c757d" }}>Semicolon-Squad-DU</strong>
+              <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>
+                Built by <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong>
               </p>
             </div>
 
             {/* Legal column */}
             <div>
-              <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
+              <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#6b7280", margin: "0 0 16px 0" }}>
                 Legal
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
@@ -883,7 +835,7 @@ export default function HomePage() {
                   { label: "Contact Us", href: "/contact" },
                 ].map((l) => (
                   <Link key={l.label} href={l.href}
-                    style={{ fontSize: "13px", color: "#4b5563", textDecoration: "none", fontWeight: 500, transition: "color 0.18s" }}
+                    style={{ fontSize: "14px", color: "#374151", textDecoration: "none", fontWeight: 500, transition: "color 0.18s" }}
                     onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
                     onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
                   >{l.label}</Link>
@@ -893,13 +845,13 @@ export default function HomePage() {
 
             {/* Team column */}
             <div>
-              <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
+              <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#6b7280", margin: "0 0 16px 0" }}>
                 Team
               </p>
-              <p style={{ fontSize: "12px", color: "#374151", margin: "0 0 10px 0", fontWeight: 700 }}>Semicolon-Squad-DU</p>
+              <p style={{ fontSize: "13.5px", color: "#1f2937", margin: "0 0 10px 0", fontWeight: 700 }}>Semicolon-Squad-DU</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
                 {["Faria Yasmin", "Yuki Bhuiyan", "Nuruzzaman", "Hasibul Islam"].map(name => (
-                  <p key={name} style={{ fontSize: "12.5px", color: "#6c757d", margin: 0 }}>{name}</p>
+                  <p key={name} style={{ fontSize: "13.5px", color: "#4b5563", margin: 0 }}>{name}</p>
                 ))}
               </div>
             </div>
@@ -917,7 +869,7 @@ export default function HomePage() {
               flexWrap: "wrap",
               gap: "8px",
             }}>
-              <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
                 © 2026 Digital Knowledge Platform. All rights reserved.
               </p>
               <button
