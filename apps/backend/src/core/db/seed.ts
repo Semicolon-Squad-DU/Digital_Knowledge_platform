@@ -307,19 +307,19 @@ async function main() {
     // Lending transactions
     for (const lt of lendingTransactions) {
       await client.query(
-        `INSERT INTO lending_transactions
-           (transaction_id, member_id, catalog_id, due_date, returned_date, status, renewed_count)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
-         ON CONFLICT (transaction_id) DO NOTHING`,
+        `INSERT INTO borrows
+           (id, user_id, resource_id, due_date, return_date, borrow_status)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (id) DO NOTHING`,
         [lt.transaction_id, lt.member_id, lt.catalog_id, lt.due_date,
-        lt.returned_date, lt.status, lt.renewed_count]
+        lt.returned_date, lt.status]
       );
     }
 
     // Fines
     for (const f of fines) {
       await client.query(
-        `INSERT INTO fines (fine_id, member_id, transaction_id, amount, reason, status)
+        `INSERT INTO fines (fine_id, member_id, borrow_id, amount, reason, status)
          VALUES ($1,$2,$3,$4,$5,$6)
          ON CONFLICT (fine_id) DO NOTHING`,
         [f.fine_id, f.member_id, f.transaction_id, f.amount, f.reason, f.status]

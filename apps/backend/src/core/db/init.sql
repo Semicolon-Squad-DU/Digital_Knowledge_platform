@@ -92,7 +92,8 @@ CREATE TABLE archive_items (
   version      INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   uploaded_by  UUID NOT NULL REFERENCES users(user_id),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at   TIMESTAMPTZ
 );
 
 CREATE INDEX idx_archive_status ON archive_items(status);
@@ -218,6 +219,7 @@ CREATE TABLE catalog_items (
   available_copies INTEGER NOT NULL CHECK (available_copies >= 0),
   shelf_location   VARCHAR(100),
   barcode          VARCHAR(50) UNIQUE,
+  availability_status VARCHAR(20) NOT NULL DEFAULT 'available',
   cover_url        TEXT,
   document_url     TEXT,
   view_count       INTEGER NOT NULL DEFAULT 0,
@@ -233,23 +235,24 @@ CREATE INDEX idx_catalog_category ON catalog_items(category);
 CREATE INDEX idx_catalog_deleted ON catalog_items(deleted_at) WHERE deleted_at IS NULL;
 
 -- Lending transactions
-CREATE TABLE lending_transactions (
-  transaction_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  catalog_id     UUID NOT NULL REFERENCES catalog_items(catalog_id),
-  member_id      UUID NOT NULL REFERENCES users(user_id),
+CREATE TABLE borrows (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  resource_id    UUID NOT NULL REFERENCES catalog_items(catalog_id),
+  user_id        UUID NOT NULL REFERENCES users(user_id),
   issue_date     DATE NOT NULL DEFAULT CURRENT_DATE,
   due_date       DATE NOT NULL CHECK (due_date > issue_date),
   return_date    DATE,
   fine_amount    DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (fine_amount >= 0),
-  status         lending_status NOT NULL DEFAULT 'active',
+  borrow_status  lending_status NOT NULL DEFAULT 'active',
+  approval_status TEXT NOT NULL DEFAULT 'approved',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_lending_member ON lending_transactions(member_id);
-CREATE INDEX idx_lending_catalog ON lending_transactions(catalog_id);
-CREATE INDEX idx_lending_status ON lending_transactions(status);
-CREATE INDEX idx_lending_due_date ON lending_transactions(due_date) WHERE status = 'active';
+CREATE INDEX idx_lending_member ON borrows(user_id);
+CREATE INDEX idx_lending_catalog ON borrows(resource_id);
+CREATE INDEX idx_lending_status ON borrows(borrow_status);
+CREATE INDEX idx_lending_due_date ON borrows(due_date) WHERE borrow_status = 'active';
 
 -- Hold requests
 CREATE TABLE hold_requests (
@@ -277,13 +280,13 @@ CREATE TABLE wishlists (
 CREATE TABLE fines (
   fine_id        UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   member_id      UUID NOT NULL REFERENCES users(user_id),
-  transaction_id UUID NOT NULL REFERENCES lending_transactions(transaction_id),
+  borrow_id      UUID NOT NULL REFERENCES borrows(id),
   amount         DECIMAL(10,2) NOT NULL CHECK (amount > 0),
   reason         TEXT NOT NULL,
   status         fine_status NOT NULL DEFAULT 'pending',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (transaction_id)
+  UNIQUE (borrow_id)
 );
 
 -- ============================================================
@@ -362,7 +365,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_archive_updated_at BEFORE UPDATE ON archive_items FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_catalog_updated_at BEFORE UPDATE ON catalog_items FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_lending_updated_at BEFORE UPDATE ON lending_transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_lending_updated_at BEFORE UPDATE ON borrows FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_fines_updated_at BEFORE UPDATE ON fines FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_research_updated_at BEFORE UPDATE ON research_outputs FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_projects_updated_at BEFORE UPDATE ON student_projects FOR EACH ROW EXECUTE FUNCTION update_updated_at();

@@ -124,7 +124,7 @@ router.get(
     }
 
     if (status) {
-      where.push(`status = $${i}`);
+      where.push(`availability_status = $${i}`);
       values.push(status);
       i++;
     }
@@ -139,8 +139,8 @@ router.get(
 
     // Get paginated results
     const documents = await query(
-      `SELECT catalog_id as id, title, authors, category as department, 
-              status, updated_at, 'restricted' as access, 0 as download_count
+      `SELECT catalog_id as id, title, authors, category as department,
+              availability_status as status, updated_at, 'restricted' as access, 0 as download_count
        FROM catalog_items
        ${whereClause}
        ORDER BY updated_at DESC
