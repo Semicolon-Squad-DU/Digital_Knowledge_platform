@@ -7,9 +7,14 @@ import { useAuthStore } from "@/store/auth.store";
 import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X } from "lucide-react";
 
 const PARTNERS = [
-  { id: 1, name: "CSE" }, { id: 2, name: "EEE" }, { id: 3, name: "IIT" },
-  { id: 4, name: "RME" }, { id: 5, name: "GEB" }, { id: 6, name: "PHR" },
-  { id: 7, name: "NE" }, { id: 8, name: "ACCE" },
+  { id: 1, name: "CSE",  full: "Computer Science & Engineering" },
+  { id: 2, name: "EEE",  full: "Electrical & Electronic Engineering" },
+  { id: 3, name: "IIT",  full: "Institute of Information Technology" },
+  { id: 4, name: "RME",  full: "Robotics & Mechatronics Engineering" },
+  { id: 5, name: "GEB",  full: "Genetic Engineering & Biotechnology" },
+  { id: 6, name: "PHR",  full: "Pharmacy" },
+  { id: 7, name: "NE",   full: "Nuclear Engineering" },
+  { id: 8, name: "ACCE", full: "Applied Chemistry & Chemical Eng." },
 ];
 
 
@@ -158,16 +163,30 @@ export default function HomePage() {
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 768px) {
           .home-partner-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .home-footer { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .home-footer { grid-template-columns: 1fr !important; }
         }
       `}} />
 
-      <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
+      <div style={{ background: "#f8f9fa", minHeight: "100vh" }}>
 
-        <header style={{ background: "#e8eaed", borderBottom: "1px solid #d1d5db", position: "sticky", top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
-            <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em", transition: "color 0.3s ease" }}>
-              Digital Knowledge Platform
-            </span>
+        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{
+                width: "30px", height: "30px", borderRadius: "8px",
+                background: "var(--avatar-theme-color, #111827)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, transition: "background 0.3s ease",
+              }}>
+                <GraduationCap size={16} color="#ffffff" />
+              </div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em", transition: "color 0.3s ease" }}>
+                DKP
+              </span>
+            </div>
 
             <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               {[
@@ -179,7 +198,7 @@ export default function HomePage() {
                 <Link
                   key={item.label}
                   href={item.protected && !isAuthenticated ? `/login?redirect=${item.href}` : item.href}
-                  style={{ padding: "6px 14px", fontSize: "13px", fontWeight: 700, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
+                  style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
                 >{item.label}</Link>
@@ -213,13 +232,14 @@ export default function HomePage() {
                   <Link
                     href="/dashboard"
                     style={{
-                      padding: "7px 16px",
+                      padding: "7px 18px",
                       fontSize: "13px",
                       fontWeight: 600,
                       color: "#ffffff",
                       background: "var(--avatar-theme-color)",
-                      borderRadius: "6px",
+                      borderRadius: "8px",
                       textDecoration: "none",
+                      letterSpacing: "0.01em",
                       transition: "all 0.2s"
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = "var(--avatar-theme-color)"; e.currentTarget.style.opacity = "0.9"; }}
@@ -265,14 +285,15 @@ export default function HomePage() {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 5,
-                      padding: "7px 12px",
+                      padding: "7px 13px",
                       fontSize: "13px",
                       fontWeight: 500,
                       color: "#4b5563",
                       background: "transparent",
-                      border: "1px solid #dee2e6",
-                      borderRadius: "6px",
+                      border: "1.5px solid #d1d5db",
+                      borderRadius: "8px",
                       cursor: "pointer",
+                      letterSpacing: "0.01em",
                       transition: "all 0.2s"
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
@@ -526,15 +547,20 @@ export default function HomePage() {
                     marginTop: "12px",
                     color: "var(--avatar-theme-color, #000)",
                     flexShrink: 0,
-                    background: "none",
-                    border: "none",
+                    background: "rgba(255,255,255,0.75)",
+                    border: "1.5px solid rgba(0,0,0,0.12)",
+                    borderRadius: "100px",
                     cursor: "pointer",
-                    padding: 0,
-                    transition: "color 0.3s ease"
+                    padding: "8px 16px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    backdropFilter: "blur(4px)",
+                    transition: "all 0.2s ease",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
                   }}
                 >
-                  <span style={{ fontSize: "16px", fontWeight: 500 }}>Scroll down</span>
-                  <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_downward</span>
+                  <span>Scroll down</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_downward</span>
                 </button>
               </div>
 
@@ -568,12 +594,12 @@ export default function HomePage() {
               }}
               >
                 <h2 style={{
-                  fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)",
-                  fontWeight: 700,
+                  fontSize: "clamp(1.3rem, 2.5vw, 1.85rem)",
+                  fontWeight: 800,
                   color: "var(--avatar-theme-color)",
-                  lineHeight: 1.3,
-                  letterSpacing: "-0.02em",
-                  margin: "0 0 16px",
+                  lineHeight: 1.25,
+                  letterSpacing: "-0.03em",
+                  margin: "0 0 18px",
                   minHeight: "2.3em",
                 }}>
                   {headingText}
@@ -590,11 +616,12 @@ export default function HomePage() {
                   )}
                 </h2>
                 <p style={{
-                  fontSize: "clamp(0.875rem, 1.4vw, 1.05rem)",
-                  color: "#495057",
-                  lineHeight: 1.75,
+                  fontSize: "clamp(0.9rem, 1.4vw, 1.05rem)",
+                  color: "#555e6d",
+                  lineHeight: 1.8,
                   margin: 0,
                   minHeight: "4.5em",
+                  fontWeight: 400,
                 }}>
                   {bodyText}
                   {(phase === "body") && (
@@ -616,24 +643,29 @@ export default function HomePage() {
 
         {/* ── AUTH CARD - Sign In & Register (For Guests) ── */}
         {!isAuthenticated && (
-          <section style={{ background: "#ffffff", padding: "60px 32px", borderTop: "1px solid #e5e7eb" }}>
+          <section style={{ background: "linear-gradient(160deg, #f4f6ff 0%, #ffffff 60%)", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "32px" }}>
-                <div style={{ textAlign: "center", maxWidth: "600px" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "36px" }}>
+                <div style={{ textAlign: "center", maxWidth: "560px" }}>
+                  <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--avatar-theme-color)", margin: "0 0 14px 0", opacity: 0.8 }}>
+                    Get Started Today
+                  </p>
                   <h2 style={{
-                    fontSize: "clamp(1.5rem, 3vw, 2.25rem)",
+                    fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
                     fontWeight: 800,
-                    color: "#111827",
-                    margin: "0 0 12px 0",
-                    letterSpacing: "-0.02em"
+                    color: "#0f1117",
+                    margin: "0 0 14px 0",
+                    letterSpacing: "-0.03em",
+                    lineHeight: 1.15,
                   }}>
                     Ready to Join Us?
                   </h2>
                   <p style={{
-                    fontSize: "clamp(0.95rem, 1.5vw, 1.1rem)",
+                    fontSize: "clamp(0.95rem, 1.5vw, 1.05rem)",
                     color: "#6b7280",
-                    lineHeight: 1.6,
-                    margin: 0
+                    lineHeight: 1.7,
+                    margin: 0,
+                    fontWeight: 400,
                   }}>
                     Access academic resources, collaborate with researchers, and explore knowledge from the university.
                   </p>
@@ -655,29 +687,30 @@ export default function HomePage() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "6px",
-                      padding: "14px 32px",
-                      fontSize: "15px",
+                      padding: "13px 36px",
+                      fontSize: "14.5px",
                       fontWeight: 600,
                       color: "var(--avatar-theme-color, #1a56db)",
                       background: "#ffffff",
                       border: "2px solid var(--avatar-theme-color, #1a56db)",
-                      borderRadius: "10px",
+                      borderRadius: "12px",
                       textDecoration: "none",
-                      transition: "all 0.3s ease",
+                      transition: "all 0.25s ease",
                       cursor: "pointer",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                      letterSpacing: "0.01em",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = "var(--avatar-theme-color, #1a56db)";
                       e.currentTarget.style.color = "#ffffff";
                       e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 6px 16px rgba(26, 86, 219, 0.25)";
+                      e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "#ffffff";
                       e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)";
                       e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)";
                     }}
                   >
                     Sign In
@@ -691,31 +724,32 @@ export default function HomePage() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "8px",
-                      padding: "14px 32px",
-                      fontSize: "15px",
+                      padding: "13px 36px",
+                      fontSize: "14.5px",
                       fontWeight: 700,
                       color: "#ffffff",
                       background: "var(--avatar-theme-color, #1a56db)",
                       border: "2px solid var(--avatar-theme-color, #1a56db)",
-                      borderRadius: "10px",
+                      borderRadius: "12px",
                       textDecoration: "none",
-                      transition: "all 0.3s ease",
+                      transition: "all 0.25s ease",
                       cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(26, 86, 219, 0.3)"
+                      boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
+                      letterSpacing: "0.01em",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(26, 86, 219, 0.9)";
+                      e.currentTarget.style.opacity = "0.88";
                       e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 8px 20px rgba(26, 86, 219, 0.4)";
+                      e.currentTarget.style.boxShadow = "0 10px 24px rgba(0,0,0,0.22)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "var(--avatar-theme-color, #1a56db)";
+                      e.currentTarget.style.opacity = "1";
                       e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(26, 86, 219, 0.3)";
+                      e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.18)";
                     }}
                   >
                     <span>Sign Up</span>
-                    <ArrowRight size={18} />
+                    <ArrowRight size={16} />
                   </Link>
                 </div>
               </div>
@@ -724,104 +758,214 @@ export default function HomePage() {
         )}
 
         {/* ── PARTNER NETWORK ────────────────────────────────────────────────── */}
-        <section id="network-section" style={{ background: "var(--theme-sidebar-gradient)", padding: "72px 32px" }} className="home-partner-section">
+        <section id="network-section" style={{ background: "var(--theme-sidebar-gradient)", padding: "80px 32px 72px" }} className="home-partner-section">
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <div style={{ marginBottom: "40px" }}>
-              <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#ffffff", marginBottom: "6px" }}>
-                Our Faculty Network
-              </h2>
-              <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", margin: 0 }}>
-                Powering Innovation and Engineering Research at the University of Dhaka
-              </p>
-            </div>
 
-            {/* Partner logo grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }} className="home-partner-grid">
-              {PARTNERS.map((p) => (
-                <div
-                  key={p.id}
-                  style={{
-                    background: "rgba(255,255,255,0.15)",
-                    backdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.25)",
-                    borderRadius: "10px",
-                    padding: "28px 20px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minHeight: "80px",
-                  }}
-                  className="home-partner-item"
-                >
-                  <span style={{ fontSize: "15px", fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: "0.05em" }}>
-                    {p.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
-        <footer style={{ background: "#f1f3f5", borderTop: "1px solid #dee2e6" }}>
-          <div style={{
-            maxWidth: "1100px",
-            margin: "0 auto",
-            padding: "32px 32px",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "32px",
-          }} className="home-footer">
-            {/* Brand */}
-            <div>
-              <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color)", lineHeight: 1.55, margin: "0 0 6px" }}>
-                Digital Knowledge Platform
-              </p>
-              <p style={{ fontSize: "12px", color: "#6c757d", margin: "0 0 8px 0" }}>
-                © 2026 Digital Knowledge Platform. All rights reserved.
-              </p>
-              <p style={{ fontSize: "12px", color: "#6c757d", margin: 0 }}>
-                Built by <strong>Semicolon-Squad-DU</strong>
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px", margin: "0 0 12px 0" }}>
-                Resources
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {/* Section header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px", marginBottom: "48px" }}>
+              <div>
+                <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", margin: "0 0 10px 0" }}>
+                  Partnered Faculties
+                </p>
+                <h2 style={{ fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 800, color: "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.025em", lineHeight: 1.2 }}>
+                  Our Faculty Network
+                </h2>
+                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", margin: 0, fontWeight: 400, lineHeight: 1.6, maxWidth: "460px" }}>
+                  Powering Innovation and Engineering Research at the University of Dhaka
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "24px", flexShrink: 0 }}>
                 {[
-                  { label: "Privacy Policy", href: "/privacy" },
-                  { label: "Terms of Service", href: "/terms" },
-                  { label: "Contact Us", href: "/contact" }
-                ].map((l) => (
-                  <Link key={l.label} href={l.href} style={{ fontSize: "12px", color: "#495057", textDecoration: "none", transition: "color 0.2s" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "#495057")}
-                  >
-                    {l.label}
-                  </Link>
+                  { value: "8", label: "Departments" },
+                  { value: "FET", label: "Faculty" },
+                ].map((s) => (
+                  <div key={s.label} style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: "22px", fontWeight: 800, color: "#ffffff", margin: 0, letterSpacing: "-0.03em" }}>{s.value}</p>
+                    <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", margin: "2px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</p>
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Team */}
+            {/* Partner card grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }} className="home-partner-grid">
+              {PARTNERS.map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    borderRadius: "14px",
+                    padding: "22px 18px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    cursor: "default",
+                    transition: "all 0.24s ease",
+                  }}
+                  className="home-partner-item"
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.18)";
+                    e.currentTarget.style.transform = "translateY(-4px)";
+                    e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.25)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+                  }}
+                >
+                  <span style={{
+                    alignSelf: "flex-start",
+                    padding: "4px 10px",
+                    background: "rgba(255,255,255,0.16)",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    color: "#ffffff",
+                    letterSpacing: "0.08em",
+                  }}>
+                    {p.name}
+                  </span>
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5, fontWeight: 400 }}>
+                    {p.full}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+
+        {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
+        <footer style={{ background: "#f0f2f5", borderTop: "1px solid #dde0e6" }}>
+
+          {/* Footer body — 4 columns */}
+          <div style={{
+            maxWidth: "1100px",
+            margin: "0 auto",
+            padding: "48px 32px 40px",
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr 1fr 1fr",
+            gap: "40px",
+          }} className="home-footer">
+
+            {/* Brand column */}
             <div>
-              <p style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px", margin: "0 0 12px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "14px" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <GraduationCap size={14} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--avatar-theme-color)", letterSpacing: "-0.02em" }}>
+                  Digital Knowledge Platform
+                </span>
+              </div>
+              <p style={{ fontSize: "13px", color: "#6c757d", margin: "0 0 16px 0", lineHeight: 1.7, maxWidth: "280px" }}>
+                A unified academic knowledge system for archives, research, and library resources at the University of Dhaka.
+              </p>
+              <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>
+                Built by <strong style={{ color: "#6c757d" }}>Semicolon-Squad-DU</strong>
+              </p>
+            </div>
+
+            {/* Navigate column */}
+            <div>
+              <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
+                Navigate
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
+                {[
+                  { label: "Archive", href: "/archive" },
+                  { label: "Library", href: "/library" },
+                  { label: "Research", href: "/research" },
+                  { label: "About", href: "/about" },
+                ].map((l) => (
+                  <Link key={l.label} href={l.href}
+                    style={{ fontSize: "13px", color: "#4b5563", textDecoration: "none", fontWeight: 500, transition: "color 0.18s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
+                  >{l.label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Legal column */}
+            <div>
+              <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
+                Legal
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
+                {[
+                  { label: "Privacy Policy", href: "/privacy" },
+                  { label: "Terms of Service", href: "/terms" },
+                  { label: "Contact Us", href: "/contact" },
+                ].map((l) => (
+                  <Link key={l.label} href={l.href}
+                    style={{ fontSize: "13px", color: "#4b5563", textDecoration: "none", fontWeight: 500, transition: "color 0.18s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
+                  >{l.label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Team column */}
+            <div>
+              <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
                 Team
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <p style={{ fontSize: "12px", color: "#6c757d", margin: 0, fontWeight: 600 }}>Semicolon-Squad-DU</p>
-                <div style={{ fontSize: "11px", color: "#6c757d" }}>
-                  <p style={{ margin: "4px 0" }}>Faria Yasmin</p>
-                  <p style={{ margin: "4px 0" }}>Yuki Bhuiyan</p>
-                  <p style={{ margin: "4px 0" }}>Nuruzzaman</p>
-                  <p style={{ margin: "4px 0" }}>Hasibul Islam</p>
-                </div>
+              <p style={{ fontSize: "12px", color: "#374151", margin: "0 0 10px 0", fontWeight: 700 }}>Semicolon-Squad-DU</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+                {["Faria Yasmin", "Yuki Bhuiyan", "Nuruzzaman", "Hasibul Islam"].map(name => (
+                  <p key={name} style={{ fontSize: "12.5px", color: "#6c757d", margin: 0 }}>{name}</p>
+                ))}
               </div>
             </div>
           </div>
+
+          {/* Footer bottom bar */}
+          <div style={{ borderTop: "1px solid #e2e5ea" }}>
+            <div style={{
+              maxWidth: "1100px",
+              margin: "0 auto",
+              padding: "16px 32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}>
+              <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>
+                © 2026 Digital Knowledge Platform. All rights reserved.
+              </p>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--avatar-theme-color, #374151)",
+                  background: "transparent",
+                  border: "1.5px solid #d1d5db",
+                  borderRadius: "8px",
+                  padding: "5px 12px",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; e.currentTarget.style.background = "#ffffff"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "transparent"; }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>arrow_upward</span>
+                Back to top
+              </button>
+            </div>
+          </div>
+
         </footer>
 
       </div>
