@@ -1,273 +1,157 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { GraduationCap, ArrowRight } from "lucide-react";
+
+const SECTIONS = [
+  {
+    num: "01",
+    title: "Acceptance",
+    body: "By accessing or using DKP, you agree to these Terms. If you disagree with any part, please do not use the platform.",
+  },
+  {
+    num: "02",
+    title: "Permitted Use",
+    body: "DKP is for personal, academic, non-commercial use only. You may not copy, redistribute, or reverse-engineer any part of the platform.",
+  },
+  {
+    num: "03",
+    title: "Your Content",
+    body: "You retain ownership of content you upload. By uploading, you grant DKP a license to store and display it within the platform.",
+  },
+  {
+    num: "04",
+    title: "No Warranties",
+    body: "The platform is provided \"as is\" without warranties of any kind — expressed or implied. We do not guarantee accuracy or uninterrupted access.",
+  },
+  {
+    num: "05",
+    title: "Liability Limits",
+    body: "DKP is not liable for any indirect, incidental, or consequential damages arising from your use of or inability to use the platform.",
+  },
+  {
+    num: "06",
+    title: "Changes & Termination",
+    body: "We may update these terms or suspend access at any time without prior notice. Continued use after changes constitutes acceptance.",
+  },
+];
+
+const NAV_LINKS = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Contact", href: "/contact" },
+];
 
 export default function TermsPage() {
   return (
-    <div style={{
-      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-      background: "var(--theme-gradient-160)",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      {/* Background Mock Content */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        padding: "32px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-        background: "#f9fafb",
-        zIndex: 0
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
-            <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
-          </div>
+    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        .legal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        @media (max-width: 600px) { .legal-grid { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {/* Minimal Nav */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <GraduationCap size={13} color="#ffffff" />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
+          </Link>
+          <nav style={{ display: "flex", gap: "4px" }}>
+            {NAV_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{ padding: "5px 12px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+              >{l.label}</Link>
+            ))}
+          </nav>
         </div>
-      </div>
-
-      {/* Backdrop blur overlay */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backdropFilter: "blur(5px)",
-        WebkitBackdropFilter: "blur(5px)",
-        background: "rgba(0, 0, 0, 0.4)",
-        pointerEvents: "none",
-        zIndex: 1
-      }} />
-
-      {/* Header */}
-      <header style={{
-        padding: "14px 24px",
-        borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
-        background: "rgba(255, 255, 255, 0.75)",
-        backdropFilter: "blur(15px)",
-        WebkitBackdropFilter: "blur(15px)",
-        position: "relative",
-        zIndex: 2
-      }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "13px",
-            fontWeight: 700,
-            color: "var(--avatar-theme-color, #000000)",
-            textDecoration: "none",
-            transition: "color 0.2s"
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >
-          <ArrowLeft size={14} strokeWidth={2.5} />
-          Back to Home
-        </Link>
       </header>
 
-      {/* Main Content */}
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "48px 24px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
-        <h1 style={{ fontSize: "40px", fontWeight: 800, color: "#111827", marginBottom: "12px", lineHeight: 1.2 }}>
-          Terms of Service
-        </h1>
-        <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "32px" }}>
-          Last updated: May 28, 2026
-        </p>
+      <main style={{ flex: 1 }}>
+        {/* Hero */}
+        <div style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", padding: "52px 32px 44px", textAlign: "center" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--avatar-theme-color, #111827)", opacity: 0.65, margin: "0 0 12px 0" }}>
+            Legal
+          </p>
+          <h1 style={{ fontSize: "clamp(1.9rem, 5vw, 2.75rem)", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 14px 0" }}>
+            Terms of Service
+          </h1>
+          <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
+            Last updated <strong style={{ color: "#374151" }}>May 28, 2026</strong> · Digital Knowledge Platform
+          </p>
+        </div>
 
-        {/* Content Sections */}
-        <div style={{ background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.3)", padding: "32px", lineHeight: 1.8, boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)" }}>
-          {/* Section 1 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              1. Acceptance of Terms
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              By accessing and using the Digital Knowledge Platform (DKP), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
-            </p>
-          </section>
+        {/* Section cards */}
+        <div style={{ maxWidth: "860px", margin: "0 auto", padding: "48px 32px 64px" }}>
+          <div className="legal-grid">
+            {SECTIONS.map(s => (
+              <div
+                key={s.num}
+                style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e5e7eb", padding: "22px 20px", transition: "box-shadow 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.07)")}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+              >
+                <span style={{
+                  display: "inline-block", padding: "2px 10px", borderRadius: "100px",
+                  background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
+                  fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "12px",
+                }}>
+                  {s.num}
+                </span>
+                <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 8px 0" }}>{s.title}</h2>
+                <p style={{ fontSize: "13px", color: "#555e6d", lineHeight: 1.65, margin: 0 }}>{s.body}</p>
+              </div>
+            ))}
+          </div>
 
-          {/* Section 2 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              2. Use License
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              Permission is granted to temporarily download one copy of the materials (information or software) on the Digital Knowledge Platform for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
-            </p>
-            <ul style={{ fontSize: "14px", color: "#495057", marginLeft: "24px", marginBottom: "12px" }}>
-              <li style={{ marginBottom: "8px" }}>Modifying or copying the materials</li>
-              <li style={{ marginBottom: "8px" }}>Using the materials for any commercial purpose or for any public display</li>
-              <li style={{ marginBottom: "8px" }}>Attempting to decompile or reverse engineer any software contained on the platform</li>
-              <li style={{ marginBottom: "8px" }}>Removing any copyright or other proprietary notations from the materials</li>
-              <li style={{ marginBottom: "8px" }}>Transferring the materials to another person or &quot;mirroring&quot; the materials on any other server</li>
-            </ul>
-          </section>
-
-          {/* Section 3 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              3. Disclaimer
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              The materials on the Digital Knowledge Platform are provided on an &apos;as is&apos; basis. The platform makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
-            </p>
-          </section>
-
-          {/* Section 4 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              4. Limitations
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              In no event shall the Digital Knowledge Platform or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on the platform, even if the platform or an authorized representative has been notified orally or in writing of the possibility of such damage.
-            </p>
-          </section>
-
-          {/* Section 5 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              5. Accuracy of Materials
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              The materials appearing on the Digital Knowledge Platform could include technical, typographical, or photographic errors. The platform does not warrant that any of the materials on the platform are accurate, complete, or current. The platform may make changes to the materials contained on the platform at any time without notice.
-            </p>
-          </section>
-
-          {/* Section 6 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              6. Links
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              The Digital Knowledge Platform has not reviewed all of the sites linked to its website and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by the platform of the site. Use of any such linked website is at the user&apos;s own risk.
-            </p>
-          </section>
-
-          {/* Section 7 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              7. Modifications
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              The Digital Knowledge Platform may revise these terms of service for the platform at any time without notice. By using this platform, you are agreeing to be bound by the then current version of these terms of service.
-            </p>
-          </section>
-
-          {/* Section 8 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              6. Contact Information
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              For questions about these Terms, contact us:
-            </p>
-            <div style={{ background: "rgba(26, 86, 219, 0.05)", padding: "16px", borderRadius: "8px", borderLeft: "3px solid var(--avatar-theme-color, #1a56db)" }}>
-              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
-                <strong>Development Team:</strong> Semicolon-Squad-DU
-              </p>
-              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
-                <strong>Team Members & Contacts:</strong>
-              </p>
-              <ul style={{ fontSize: "13px", color: "#495057", marginLeft: "20px", margin: 0 }}>
-                <li>Fariha Yasmin: <a href="mailto:fariayasmin19@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>fariayasmin19@gmail.com</a> | <a href="https://github.com/fariayasmin" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@fariayasmin</a></li>
-                <li>Yuki Bhuiyan: <a href="mailto:yukibhuiyan@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>yukibhuiyan@gmail.com</a> | <a href="https://github.com/Yukii9291" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@Yukii9291</a></li>
-                <li>Nuruzzaman: <a href="mailto:nuruzzaman@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>nuruzzaman@gamil.com</a> | <a href="https://github.com/prolexcsedu" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@prolexcsedu</a></li>
-                <li>Hasibul Islam: <a href="mailto:hasibulislam@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>hasibulislam@gamil.com</a> | <a href="https://github.com/enol5423" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@enol5423</a></li>
-              </ul>
-              <p style={{ fontSize: "13px", color: "#495057", marginTop: "12px", margin: "12px 0 0 0" }}>
-                <strong>GitHub Organization:</strong> <a href="https://github.com/Semicolon-Squad-DU" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>github.com/Semicolon-Squad-DU</a>
-              </p>
+          {/* Contact CTA */}
+          <div style={{
+            marginTop: "14px", background: "#ffffff", borderRadius: "14px",
+            border: "1px solid #e5e7eb", padding: "22px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap",
+          }}>
+            <div>
+              <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px 0" }}>Questions about these terms?</h2>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Reach out to Semicolon-Squad-DU — we're happy to clarify.</p>
             </div>
-          </section>
-
-          {/* Section 9 */}
-          <section>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              9. Contact Information
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              For questions about these Terms, contact us:
-            </p>
-            <p style={{ fontSize: "14px", color: "#495057" }}>
-              Email: support@dkp.edu.bd<br />
-              Address: University of Dhaka, Dhaka, Bangladesh
-            </p>
-          </section>
+            <Link
+              href="/contact"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "9px 18px", fontSize: "13px", fontWeight: 600,
+                color: "#ffffff", background: "var(--avatar-theme-color, #111827)",
+                borderRadius: "8px", textDecoration: "none", flexShrink: 0, transition: "opacity 0.2s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.82")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            >
+              Contact Us <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
+      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "32px 24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
+          maxWidth: "860px", margin: "0 auto", padding: "16px 32px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px",
         }}>
-          <div>
-            <p style={{ fontSize: "13px", fontWeight: 700, color: "#ffffff", lineHeight: 1.55, margin: "0 0 6px" }}>
-              Digital Knowledge Platform
-            </p>
-            <p style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.7)", margin: 0 }}>
-              © 2026 Digital Knowledge Platform. All rights reserved.
-            </p>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", textAlign: "center", flexWrap: "wrap" }}>
-              {[
-                { label: "Privacy Policy", href: "/privacy" },
-                { label: "Terms of Service", href: "/terms" },
-                { label: "Contact Us", href: "/contact" }
-              ].map((l) => (
-                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.8)", textDecoration: "none", transition: "all 0.2s", display: "inline-block" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
+          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform · Semicolon-Squad-DU</p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {NAV_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+              >{l.label}</Link>
+            ))}
           </div>
         </div>
-        <style>{`
-          @media (min-width: 768px) {
-            footer > div {
-              display: grid;
-              grid-template-columns: 200px 1fr auto;
-              align-items: start;
-              gap: 32px;
-            }
-            footer > div > div:nth-child(2) {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 8px;
-            }
-            footer > div > div:nth-child(2) > div {
-              display: flex;
-              gap: 24px;
-              flex-direction: row;
-            }
-          }
-        `}</style>
       </footer>
     </div>
   );

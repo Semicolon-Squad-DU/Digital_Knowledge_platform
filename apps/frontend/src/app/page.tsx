@@ -849,7 +849,7 @@ export default function HomePage() {
             margin: "0 auto",
             padding: "48px 32px 40px",
             display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
+            gridTemplateColumns: "2fr 1fr 1fr",
             gap: "40px",
           }} className="home-footer">
 
@@ -869,27 +869,6 @@ export default function HomePage() {
               <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>
                 Built by <strong style={{ color: "#6c757d" }}>Semicolon-Squad-DU</strong>
               </p>
-            </div>
-
-            {/* Navigate column */}
-            <div>
-              <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
-                Navigate
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
-                {[
-                  { label: "Archive", href: "/archive" },
-                  { label: "Library", href: "/library" },
-                  { label: "Research", href: "/research" },
-                  { label: "About", href: "/about" },
-                ].map((l) => (
-                  <Link key={l.label} href={l.href}
-                    style={{ fontSize: "13px", color: "#4b5563", textDecoration: "none", fontWeight: 500, transition: "color 0.18s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
-                  >{l.label}</Link>
-                ))}
-              </div>
             </div>
 
             {/* Legal column */}

@@ -1,17 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Mail, Github, ExternalLink, Send } from "lucide-react";
+import { GraduationCap, Mail, Github, Send } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 
 const TEAM_MEMBERS = [
-  { name: "Faria Yasmin", email: "fariayasmin19@gmail.com", github: "fariayasmin" },
-  { name: "Yuki Bhuiyan", email: "yukibhuiyan@gmail.com", github: "Yukii9291" },
-  { name: "Md. Nuruzzaman", email: "nuruzzaman@gamil.com", github: "prolexcsedu" },
-  { name: "Hasibul Islam", email: "hasibulislam@gamil.com", github: "enol5423" },
+  { name: "Faria Yasmin",    email: "fariayasmin19@gmail.com", github: "fariayasmin" },
+  { name: "Yuki Bhuiyan",   email: "yukibhuiyan@gmail.com",   github: "Yukii9291"   },
+  { name: "Md. Nuruzzaman", email: "nuruzzaman@gamil.com",    github: "prolexcsedu" },
+  { name: "Hasibul Islam",  email: "hasibulislam@gamil.com",  github: "enol5423"    },
 ];
+
+const NAV_LINKS = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms",   href: "/terms"   },
+  { label: "Contact", href: "/contact" },
+];
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 14px",
+  borderRadius: "8px",
+  border: "1.5px solid #e5e7eb",
+  fontSize: "13.5px",
+  color: "#111827",
+  background: "#ffffff",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.2s",
+  fontFamily: "inherit",
+};
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
@@ -19,422 +39,265 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      toast.error("Please fill all fields");
+    if (!formData.name || formData.name.trim().length < 2) {
+      toast.error("Name must be at least 2 characters");
       return;
     }
-    
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (!formData.subject || formData.subject.trim().length < 5) {
+      toast.error("Subject must be at least 5 characters");
+      return;
+    }
+    if (!formData.message || formData.message.trim().length < 10) {
+      toast.error("Message must be at least 10 characters");
+      return;
+    }
     setIsLoading(true);
     try {
       await api.post("/contact/submit", formData);
       toast.success("Message sent successfully!");
       setFormData({ name: "", email: "", subject: "", message: "" });
-    } catch (error) {
-      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(message || "Failed to send message");
+    } catch (error: any) {
+      if (!error.response) {
+        toast.error("Cannot reach the server. Make sure the backend is running on port 4000.");
+      } else {
+        const msg = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg;
+        toast.error(msg || `Server error (${error.response.status}). Please try again.`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div style={{
-      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-      background: "var(--theme-gradient-160)",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      {/* Background Mock Content */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        padding: "32px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-        background: "#f9fafb",
-        zIndex: 0
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
-            <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
-          </div>
+    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        .contact-split { display: grid; grid-template-columns: 1fr 1.6fr; gap: 20px; }
+        .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        input.contact-input:focus, textarea.contact-input:focus { border-color: var(--avatar-theme-color, #111827) !important; }
+        @media (max-width: 768px) { .contact-split { grid-template-columns: 1fr; } .team-grid { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {/* Minimal Nav */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <GraduationCap size={13} color="#ffffff" />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
+          </Link>
+          <nav style={{ display: "flex", gap: "4px" }}>
+            {NAV_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{ padding: "5px 12px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+              >{l.label}</Link>
+            ))}
+          </nav>
         </div>
-      </div>
-
-      {/* Backdrop blur overlay */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backdropFilter: "blur(5px)",
-        WebkitBackdropFilter: "blur(5px)",
-        background: "rgba(0, 0, 0, 0.4)",
-        pointerEvents: "none",
-        zIndex: 1
-      }} />
-
-      {/* Navbar */}
-      <header style={{
-        padding: "14px 24px",
-        borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
-        background: "rgba(255, 255, 255, 0.75)",
-        backdropFilter: "blur(15px)",
-        WebkitBackdropFilter: "blur(15px)",
-        position: "relative",
-        zIndex: 2,
-        overflowX: "hidden"
-      }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "13px",
-            color: "var(--avatar-theme-color, #000000)",
-            fontWeight: 700,
-            textDecoration: "none",
-            transition: "color 0.2s"
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >
-          <ArrowLeft size={14} strokeWidth={2.5} />
-          Back to Home
-        </Link>
       </header>
 
-      {/* Main Content */}
-      <main style={{
-        flex: 1,
-        padding: "32px 24px",
-        position: "relative",
-        zIndex: 2,
-        overflowY: "auto",
-        overflowX: "hidden"
-      }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%", overflowX: "hidden" }}>
-          {/* Hero Section */}
-          <div style={{ textAlign: "center", marginBottom: "48px" }}>
-            <h1 style={{
-              fontSize: "clamp(28px, 6vw, 48px)",
-              fontWeight: 800,
-              color: "#111827",
-              marginBottom: "12px",
-              lineHeight: 1.2
-            }}>
-              Get in Touch
-            </h1>
-            <p style={{
-              fontSize: "clamp(14px, 4vw, 16px)",
-              color: "#6b7280",
-              maxWidth: "600px",
-              margin: "0 auto"
-            }}>
-              Have a question? Contact our team.
-            </p>
-          </div>
+      <main style={{ flex: 1 }}>
+        {/* Hero */}
+        <div style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", padding: "52px 32px 44px", textAlign: "center" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--avatar-theme-color, #111827)", opacity: 0.65, margin: "0 0 12px 0" }}>
+            Reach Out
+          </p>
+          <h1 style={{ fontSize: "clamp(1.9rem, 5vw, 2.75rem)", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 14px 0" }}>
+            Get in Touch
+          </h1>
+          <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 auto", maxWidth: "420px" }}>
+            Have a question or feedback? Contact us directly or use the form below.
+          </p>
+        </div>
 
-          {/* Team Members Grid */}
-          <div style={{ marginBottom: "48px" }}>
-            <h2 style={{
-              fontSize: "clamp(24px, 5vw, 32px)",
-              fontWeight: 800,
-              color: "#111827",
-              marginBottom: "24px",
-              textAlign: "center"
-            }}>
-              Meet the Team - Semicolon-Squad-DU
-            </h2>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "20px",
-              marginBottom: "32px"
-            }}>
-              {TEAM_MEMBERS.map((member) => (
-                <div key={member.email} style={{
-                  background: "rgba(255, 255, 255, 0.95)",
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  borderRadius: "12px",
-                  border: "1px solid rgba(255, 255, 255, 0.3)",
-                  padding: "24px",
-                  textAlign: "center",
-                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-                  transition: "transform 0.2s, box-shadow 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-6px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.1)";
-                }}>
+        <div style={{ maxWidth: "940px", margin: "0 auto", padding: "48px 32px 64px" }}>
+
+          {/* Team */}
+          <div style={{ marginBottom: "32px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9ca3af", margin: "0 0 16px 0" }}>
+              Semicolon-Squad-DU
+            </p>
+            <div className="team-grid">
+              {TEAM_MEMBERS.map(m => (
+                <div
+                  key={m.email}
+                  style={{
+                    background: "#ffffff", borderRadius: "12px", border: "1px solid #e5e7eb",
+                    padding: "16px 18px", display: "flex", alignItems: "center", gap: "14px",
+                    transition: "box-shadow 0.2s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.07)")}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+                >
+                  {/* Avatar */}
                   <div style={{
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    background: "var(--avatar-theme-color, linear-gradient(135deg, #667eea 0%, #764ba2 100%))",
-                    margin: "0 auto 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#ffffff",
-                    fontSize: "24px",
-                    fontWeight: 700
+                    width: "40px", height: "40px", borderRadius: "50%", flexShrink: 0,
+                    background: "var(--avatar-theme-color, #111827)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "16px", fontWeight: 700, color: "#ffffff",
                   }}>
-                    {member.name[0]}
+                    {m.name[0]}
                   </div>
-                  <h3 style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    marginBottom: "12px",
-                    margin: "0 0 12px 0"
-                  }}>
-                    {member.name}
-                  </h3>
-                  <p style={{
-                    fontSize: "12px",
-                    color: "#6b7280",
-                    margin: "0",
-                    padding: "0"
-                  }}>
-                    {member.email}
-                  </p>
+                  {/* Info */}
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827", margin: "0 0 3px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                      <a href={`mailto:${m.email}`} style={{ fontSize: "11.5px", color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none", display: "flex", alignItems: "center", gap: "3px" }}
+                        onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                        onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+                      >
+                        <Mail size={10} /> {m.email}
+                      </a>
+                      <a href={`https://github.com/${m.github}`} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: "11.5px", color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: "3px" }}
+                        onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
+                        onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+                      >
+                        <Github size={10} /> @{m.github}
+                      </a>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Contact Methods */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "20px",
-            marginBottom: "48px"
-          }}>
-            {/* Quick Email */}
-            <div style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                <Mail size={24} color="var(--avatar-theme-color, #1a56db)" />
-                <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: 0 }}>Email Team Members</h3>
-              </div>
-              <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "16px", margin: "0 0 16px 0" }}>
-                Reach out directly to any team member:
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {TEAM_MEMBERS.map((member) => (
-                  <a
-                    key={member.email}
-                    href={`mailto:${member.email}`}
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--avatar-theme-color, #1a56db)",
-                      textDecoration: "none",
-                      padding: "6px 0",
-                      borderBottom: "1px solid rgba(26, 86, 219, 0.1)",
-                      transition: "color 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = "#0f3a7d"}
-                    onMouseLeave={(e) => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
-                  >
-                    {member.email}
-                  </a>
-                ))}
-              </div>
-            </div>
+          {/* Split: info + form */}
+          <div className="contact-split">
 
-            {/* GitHub Org */}
-            <div style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                <Github size={24} color="var(--avatar-theme-color, #1a56db)" />
-                <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: 0 }}>Development</h3>
-              </div>
-              <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "16px", margin: "0 0 16px 0" }}>
-                <strong>Organization:</strong> Semicolon-Squad-DU
-              </p>
-              <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "16px", margin: "0 0 16px 0" }}>
-                A dedicated team of developers, designers, and strategists.
-              </p>
-              <a
-                href="https://github.com/Semicolon-Squad-DU"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "12px",
-                  color: "var(--avatar-theme-color, #1a56db)",
-                  textDecoration: "none",
-                  padding: "8px 12px",
-                  background: "rgba(26, 86, 219, 0.1)",
-                  borderRadius: "6px",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(26, 86, 219, 0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(26, 86, 219, 0.1)";
-                }}
-              >
-                <Github size={14} />
-                Visit Organization
-              </a>
-            </div>
-
-            {/* Response Time */}
-            <div style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                <ExternalLink size={24} color="var(--avatar-theme-color, #1a56db)" />
-                <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: 0 }}>Support</h3>
-              </div>
-              <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "16px", margin: "0 0 16px 0" }}>
-                We aim to respond to all inquiries within 24-48 hours during business days.
-              </p>
-              <div style={{
-                padding: "12px",
-                background: "rgba(34, 197, 94, 0.1)",
-                borderRadius: "6px",
-                borderLeft: "3px solid #22c55e"
-              }}>
-                <p style={{ fontSize: "12px", color: "#166534", margin: 0, fontWeight: 600 }}>
-                  ✓ Available Mon-Fri, 9 AM - 5 PM UTC
+            {/* Left — contact info */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* GitHub org card */}
+              <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e5e7eb", padding: "20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <Github size={16} color="var(--avatar-theme-color, #111827)" />
+                  <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Organization</span>
+                </div>
+                <p style={{ fontSize: "12.5px", color: "#6b7280", margin: "0 0 12px 0", lineHeight: 1.6 }}>
+                  Our open-source work lives on GitHub under <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong>.
                 </p>
+                <a
+                  href="https://github.com/Semicolon-Squad-DU"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "5px",
+                    fontSize: "12.5px", fontWeight: 600,
+                    color: "var(--avatar-theme-color, #111827)",
+                    background: "#f3f4f6", borderRadius: "6px", padding: "6px 12px",
+                    textDecoration: "none", transition: "background 0.2s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
+                >
+                  <Github size={13} /> View on GitHub
+                </a>
+              </div>
+
+              {/* Response time card */}
+              <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e5e7eb", padding: "20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <Mail size={16} color="var(--avatar-theme-color, #111827)" />
+                  <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Response Time</span>
+                </div>
+                <p style={{ fontSize: "12.5px", color: "#6b7280", margin: "0 0 12px 0", lineHeight: 1.6 }}>
+                  We aim to respond to all inquiries within <strong style={{ color: "#374151" }}>24–48 hours</strong> on business days.
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 10px", background: "#f0fdf4", borderRadius: "6px", border: "1px solid #bbf7d0" }}>
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#22c55e", flexShrink: 0, display: "inline-block" }} />
+                  <p style={{ fontSize: "12px", color: "#166534", margin: 0, fontWeight: 600 }}>Available Mon – Fri, 9 AM – 5 PM BDT</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Contact Form */}
-          <div style={{
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            borderRadius: "16px",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
-            padding: "clamp(20px, 5vw, 32px)",
-            maxWidth: "600px",
-            margin: "0 auto",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)"
-          }}>
-            <h2 style={{
-              fontSize: "clamp(20px, 5vw, 24px)",
-              fontWeight: 800,
-              color: "#111827",
-              marginBottom: "8px",
-              margin: "0 0 8px 0"
-            }}>
-              Send Us a Message
-            </h2>
-            <p style={{
-              fontSize: "14px",
-              color: "#6b7280",
-              marginBottom: "24px",
-              margin: "0 0 24px 0"
-            }}>
-              Fill out the form below and we&apos;ll get back to you.
-            </p>
+            {/* Right — contact form */}
+            <div style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e5e7eb", padding: "28px" }}>
+              <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: "0 0 4px 0" }}>Send a Message</h2>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 22px 0" }}>Fill out the form and we&apos;ll get back to you.</p>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={formData.name}
-                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
-                style={{
-                  padding: "12px", borderRadius: "8px",
-                  border: "1px solid #e5e7eb", fontSize: "14px",
-                }}
-              />
-              <input
-                type="email"
-                placeholder="Your email"
-                value={formData.email}
-                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
-                style={{
-                  padding: "12px", borderRadius: "8px",
-                  border: "1px solid #e5e7eb", fontSize: "14px",
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Subject"
-                value={formData.subject}
-                onChange={(e) => setFormData((f) => ({ ...f, subject: e.target.value }))}
-                style={{
-                  padding: "12px", borderRadius: "8px",
-                  border: "1px solid #e5e7eb", fontSize: "14px",
-                }}
-              />
-              <textarea
-                placeholder="Your message"
-                value={formData.message}
-                onChange={(e) => setFormData((f) => ({ ...f, message: e.target.value }))}
-                rows={5}
-                style={{
-                  padding: "12px", borderRadius: "8px",
-                  border: "1px solid #e5e7eb", fontSize: "14px",
-                  resize: "vertical", fontFamily: "inherit",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                  padding: "12px", borderRadius: "8px", border: "none",
-                  background: "var(--avatar-theme-color, #1a56db)", color: "#fff",
-                  fontSize: "14px", fontWeight: 700,
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                  opacity: isLoading ? 0.7 : 1,
-                }}
-              >
-                <Send size={16} />
-                {isLoading ? "Sending…" : "Send Message"}
-              </button>
-            </form>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <input
+                  className="contact-input"
+                  type="text"
+                  placeholder="Your name"
+                  value={formData.name}
+                  onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+                  style={inputStyle}
+                />
+                <input
+                  className="contact-input"
+                  type="email"
+                  placeholder="Your email"
+                  value={formData.email}
+                  onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
+                  style={inputStyle}
+                />
+                <input
+                  className="contact-input"
+                  type="text"
+                  placeholder="Subject"
+                  value={formData.subject}
+                  onChange={e => setFormData(f => ({ ...f, subject: e.target.value }))}
+                  style={inputStyle}
+                />
+                <textarea
+                  className="contact-input"
+                  placeholder="Your message"
+                  value={formData.message}
+                  onChange={e => setFormData(f => ({ ...f, message: e.target.value }))}
+                  rows={5}
+                  style={{ ...inputStyle, resize: "vertical" }}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+                    padding: "11px", borderRadius: "8px", border: "none",
+                    background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
+                    fontSize: "13.5px", fontWeight: 700,
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    opacity: isLoading ? 0.65 : 1,
+                    transition: "opacity 0.2s",
+                    marginTop: "4px",
+                  }}
+                  onMouseEnter={e => { if (!isLoading) e.currentTarget.style.opacity = "0.85"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = isLoading ? "0.65" : "1"; }}
+                >
+                  <Send size={15} />
+                  {isLoading ? "Sending…" : "Send Message"}
+                </button>
+              </form>
+            </div>
+
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}>
+        <div style={{
+          maxWidth: "940px", margin: "0 auto", padding: "16px 32px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px",
+        }}>
+          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform · Semicolon-Squad-DU</p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {NAV_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+              >{l.label}</Link>
+            ))}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
