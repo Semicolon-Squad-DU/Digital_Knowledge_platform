@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useAuthStore } from "@/store/auth.store";
 import {
   useEventsList,
@@ -31,6 +32,7 @@ import toast from "react-hot-toast";
 
 export default function EventsPage() {
   const { user } = useAuthStore();
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: events = [], isLoading: eventsLoading } = useEventsList();
 
   const { mutateAsync: createEvent } = useCreateEvent();
@@ -124,7 +126,7 @@ export default function EventsPage() {
         fontFamily: "'Inter', sans-serif",
         background: "#f8fafc",
         minHeight: "calc(100vh - 56px)",
-        padding: "40px 24px"
+        padding: isMobile ? "20px 16px" : "28px 32px"
       }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
 
@@ -134,13 +136,11 @@ export default function EventsPage() {
               <h1
                 id="events-page-title"
                 style={{
-                  fontSize: "40px",
+                  fontSize: isMobile ? 22 : 26,
                   fontWeight: 800,
-                  background: "var(--theme-gradient-160)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  color: "#0f1117",
                   margin: "0 0 6px",
-                  letterSpacing: "-0.02em"
+                  letterSpacing: "-0.025em"
                 }}
               >
                 Academic Seminars & Events
@@ -199,7 +199,7 @@ export default function EventsPage() {
               </p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "24px" }}>
               {events.map((event) => {
                 const dateStr = new Date(event.scheduled_at).toLocaleString("en-GB", {
                   weekday: "short",

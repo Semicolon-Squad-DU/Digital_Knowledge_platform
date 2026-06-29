@@ -181,20 +181,17 @@ export default function SubmitProjectPage() {
         {/* Page heading */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{
-            fontSize: 40,
+            fontSize: 32,
             fontWeight: 800,
-            fontFamily: "'Inter', -apple-system, sans-serif",
-            background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, color-mix(in srgb, var(--avatar-theme-color) 40%, #fff) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            margin: 0,
+            color: "#0f1117",
+            letterSpacing: "-0.025em",
             lineHeight: 1.2,
-            display: "inline-block"
+            margin: "0 0 6px",
           }}>
             Submit Project
           </h1>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
-            Submit your project for advisor review and showcase publication
+          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+            Submit your project for advisor review and showcase publication.
           </p>
         </div>
 

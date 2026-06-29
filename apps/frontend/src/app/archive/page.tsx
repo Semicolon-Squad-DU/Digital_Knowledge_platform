@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import Link from "next/link";
 import {
   Search, Plus, Upload, X, ChevronLeft, ChevronRight, Archive as ArchiveIcon,
@@ -48,6 +49,7 @@ export default function ArchivePage() {
   const { data, isLoading, isError } = useArchiveSearch(params);
   const { mutateAsync: download } = useDownloadArchiveItem();
 
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const canUpload = _hasHydrated && isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
 
   const handleSearch = () => {
@@ -114,11 +116,11 @@ export default function ArchivePage() {
 
   return (
     <AppLayout topbarSearch={topbarSearch}>
-      <div style={{ padding:"28px 32px" }} className="archive-container">
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 32px" }} className="archive-container">
           {/* Title Section */}
           <div style={{ marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }} className="archive-heading">
             <div>
-              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+              <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", margin: 0, lineHeight: 1.2, letterSpacing: "-0.025em", fontFamily: "'Inter', -apple-system, sans-serif" }}>
                 Archive Repository
               </h1>
               <p style={{ fontSize: 13, color: "#6b7280", margin: "8px 0 0 0" }}>

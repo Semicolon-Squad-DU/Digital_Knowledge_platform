@@ -1505,7 +1505,7 @@ export default function AdminPage() {
               <div style={{ width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: 8, background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <ShieldCheck size={isMobile ? 16 : 18} color="#fff" />
               </div>
-              <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2 }}>
+              <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", margin: 0, lineHeight: 1.2 }}>
                 Platform Administration
               </h1>
             </div>
@@ -1581,7 +1581,7 @@ export default function AdminPage() {
     <AppLayout>
       <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "28px 32px" }}>
         <div style={{ marginBottom: isMobile ? 16 : 28 }}>
-          <h1 style={{ fontSize: isMobile ? 24 : 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2 }}>{roleTitle}</h1>
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", margin: 0, lineHeight: 1.2 }}>{roleTitle}</h1>
           <p style={{ fontSize: isMobile ? 12 : 13, color: "#6b7280", marginTop: isMobile ? 4 : 6 }}>{roleDescription}</p>
         </div>
 

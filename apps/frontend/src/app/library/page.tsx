@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   Search, BookOpen,
   ChevronDown, X, Plus,
@@ -85,6 +86,7 @@ export default function LibraryPage() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const isLibrarian = isAuthenticated && ["librarian", "admin"].includes(user?.role ?? "");
 
   const [searchInput, setSearchInput]   = useState("");
@@ -195,12 +197,12 @@ export default function LibraryPage() {
 
   return (
     <AppLayout topbarActions={topbarActions}>
-      <div style={{ padding:"28px 32px" }} className="library-container">
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 32px" }} className="library-container">
 
           {/* Page heading */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }} className="library-heading-row">
-              <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="library-heading">
+              <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", margin: 0, lineHeight: 1.2, letterSpacing: "-0.025em", fontFamily: "'Inter', -apple-system, sans-serif" }} className="library-heading">
                 Library Repository
               </h1>
               {isLibrarian && (
@@ -314,7 +316,7 @@ export default function LibraryPage() {
               padding: "16px 20px",
               marginBottom: 20,
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr",
               gap: 16,
               boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             }} className="library-advanced-panel">

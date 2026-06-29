@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, Plus, FlaskConical, ExternalLink, Calendar,
@@ -112,6 +113,7 @@ export default function ResearchPage() {
     enabled: ready,
   });
 
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const canUpload = ready && ["researcher", "admin"].includes(user?.role ?? "");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -149,11 +151,11 @@ export default function ResearchPage() {
 
   return (
     <AppLayout topbarSearch={topbarSearch}>
-      <div style={{ padding:"28px 32px" }} className="research-container">
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 32px" }} className="research-container">
 
           {/* Page heading */}
           <div style={{ marginBottom:24 }}>
-            <h1 style={{ fontSize: 40, fontWeight: 800, color: "var(--avatar-theme-color)", margin: 0, lineHeight: 1.2, fontFamily: "'Inter', -apple-system, sans-serif" }} className="research-heading">
+            <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: "#0f1117", margin: 0, lineHeight: 1.2, letterSpacing: "-0.025em", fontFamily: "'Inter', -apple-system, sans-serif" }} className="research-heading">
               Research Repository
             </h1>
             <p style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>

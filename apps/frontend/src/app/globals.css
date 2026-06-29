@@ -199,10 +199,11 @@ input[type="password"]::-moz-reveal {
   }
 
   .page-title {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 22px;
+    font-weight: 700;
     line-height: 1.25;
-    color: var(--color-fg-default);
+    letter-spacing: -0.025em;
+    color: #0f1117;
   }
 
   .page-subtitle {

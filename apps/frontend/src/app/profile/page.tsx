@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
 import { 
-  User, Mail, Building2, Shield, LogOut, ShieldCheck, KeyRound, 
-  MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp,
-  ArrowLeft
+  User, Mail, Building2, Shield, LogOut, ShieldCheck, KeyRound,
+  MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { Navbar } from "@/components/layout/Navbar";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
@@ -58,6 +58,7 @@ export default function ProfilePage() {
 
   // Activity Log view state
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login?redirect=/profile");
@@ -311,63 +312,8 @@ export default function ProfilePage() {
   ];
 
   return (
-    <>
-      <header style={{
-        background: "#e8eaed",
-        borderBottom: "1px solid #d1d5db",
-        position: "sticky",
-        top: 0,
-        zIndex: 50
-      }}>
-        <div style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "0 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: "56px"
-        }}>
-          {/* Top Left corner: Back button */}
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 0",
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "#495057",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = "#111827";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = "#495057";
-            }}
-          >
-            <ArrowLeft size={20} strokeWidth={2} />
-          </button>
-
-          {/* Top Right corner: Digital Knowledge Platform */}
-          <span style={{
-            fontSize: "14px",
-            fontWeight: 700,
-            color: "var(--avatar-theme-color, #111827)",
-            letterSpacing: "-0.01em",
-            transition: "color 0.3s ease"
-          }}>
-            Digital Knowledge Platform
-          </span>
-        </div>
-      </header>
-
-      <div style={{ padding: "48px 24px 80px" }} className="profile-container">
+    <AppLayout>
+      <div style={{ padding: isMobile ? "20px 16px 48px" : "32px 32px 60px" }}>
         <div style={{ maxWidth: "760px", margin: "0 auto" }}>
           
           <Card style={{
@@ -448,7 +394,7 @@ export default function ProfilePage() {
               </p>
 
               {/* Avatar Color Customizer */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, marginRight: 4 }}>Avatar Theme:</span>
                 {AVATAR_COLORS.map(color => (
                   <button
@@ -561,7 +507,7 @@ export default function ProfilePage() {
                   Personal Data 
                 </h3>
                 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "20px 24px" }}>
                   {fields.map(({ icon: Icon, label, value, desc, isBadge }) => (
                     <div key={label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       <label style={{ fontSize: "12px", fontWeight: 600, color: "#4b5563", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -779,7 +725,7 @@ export default function ProfilePage() {
                   </button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
                   
                   <div style={{
                     display: "flex",
@@ -890,7 +836,7 @@ export default function ProfilePage() {
                   <ShieldCheck size={16} color="#111827" /> Security & Account Management
                 </h3>
                 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
                   
                   {/* Password Change Action */}
                   <div 
@@ -1182,6 +1128,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-    </>
+    </AppLayout>
   );
 }
