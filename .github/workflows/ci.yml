@@ -41,16 +41,19 @@ jobs:
       - name: Lint
         run: npm run -w @dkp/backend lint
 
+      - name: Test
+        run: npm run -w @dkp/backend test
+
       - name: Build
         run: npm run -w @dkp/backend build
 
       - name: Check seed file is not empty
         run: |
-          if [ ! -s apps/backend/src/db/seed.ts ]; then
+          if [ ! -s apps/backend/src/core/db/seed.ts ]; then
             echo "ERROR: seed.ts is empty!"
             exit 1
           fi
-          echo "seed.ts OK ($(wc -l < apps/backend/src/db/seed.ts) lines)"
+          echo "seed.ts OK ($(wc -l < apps/backend/src/core/db/seed.ts) lines)"
 
   frontend:
     needs: block-bot-commits
@@ -70,6 +73,9 @@ jobs:
 
       - name: Lint
         run: npm run -w @dkp/frontend lint
+
+      - name: Test
+        run: npm run -w @dkp/frontend test
 
       - name: Build
         run: npm run -w @dkp/frontend build
