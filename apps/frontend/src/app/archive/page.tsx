@@ -57,6 +57,7 @@ export default function ArchivePage() {
     setParams({ query: "", category: "", language: "", file_type: "", page: 1, limit: 20 }); setCurrentPage(1);
   };
   const handleDownload = async (id: string) => {
+    if (!isAuthenticated) { toast.error("Please sign in to download documents."); return; }
     try { const url = await download(id); window.open(url, "_blank"); }
     catch { toast.error("Download failed or access denied"); }
   };

@@ -288,39 +288,70 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           {topbarSearch}
           {topbarActions}
 
-          {/* Right icons */}
+          {/* Right icons — auth-aware */}
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-            <Link
-              href="/notifications"
-              style={{ position: "relative", width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <Bell size={18} color="#6b7280" />
-              {unreadCount > 0 && (
-                <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
-              )}
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/notifications"
+                  style={{ position: "relative", width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  <Bell size={18} color="#6b7280" />
+                  {unreadCount > 0 && (
+                    <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
+                  )}
+                </Link>
 
-            <Link
-              href="/library/wishlist"
-              style={{ width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <Heart size={18} color="#6b7280" />
-            </Link>
+                <Link
+                  href="/library/wishlist"
+                  style={{ width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  <Heart size={18} color="#6b7280" />
+                </Link>
 
-            <Link href="/profile" style={{ textDecoration: "none", marginLeft: 2 }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: "50%",
-                background: "var(--avatar-theme-color)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
-              }}>
-                {user?.name?.[0]?.toUpperCase() ?? "U"}
-              </div>
-            </Link>
+                <Link href="/profile" style={{ textDecoration: "none", marginLeft: 2 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: "50%",
+                    background: "var(--avatar-theme-color)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
+                  }}>
+                    {user?.name?.[0]?.toUpperCase() ?? "U"}
+                  </div>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  style={{
+                    padding: "7px 16px", fontSize: 13, fontWeight: 500,
+                    color: "#374151", textDecoration: "none",
+                    borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  style={{
+                    padding: "7px 16px", fontSize: 13, fontWeight: 600,
+                    color: "#fff", textDecoration: "none",
+                    borderRadius: 7, background: "var(--avatar-theme-color, #1a1a2e)",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </header>
 

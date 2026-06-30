@@ -7,7 +7,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus, GraduationCap, Users, Calendar, Send, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "@/lib/api";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -119,7 +119,7 @@ function ProjectCard({ project, onClick }: {
 
 export default function ShowcasePage() {
   const router = useRouter();
-  const { user, ready } = useAuthGuard();
+  const { user, isAuthenticated } = useAuthStore();
   const [params, setParams]           = useState({ department: "", q: "", page: 1, limit: 12 });
   const [searchInput, setSearchInput] = useState("");
 
@@ -129,17 +129,14 @@ export default function ShowcasePage() {
       const { data } = await api.get("/showcase", { params });
       return data.data;
     },
-    enabled: ready,
   });
 
   const isMobile  = useMediaQuery("(max-width: 767px)");
-  const canSubmit = ready && (user?.role === "student_author" || user?.role === "admin");
+  const canSubmit = isAuthenticated && (user?.role === "student_author" || user?.role === "admin");
 
   const handleSearch = () => setParams(p => ({ ...p, q: searchInput, page: 1 }));
   const clearSearch  = () => { setSearchInput(""); setParams(p => ({ ...p, q: "", page: 1 })); };
   const clearAll     = () => { setSearchInput(""); setParams({ department: "", q: "", page: 1, limit: 12 }); };
-
-  if (!ready) return null;
 
   const hasFilters = !!(params.department || params.q);
 

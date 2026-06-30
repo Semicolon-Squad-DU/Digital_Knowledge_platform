@@ -190,14 +190,15 @@ export default function HomePage() {
 
             <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               {[
-                { label: "Archive", href: "/archive", protected: false },
-                { label: "Library", href: "/library", protected: true },
-                { label: "Research", href: "/research", protected: true },
-                { label: "About", href: "/about", protected: false },
+                { label: "Archive",     href: "/archive"  },
+                { label: "Library",     href: "/library"  },
+                { label: "Research",    href: "/research" },
+                { label: "Showcase",    href: "/showcase" },
+                { label: "About",       href: "/about"    },
               ].map((item) => (
                 <Link
                   key={item.label}
-                  href={item.protected && !isAuthenticated ? `/login?redirect=${item.href}` : item.href}
+                  href={item.href}
                   style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
@@ -325,14 +326,15 @@ export default function HomePage() {
                     {/* Navigation Links */}
                     <div style={{ padding: "12px 0", borderBottom: "none", background: "#ffffff" }}>
                       {[
-                        { label: "Archive", href: "/archive", protected: false },
-                        { label: "Library", href: "/library", protected: true },
-                        { label: "Research", href: "/research", protected: true },
-                        { label: "About", href: "/about", protected: false },
+                        { label: "Archive",  href: "/archive"  },
+                        { label: "Library",  href: "/library"  },
+                        { label: "Research", href: "/research" },
+                        { label: "Showcase", href: "/showcase" },
+                        { label: "About",    href: "/about"    },
                       ].map((item) => (
                         <Link
                           key={item.label}
-                          href={item.protected && !isAuthenticated ? `/login?redirect=${item.href}` : item.href}
+                          href={item.href}
                           onClick={handleCloseSidebar}
                           style={{
                             display: "block",

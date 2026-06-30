@@ -23,10 +23,11 @@ export default function AboutPage() {
 
             <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               {[
-                { label: "Archive", href: "/archive", protected: true },
-                { label: "Library", href: "/library", protected: true },
-                { label: "Research", href: "/research", protected: true },
-                { label: "About", href: "/about", protected: false },
+                { label: "Archive",  href: "/archive"  },
+                { label: "Library",  href: "/library"  },
+                { label: "Research", href: "/research" },
+                { label: "Showcase", href: "/showcase" },
+                { label: "About",    href: "/about"    },
               ].map((item) => (
                 <Link
                   key={item.label}

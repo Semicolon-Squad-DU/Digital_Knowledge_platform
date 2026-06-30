@@ -10,7 +10,7 @@ import {
   useCatalogItem, useAddToWishlist, usePlaceHold,
   useUpdateCatalogItem, useDeleteCatalogItem,
 } from "@/features/library/hooks/useLibrary";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
@@ -79,7 +79,7 @@ export default function LibraryItemPage() {
   const router = useRouter();
   const itemId = params?.id ?? "";
 
-  const { user, ready } = useAuthGuard();
+  const { user, isAuthenticated } = useAuthStore();
   const { data: item, isLoading, refetch } = useCatalogItem(itemId);
   const { mutateAsync: addToWishlist } = useAddToWishlist();
   const { mutateAsync: placeHold } = usePlaceHold();
@@ -115,6 +115,7 @@ export default function LibraryItemPage() {
   const isLibrarian = ["librarian", "admin"].includes(user?.role ?? "");
 
   const handleWishlist = async () => {
+    if (!isAuthenticated) { toast.error("Please sign in to add to wishlist"); return; }
     try {
       await addToWishlist(itemId);
       toast.success("Added to wishlist");
@@ -124,6 +125,7 @@ export default function LibraryItemPage() {
   };
 
   const handleHold = async () => {
+    if (!isAuthenticated) { toast.error("Please sign in to reserve books"); return; }
     try {
       await placeHold(itemId);
       toast.success("Hold placed — you'll be notified when available");
@@ -189,8 +191,6 @@ export default function LibraryItemPage() {
       toast.error("Could not open document. Please try again.");
     }
   };
-
-  if (!ready) return null;
 
   return (
     <AppLayout>

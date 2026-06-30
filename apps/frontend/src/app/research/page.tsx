@@ -7,7 +7,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus, FlaskConical, ExternalLink, Calendar, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "@/lib/api";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate } from "@/lib/utils";
@@ -109,7 +109,7 @@ function ResearchCard({ item, onView }: {
 
 export default function ResearchPage() {
   const router = useRouter();
-  const { user, ready } = useAuthGuard();
+  const { user, isAuthenticated } = useAuthStore();
   const [params, setParams]       = useState({ q: "", output_type: "", page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState("");
 
@@ -119,16 +119,13 @@ export default function ResearchPage() {
       const { data } = await api.get("/research", { params });
       return data.data;
     },
-    enabled: ready,
   });
 
   const isMobile  = useMediaQuery("(max-width: 767px)");
-  const canUpload = ready && ["researcher", "admin"].includes(user?.role ?? "");
+  const canUpload = isAuthenticated && ["researcher", "admin"].includes(user?.role ?? "");
 
   const handleSearch = () => setParams(p => ({ ...p, q: searchInput, page: 1 }));
   const clearSearch  = () => { setSearchInput(""); setParams(p => ({ ...p, q: "", page: 1 })); };
-
-  if (!ready) return null;
 
   const Pill = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
     <button
