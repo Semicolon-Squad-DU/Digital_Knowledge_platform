@@ -173,7 +173,7 @@ export default function HomePage() {
       <div style={{ background: "#f8f9fa", minHeight: "100vh" }}>
 
         <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: "64px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div style={{
                 width: "30px", height: "30px", borderRadius: "8px",
@@ -207,52 +207,32 @@ export default function HomePage() {
             </nav>
 
             {/* ── AUTH AREA: different for guest vs signed-in ── */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "relative" }}>
-              {/* Hamburger Menu Button (Mobile) */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                style={{
-                  display: "none",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px 8px",
-                  color: "#4b5563",
-                  transition: "all 0.2s"
-                }}
-                className="header-hamburger-btn"
-                title="Menu"
-              >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
               {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                >
+                  <LogOut size={13} /> Sign Out
+                </button>
+              ) : (
                 <>
-                  {/* Signed-in: sign out only */}
-                  <button
-                    onClick={handleLogout}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
-                      padding: "7px 13px",
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#4b5563",
-                      background: "transparent",
-                      border: "1.5px solid #d1d5db",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      letterSpacing: "0.01em",
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#dee2e6"; }}
-                  >
-                    <LogOut size={13} /> Sign Out
-                  </button>
+                  <Link
+                    href="/login"
+                    style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                  >Sign In</Link>
+                  <Link
+                    href="/register"
+                    style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                    onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+                    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                  >Register</Link>
                 </>
-              ) : null}
+              )}
 
               {/* Mobile Sidebar */}
               {sidebarOpen && (

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, BookOpen, FlaskConical, Star, Users, Target, Lightbulb, ArrowRight } from "lucide-react";
+import { Archive, BookOpen, FlaskConical, Star, Users, Target, Lightbulb, ArrowRight, GraduationCap } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -15,12 +15,18 @@ export default function AboutPage() {
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
         
         {/* ── NAVBAR ── */}
-        <header style={{ background: "#ffffff", borderBottom: "1px solid #e9ecef", position: "sticky", top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
-            <Link href="/" style={{ fontSize: "15px", fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.01em", textDecoration: "none", transition: "color 0.2s ease" }}>
-              Digital Knowledge Platform
+        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: "64px" }}>
+
+            {/* Brand */}
+            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+              <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <GraduationCap size={16} color="#ffffff" />
+              </div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
             </Link>
 
+            {/* Nav links */}
             <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               {[
                 { label: "Archive",  href: "/archive"  },
@@ -32,64 +38,27 @@ export default function AboutPage() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  style={{ 
-                    padding: "6px 14px", 
-                    fontSize: "13px", 
-                    fontWeight: 500, 
-                    color: item.label === "About" ? "var(--avatar-theme-color, #1a1a2e)" : "#495057",
-                    textDecoration: "none", 
-                    borderRadius: "6px",
-                    background: item.label === "About" ? "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 8%, transparent)" : "transparent",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, transparent)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = item.label === "About" ? "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 8%, transparent)" : "transparent")}
+                  style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: item.href === "/about" ? "#d1d5db" : "transparent" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = item.href === "/about" ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
                 >{item.label}</Link>
               ))}
             </nav>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Link 
-                href="/login" 
-                style={{ 
-                  padding: "7px 16px", 
-                  fontSize: "13px", 
-                  fontWeight: 500, 
-                  color: "#495057", 
-                  textDecoration: "none", 
-                  borderRadius: "6px", 
-                  border: "1px solid #dee2e6", 
-                  background: "#ffffff",
-                  transition: "all 0.2s ease"
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = "var(--avatar-theme-color, #1a1a2e)";
-                  e.currentTarget.style.color = "var(--avatar-theme-color, #1a1a2e)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = "#dee2e6";
-                  e.currentTarget.style.color = "#495057";
-                }}
-              >
-                Sign In
-              </Link>
-              <Link 
-                href="/register" 
-                style={{ 
-                  padding: "7px 16px", 
-                  fontSize: "13px", 
-                  fontWeight: 600, 
-                  color: "#ffffff", 
-                  background: "var(--avatar-theme-color, #1a1a2e)", 
-                  borderRadius: "6px", 
-                  textDecoration: "none",
-                  transition: "all 0.2s ease"
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+            {/* Auth buttons */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
+              <Link
+                href="/login"
+                style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+              >Sign In</Link>
+              <Link
+                href="/register"
+                style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "var(--avatar-theme-color, #111827)", borderRadius: "8px", textDecoration: "none", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
                 onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-              >
-                Register
-              </Link>
+              >Register</Link>
             </div>
           </div>
         </header>
