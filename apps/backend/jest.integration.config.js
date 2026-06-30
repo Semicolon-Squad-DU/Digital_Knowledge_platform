@@ -3,12 +3,11 @@ module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
   rootDir: ".",
-  testMatch: ["<rootDir>/src/**/__tests__/**/*.test.ts"],
-  testPathIgnorePatterns: ["/node_modules/", "\\.integration\\.test\\.ts$"],
-  setupFiles: ["<rootDir>/jest.setup.js"],
+  testMatch: ["<rootDir>/src/**/__tests__/**/*.integration.test.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@dkp/shared$": "<rootDir>/../../packages/shared/src/index.ts",
   },
-  clearMocks: true,
+  setupFiles: ["<rootDir>/jest.integration.setup.js"],
+  testTimeout: 15000,
 };

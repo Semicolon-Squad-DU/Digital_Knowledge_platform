@@ -1,0 +1,27 @@
+# Disposable database for integration tests — separate from both the shared
+# Supabase dev database and the local dev docker-compose.yml postgres service,
+# so tests never touch real team data.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   npm run -w @dkp/backend db:test:setup
+#   npm run -w @dkp/backend test:integration
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: dkp_postgres_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dkp_test_user
+      POSTGRES_PASSWORD: dkp_test_password
+      POSTGRES_DB: dkp_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dkp_test_user -d dkp_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
