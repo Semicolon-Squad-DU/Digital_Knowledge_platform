@@ -1,26 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
-import { 
-  User, Mail, Building2, Shield, LogOut, ShieldCheck, KeyRound, 
-  MonitorDot, Activity, Heart, Bell, Download, Lock, CheckCircle2, ChevronDown, ChevronUp,
-  ArrowLeft
+import {
+  User, Mail, Building2, Shield, LogOut, KeyRound,
+  Activity, Download, CheckCircle2, ChevronDown, ChevronUp, Camera
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { Navbar } from "@/components/layout/Navbar";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
 import toast from "react-hot-toast";
 
+
 const AVATAR_COLORS = [
-  { name: "Sleek Dark", value: "#1a1a2e" },
-  { name: "Deep Indigo", value: "#312e81" },
+  { name: "Sleek Dark",     value: "#1a1a2e" },
+  { name: "Deep Indigo",    value: "#312e81" },
   { name: "Emerald Forest", value: "#064e3b" },
-  { name: "Royal Blue", value: "#1e3a8a" },
-  { name: "Warm Burgundy", value: "#4c0519" },
+  { name: "Royal Blue",     value: "#1e3a8a" },
+  { name: "Warm Burgundy",  value: "#4c0519" },
 ];
 
 export default function ProfilePage() {
@@ -39,8 +38,6 @@ export default function ProfilePage() {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [tempBio, setTempBio] = useState("");
   
-  // Custom Avatar Color state
-  const [avatarColor, setAvatarColor] = useState("#1a1a2e");
 
   // Notification Preferences states
   const [notificationPrefs, setNotificationPrefs] = useState({
@@ -58,6 +55,12 @@ export default function ProfilePage() {
 
   // Activity Log view state
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+
+  // Profile picture
+  const [profilePic, setProfilePic] = useState<string | null>(null);
+  const [avatarColor, setAvatarColor] = useState("#1a1a2e");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login?redirect=/profile");
@@ -77,10 +80,11 @@ export default function ProfilePage() {
       setTempBio("Academic researcher and student author passionate about digital archives and machine learning.");
     }
 
+    const savedPic = localStorage.getItem("user_profile_pic");
+    if (savedPic) setProfilePic(savedPic);
+
     const savedColor = localStorage.getItem("user_avatar_color");
-    if (savedColor) {
-      setAvatarColor(savedColor);
-    }
+    if (savedColor) setAvatarColor(savedColor);
 
     const savedPrefs = localStorage.getItem("notification_prefs");
     if (savedPrefs) {
@@ -104,11 +108,31 @@ export default function ProfilePage() {
     toast.success("Bio updated successfully!");
   };
 
+  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setProfilePic(dataUrl);
+      localStorage.setItem("user_profile_pic", dataUrl);
+      toast.success("Profile picture updated!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveProfilePic = () => {
+    setProfilePic(null);
+    localStorage.removeItem("user_profile_pic");
+    toast.success("Profile picture removed");
+  };
+
   const handleAvatarColorChange = (colorVal: string) => {
     setAvatarColor(colorVal);
     localStorage.setItem("user_avatar_color", colorVal);
     window.dispatchEvent(new Event("avatar-theme-changed"));
-    toast.success("Avatar backdrop customized!");
+    toast.success("Theme updated!");
   };
 
   const handleTogglePref = (key: keyof typeof notificationPrefs) => {
@@ -295,761 +319,364 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const fields = [
-    { icon: User, label: "Full Name", value: user.name, desc: "GDPR Personal Data: Your legal name registered in our system" },
-    { icon: Mail, label: "Email Address", value: user.email, desc: "GDPR Personal Data: Primary contact address for account and communications" },
-    { icon: Building2, label: "Department", value: user.department || "Computer Science & Engineering", desc: "GDPR Special Category: Institutional classification for access control" },
-    { icon: Shield, label: "Security Role", value: user.role?.replace("_", " "), desc: "GDPR Processing Basis: Your privilege level and platform permissions", isBadge: true },
+  const mockLogs = [
+    { time: "Today, 2:40 PM", action: "Signed in to your account" },
+    { time: "Yesterday, 11:15 AM", action: "Viewed book in library" },
+    { time: "25 May, 4:30 PM", action: "Borrowed a book" },
+    { time: "24 May, 9:12 AM", action: "Placed a hold request" },
+    { time: "23 May, 1:05 PM", action: "Updated notification settings" },
   ];
 
-  const mockLogs = [
-    { time: "Today at 02:40 PM", action: "Successfully authenticated from browser session" },
-    { time: "Yesterday at 11:15 AM", action: "Completed reading book Concept of Data Mining in viewer" },
-    { time: "25 May 2026, 04:30 PM", action: "Borrowed book concept and techniques 3rd edition" },
-    { time: "24 May 2026, 09:12 AM", action: "Placed a hold reservation on textbook catalog item" },
-    { time: "23 May 2026, 01:05 PM", action: "Updated profile preferences & email digests" },
-  ];
+  // ── helpers ──────────────────────────────────────────────────────────────────
+  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <div
+      onClick={onChange}
+      style={{
+        width: 42, height: 24, borderRadius: 12, cursor: "pointer", flexShrink: 0,
+        background: checked ? "var(--avatar-theme-color, #1a56db)" : "#d1d5db",
+        position: "relative", transition: "background 0.2s",
+      }}
+    >
+      <div style={{
+        position: "absolute", top: 4, left: checked ? 22 : 4,
+        width: 16, height: 16, borderRadius: "50%", background: "#fff",
+        transition: "left 0.18s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+      }} />
+    </div>
+  );
+
+  const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: "1px solid #f3f4f6" }}>
+      <div style={{ width: 34, height: 34, borderRadius: 8, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon size={15} color="#6b7280" />
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+        <p style={{ fontSize: 14, color: "#111827", margin: "2px 0 0", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+      </div>
+    </div>
+  );
+
+  const SectionCard = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", ...style }}>
+      {children}
+    </div>
+  );
+
+  const SectionHead = ({ title, action }: { title: string; action?: React.ReactNode }) => (
+    <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", margin: 0 }}>{title}</p>
+      {action}
+    </div>
+  );
+
+  const activeLoans = (history ?? []).filter((h: any) => h.status !== "returned");
+  const returnedLoans = (history ?? []).filter((h: any) => h.status === "returned");
 
   return (
-    <>
-      <header style={{
-        background: "#e8eaed",
-        borderBottom: "1px solid #d1d5db",
-        position: "sticky",
-        top: 0,
-        zIndex: 50
-      }}>
-        <div style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "0 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: "56px"
-        }}>
-          {/* Top Left corner: Back button */}
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 0",
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "#495057",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = "#111827";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = "#495057";
-            }}
-          >
-            <ArrowLeft size={20} strokeWidth={2} />
-          </button>
+    <AppLayout>
+      <div style={{ padding: isMobile ? "20px 16px 48px" : "28px 32px 60px", maxWidth: 720, margin: "0 auto" }}>
 
-          {/* Top Right corner: Digital Knowledge Platform */}
-          <span style={{
-            fontSize: "14px",
-            fontWeight: 700,
-            color: "var(--avatar-theme-color, #111827)",
-            letterSpacing: "-0.01em",
-            transition: "color 0.3s ease"
-          }}>
-            Digital Knowledge Platform
-          </span>
-        </div>
-      </header>
-
-      <div style={{ padding: "48px 24px 80px" }} className="profile-container">
-        <div style={{ maxWidth: "760px", margin: "0 auto" }}>
-          
-          <Card style={{
-            overflow: "hidden",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
-          }} padding="none">
-            
-            {/* ── PROFILE BANNER ── */}
-            <div style={{
-              background: "var(--theme-gradient-135)",
-              padding: "56px 32px",
-              position: "relative",
-              overflow: "hidden",
-              textAlign: "center",
-              borderBottom: "1px solid #e5e7eb",
-              transition: "all 0.4s ease"
-            }} className="profile-banner">
-              {/* Active session banner */}
-              <div style={{
-                position: "absolute",
-                top: "20px",
-                right: "24px",
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#ffffff",
-                background: "rgba(255, 255, 255, 0.08)",
-                padding: "4px 12px",
-                borderRadius: "100px",
-                border: "1px solid rgba(255, 255, 255, 0.12)"
-              }}>
-                Active Session
-              </div>
-
-              {/* Interactive Avatar */}
-              <div style={{
-                width: "96px",
-                height: "96px",
-                borderRadius: "50%",
-                background: "#ffffff",
-                margin: "0 auto 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                border: "4px solid rgba(255,255,255,0.15)",
-                fontSize: "36px",
-                fontWeight: 800,
-                color: "#111827",
-                position: "relative",
-                zIndex: 1
-              }} className="profile-avatar">
-                {user.name?.[0]?.toUpperCase()}
-              </div>
-              
-              <h2 style={{
-                fontSize: "26px",
-                fontWeight: 800,
-                color: "#ffffff",
-                margin: "0 0 6px",
-                letterSpacing: "-0.02em",
-                position: "relative",
-                zIndex: 1
-              }}>
-                {user.name}
-              </h2>
-              <p style={{
-                fontSize: "14px",
-                color: "rgba(255,255,255,0.6)",
-                margin: "0 0 20px",
-                fontWeight: 500,
-                position: "relative",
-                zIndex: 1
-              }}>
-                {user.email}
-              </p>
-
-              {/* Avatar Color Customizer */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, marginRight: 4 }}>Avatar Theme:</span>
-                {AVATAR_COLORS.map(color => (
-                  <button
-                    key={color.value}
-                    onClick={() => handleAvatarColorChange(color.value)}
-                    title={color.name}
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      background: color.value,
-                      border: avatarColor === color.value ? "2px solid #fff" : "1px solid rgba(255,255,255,0.2)",
-                      cursor: "pointer",
-                      padding: 0,
-                      transform: avatarColor === color.value ? "scale(1.2)" : "scale(1)",
-                      transition: "all 0.2s"
-                    }}
-                  />
-                ))}
-              </div>
+        {/* ── HERO CARD ─────────────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16 }}>
+          {/* Banner */}
+          <div style={{ background: "var(--theme-gradient-135)", padding: isMobile ? "36px 20px 28px" : "48px 32px 32px", textAlign: "center", position: "relative" }}>
+            <div style={{ position: "absolute", top: 14, right: 16, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.75)", background: "rgba(255,255,255,0.1)", padding: "3px 10px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.15)" }}>
+              ● Online
             </div>
 
-            {/* Profile Body */}
-            <div style={{ padding: "40px 32px", background: "#ffffff" }}>
-              
-              {/* SECTION 1: PERSONAL BIO  */}
-              <div style={{ marginBottom: "36px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    margin: 0
-                  }}>
-                    Personal Bio 
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setIsEditingBio(!isEditingBio);
-                      setTempBio(bio);
-                    }}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "#1f2937",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      textDecoration: "underline"
-                    }}
-                  >
-                    {isEditingBio ? "Cancel" : "Edit Bio"}
-                  </button>
-                </div>
-
-                {isEditingBio ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <textarea
-                      value={tempBio}
-                      onChange={e => setTempBio(e.target.value)}
-                      maxLength={180}
-                      rows={3}
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        borderRadius: "8px",
-                        border: "1px solid #d1d5db",
-                        fontSize: "13px",
-                        fontFamily: "inherit",
-                        resize: "none",
-                        outline: "none",
-                        boxSizing: "border-box"
-                      }}
-                    />
-                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                      <Button onClick={handleSaveBio} size="sm" style={{ padding: "6px 14px", fontSize: 12 }}>
-                        Save Bio
-                      </Button>
-                    </div>
-                  </div>
+            {/* Avatar with permanent camera badge */}
+            <div style={{ position: "relative", display: "inline-block", margin: "0 auto 16px" }}>
+              {/* Avatar circle */}
+              <div style={{
+                width: isMobile ? 90 : 104, height: isMobile ? 90 : 104,
+                borderRadius: "50%", overflow: "hidden",
+                background: "#fff",
+                boxShadow: "0 6px 24px rgba(0,0,0,0.28)",
+                border: "3px solid rgba(255,255,255,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {profilePic ? (
+                  <img src={profilePic} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <p style={{
-                    fontSize: "14px",
-                    color: "#4b5563",
-                    lineHeight: 1.6,
-                    margin: 0,
-                    padding: "12px 14px",
-                    background: "#f9fafb",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    fontStyle: "italic"
-                  }}>
-                    &quot;{bio}&quot;
-                  </p>
+                  <span style={{ fontSize: isMobile ? 34 : 40, fontWeight: 800, color: "#111827", userSelect: "none" }}>
+                    {user.name?.[0]?.toUpperCase()}
+                  </span>
                 )}
               </div>
 
-              {/* SECTION 2: PERSONAL DATA */}
-              <div style={{ paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
-                <h3 style={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#111827",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  margin: "0 0 20px"
-                }}>
-                  Personal Data 
-                </h3>
-                
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px" }}>
-                  {fields.map(({ icon: Icon, label, value, desc, isBadge }) => (
-                    <div key={label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#4b5563", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <Icon size={14} color="#71717a" /> {label}
-                      </label>
-                      {isBadge ? (
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                          <span style={{
-                            padding: "6px 14px",
-                            background: "color-mix(in srgb, var(--avatar-theme-color, #1a56db) 10%, transparent)",
-                            color: "var(--avatar-theme-color, #1a56db)",
-                            border: "1px solid color-mix(in srgb, var(--avatar-theme-color, #1a56db) 30%, transparent)",
-                            borderRadius: "6px",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            textTransform: "capitalize",
-                            letterSpacing: "0.3px"
-                          }}>
-                            {value}
-                          </span>
-                        </div>
-                      ) : (
-                        <div style={{
-                          padding: "12px 14px",
-                          background: "#f9fafb",
-                          borderRadius: "8px",
-                          border: "1px solid #e5e7eb",
-                          fontSize: "14px",
-                          fontWeight: 500,
-                          color: "#111827"
-                        }}>
-                          {value}
-                        </div>
-                      )}
-                      <p style={{ fontSize: "11px", color: "#6b7280", margin: 0 }}>
-                        {desc}
-                      </p>
-                    </div>
-                  ))}
+              {/* Camera badge — always visible, bottom-right */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                title="Change profile picture"
+                style={{
+                  position: "absolute", bottom: 2, right: 2,
+                  width: 30, height: 30, borderRadius: "50%",
+                  background: "#fff", border: "2px solid rgba(255,255,255,0.5)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#374151",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
+              >
+                <Camera size={14} />
+              </button>
+
+              {/* Remove badge — only when photo is set */}
+              {profilePic && (
+                <button
+                  onClick={handleRemoveProfilePic}
+                  title="Remove photo"
+                  style={{
+                    position: "absolute", top: 2, right: 2,
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "#ef4444", border: "2px solid #fff",
+                    color: "#fff", fontSize: 14, fontWeight: 700,
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    lineHeight: 1,
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleProfilePicChange}
+            />
+
+            <h2 style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.02em" }}>{user.name}</h2>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: "0 0 20px", textTransform: "capitalize" }}>{user.role?.replace(/_/g, " ")} · {user.department || "Digital Knowledge Platform"}</p>
+
+            {/* Theme colour picker */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 600, letterSpacing: "0.04em" }}>THEME</span>
+              {AVATAR_COLORS.map(color => (
+                <button
+                  key={color.value}
+                  onClick={() => handleAvatarColorChange(color.value)}
+                  title={color.name}
+                  style={{
+                    width: avatarColor === color.value ? 22 : 18,
+                    height: avatarColor === color.value ? 22 : 18,
+                    borderRadius: "50%",
+                    background: color.value,
+                    border: avatarColor === color.value ? "2.5px solid #fff" : "2px solid rgba(255,255,255,0.25)",
+                    cursor: "pointer", padding: 0,
+                    transition: "all 0.15s",
+                    boxShadow: avatarColor === color.value ? "0 0 0 2px rgba(255,255,255,0.4)" : "none",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Quick stats row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid #f3f4f6" }}>
+            {[
+              { label: "Borrowed", value: activeLoans.length },
+              { label: "History", value: returnedLoans.length },
+              { label: "Wishlist", value: (wishlist as any[])?.length ?? 0 },
+            ].map(({ label, value }, i) => (
+              <div key={label} style={{ padding: "14px 0", textAlign: "center", borderRight: i < 2 ? "1px solid #f3f4f6" : "none" }}>
+                <p style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>{value}</p>
+                <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0", fontWeight: 500 }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* ── PERSONAL INFO ─────────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16 }}>
+          <SectionHead title="Personal Info" />
+          <div style={{ padding: "0 20px" }}>
+            <InfoRow icon={User} label="Full Name" value={user.name} />
+            <InfoRow icon={Mail} label="Email" value={user.email} />
+            <InfoRow icon={Building2} label="Department" value={user.department || "Computer Science & Engineering"} />
+            <InfoRow icon={Shield} label="Role" value={user.role?.replace(/_/g, " ") ?? "Member"} />
+          </div>
+        </SectionCard>
+
+        {/* ── BIO ───────────────────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16 }}>
+          <SectionHead
+            title="About Me"
+            action={
+              <button
+                onClick={() => { setIsEditingBio(!isEditingBio); setTempBio(bio); }}
+                style={{ fontSize: 12, fontWeight: 600, color: "var(--avatar-theme-color, #1a56db)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              >
+                {isEditingBio ? "Cancel" : "Edit"}
+              </button>
+            }
+          />
+          <div style={{ padding: "16px 20px" }}>
+            {isEditingBio ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <textarea
+                  value={tempBio}
+                  onChange={e => setTempBio(e.target.value)}
+                  maxLength={180}
+                  rows={3}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box", color: "#111827" }}
+                />
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button onClick={handleSaveBio} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #111827)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Save
+                  </button>
                 </div>
               </div>
+            ) : (
+              <p style={{ fontSize: 14, color: "#4b5563", lineHeight: 1.6, margin: 0 }}>
+                {bio || "No bio yet. Click Edit to add one."}
+              </p>
+            )}
+          </div>
+        </SectionCard>
 
-              {/* SECTION 2.5: LIBRARY ACCOUNT STATUS */}
-              {user?.role === "member" && (
-                <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
-                  <h3 style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    margin: "0 0 20px"
-                  }}>
-                    Library Account Status
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left Column: Active Loans & Holds */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                      <div style={{ padding: "18px 20px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b", margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
-                          Currently Borrowed Items
-                        </h4>
-                        {histLoading ? (
-                          <p style={{ fontSize: "12px", color: "#64748b" }}>Loading active loans...</p>
-                        ) : !history || history.filter((h: any) => h.status !== "returned").length === 0 ? (
-                          <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>No books currently borrowed.</p>
-                        ) : (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                            {history.filter((h: any) => h.status !== "returned").map((loan: any) => {
-                              const isOverdue = loan.status === "overdue" || new Date(loan.due_date) < new Date();
-                              return (
-                                <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>
-                                  <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-                                    <span style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={loan.title}>
-                                      {loan.title}
-                                    </span>
-                                    <span style={{ fontSize: "11px", color: isOverdue ? "#ef4444" : "#64748b", fontWeight: 500 }}>
-                                      Due: {new Date(loan.due_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                                    </span>
-                                  </div>
-                                  <span style={{
-                                    padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, textTransform: "uppercase",
-                                    background: isOverdue ? "#fee2e2" : "#dcfce7", color: isOverdue ? "#991b1b" : "#166534"
-                                  }}>
-                                    {isOverdue ? "Overdue" : "Active"}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{ padding: "18px 20px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b", margin: "0 0 12px" }}>
-                          Active Hold Requests (Queue)
-                        </h4>
-                        {holdsLoading ? (
-                          <p style={{ fontSize: "12px", color: "#64748b" }}>Loading holds...</p>
-                        ) : !holds || holds.length === 0 ? (
-                          <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>No active hold requests.</p>
-                        ) : (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                            {holds.map((hold: any) => (
-                              <div key={hold.hold_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>
-                                <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-                                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={hold.title}>
-                                    {hold.title}
-                                  </span>
-                                  <span style={{ fontSize: "11px", color: "#64748b" }}>
-                                    Requested: {new Date(hold.request_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                                  </span>
-                                </div>
-                                <span style={{
-                                  padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, textTransform: "uppercase",
-                                  background: hold.status === "available" ? "#dcfce7" : "#dbeafe", color: hold.status === "available" ? "#166534" : "#1e40af"
-                                }}>
-                                  {hold.status}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right Column: Fines & History */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                      <div style={{ padding: "18px 20px", background: "#fffdfa", borderRadius: "8px", border: "1px solid #fef08a" }}>
-                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#854d0e", margin: "0 0 12px" }}>
-                          Overdue Fine Tracking
-                        </h4>
-                        {finesLoading ? (
-                          <p style={{ fontSize: "12px", color: "#854d0e" }}>Loading fines...</p>
-                        ) : !fineData || fineData.total_pending === 0 ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <CheckCircle2 size={16} color="#16a34a" />
-                            <p style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600, margin: 0 }}>No outstanding fines. All clear!</p>
-                          </div>
-                        ) : (
-                          <div>
-                            <div style={{ fontSize: "22px", fontWeight: 800, color: "#dc2626", marginBottom: "12px" }}>
-                              BDT {fineData.total_pending.toFixed(2)}
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                              {fineData.fines?.filter((f: any) => f.status === "pending").map((fine: any) => (
-                                <div key={fine.fine_id} style={{ fontSize: "12px", color: "#475569", borderBottom: "1px solid #fef08a", paddingBottom: "6px" }}>
-                                  <div style={{ fontWeight: 600, color: "#1e293b" }}>{fine.book_title}</div>
-                                  <div style={{ color: "#64748b" }}>Reason: {fine.reason} ({fine.amount} BDT)</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{ padding: "18px 20px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                        <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b", margin: "0 0 12px" }}>
-                          Borrowing History
-                        </h4>
-                        {histLoading ? (
-                          <p style={{ fontSize: "12px", color: "#64748b" }}>Loading history...</p>
-                        ) : !history || history.filter((h: any) => h.status === "returned").length === 0 ? (
-                          <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>No previous history found.</p>
-                        ) : (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "180px", overflowY: "auto" }}>
-                            {history.filter((h: any) => h.status === "returned").map((loan: any) => (
-                              <div key={loan.transaction_id} style={{ fontSize: "12px", color: "#334155", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>
-                                <div style={{ fontWeight: 600, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={loan.title}>{loan.title}</div>
-                                <div style={{ color: "#64748b", fontSize: "11px" }}>
-                                  Returned: {new Date(loan.return_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+        {/* ── LIBRARY STATUS (members only) ─────────────────────────────── */}
+        {user?.role === "member" && (
+          <SectionCard style={{ marginBottom: 16 }}>
+            <SectionHead title="Library" />
+            <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Fines banner */}
+              {!finesLoading && (fineData?.total_pending ?? 0) > 0 && (
+                <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>⚠️</span>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "#92400e", margin: 0 }}>Outstanding fine: BDT {fineData!.total_pending.toFixed(2)}</p>
+                    <p style={{ fontSize: 11, color: "#92400e", margin: "2px 0 0" }}>Please visit the library to clear your fine.</p>
                   </div>
                 </div>
               )}
-
-              {/* SECTION 3: DATA PROCESSING PREFERENCES (GDPR ARTICLE 21) */}
-              <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    margin: 0
-                  }}>
-                    Data Processing Preferences (GDPR Article 21)
-                  </h3>
-                  
-                  {/* Direct link to in-app Feed */}
-                  <button
-                    onClick={() => router.push("/notifications")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: "var(--avatar-theme-color, #2563eb)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      textDecoration: "underline"
-                    }}
-                  >
-                    <Bell size={13} /> View In-App Notification Feed
-                  </button>
+              {!finesLoading && (fineData?.total_pending ?? 0) === 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <CheckCircle2 size={16} color="#16a34a" />
+                  <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, margin: 0 }}>No outstanding fines</p>
                 </div>
+              )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                  
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px",
-                    background: "#f9fafb",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    cursor: "pointer"
-                  }} onClick={() => handleTogglePref("dueDateReminders")}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>Due Date Reminders</span>
-                      <span style={{ fontSize: "11px", color: "#6b7280" }}>Alerts for books due in 3 days</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notificationPrefs.dueDateReminders}
-                      onChange={() => {}} // handled by parent onClick
-                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
-                    />
+              {/* Active loans */}
+              {!histLoading && activeLoans.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Currently Borrowed</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {activeLoans.slice(0, 3).map((loan: any) => {
+                      const overdue = loan.status === "overdue" || new Date(loan.due_date) < new Date();
+                      return (
+                        <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{loan.title}</p>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: overdue ? "#fee2e2" : "#dcfce7", color: overdue ? "#991b1b" : "#166534", flexShrink: 0 }}>
+                            {overdue ? "Overdue" : "Active"}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px",
-                    background: "#f9fafb",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    cursor: "pointer"
-                  }} onClick={() => handleTogglePref("holdAvailability")}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>Hold Availability Alerts</span>
-                      <span style={{ fontSize: "11px", color: "#6b7280" }}>Notification when reserve is ready</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notificationPrefs.holdAvailability}
-                      onChange={() => {}}
-                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
-                    />
-                  </div>
-
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px",
-                    background: "#f9fafb",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    cursor: "pointer"
-                  }} onClick={() => handleTogglePref("weeklyDigests")}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>Weekly Email Digests</span>
-                      <span style={{ fontSize: "11px", color: "#6b7280" }}>Weekly newsletter and summaries</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notificationPrefs.weeklyDigests}
-                      onChange={() => {}}
-                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
-                    />
-                  </div>
-
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px",
-                    background: "#f9fafb",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    cursor: "pointer"
-                  }} onClick={() => handleTogglePref("appAlerts")}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>In-App Banners</span>
-                      <span style={{ fontSize: "11px", color: "#6b7280" }}>Pop-up notifications in portal</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notificationPrefs.appAlerts}
-                      onChange={() => {}}
-                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--avatar-theme-color)" }}
-                    />
-                  </div>
-
                 </div>
-              </div>
-
-
-
-              {/* SECTION 4: SECURITY CONTROLS & GDPR COMPLIANCE AUDIT LOG */}
-              <div style={{ marginTop: "36px", paddingTop: "32px", borderTop: "1px solid #e5e7eb" }}>
-                <h3 style={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#111827",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  margin: "0 0 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px"
-                }}>
-                  <ShieldCheck size={16} color="#111827" /> Security & Account Management
-                </h3>
-                
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
-                  
-                  {/* Password Change Action */}
-                  <div 
-                    onClick={() => setShowPasswordModal(true)}
-                    style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "12px", 
-                      padding: "16px", 
-                      background: "#f9fafb", 
-                      borderRadius: "8px", 
-                      border: "1px solid #e5e7eb",
-                      cursor: "pointer",
-                      transition: "background 0.2s"
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#f9fafb"}
-                  >
-                    <div style={{
-                      width: "36px", height: "36px", borderRadius: "8px",
-                      background: "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 10%, transparent)",
-                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                    }}>
-                      <KeyRound size={16} color="var(--avatar-theme-color, #1a56db)" />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", display: "block" }}>Change Password</span>
-                      <span style={{ fontSize: "11px", color: "#6b7280" }}>Update your sign-in credentials</span>
-                    </div>
-                  </div>
-
-                  {/* GDPR Data Subject Access Request */}
-                  <div 
-                    onClick={handleExportData}
-                    style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "12px", 
-                      padding: "16px", 
-                      background: "#ecfdf5", 
-                      borderRadius: "8px", 
-                      border: "1px solid #059669",
-                      cursor: "pointer",
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "#d1fae5";
-                      e.currentTarget.style.borderColor = "#047857";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "#ecfdf5";
-                      e.currentTarget.style.borderColor = "#059669";
-                    }}
-                  >
-                    <div style={{
-                      width: "36px", height: "36px", borderRadius: "8px", background: "#dbeafe",
-                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                    }}>
-                      <Download size={16} color="#0369a1" />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", display: "block" }}>GDPR Data Subject Access Request</span>
-                      <span style={{ fontSize: "11px", color: "#374151" }}>Download your complete personal data record as PDF </span>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Personal Activity & Processing History */}
-                <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
-                  <button
-                    onClick={() => setShowActivityLog(!showActivityLog)}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "14px 16px",
-                      background: "#f9fafb",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#374151"
-                    }}
-                  >
-                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <Activity size={14} color="#6b7280" /> Account Activity & Processing Log (GDPR Transparency)
-                    </span>
-                    {showActivityLog ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                  
-                  {showActivityLog && (
-                    <div style={{ padding: "16px", background: "#ffffff", borderTop: "1px solid #e5e7eb" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {mockLogs.map((log, index) => (
-                          <div key={index} style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", borderBottom: index !== mockLogs.length - 1 ? "1px solid #f3f4f6" : "none", paddingBottom: 8 }}>
-                            <span style={{ color: "#374151", fontWeight: 500 }}>{log.action}</span>
-                            <span style={{ color: "#9ca3af", fontFamily: "monospace" }}>{log.time}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* FOOTER ACTIONS */}
-              <div style={{
-                display: "flex",
-                gap: "14px",
-                marginTop: "48px",
-                paddingTop: "32px",
-                borderTop: "1px solid #e5e7eb",
-                justifyContent: "flex-end"
-              }}>
-                <Button
-                  onClick={() => router.push("/dashboard")}
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    background: "var(--theme-gradient-160)",
-                    color: "#ffffff",
-                    border: "none",
-                    padding: "10px 20px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
-                  }}
-                >
-                  Return to Dashboard
-                </Button>
-                <Button
-                  onClick={handleSignOut}
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    background: "#ffffff",
-                    color: "#1f2937",
-                    border: "1px solid #d1d5db",
-                    padding: "9px 20px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    transition: "background 0.2s"
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
-                  onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}
-                >
-                  <LogOut size={14} />
-                  Sign Out Account
-                </Button>
-              </div>
-
+              )}
+              {!histLoading && activeLoans.length === 0 && (
+                <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No books currently borrowed.</p>
+              )}
             </div>
-          </Card>
-        </div>
+          </SectionCard>
+        )}
+
+        {/* ── NOTIFICATIONS ─────────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16 }}>
+          <SectionHead title="Notifications" />
+          <div style={{ padding: "8px 20px" }}>
+            {[
+              { key: "dueDateReminders" as const, label: "Due date reminders", desc: "Get notified when books are almost due" },
+              { key: "holdAvailability" as const, label: "Hold notifications", desc: "Alert when a reserved book is ready" },
+              { key: "weeklyDigests" as const, label: "Weekly digest", desc: "Weekly summary email" },
+              { key: "appAlerts" as const, label: "In-app alerts", desc: "Pop-up notifications in the portal" },
+            ].map(({ key, label, desc }) => (
+              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid #f3f4f6" }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>{label}</p>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>{desc}</p>
+                </div>
+                <Toggle checked={notificationPrefs[key]} onChange={() => handleTogglePref(key)} />
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* ── ACCOUNT & SECURITY ────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16 }}>
+          <SectionHead title="Account & Security" />
+          <div style={{ padding: "8px 20px" }}>
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid #f3f4f6", textAlign: "left" }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <KeyRound size={15} color="#2563eb" />
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Change Password</p>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Update your sign-in credentials</p>
+              </div>
+            </button>
+
+            <button
+              onClick={handleExportData}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid #f3f4f6", textAlign: "left" }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Download size={15} color="#16a34a" />
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Download My Data</p>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Export your account data as PDF</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: "#faf5ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Activity size={15} color="#7c3aed" />
+                </div>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Recent Activity</p>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>View your recent account actions</p>
+                </div>
+              </div>
+              {showActivityLog ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
+            </button>
+
+            {showActivityLog && (
+              <div style={{ paddingBottom: 12 }}>
+                {mockLogs.map((log, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #f3f4f6", gap: 12 }}>
+                    <p style={{ fontSize: 13, color: "#374151", margin: 0, flex: 1 }}>{log.action}</p>
+                    <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, flexShrink: 0, fontFamily: "monospace" }}>{log.time}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* ── SIGN OUT ──────────────────────────────────────────────────── */}
+        <button
+          onClick={handleSignOut}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 12, border: "1px solid #fee2e2", background: "#fff", color: "#dc2626", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#fef2f2")}
+          onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
+        >
+          <LogOut size={16} /> Sign Out
+        </button>
       </div>
 
       {/* ── PASSWORD CHANGE MODAL ── */}
@@ -1182,6 +809,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-    </>
+    </AppLayout>
   );
 }

@@ -8,28 +8,27 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, ShieldCheck, BookCopy, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, BookCopy, GraduationCap } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
-import { MockOAuthModal } from "@/components/ui/MockOAuthModal";
 
 // ── Role options ──────────────────────────────────────────────────────────────
 const ROLES = [
-  { value: "member", label: "Member", desc: "Browse and access published content" },
-  { value: "student_author", label: "Student Author", desc: "Submit projects to the showcase" },
-  { value: "researcher", label: "Researcher", desc: "Publish research outputs and manage labs" },
-  { value: "archivist", label: "Archivist", desc: "Upload and manage archive documents" },
-  { value: "librarian", label: "Librarian", desc: "Manage library catalog and lending" },
-  { value: "admin", label: "Admin", desc: "Full platform access and user management" },
+  { value: "member",         label: "Member",         desc: "Browse and access published content" },
+  { value: "student_author", label: "Student Author",  desc: "Submit projects to the showcase" },
+  { value: "researcher",     label: "Researcher",      desc: "Publish research outputs and manage labs" },
+  { value: "archivist",      label: "Archivist",       desc: "Upload and manage archive documents" },
+  { value: "librarian",      label: "Librarian",       desc: "Manage library catalog and lending" },
+  { value: "admin",          label: "Admin",           desc: "Full platform access and user management" },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 const schema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Valid email required"),
+  name:       z.string().min(2, "Name must be at least 2 characters"),
+  email:      z.string().email("Valid email required"),
   department: z.string().optional(),
-  password: z
+  password:   z
     .string()
     .min(8, "At least 8 characters")
     .regex(/[A-Z]/, "Uppercase letter required")
@@ -39,24 +38,24 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-// ── Password strength checker ─────────────────────────────────────────────────
+// ── Password strength checklist ───────────────────────────────────────────────
 function PasswordChecklist({ password }: { password: string }) {
   const checks = [
-    { label: "8+ characters", ok: password.length >= 8 },
-    { label: "Uppercase letter", ok: /[A-Z]/.test(password) },
-    { label: "Lowercase letter", ok: /[a-z]/.test(password) },
-    { label: "One digit (0-9)", ok: /\d/.test(password) },
+    { label: "8+ characters",     ok: password.length >= 8 },
+    { label: "Uppercase letter",  ok: /[A-Z]/.test(password) },
+    { label: "Lowercase letter",  ok: /[a-z]/.test(password) },
+    { label: "One digit (0-9)",   ok: /\d/.test(password) },
     { label: "Special (@$!%*?&)", ok: /[@$!%*?&]/.test(password) },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", marginTop: "10px" }}>
-      {checks.map((c) => (
+      {checks.map(c => (
         <label key={c.label} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12px", color: "#6b7280", cursor: "default" }}>
           <span style={{
-            width: "14px", height: "14px", borderRadius: "50%",
-            border: `1.5px solid ${c.ok ? "#1a1a2e" : "#d1d5db"}`,
-            background: c.ok ? "#1a1a2e" : "transparent",
-            display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            width: "14px", height: "14px", borderRadius: "50%", flexShrink: 0,
+            border: `1.5px solid ${c.ok ? "var(--avatar-theme-color, #111827)" : "#d1d5db"}`,
+            background: c.ok ? "var(--avatar-theme-color, #111827)" : "transparent",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
           }}>
             {c.ok && (
               <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
@@ -71,45 +70,30 @@ function PasswordChecklist({ password }: { password: string }) {
   );
 }
 
-// ── Shared input style ────────────────────────────────────────────────────────
+// ── Shared styles ─────────────────────────────────────────────────────────────
 const inputStyle = (hasError?: boolean): React.CSSProperties => ({
-  display: "block",
-  width: "100%",
-  padding: "10px 12px",
-  fontSize: "13px",
-  color: "#111827",
-  background: "#ffffff",
-  border: `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
-  borderRadius: "6px",
-  outline: "none",
-  boxShadow: "none",
-  boxSizing: "border-box",
-  // Suppress browser default blue focus ring on select elements
-  WebkitAppearance: "none",
-  MozAppearance: "none",
+  display: "block", width: "100%", padding: "10px 12px",
+  fontSize: "13px", color: "#111827", background: "#ffffff",
+  border: `1.5px solid ${hasError ? "#ef4444" : "#e5e7eb"}`,
+  borderRadius: "7px", outline: "none", boxShadow: "none", boxSizing: "border-box",
+  transition: "border-color 0.2s",
 });
 
 const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.09em",
-  color: "#111827",
-  marginBottom: "6px",
+  display: "block", fontSize: "11.5px", fontWeight: 600,
+  color: "#374151", marginBottom: "6px",
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser } = useAuthStore();
-  const [error, setError] = useState("");
-  const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
-  const [showPassword, setShowPassword] = useState(false);
-  const [agreed, setAgreed] = useState(false);
+
+  const [error,         setError]         = useState("");
+  const [selectedRole,  setSelectedRole]  = useState<RoleValue>("member");
+  const [showPassword,  setShowPassword]  = useState(false);
+  const [agreed,        setAgreed]        = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
-  const [oauthModalOpen, setOauthModalOpen] = useState(false);
-  const [oauthProvider, setOauthProvider] = useState<"google" | "sso">("google");
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, watch } =
     useForm<FormData>({ resolver: zodResolver(schema) });
@@ -126,7 +110,7 @@ export default function RegisterPage() {
       localStorage.setItem("refresh_token", refresh_token);
       setUser(user);
       toast.success("Account created successfully!");
-      router.push("/admin");
+      router.push("/dashboard");
     } catch (err: unknown) {
       const response = (err as { response?: { data?: { message?: string; errors?: { msg: string }[] } } })?.response?.data;
       if (response?.errors?.length) {
@@ -138,22 +122,17 @@ export default function RegisterPage() {
   };
 
   const handleOAuthAuthorize = async (oauthData: {
-    email: string;
-    name: string;
-    role: string;
-    provider: "google" | "sso";
-    providerId: string;
-    department?: string;
+    email: string; name: string; role: string;
+    provider: "google" | "sso"; providerId: string; department?: string;
   }) => {
-    setOauthModalOpen(false);
     try {
       const res = await api.post("/auth/oauth-login", oauthData);
       const { access_token, refresh_token, user } = res.data.data;
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
       setUser(user);
-      toast.success(`Account authorized successfully: Welcome, ${user.name}!`);
-      router.push("/admin");
+      toast.success(`Welcome, ${user.name}!`);
+      router.push("/dashboard");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to sign up via OAuth");
     }
@@ -162,378 +141,260 @@ export default function RegisterPage() {
   const handleGoogleSignIn = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      toast.error("Google Client ID not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local");
+      toast.error("Google Client ID not configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local");
       return;
     }
-
     if (typeof window !== "undefined" && (window as any).google) {
       try {
         const client = (window as any).google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
           callback: async (tokenResponse: any) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              const loadingToast = toast.loading("Fetching Google profile...");
+            if (tokenResponse?.access_token) {
+              const t = toast.loading("Fetching Google profile…");
               try {
-                const profileRes = await fetch(
-                  `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`
-                );
+                const profileRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`);
                 const profile = await profileRes.json();
-                toast.dismiss(loadingToast);
-                
+                toast.dismiss(t);
                 await handleOAuthAuthorize({
-                  email: profile.email,
-                  name: profile.name,
-                  role: selectedRole, // Registers as selected role
-                  provider: "google",
-                  providerId: `google_${profile.sub}`,
-                  department: "",
+                  email: profile.email, name: profile.name,
+                  role: selectedRole, provider: "google",
+                  providerId: `google_${profile.sub}`, department: "",
                 });
-              } catch (e) {
-                toast.dismiss(loadingToast);
-                toast.error("Failed to fetch user profile from Google");
+              } catch {
+                toast.dismiss(t);
+                toast.error("Failed to fetch Google profile");
               }
             }
           },
         });
         client.requestAccessToken();
-      } catch (err) {
+      } catch {
         toast.error("Failed to initialize Google Sign-In SDK");
       }
     } else {
-      toast.error("Google SDK is still loading. Please try again in a moment.");
+      toast.error("Google SDK is still loading. Please try again.");
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f3f4f6", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", position: "relative", overflow: "hidden" }}>
-      {/* Mock Blurred Dashboard Layout in the Background */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        display: "grid",
-        gridTemplateColumns: "240px 1fr",
-        pointerEvents: "none",
-        userSelect: "none",
-        zIndex: 0
-      }}>
-        {/* Mock Sidebar */}
-        <div style={{ background: "#111827", borderRight: "1px solid #1f2937", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div style={{ height: "32px", width: "120px", background: "#374151", borderRadius: "6px" }} />
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} style={{ height: "24px", width: i % 2 === 0 ? "80%" : "60%", background: "#1f2937", borderRadius: "4px" }} />
-            ))}
-          </div>
-        </div>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8f9fa" }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        input[type="radio"]    { accent-color: var(--avatar-theme-color, #111827) !important; cursor: pointer; }
+        input[type="checkbox"] { accent-color: var(--avatar-theme-color, #111827) !important; }
+        .reg-input:focus { border-color: var(--avatar-theme-color, #111827) !important; box-shadow: 0 0 0 3px rgba(17,24,39,0.07) !important; }
+        .reg-cols { display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; align-items: stretch; }
+        @media (max-width: 720px) { .reg-cols { grid-template-columns: 1fr; } }
+      `}} />
 
-        {/* Mock Content */}
-        <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "24px", background: "#f9fafb" }}>
-          {/* Mock Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
-            <div style={{ display: "flex", gap: "12px" }}>
-              <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
-              <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
+      {/* ── Nav ── */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "980px", margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <GraduationCap size={13} color="#ffffff" />
             </div>
-          </div>
-
-          {/* Mock Stat Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} style={{ height: "100px", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px" }}>
-                <div style={{ height: "12px", width: "40px", background: "#f3f4f6", marginBottom: "12px" }} />
-                <div style={{ height: "24px", width: "80px", background: "#e5e7eb" }} />
-              </div>
-            ))}
-          </div>
-
-          {/* Mock Table/List */}
-          <div style={{ flex: 1, background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div style={{ height: "16px", width: "150px", background: "#e5e7eb", marginBottom: "8px" }} />
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", borderBottom: "1px solid #f3f4f6", paddingBottom: "12px" }}>
-                <div style={{ height: "16px", width: "16px", background: "#f3f4f6", borderRadius: "4px" }} />
-                <div style={{ height: "12px", width: i % 2 === 0 ? "200px" : "150px", background: "#f3f4f6" }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Backdrop blur overlay - Dark overlay to match Change Password page's backdrop overlay */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backdropFilter: "blur(5px)",
-        WebkitBackdropFilter: "blur(5px)",
-        background: "rgba(0, 0, 0, 0.4)", // matches change password overlay exactly
-        pointerEvents: "none",
-        zIndex: 1
-      }} />
-
-      {/* ── Navbar ── */}
-      <header style={{ background: "rgba(255, 255, 255, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderBottom: "1px solid rgba(229, 231, 235, 0.8)", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", height: "58px", justifyContent: "space-between" }}>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 hover:underline"
-            style={{ fontSize: "14px", color: "var(--avatar-theme-color, #111827)", fontWeight: 700, transition: "color 0.2s", textDecoration: "none", display: "flex", alignItems: "center" }}
-          >
-            <ArrowLeft size={18} strokeWidth={2} />
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
           </Link>
-          <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em", transition: "color 0.2s" }}>
-            Digital Knowledge Platform
-          </span>
+          <Link href="/login"
+            style={{ fontSize: "13px", fontWeight: 600, color: "#4b5563", textDecoration: "none", transition: "color 0.2s" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#4b5563")}
+          >
+            Sign in
+          </Link>
         </div>
       </header>
 
       {/* ── Main ── */}
-      <main style={{ flex: 1, padding: "32px 16px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "40px", alignItems: "start" }}>
+      <main style={{ flex: 1, padding: "0 24px 60px" }}>
 
-          {/* ── LEFT COLUMN ── */}
-          <div style={{ minWidth: "280px" }}>
-            <h1 style={{ fontSize: "clamp(28px, 6vw, 36px)", fontWeight: 800, color: "#ffffff", lineHeight: 1.15, marginBottom: "16px", letterSpacing: "-0.02em", transition: "color 0.2s" }}>
-              Join the Platform.
-            </h1>
-            <p style={{ fontSize: "14px", color: "#e5e7eb", lineHeight: 1.7, marginBottom: "28px" }}>
+        {/* ── Centered Hero ── */}
+        <div style={{ textAlign: "center", padding: "44px 20px 32px", maxWidth: "560px", margin: "0 auto" }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 38px)", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 0 12px 0" }}>
+            Join the Platform.
+          </h1>
+          <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: 1.7, margin: 0 }}>
+            The University of Dhaka&apos;s academic knowledge hub — built for students, faculty, and researchers.
+          </p>
+        </div>
 
-            </p>
+        {/* ── Two matched boxes ── */}
+        <div style={{ maxWidth: "980px", margin: "0 auto" }} className="reg-cols">
 
-            {/* Role selector card */}
-            <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 20px", marginBottom: "20px", transition: "background 0.3s", overflowY: "auto", maxHeight: "500px" }}>
-              <label style={{ ...labelStyle, marginBottom: "12px", color: "#ffffff" }}>
-                I am registering as <span style={{ color: "#ef4444" }}></span>
-              </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {ROLES.map((r) => (
-                  <label key={r.value} style={{ display: "flex", alignItems: "flex-start", gap: "12px", cursor: "pointer", padding: "8px 12px", borderRadius: "6px", transition: "background 0.2s", background: selectedRole === r.value ? "rgba(255,255,255,0.15)" : "transparent" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = selectedRole === r.value ? "rgba(255,255,255,0.15)" : "transparent")}
+          {/* ── LEFT BOX — Role selector ── */}
+          <div style={{
+            background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #0f172a 0%, #1e293b 100%))",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "14px",
+            padding: "28px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }}>
+            {/* Role header */}
+            <div>
+              <p style={{ fontSize: "10.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(255,255,255,0.45)", margin: "0 0 14px 0" }}>
+                I am registering as
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {ROLES.map(r => (
+                  <label key={r.value} style={{ display: "flex", alignItems: "flex-start", gap: "12px", cursor: "pointer", padding: "10px 12px", borderRadius: "8px", transition: "background 0.15s", background: selectedRole === r.value ? "rgba(255,255,255,0.12)" : "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = selectedRole === r.value ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = selectedRole === r.value ? "rgba(255,255,255,0.12)" : "transparent")}
                   >
-                    <input
-                      type="radio"
-                      name="role"
-                      value={r.value}
-                      checked={selectedRole === r.value}
-                      onChange={(e) => setSelectedRole(e.target.value as RoleValue)}
-                      style={{ marginTop: "3px", accentColor: "#ffffff", cursor: "pointer" }}
-                    />
+                    <input type="radio" name="role" value={r.value} checked={selectedRole === r.value}
+                      onChange={e => setSelectedRole(e.target.value as RoleValue)}
+                      style={{ marginTop: "3px", cursor: "pointer" }} />
                     <div>
                       <p style={{ fontSize: "13px", fontWeight: 600, color: "#ffffff", margin: "0 0 2px 0" }}>{r.label}</p>
-                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: 0 }}>{r.desc}</p>
+                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", margin: 0 }}>{r.desc}</p>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
-              <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px", transition: "background 0.3s" }}>
-                <ShieldCheck size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
-                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
-                  Institutional Access
-                </p>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", lineHeight: 1.5, margin: 0 }}>
-                  SSO integration for participating universities.
-                </p>
+            {/* Info cards pinned at bottom */}
+            <div style={{ marginTop: "auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px 12px" }}>
+                <GraduationCap size={18} style={{ color: "rgba(255,255,255,0.7)", marginBottom: "8px" }} />
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#ffffff", margin: "0 0 5px 0" }}>Academic</p>
+                <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0 }}>Connect with FET faculty and researchers.</p>
               </div>
-              <div style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "18px 16px", transition: "background 0.3s" }}>
-                <BookCopy size={20} style={{ color: "#ffffff", marginBottom: "10px" }} />
-                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffffff", marginBottom: "6px" }}>
-                  Research Vaults
-                </p>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", lineHeight: 1.5, margin: 0 }}>
-                  High-fidelity digitized primary sources.
-                </p>
+              <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px 12px" }}>
+                <BookCopy size={18} style={{ color: "rgba(255,255,255,0.7)", marginBottom: "8px" }} />
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#ffffff", margin: "0 0 5px 0" }}>Vaults</p>
+                <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0 }}>Digitized primary academic sources.</p>
               </div>
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN — Form card ── */}
-          <div style={{ background: "rgba(255, 255, 255, 0.9)", border: "1px solid rgba(229, 231, 235, 0.9)", borderRadius: "12px", padding: "clamp(20px, 5vw, 36px)", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", minWidth: "280px", maxWidth: "100%", overflowX: "hidden" }}>
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {/* ── RIGHT BOX — Form ── */}
+          <div style={{
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "14px",
+            padding: "28px 28px 24px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+            display: "flex",
+            flexDirection: "column",
+          }}>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ display: "flex", flexDirection: "column", flex: 1 }}>
 
-              {/* Row 1: Full Name + Email */}
-              <div className="register-form-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "16px", marginBottom: "18px" }}>
+              {/* Name + Email */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "14px", marginBottom: "16px" }}>
                 <div>
                   <label style={labelStyle}>Full Name</label>
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    placeholder=""
-                    aria-invalid={!!errors.name}
-                    style={inputStyle(!!errors.name)}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
-                    {...register("name", { onBlur: (e) => { e.currentTarget.style.borderColor = errors.name ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; } })}
-                  />
+                  <input type="text" autoComplete="name" className="reg-input"
+                    aria-invalid={!!errors.name} style={inputStyle(!!errors.name)}
+                    {...register("name", {
+                      onBlur: e => { e.currentTarget.style.borderColor = errors.name ? "#ef4444" : "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }
+                    })} />
                   {errors.name && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errors.name.message}</p>}
                 </div>
                 <div>
                   <label style={labelStyle}>Email Address</label>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    placeholder=""
-                    aria-invalid={!!errors.email}
-                    style={inputStyle(!!errors.email)}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
-                    {...register("email", { onBlur: (e) => { e.currentTarget.style.borderColor = errors.email ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; } })}
-                  />
+                  <input type="email" autoComplete="email" className="reg-input"
+                    aria-invalid={!!errors.email} style={inputStyle(!!errors.email)}
+                    {...register("email", {
+                      onBlur: e => { e.currentTarget.style.borderColor = errors.email ? "#ef4444" : "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }
+                    })} />
                   {errors.email && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errors.email.message}</p>}
                 </div>
               </div>
 
-              {/* Row 2: Department */}
-              <div style={{ marginBottom: "18px" }}>
-                <label style={labelStyle}>Department / Faculty</label>
-                <input
-                  type="text"
-                  placeholder=""
-                  aria-invalid={!!errors.department}
-                  style={inputStyle(!!errors.department)}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
-                  {...register("department", { onBlur: (e) => { e.currentTarget.style.borderColor = errors.department ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; } })}
-                />
-                {errors.department && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errors.department.message}</p>}
+              {/* Department */}
+              <div style={{ marginBottom: "16px" }}>
+                <label style={labelStyle}>Department / Faculty <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span></label>
+                <input type="text" placeholder="e.g. Computer Science & Engineering" className="reg-input"
+                  style={inputStyle()} {...register("department", {
+                    onBlur: e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }
+                  })} />
               </div>
 
               {/* Password */}
-              <div style={{ marginBottom: "18px" }}>
+              <div style={{ marginBottom: "16px" }}>
                 <label style={labelStyle}>Password</label>
                 <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="••••••••••••"
-                    aria-invalid={!!errors.password}
+                  <input type={showPassword ? "text" : "password"} autoComplete="new-password"
+                    placeholder="••••••••••••" aria-invalid={!!errors.password} className="reg-input"
                     style={{ ...inputStyle(!!errors.password), paddingRight: "42px" }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "#111827"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(17,24,39,0.07)"; }}
                     {...register("password", {
-                      onChange: (e) => setPasswordValue(e.target.value),
-                      onBlur: (e) => { e.currentTarget.style.borderColor = errors.password ? "#ef4444" : "#d1d5db"; e.currentTarget.style.boxShadow = "none"; },
-                    })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af", display: "flex", alignItems: "center" }}
-                  >
+                      onChange: e => setPasswordValue(e.target.value),
+                      onBlur: e => { e.currentTarget.style.borderColor = errors.password ? "#ef4444" : "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; },
+                    })} />
+                  <button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? "Hide password" : "Show password"}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af", display: "flex", alignItems: "center" }}>
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
                 <PasswordChecklist password={watchedPassword || passwordValue} />
               </div>
 
-              {/* Terms checkbox */}
-              <div style={{ marginBottom: "20px" }}>
+              {/* Terms */}
+              <div style={{ marginBottom: "18px" }}>
                 <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
-                    style={{ marginTop: "2px", width: "14px", height: "14px", flexShrink: 0, accentColor: "#111827", cursor: "pointer" }}
-                  />
+                  <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+                    style={{ marginTop: "2px", width: "14px", height: "14px", flexShrink: 0, cursor: "pointer" }} />
                   <span style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6 }}>
                     I agree to the{" "}
                     <Link href="/terms" style={{ color: "#374151", fontWeight: 600, textDecoration: "underline" }}>Terms of Service</Link>
                     {" "}and acknowledge the{" "}
-                    <Link href="/privacy" style={{ color: "#374151", fontWeight: 600, textDecoration: "underline" }}>Privacy Policy</Link>
-                    {" "}concerning intellectual property and data archival.
+                    <Link href="/privacy" style={{ color: "#374151", fontWeight: 600, textDecoration: "underline" }}>Privacy Policy</Link>.
                   </span>
                 </label>
               </div>
 
-              {/* Server error */}
+              {/* Error */}
               {error && (
-                <div style={{ marginBottom: "16px", padding: "10px 12px", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", color: "#dc2626" }} role="alert">
+                <div style={{ marginBottom: "16px", padding: "10px 12px", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#dc2626" }} role="alert">
                   {error}
                 </div>
               )}
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                style={{
-                  width: "100%",
-                  padding: "13px 16px",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  background: "#111827",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.6 : 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  marginBottom: "16px",
-                }}
-              >
-                {isSubmitting && (
-                  <svg className="animate-spin" width="14" height="14" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                )}
-                Create Academic Profile
-              </button>
-
-              {/* OR divider */}
-              <div
-                style={{ margin: "20px 0", display: "flex", alignItems: "center" }}
-              >
-                <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-                <span
+              {/* Push remaining to bottom */}
+              <div style={{ marginTop: "auto" }}>
+                {/* Submit */}
+                <button type="submit" disabled={isSubmitting}
                   style={{
-                    padding: "0 12px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: "#9ca3af",
+                    width: "100%", padding: "12px 16px", fontSize: "13.5px", fontWeight: 700,
+                    background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
+                    border: "none", borderRadius: "8px",
+                    cursor: isSubmitting ? "not-allowed" : "pointer", opacity: isSubmitting ? 0.65 : 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    marginBottom: "14px", transition: "opacity 0.2s",
                   }}
+                  onMouseEnter={e => { if (!isSubmitting) e.currentTarget.style.opacity = "0.87"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = isSubmitting ? "0.65" : "1"; }}
                 >
-                  or
-                </span>
-                <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-              </div>
+                  {isSubmitting && (
+                    <svg className="animate-spin" width="14" height="14" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  Create Account
+                </button>
 
-              {/* OAuth buttons */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-                <button
-                  type="button"
+                {/* OR */}
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "14px" }}>
+                  <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                  <span style={{ padding: "0 12px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af" }}>or</span>
+                  <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                </div>
+
+                {/* Google */}
+                <button type="button" onClick={handleGoogleSignIn}
                   style={{
-                    width: "100%",
-                    padding: "11px 16px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    background: "#ffffff",
-                    color: "#374151",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px"
+                    width: "100%", padding: "11px 16px", fontSize: "13.5px", fontWeight: 600,
+                    background: "#ffffff", color: "#374151",
+                    border: "1.5px solid #e5e7eb", borderRadius: "8px",
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                    marginBottom: "18px", transition: "border-color 0.2s, background 0.2s",
                   }}
-                  onClick={handleGoogleSignIn}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -541,48 +402,21 @@ export default function RegisterPage() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  Sign up with Google
+                  Continue with Google
                 </button>
 
-                <button
-                  type="button"
-                  style={{
-                    width: "100%",
-                    padding: "11px 16px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    background: "#ffffff",
-                    color: "#374151",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px"
-                  }}
-                  onClick={() => {
-                    setOauthProvider("sso");
-                    setOauthModalOpen(true);
-                  }}
-                >
-                  <ShieldCheck size={16} color="#374151" />
-                  Sign up with Institutional SSO
-                </button>
+                {/* Sign in link */}
+                <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                  Already have an account?{" "}
+                  <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
+                    onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                    onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+                  >
+                    Sign In
+                  </Link>
+                </p>
               </div>
 
-              {/* Sign in link */}
-              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                Already registered?{" "}
-                <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                >
-                  Sign In here.
-                </Link>
-              </p>
             </form>
           </div>
 
@@ -590,43 +424,21 @@ export default function RegisterPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "rgba(233, 235, 238, 0.75)", backdropFilter: "blur(15px)", WebkitBackdropFilter: "blur(15px)", borderTop: "1px solid rgba(209, 213, 219, 0.8)", position: "relative", zIndex: 2 }} className="register-footer">
-        <div className="register-footer-content" style={{ maxWidth: "1100px", margin: "0 auto", padding: "20px 32px", display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "center", gap: "16px" }}>
-          <div>
-            <p className="register-footer-brand" style={{ fontSize: "13px", fontWeight: 700, color: "#111827", margin: "0 0 3px" }}>Digital Knowledge Platform</p>
-            <p className="register-footer-copyright" style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>© 2024 Digital Knowledge Platform. All rights reserved.</p>
-          </div>
-          <div className="register-footer-links" style={{ display: "flex", justifyContent: "flex-end", gap: "24px" }}>
-            {["Privacy Policy", "Terms of Service", "Institutional Access", "Contact Support"].map((l) => (
-              <Link key={l} href="#" style={{ fontSize: "13px", color: "#495057", textDecoration: "none" }}
-                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-              >
-                {l}
-              </Link>
+      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff", marginTop: "auto" }}>
+        <div style={{ maxWidth: "980px", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform</p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {[{ l: "Privacy", h: "/privacy" }, { l: "Terms", h: "/terms" }, { l: "Contact", h: "/contact" }].map(x => (
+              <Link key={x.l} href={x.h} style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+              >{x.l}</Link>
             ))}
           </div>
         </div>
       </footer>
 
-      <MockOAuthModal
-        isOpen={oauthModalOpen}
-        onClose={() => setOauthModalOpen(false)}
-        provider={oauthProvider}
-        onAuthorize={handleOAuthAuthorize}
-      />
-
       <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
-
-      <style>{`
-        input[type="radio"] {
-          accent-color: #000000 !important;
-          cursor: pointer;
-        }
-        input[type="checkbox"] {
-          accent-color: #000000 !important;
-        }
-      `}</style>
     </div>
   );
 }

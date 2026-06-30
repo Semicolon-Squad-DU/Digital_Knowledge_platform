@@ -1,279 +1,157 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { GraduationCap, ArrowRight } from "lucide-react";
+
+const SECTIONS = [
+  {
+    num: "01",
+    title: "What We Collect",
+    body: "Name, email, department, account credentials, browsing activity within the platform, device identifiers, and any content you upload.",
+  },
+  {
+    num: "02",
+    title: "How We Use It",
+    body: "To manage your account, personalize your experience, improve platform features, and send essential service notifications.",
+  },
+  {
+    num: "03",
+    title: "Who We Share With",
+    body: "We do not sell your data. Information is only shared when required by law or with trusted service providers who help operate the platform.",
+  },
+  {
+    num: "04",
+    title: "Data Security",
+    body: "We apply industry-standard administrative, technical, and physical safeguards. No electronic system is 100% secure, but we follow best practices.",
+  },
+  {
+    num: "05",
+    title: "Your Rights",
+    body: "You may access, correct, or request deletion of your personal data at any time by contacting us directly.",
+  },
+  {
+    num: "06",
+    title: "Policy Updates",
+    body: "We may update this policy at any time. Material changes will be announced on the platform. Continued use constitutes acceptance.",
+  },
+];
+
+const NAV_LINKS = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Contact", href: "/contact" },
+];
 
 export default function PrivacyPage() {
   return (
-    <div style={{
-      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-      background: "var(--theme-gradient-160)",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      {/* Background Mock Content */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        padding: "32px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-        background: "#f9fafb",
-        zIndex: 0
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
-            <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
-          </div>
+    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        .legal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        @media (max-width: 600px) { .legal-grid { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {/* Minimal Nav */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <GraduationCap size={13} color="#ffffff" />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
+          </Link>
+          <nav style={{ display: "flex", gap: "4px" }}>
+            {NAV_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{ padding: "5px 12px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+              >{l.label}</Link>
+            ))}
+          </nav>
         </div>
-      </div>
-
-      {/* Backdrop blur overlay */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backdropFilter: "blur(5px)",
-        WebkitBackdropFilter: "blur(5px)",
-        background: "rgba(0, 0, 0, 0.4)",
-        pointerEvents: "none",
-        zIndex: 1
-      }} />
-
-      {/* Header */}
-      <header style={{
-        padding: "14px 24px",
-        borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
-        background: "rgba(255, 255, 255, 0.75)",
-        backdropFilter: "blur(15px)",
-        WebkitBackdropFilter: "blur(15px)",
-        position: "relative",
-        zIndex: 2,
-        overflowX: "hidden"
-      }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "13px",
-            fontWeight: 700,
-            color: "var(--avatar-theme-color, #000000)",
-            textDecoration: "none",
-            transition: "color 0.2s"
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >
-          <ArrowLeft size={14} strokeWidth={2.5} />
-          Back to Home
-        </Link>
       </header>
 
-      {/* Main Content */}
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "48px 24px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
-        <h1 style={{ fontSize: "40px", fontWeight: 800, color: "#111827", marginBottom: "12px", lineHeight: 1.2 }}>
-          Privacy Policy
-        </h1>
-        <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "32px" }}>
-          Last updated: May 28, 2026
-        </p>
+      <main style={{ flex: 1 }}>
+        {/* Hero */}
+        <div style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", padding: "52px 32px 44px", textAlign: "center" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--avatar-theme-color, #111827)", opacity: 0.65, margin: "0 0 12px 0" }}>
+            Legal
+          </p>
+          <h1 style={{ fontSize: "clamp(1.9rem, 5vw, 2.75rem)", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 14px 0" }}>
+            Privacy Policy
+          </h1>
+          <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
+            Last updated <strong style={{ color: "#374151" }}>May 28, 2026</strong> · Digital Knowledge Platform
+          </p>
+        </div>
 
-        {/* Content Sections */}
-        <div style={{ background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.3)", padding: "32px", lineHeight: 1.8, boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)" }}>
-          {/* Section 1 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              1. Introduction
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              The Digital Knowledge Platform (DKP) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our platform, including any other media form, media channel, mobile website, or mobile application related or connected to it.
-            </p>
-          </section>
+        {/* Section cards */}
+        <div style={{ maxWidth: "860px", margin: "0 auto", padding: "48px 32px 64px" }}>
+          <div className="legal-grid">
+            {SECTIONS.map(s => (
+              <div
+                key={s.num}
+                style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e5e7eb", padding: "22px 20px", transition: "box-shadow 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.07)")}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+              >
+                <span style={{
+                  display: "inline-block", padding: "2px 10px", borderRadius: "100px",
+                  background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
+                  fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "12px",
+                }}>
+                  {s.num}
+                </span>
+                <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 8px 0" }}>{s.title}</h2>
+                <p style={{ fontSize: "13px", color: "#555e6d", lineHeight: 1.65, margin: 0 }}>{s.body}</p>
+              </div>
+            ))}
+          </div>
 
-          {/* Section 2 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              2. Information We Collect
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              We may collect information about you in a variety of ways. The information we may collect on the platform includes:
-            </p>
-            <ul style={{ fontSize: "14px", color: "#495057", marginLeft: "24px", marginBottom: "12px" }}>
-              <li style={{ marginBottom: "8px" }}><strong>Personal Data:</strong> Name, email address, phone number, department, and other information you voluntarily provide</li>
-              <li style={{ marginBottom: "8px" }}><strong>Account Information:</strong> Username, password, and profile information</li>
-              <li style={{ marginBottom: "8px" }}><strong>Usage Data:</strong> Information about how you interact with the platform, including pages visited, time spent, and actions taken</li>
-              <li style={{ marginBottom: "8px" }}><strong>Device Information:</strong> IP address, browser type, operating system, and device identifiers</li>
-              <li style={{ marginBottom: "8px" }}><strong>Content Data:</strong> Documents, research outputs, and other content you upload or create</li>
-            </ul>
-          </section>
-
-          {/* Section 3 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              3. Use of Your Information
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              Having accurate information about you permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you via the platform to:
-            </p>
-            <ul style={{ fontSize: "14px", color: "#495057", marginLeft: "24px", marginBottom: "12px" }}>
-              <li style={{ marginBottom: "8px" }}>Create and manage your account</li>
-              <li style={{ marginBottom: "8px" }}>Process your transactions and send related information</li>
-              <li style={{ marginBottom: "8px" }}>Email you regarding your account or order</li>
-              <li style={{ marginBottom: "8px" }}>Fulfill and manage your requests</li>
-              <li style={{ marginBottom: "8px" }}>Generate a personal profile about you</li>
-              <li style={{ marginBottom: "8px" }}>Increase the efficiency and operation of the platform</li>
-              <li style={{ marginBottom: "8px" }}>Monitor and analyze trends, usage, and activities</li>
-              <li style={{ marginBottom: "8px" }}>Notify you of updates to the platform</li>
-            </ul>
-          </section>
-
-          {/* Section 4 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              4. Disclosure of Your Information
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              We may share information we have collected about you in certain situations:
-            </p>
-            <ul style={{ fontSize: "14px", color: "#495057", marginLeft: "24px", marginBottom: "12px" }}>
-              <li style={{ marginBottom: "8px" }}><strong>By Law or to Protect Rights:</strong> If we believe the release of information is necessary to comply with the law</li>
-              <li style={{ marginBottom: "8px" }}><strong>Third-Party Service Providers:</strong> We may share your information with vendors, consultants, and other service providers who need access to such information to carry out work on our behalf</li>
-              <li style={{ marginBottom: "8px" }}><strong>Business Transfers:</strong> Your information may be transferred as part of our business assets if we are acquired or merged</li>
-            </ul>
-          </section>
-
-          {/* Section 5 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              5. Security of Your Information
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              We use administrative, technical, and physical security measures to protect your personal information. However, no method of transmission over the Internet or method of electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee its absolute security.
-            </p>
-          </section>
-
-          {/* Section 6 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              6. Contact Us
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              Contact us with questions about this Privacy Policy:
-            </p>
-            <div style={{ background: "rgba(26, 86, 219, 0.05)", padding: "16px", borderRadius: "8px", marginBottom: "16px", borderLeft: "3px solid var(--avatar-theme-color, #1a56db)" }}>
-              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
-                <strong>Team:</strong> Semicolon-Squad-DU
-              </p>
-              <p style={{ fontSize: "13px", color: "#495057", marginBottom: "8px", margin: "0 0 8px 0" }}>
-                <strong>Email Contacts:</strong>
-              </p>
-              <ul style={{ fontSize: "13px", color: "#495057", marginLeft: "20px", margin: 0 }}>
-                <li>Fariha Yasmin: <a href="mailto:fariayasmin19@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>fariayasmin19@gmail.com</a> | <a href="https://github.com/fariayasmin" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@fariayasmin</a></li>
-                <li>Yuki Bhuiyan: <a href="mailto:yukibhuiyan@gmail.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>yukibhuiyan@gmail.com</a> | <a href="https://github.com/Yukii9291" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@Yukii9291</a></li>
-                <li>Nuruzzaman: <a href="mailto:nuruzzaman@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>nuruzzaman@gamil.com</a> | <a href="https://github.com/prolexcsedu" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@prolexcsedu</a></li>
-                <li>Hasibul Islam: <a href="mailto:hasibulislam@gamil.com" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>hasibulislam@gamil.com</a> | <a href="https://github.com/enol5423" target="_blank" rel="noopener noreferrer" style={{ color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>@enol5423</a></li>
-              </ul>
+          {/* Contact CTA */}
+          <div style={{
+            marginTop: "14px", background: "#ffffff", borderRadius: "14px",
+            border: "1px solid #e5e7eb", padding: "22px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap",
+          }}>
+            <div>
+              <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px 0" }}>Questions about your privacy?</h2>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>The Semicolon-Squad-DU team is happy to help.</p>
             </div>
-          </section>
-
-          {/* Section 7 */}
-          <section style={{ marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              7. Changes to This Privacy Policy
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              We reserve the right to modify this privacy policy at any time. Changes and clarifications will take effect immediately upon their posting on the website. If we make material changes to this policy, we will notify you here that it has been updated, so that you are aware of what information we collect, how we use it, and under what circumstances, if any, we use and/or disclose it.
-            </p>
-          </section>
-
-          {/* Section 8 */}
-          <section>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
-              8. Your Rights
-            </h2>
-            <p style={{ fontSize: "14px", color: "#495057", marginBottom: "12px" }}>
-              You have the right to:
-            </p>
-            <ul style={{ fontSize: "14px", color: "#495057", marginLeft: "24px" }}>
-              <li style={{ marginBottom: "8px" }}>Access your personal information</li>
-              <li style={{ marginBottom: "8px" }}>Correct inaccurate data</li>
-              <li style={{ marginBottom: "8px" }}>Request deletion of your data</li>
-              <li style={{ marginBottom: "8px" }}>Opt-out of certain communications</li>
-              <li style={{ marginBottom: "8px" }}>Data portability</li>
-            </ul>
-          </section>
+            <Link
+              href="/contact"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "9px 18px", fontSize: "13px", fontWeight: 600,
+                color: "#ffffff", background: "var(--avatar-theme-color, #111827)",
+                borderRadius: "8px", textDecoration: "none", flexShrink: 0, transition: "opacity 0.2s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.82")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            >
+              Contact Us <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="privacy-footer" style={{ background: "rgba(255, 255, 255, 0.1)", borderTop: "1px solid rgba(255, 255, 255, 0.2)", marginTop: "48px", position: "relative", zIndex: 2, overflowX: "hidden" }}>
-        <div className="privacy-footer-content" style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "32px 24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
+      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}>
+        <div style={{
+          maxWidth: "860px", margin: "0 auto", padding: "16px 32px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px",
         }}>
-          <div>
-            <p className="privacy-footer-brand" style={{ fontSize: "13px", fontWeight: 700, color: "#d1d5db", lineHeight: 1.55, margin: "0 0 6px" }}>
-              Digital Knowledge Platform
-            </p>
-            <p className="privacy-footer-copyright" style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>
-              © 2026 Digital Knowledge Platform. All rights reserved.
-            </p>
-          </div>
-          <div className="privacy-footer-links-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
-            <div className="privacy-footer-links" style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", textAlign: "center", flexWrap: "wrap" }}>
-              {[
-                { label: "Privacy Policy", href: "/privacy" },
-                { label: "Terms of Service", href: "/terms" },
-                { label: "Contact Us", href: "/contact" }
-              ].map((l) => (
-                <Link key={l.label} href={l.href} style={{ fontSize: "13px", color: "#d1d5db", textDecoration: "none", transition: "all 0.2s", display: "inline-block" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
+          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform · Semicolon-Squad-DU</p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {NAV_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+              >{l.label}</Link>
+            ))}
           </div>
         </div>
-        <style>{`
-          @media (min-width: 768px) {
-            .privacy-footer-content {
-              display: grid !important;
-              grid-template-columns: 200px 1fr auto;
-              align-items: start;
-              gap: 32px;
-            }
-            .privacy-footer-links-container {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 8px;
-            }
-            .privacy-footer-links {
-              display: flex;
-              gap: 24px;
-              flex-direction: row;
-            }
-          }
-        `}</style>
       </footer>
     </div>
   );

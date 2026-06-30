@@ -5,12 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, Archive, FlaskConical, Send,
-  BookOpen, ShieldCheck, Bell, Heart, Search, LogOut, Calendar, ArrowLeft, Menu, X
+  BookOpen, ShieldCheck, Bell, Heart, LogOut,
+  Calendar, Menu, X, GraduationCap,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
-// ── Shared nav definition (single source of truth) ───────────────────────────
 export const APP_NAV = [
   { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
   { label: "Archive",     href: "/archive",   icon: Archive },
@@ -23,349 +24,296 @@ export const APP_NAV = [
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  /** Optional search bar rendered in the topbar center */
   topbarSearch?: React.ReactNode;
-  /** Optional extra actions rendered in the topbar right (before bell/heart/avatar) */
   topbarActions?: React.ReactNode;
 }
 
+// ── Shared nav link used in both sidebar and mobile drawer ────────────────────
+function NavLink({ label, href, icon: Icon, active, onClick }: {
+  label: string; href: string; icon: React.ElementType;
+  active: boolean; onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      style={{ textDecoration: "none", display: "block", marginBottom: 2 }}
+    >
+      <div
+        style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 14px", borderRadius: 8, cursor: "pointer",
+          fontSize: 13.5, fontWeight: active ? 700 : 500,
+          color: active ? "#fff" : "rgba(255,255,255,0.65)",
+          background: active ? "rgba(255,255,255,0.18)" : "transparent",
+        }}
+        onMouseEnter={e => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.1)";
+            (e.currentTarget as HTMLElement).style.color = "#fff";
+          }
+        }}
+        onMouseLeave={e => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)";
+          }
+        }}
+      >
+        <Icon size={16} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0, opacity: active ? 1 : 0.8 }} />
+        <span>{label}</span>
+      </div>
+    </Link>
+  );
+}
+
+// ── Logo block ────────────────────────────────────────────────────────────────
+function SidebarBrand({ onClose }: { onClose?: () => void }) {
+  return (
+    <div style={{
+      height: 64, padding: "0 18px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
+    }}>
+      <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 7,
+          background: "rgba(255,255,255,0.18)",
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        }}>
+          <GraduationCap size={15} color="#fff" />
+        </div>
+        <div>
+          <p style={{ fontSize: 14.5, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.2, letterSpacing: "-0.02em" }}>Digital Knowledge</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "2px 0 0", letterSpacing: "0.01em" }}>Academic Portal</p>
+        </div>
+      </Link>
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.65)", padding: 4, display: "flex", borderRadius: 6 }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "none")}
+        >
+          <X size={20} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── User + sign-out footer ────────────────────────────────────────────────────
+function UserFooter({ user, onLogout }: { user: any; onLogout: () => void }) {
+  if (!user) return null;
+  return (
+    <div style={{ padding: "8px 8px 14px", borderTop: "1px solid rgba(255,255,255,0.09)", flexShrink: 0 }}>
+      <Link href="/profile" style={{ textDecoration: "none", display: "block", marginBottom: 6 }}>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 8 }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        >
+          <div style={{
+            width: 30, height: 30, borderRadius: "50%",
+            background: "rgba(255,255,255,0.2)", flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 700, color: "#fff",
+          }}>
+            {user.name?.[0]?.toUpperCase()}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>
+              {user.name?.split(" ")[0]}
+            </p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "1px 0 0", textTransform: "capitalize", letterSpacing: "0.01em" }}>
+              {user.role?.replace("_", " ")}
+            </p>
+          </div>
+        </div>
+      </Link>
+      <button
+        onClick={onLogout}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 7,
+          padding: "8px 10px", borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.15)", background: "transparent",
+          cursor: "pointer", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.65)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          e.currentTarget.style.color = "#fff";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "rgba(255,255,255,0.65)";
+        }}
+      >
+        <LogOut size={13} /> Sign Out
+      </button>
+    </div>
+  );
+}
+
+// ── Nav items list (reused in both sidebar and drawer) ────────────────────────
+function NavList({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
+  return (
+    <div style={{ padding: "10px 8px" }}>
+      {APP_NAV.map(({ label, href, icon }) => (
+        <NavLink
+          key={href}
+          label={label}
+          href={href}
+          icon={icon}
+          active={pathname === href || pathname.startsWith(href + "/")}
+          onClick={onNav}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Sidebar (desktop) styles ──────────────────────────────────────────────────
+const SIDEBAR_STYLE: React.CSSProperties = {
+  width: 224, flexShrink: 0,
+  background: "var(--theme-sidebar-gradient)",
+  borderRight: "none",
+  borderRadius: "0 18px 18px 0",
+  boxShadow: "4px 0 28px rgba(0,0,0,0.18)",
+  display: "flex", flexDirection: "column",
+  position: "sticky", top: 0, height: "100vh", overflowY: "auto",
+  overflow: "hidden",
+};
+
+// ── Layout ────────────────────────────────────────────────────────────────────
 export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutProps) {
-  const pathname  = usePathname();
-  const router    = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname        = usePathname();
+  const router          = useRouter();
+  const isMobile        = useMediaQuery("(max-width: 767px)");
+  const [open, setOpen] = useState(false);
 
-  const getHeaderTitle = () => {
-    if (pathname.startsWith("/library") || pathname.startsWith("/librarian")) {
-      return "Library Repository";
-    }
-    if (pathname.startsWith("/research")) {
-      return "Research Repository";
-    }
-    if (pathname.startsWith("/archive")) {
-      return "Digital Archive";
-    }
-    if (pathname.startsWith("/admin")) {
-      return "Admin panel";
-    }
-    return null;
-  };
-
-  const headerTitle = getHeaderTitle();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { data: notifData } = useNotifications(1, false, isAuthenticated);
   const unreadCount = notifData?.unread_count ?? 0;
 
-  const handleLogout = async () => {
-    await logout();
-    router.push("/");
-  };
+  const handleLogout = async () => { await logout(); router.push("/"); };
+  const closeDrawer = () => setOpen(false);
 
   return (
-    <div style={{
-      display: "flex", minHeight: "100vh",
-      background: "#f0f2f5",
-      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-    }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f0f2f5" }}>
 
-      {/* ════════ SIDEBAR (DESKTOP ONLY) ════════ */}
-      <aside className="hidden md:flex" style={{
-        width: 200, flexShrink: 0,
-        background: "var(--theme-sidebar-gradient)",
-        borderRight: "1px solid rgba(255,255,255,0.05)",
-        flexDirection: "column",
-        position: "sticky", top: 0, height: "100vh", overflowY: "auto",
-      }}>
-        {/* Logo */}
-        <div style={{
-          padding: "0 20px",
-          height: 60,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          flexShrink: 0,
-        }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>
-            Digital Knowledge
-          </p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2, marginBottom: 0 }}>
-            Academic Portal
-          </p>
-        </div>
-
-        {/* Nav items */}
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {APP_NAV.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link key={href} href={href} style={{ textDecoration: "none" }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 12px", borderRadius: 6, marginBottom: 2,
-                  fontSize: 13,
-                  fontWeight: active ? 600 : 500,
-                  color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
-                  background: active ? "var(--avatar-theme-color)" : "transparent",
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; } }}
-                >
-                  <Icon size={15} />
-                  {label}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* User info + sign out */}
-        {user && (
-          <div style={{ padding: "12px 12px 16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: "50%",
-                background: "#ffffff", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: "#111827",
-              }}>
-                {user.name?.[0]?.toUpperCase()}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#ffffff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {user.name?.split(" ")[0]}
-                </p>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0, textTransform: "capitalize" }}>
-                  {user.role?.replace("_", " ")}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 7,
-                padding: "7px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
-                background: "transparent", cursor: "pointer",
-                fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.7)",
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
-            >
-              <LogOut size={13} /> Sign Out
-            </button>
-          </div>
-        )}
-      </aside>
-
-      {/* ════════ MOBILE DRAWER OVERLAY ════════ */}
-      {mobileMenuOpen && (
-        <div
-          onClick={() => setMobileMenuOpen(false)}
-          className="md:hidden"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 39,
-          }}
-        />
+      {/* ══════════════════════════════════════════════════════════
+          DESKTOP SIDEBAR — only rendered when not mobile
+          No Tailwind classes needed; pure JS conditional render.
+      ══════════════════════════════════════════════════════════ */}
+      {!isMobile && (
+        <aside style={SIDEBAR_STYLE}>
+          <SidebarBrand />
+          <nav style={{ flex: 1, overflowY: "auto" }}>
+            <NavList pathname={pathname} />
+          </nav>
+          <UserFooter user={user} onLogout={handleLogout} />
+        </aside>
       )}
 
-      {/* ════════ MOBILE DRAWER (MOBILE ONLY) ════════ */}
-      <div
-        className="md:hidden"
-        style={{
-          position: "fixed",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 240,
-          background: "var(--theme-sidebar-gradient)",
-          borderRight: "1px solid rgba(255,255,255,0.05)",
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 40,
-          transform: mobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-          overflowY: "auto",
-        }}
-      >
-        {/* Logo */}
-        <div style={{
-          padding: "0 20px",
-          height: 60,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          flexShrink: 0,
-        }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>
-            Digital Knowledge
-          </p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2, marginBottom: 0 }}>
-            Academic Portal
-          </p>
-        </div>
-
-        {/* Mobile Nav items */}
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {APP_NAV.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMobileMenuOpen(false)}
-                style={{ textDecoration: "none" }}
-              >
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "12px 12px", borderRadius: 6, marginBottom: 4,
-                  fontSize: 14,
-                  fontWeight: active ? 600 : 500,
-                  color: active ? "#ffffff" : "rgba(255,255,255,0.7)",
-                  background: active ? "var(--avatar-theme-color)" : "transparent",
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                }}>
-                  <Icon size={16} />
-                  <span>{label}</span>
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Mobile User info + sign out */}
-        {user && (
-          <div style={{ padding: "12px 12px 16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: "50%",
-                background: "#ffffff", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, color: "#111827",
-              }}>
-                {user.name?.[0]?.toUpperCase()}
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#ffffff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {user.name}
-                </p>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0, textTransform: "capitalize" }}>
-                  {user.role?.replace("_", " ")}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                handleLogout();
-                setMobileMenuOpen(false);
-              }}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 7,
-                padding: "10px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
-                background: "transparent", cursor: "pointer",
-                fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)",
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#ffffff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-            >
-              <LogOut size={14} /> Sign Out
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ════════ MAIN COLUMN ════════ */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-
-        {/* ── TOP BAR ── */}
-        <header style={{
-          height: 60, background: "#ffffff",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex", alignItems: "center",
-          padding: "0 16px", gap: 12, flexShrink: 0,
-          position: "sticky", top: 0, zIndex: 30,
-        }}>
-          {/* Hamburger menu - Mobile only */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 40,
-              height: 40,
-              background: "#f3f4f6",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              color: "#374151",
-              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-              flexShrink: 0,
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#e5e7eb";
-              e.currentTarget.style.color = "var(--avatar-theme-color, #111827)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#f3f4f6";
-              e.currentTarget.style.color = "#374151";
-            }}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-
-
-          {/* Extra actions slot */}
-          {topbarActions && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {topbarActions}
-            </div>
+      {/* ══════════════════════════════════════════════════════════
+          MOBILE DRAWER — only rendered when mobile
+          position:fixed drawer is safe since there is NO wrapper
+          div with display:none that could hide fixed children.
+      ══════════════════════════════════════════════════════════ */}
+      {isMobile && (
+        <>
+          {/* Backdrop */}
+          {open && (
+            <div
+              onClick={closeDrawer}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 39 }}
+            />
           )}
 
+          {/* Slide-in drawer */}
+          <div style={{
+            position: "fixed", left: 0, top: 0, width: 270, height: "100dvh",
+            background: "var(--theme-sidebar-gradient)",
+            borderRight: "none",
+            borderRadius: "0 18px 18px 0",
+            boxShadow: "4px 0 32px rgba(0,0,0,0.22)",
+            overflow: "hidden",
+            display: "flex", flexDirection: "column",
+            zIndex: 40,
+            transform: open ? "translateX(0)" : "translateX(-100%)",
+            transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+          }}>
+            <SidebarBrand onClose={closeDrawer} />
+
+            {/* Nav items — fills the remaining space */}
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              <NavList pathname={pathname} onNav={closeDrawer} />
+            </div>
+
+            <UserFooter user={user} onLogout={() => { handleLogout(); closeDrawer(); }} />
+          </div>
+        </>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════
+          MAIN CONTENT AREA
+      ══════════════════════════════════════════════════════════ */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+
+        {/* TOP BAR */}
+        <header style={{
+          height: 64, background: "#fff", borderBottom: "1px solid #e5e7eb",
+          display: "flex", alignItems: "center", padding: "0 20px", gap: 10,
+          flexShrink: 0, position: "sticky", top: 0, zIndex: 30,
+        }}>
+
+          {/* Hamburger — only rendered on mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setOpen(!open)}
+              aria-label="Open navigation"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 38, height: 38, flexShrink: 0,
+                background: "#f3f4f6", border: "none", borderRadius: 8,
+                cursor: "pointer", color: "#374151",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
+            >
+              <Menu size={20} />
+            </button>
+          )}
+
+          {topbarSearch}
+          {topbarActions}
+
           {/* Right icons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
-            {/* Bell */}
-            <Link href="/notifications" style={{
-              position: "relative", width: 40, height: 40, borderRadius: 8,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none",
-            }}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+            <Link
+              href="/notifications"
+              style={{ position: "relative", width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
               onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
               <Bell size={18} color="#6b7280" />
               {unreadCount > 0 && (
-                <span style={{
-                  position: "absolute", top: 4, right: 4,
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: "#ef4444", border: "2px solid #fff",
-                }} />
+                <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
               )}
             </Link>
 
-            {/* Wishlist - Hide on very small mobile */}
-            <Link href="/library/wishlist" title="My Wishlist" className="hidden sm:flex" style={{
-              width: 40, height: 40, borderRadius: 8,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none",
-            }}
+            <Link
+              href="/library/wishlist"
+              style={{ width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
               onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
               <Heart size={18} color="#6b7280" />
             </Link>
 
-            {/* Avatar */}
-            <Link href="/profile" title="View Profile" style={{ textDecoration: "none", display: "flex" }}>
+            <Link href="/profile" style={{ textDecoration: "none", marginLeft: 2 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: "50%",
+                width: 34, height: 34, borderRadius: "50%",
                 background: "var(--avatar-theme-color)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
@@ -376,8 +324,8 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           </div>
         </header>
 
-        {/* ── PAGE CONTENT ── */}
-        <main style={{ flex: 1, overflowY: "auto" }}>
+        {/* PAGE CONTENT */}
+        <main key={pathname} className="dkp-page-enter" style={{ flex: 1, overflowY: "auto" }}>
           {children}
         </main>
       </div>

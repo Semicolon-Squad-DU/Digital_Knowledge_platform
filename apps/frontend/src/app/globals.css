@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Page transition ─────────────────────────────────────── */
+@keyframes dkp-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.dkp-page-enter {
+  animation: dkp-fade-in 0.18s ease both;
+}
+
 /* ── Hide ALL browser-native password reveal buttons ─────── */
 
 /* Edge / IE */
@@ -199,10 +208,11 @@ input[type="password"]::-moz-reveal {
   }
 
   .page-title {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 22px;
+    font-weight: 700;
     line-height: 1.25;
-    color: var(--color-fg-default);
+    letter-spacing: -0.025em;
+    color: #0f1117;
   }
 
   .page-subtitle {

@@ -83,6 +83,7 @@ export default function SubmitProjectPage() {
     register,
     control,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -92,6 +93,9 @@ export default function SubmitProjectPage() {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "team_members" });
+
+  const ABSTRACT_MIN = 50;
+  const abstractLen  = (watch("abstract") ?? "").length;
 
   // PDF dropzone
   const onDrop = useCallback((accepted: File[], rejected: any[]) => {
@@ -181,20 +185,17 @@ export default function SubmitProjectPage() {
         {/* Page heading */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{
-            fontSize: 40,
+            fontSize: 32,
             fontWeight: 800,
-            fontFamily: "'Inter', -apple-system, sans-serif",
-            background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, color-mix(in srgb, var(--avatar-theme-color) 40%, #fff) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            margin: 0,
+            color: "#0f1117",
+            letterSpacing: "-0.025em",
             lineHeight: 1.2,
-            display: "inline-block"
+            margin: "0 0 6px",
           }}>
             Submit Project
           </h1>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
-            Submit your project for advisor review and showcase publication
+          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+            Submit your project for advisor review and showcase publication.
           </p>
         </div>
 
@@ -227,15 +228,55 @@ export default function SubmitProjectPage() {
                 error={errors.title?.message}
                 {...register("title")}
               />
-              <Textarea
-                label="Abstract"
-                required
-                rows={5}
-                placeholder="Describe your project, its objectives, methodology, and outcomes…"
-                hint="Minimum 50 characters"
-                error={errors.abstract?.message}
-                {...register("abstract")}
-              />
+              {/* Abstract with live character counter */}
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+                  Project Description <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <textarea
+                  rows={6}
+                  placeholder="Describe your project — its objectives, methodology, and key outcomes…"
+                  {...register("abstract")}
+                  style={{
+                    width: "100%", padding: "11px 14px", borderRadius: 8,
+                    border: `1.5px solid ${errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#d1d5db"}`,
+                    fontSize: 14, fontFamily: "inherit", lineHeight: 1.7,
+                    resize: "vertical", outline: "none", boxSizing: "border-box",
+                    color: "#111827", background: "#fff",
+                    transition: "border-color 0.15s",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = abstractLen >= ABSTRACT_MIN ? "#16a34a" : "var(--avatar-theme-color, #2563eb)"; }}
+                  onBlur={e  => { e.target.style.borderColor = errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#d1d5db"; }}
+                />
+
+                {/* Counter row */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+                  <span style={{ fontSize: 12, color: errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#6b7280" }}>
+                    {errors.abstract
+                      ? errors.abstract.message
+                      : abstractLen >= ABSTRACT_MIN
+                        ? "✓ Looks good"
+                        : `${ABSTRACT_MIN - abstractLen} more character${ABSTRACT_MIN - abstractLen === 1 ? "" : "s"} needed`}
+                  </span>
+                  <span style={{
+                    fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums",
+                    color: abstractLen === 0 ? "#9ca3af" : abstractLen < ABSTRACT_MIN ? "#dc2626" : "#16a34a",
+                  }}>
+                    {abstractLen}
+                    <span style={{ fontWeight: 400, color: "#9ca3af" }}> / {ABSTRACT_MIN}</span>
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ height: 3, background: "#f3f4f6", borderRadius: 2, marginTop: 5, overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", borderRadius: 2,
+                    width: `${Math.min((abstractLen / ABSTRACT_MIN) * 100, 100)}%`,
+                    background: abstractLen < ABSTRACT_MIN ? "#f59e0b" : "#16a34a",
+                    transition: "width 0.1s ease, background 0.3s ease",
+                  }} />
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Department"

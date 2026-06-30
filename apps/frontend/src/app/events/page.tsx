@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useAuthStore } from "@/store/auth.store";
 import {
   useEventsList,
@@ -31,6 +32,7 @@ import toast from "react-hot-toast";
 
 export default function EventsPage() {
   const { user } = useAuthStore();
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: events = [], isLoading: eventsLoading } = useEventsList();
 
   const { mutateAsync: createEvent } = useCreateEvent();
@@ -120,61 +122,45 @@ export default function EventsPage() {
 
   return (
     <AppLayout>
-      <div style={{
-        fontFamily: "'Inter', sans-serif",
-        background: "#f8fafc",
-        minHeight: "calc(100vh - 56px)",
-        padding: "40px 24px"
-      }}>
-        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+      <div style={{ background: "#f0f2f5", minHeight: "100%", fontFamily: "'Inter', sans-serif" }}>
 
-          {/* ── HEADER ── */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div>
-              <h1
-                id="events-page-title"
-                style={{
-                  fontSize: "40px",
-                  fontWeight: 800,
-                  background: "var(--theme-gradient-160)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  margin: "0 0 6px",
-                  letterSpacing: "-0.02em"
-                }}
-              >
-                Academic Seminars & Events
-              </h1>
-              <p style={{ fontSize: "14px", color: "var(--color-fg-muted, #64748b)", margin: 0 }}>
-                Browse listings of university academic seminars, RSVP to book a seat, and access materials.
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Calendar size={19} color="var(--avatar-theme-color, #6366f1)" />
+                </div>
+                <h1 id="events-page-title" style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                  Events
+                </h1>
+              </div>
+              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+                Academic seminars &amp; talks — RSVP to book your seat
               </p>
             </div>
-            
             {canCreate && (
               <button
                 id="create-event-btn"
                 onClick={() => setCreateModal(true)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "10px 20px",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  background: "var(--theme-gradient-160)",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  transition: "all 0.2s"
-                }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 9, cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0 }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
               >
-                <PlusCircle size={16} />
-                Create Seminar Event
+                <PlusCircle size={15} /> Create Event
               </button>
             )}
           </div>
+        </div>
+
+        {/* ── Content ─────────────────────────────────────────────────────────── */}
+        <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
+        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
 
           {/* ── EVENT LISTINGS ── */}
           {eventsLoading ? (
@@ -199,7 +185,7 @@ export default function EventsPage() {
               </p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "24px" }}>
               {events.map((event) => {
                 const dateStr = new Date(event.scheduled_at).toLocaleString("en-GB", {
                   weekday: "short",
@@ -412,6 +398,7 @@ export default function EventsPage() {
             </div>
           )}
 
+        </div>
         </div>
       </div>
 
