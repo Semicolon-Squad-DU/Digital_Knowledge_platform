@@ -13,13 +13,13 @@ import { useNotifications } from "@/features/notifications/hooks/useNotification
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export const APP_NAV = [
-  { label: "Dashboard",   href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive",     href: "/archive",   icon: Archive },
-  { label: "Research",    href: "/research",  icon: FlaskConical },
-  { label: "Submissions", href: "/showcase",  icon: Send },
-  { label: "Library",     href: "/library",   icon: BookOpen },
-  { label: "Events",      href: "/events",    icon: Calendar },
-  { label: "Admin",       href: "/admin",     icon: ShieldCheck },
+  { label: "Dashboard",   guestLabel: undefined,    href: "/dashboard", icon: LayoutDashboard, public: false },
+  { label: "Archive",     guestLabel: undefined,    href: "/archive",   icon: Archive,         public: true  },
+  { label: "Research",    guestLabel: undefined,    href: "/research",  icon: FlaskConical,    public: true  },
+  { label: "Submissions", guestLabel: "Showcase",   href: "/showcase",  icon: Send,            public: true  },
+  { label: "Library",     guestLabel: undefined,    href: "/library",   icon: BookOpen,        public: true  },
+  { label: "Events",      guestLabel: undefined,    href: "/events",    icon: Calendar,        public: false },
+  { label: "Admin",       guestLabel: undefined,    href: "/admin",     icon: ShieldCheck,     public: false },
 ];
 
 interface AppLayoutProps {
@@ -154,11 +154,64 @@ function UserFooter({ user, onLogout }: { user: any; onLogout: () => void }) {
   );
 }
 
+// ── Guest banner (shown inside sidebar when not authenticated) ────────────────
+function GuestBanner() {
+  return (
+    <div style={{
+      margin: "12px 10px 4px",
+      borderRadius: 12,
+      background: "rgba(255,255,255,0.07)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      padding: "14px 14px 12px",
+      flexShrink: 0,
+    }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: "0 0 2px", letterSpacing: "-0.01em" }}>
+        Browsing as Guest
+      </p>
+      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", margin: "0 0 12px", lineHeight: 1.5 }}>
+        Sign in to access your dashboard, events&nbsp;&amp; more.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <Link
+          href="/login"
+          style={{
+            display: "block", textAlign: "center",
+            padding: "8px 0", borderRadius: 8,
+            background: "#fff", color: "var(--avatar-theme-color, #1a1a2e)",
+            fontSize: 12.5, fontWeight: 700, textDecoration: "none",
+            transition: "opacity 0.15s",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+          onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+        >
+          Sign In
+        </Link>
+        <Link
+          href="/register"
+          style={{
+            display: "block", textAlign: "center",
+            padding: "8px 0", borderRadius: 8,
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "#fff", fontSize: 12.5, fontWeight: 600, textDecoration: "none",
+            transition: "background 0.15s",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+        >
+          Register
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ── Nav items list (reused in both sidebar and drawer) ────────────────────────
-function NavList({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
+function NavList({ pathname, isAuthenticated, onNav }: { pathname: string; isAuthenticated: boolean; onNav?: () => void }) {
+  const visibleNav = isAuthenticated ? APP_NAV : APP_NAV.filter(item => item.public);
   return (
     <div style={{ padding: "10px 8px" }}>
-      {APP_NAV.map(({ label, href, icon }) => (
+      {visibleNav.map(({ label, href, icon }) => (
         <NavLink
           key={href}
           label={label}
@@ -184,6 +237,102 @@ const SIDEBAR_STYLE: React.CSSProperties = {
   overflow: "hidden",
 };
 
+// ── Guest top navbar (replaces sidebar for unauthenticated users) ─────────────
+const GUEST_NAV = [
+  { label: "Archive",  href: "/archive"  },
+  { label: "Library",  href: "/library"  },
+  { label: "Research", href: "/research" },
+  { label: "Showcase", href: "/showcase" },
+  { label: "About",    href: "/about"    },
+];
+
+function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
+  pathname: string; isMobile: boolean; menuOpen: boolean; setMenuOpen: (v: boolean) => void;
+}) {
+  return (
+    <>
+      <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: "64px" }}>
+
+          {/* Brand — exact copy of home page */}
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <GraduationCap size={16} color="#ffffff" />
+            </div>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+          </Link>
+
+          {/* Nav links — exact copy of home page, hidden on mobile */}
+          {!isMobile && (
+            <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              {GUEST_NAV.map(({ label, href }) => {
+                const active = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: active ? "#d1d5db" : "transparent" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = active ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                  >{label}</Link>
+                );
+              })}
+            </nav>
+          )}
+
+          {/* Right: Sign In + Register (desktop) or hamburger (mobile) */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
+            {!isMobile ? (
+              <>
+                <Link
+                  href="/login"
+                  style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                >Sign In</Link>
+                <Link
+                  href="/register"
+                  style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                >Register</Link>
+              </>
+            ) : (
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px 8px", color: "#4b5563", display: "flex", alignItems: "center" }}
+              >
+                {menuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile dropdown */}
+      {isMobile && menuOpen && (
+        <div style={{ position: "fixed", top: 64, left: 0, right: 0, background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 49, padding: "10px 20px 16px" }}>
+          {GUEST_NAV.map(({ label, href }) => {
+            const active = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                style={{ display: "block", padding: "11px 14px", borderRadius: "6px", textDecoration: "none", marginBottom: 2, fontSize: "13.5px", fontWeight: 500, color: "#4b5563", background: active ? "#d1d5db" : "transparent", letterSpacing: "0.01em" }}
+              >{label}</Link>
+            );
+          })}
+          <div style={{ display: "flex", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid #d1d5db" }}>
+            <Link href="/login" style={{ flex: 1, textAlign: "center", padding: "9px 0", borderRadius: "8px", border: "1.5px solid #d1d5db", fontSize: "13px", fontWeight: 600, color: "#4b5563", textDecoration: "none" }}>Sign In</Link>
+            <Link href="/register" style={{ flex: 1, textAlign: "center", padding: "9px 0", borderRadius: "8px", fontSize: "13px", fontWeight: 600, color: "#fff", background: "var(--avatar-theme-color, #111827)", textDecoration: "none" }}>Register</Link>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutProps) {
   const pathname        = usePathname();
@@ -198,86 +347,69 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
   const handleLogout = async () => { await logout(); router.push("/"); };
   const closeDrawer = () => setOpen(false);
 
+  /* ── GUEST LAYOUT: full-width with top navbar ── */
+  if (!isAuthenticated) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f0f2f5" }}>
+        <GuestTopNav pathname={pathname} isMobile={isMobile} menuOpen={open} setMenuOpen={setOpen} />
+        <main key={pathname} className="dkp-page-enter" style={{ flex: 1 }}>
+          {children}
+        </main>
+      </div>
+    );
+  }
+
+  /* ── AUTHENTICATED LAYOUT: sidebar + topbar ── */
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f0f2f5" }}>
 
-      {/* ══════════════════════════════════════════════════════════
-          DESKTOP SIDEBAR — only rendered when not mobile
-          No Tailwind classes needed; pure JS conditional render.
-      ══════════════════════════════════════════════════════════ */}
+      {/* DESKTOP SIDEBAR */}
       {!isMobile && (
         <aside style={SIDEBAR_STYLE}>
           <SidebarBrand />
           <nav style={{ flex: 1, overflowY: "auto" }}>
-            <NavList pathname={pathname} />
+            <NavList pathname={pathname} isAuthenticated={isAuthenticated} />
           </nav>
           <UserFooter user={user} onLogout={handleLogout} />
         </aside>
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          MOBILE DRAWER — only rendered when mobile
-          position:fixed drawer is safe since there is NO wrapper
-          div with display:none that could hide fixed children.
-      ══════════════════════════════════════════════════════════ */}
+      {/* MOBILE DRAWER */}
       {isMobile && (
         <>
-          {/* Backdrop */}
           {open && (
-            <div
-              onClick={closeDrawer}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 39 }}
-            />
+            <div onClick={closeDrawer} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 39 }} />
           )}
-
-          {/* Slide-in drawer */}
           <div style={{
             position: "fixed", left: 0, top: 0, width: 270, height: "100dvh",
             background: "var(--theme-sidebar-gradient)",
-            borderRight: "none",
-            borderRadius: "0 18px 18px 0",
-            boxShadow: "4px 0 32px rgba(0,0,0,0.22)",
-            overflow: "hidden",
-            display: "flex", flexDirection: "column",
-            zIndex: 40,
+            borderRight: "none", borderRadius: "0 18px 18px 0",
+            boxShadow: "4px 0 32px rgba(0,0,0,0.22)", overflow: "hidden",
+            display: "flex", flexDirection: "column", zIndex: 40,
             transform: open ? "translateX(0)" : "translateX(-100%)",
             transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
           }}>
             <SidebarBrand onClose={closeDrawer} />
-
-            {/* Nav items — fills the remaining space */}
             <div style={{ flex: 1, overflowY: "auto" }}>
-              <NavList pathname={pathname} onNav={closeDrawer} />
+              <NavList pathname={pathname} isAuthenticated={isAuthenticated} onNav={closeDrawer} />
             </div>
-
             <UserFooter user={user} onLogout={() => { handleLogout(); closeDrawer(); }} />
           </div>
         </>
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          MAIN CONTENT AREA
-      ══════════════════════════════════════════════════════════ */}
+      {/* MAIN CONTENT AREA */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-
-        {/* TOP BAR */}
         <header style={{
           height: 64, background: "#fff", borderBottom: "1px solid #e5e7eb",
           display: "flex", alignItems: "center", padding: "0 20px", gap: 10,
           flexShrink: 0, position: "sticky", top: 0, zIndex: 30,
         }}>
-
-          {/* Hamburger — only rendered on mobile */}
           {isMobile && (
             <button
               onClick={() => setOpen(!open)}
               aria-label="Open navigation"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 38, height: 38, flexShrink: 0,
-                background: "#f3f4f6", border: "none", borderRadius: 8,
-                cursor: "pointer", color: "#374151",
-              }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, flexShrink: 0, background: "#f3f4f6", border: "none", borderRadius: 8, cursor: "pointer", color: "#374151" }}
               onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
               onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
             >
@@ -288,74 +420,34 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           {topbarSearch}
           {topbarActions}
 
-          {/* Right icons — auth-aware */}
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-            {isAuthenticated ? (
-              <>
-                <Link
-                  href="/notifications"
-                  style={{ position: "relative", width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <Bell size={18} color="#6b7280" />
-                  {unreadCount > 0 && (
-                    <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
-                  )}
-                </Link>
-
-                <Link
-                  href="/library/wishlist"
-                  style={{ width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <Heart size={18} color="#6b7280" />
-                </Link>
-
-                <Link href="/profile" style={{ textDecoration: "none", marginLeft: 2 }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: "50%",
-                    background: "var(--avatar-theme-color)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
-                  }}>
-                    {user?.name?.[0]?.toUpperCase() ?? "U"}
-                  </div>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  style={{
-                    padding: "7px 16px", fontSize: 13, fontWeight: 500,
-                    color: "#374151", textDecoration: "none",
-                    borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#f9fafb"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  style={{
-                    padding: "7px 16px", fontSize: 13, fontWeight: 600,
-                    color: "#fff", textDecoration: "none",
-                    borderRadius: 7, background: "var(--avatar-theme-color, #1a1a2e)",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-                >
-                  Register
-                </Link>
-              </>
-            )}
+            <Link
+              href="/notifications"
+              style={{ position: "relative", width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              <Bell size={18} color="#6b7280" />
+              {unreadCount > 0 && (
+                <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
+              )}
+            </Link>
+            <Link
+              href="/library/wishlist"
+              style={{ width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              <Heart size={18} color="#6b7280" />
+            </Link>
+            <Link href="/profile" style={{ textDecoration: "none", marginLeft: 2 }}>
+              <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
+                {user?.name?.[0]?.toUpperCase() ?? "U"}
+              </div>
+            </Link>
           </div>
         </header>
 
-        {/* PAGE CONTENT */}
         <main key={pathname} className="dkp-page-enter" style={{ flex: 1, overflowY: "auto" }}>
           {children}
         </main>
