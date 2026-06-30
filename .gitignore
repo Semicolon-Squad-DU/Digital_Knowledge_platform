@@ -6,6 +6,7 @@ build/
 .env.local
 .env.*.local
 *.log
+logs/
 coverage/
 .DS_Store
 uploads/
