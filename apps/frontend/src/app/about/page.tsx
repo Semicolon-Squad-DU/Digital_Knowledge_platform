@@ -1,67 +1,107 @@
 "use client";
 
+import { useState, useLayoutEffect } from "react";
 import Link from "next/link";
-import { Archive, BookOpen, FlaskConical, Star, Users, Target, Lightbulb, ArrowRight, GraduationCap } from "lucide-react";
+import { Archive, BookOpen, FlaskConical, Star, Users, Target, Lightbulb, ArrowRight, GraduationCap, X, Menu } from "lucide-react";
+
+const ABOUT_NAV = [
+  { label: "Archive",  href: "/archive"  },
+  { label: "Library",  href: "/library"  },
+  { label: "Research", href: "/research" },
+  { label: "Showcase", href: "/showcase" },
+  { label: "About",    href: "/about"    },
+];
 
 export default function AboutPage() {
+  const [menuOpen, setMenuOpen]   = useState(false);
+  const [isMobile, setIsMobile]   = useState(false);
+
+  useLayoutEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
         .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-weight:normal; font-style:normal; font-size:24px; line-height:1; letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap; direction:ltr; -webkit-font-smoothing:antialiased; }
       `}} />
 
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
-        
+
         {/* ── NAVBAR ── */}
         <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: "64px" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
             {/* Brand */}
             <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-              <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <GraduationCap size={16} color="#ffffff" />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>DKP</span>
             </Link>
 
-            {/* Nav links */}
-            <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {[
-                { label: "Archive",  href: "/archive"  },
-                { label: "Library",  href: "/library"  },
-                { label: "Research", href: "/research" },
-                { label: "Showcase", href: "/showcase" },
-                { label: "About",    href: "/about"    },
-              ].map((item) => (
+            {isMobile ? (
+              /* Mobile: hamburger */
+              <button
+                onClick={() => setMenuOpen(true)}
+                aria-label="Open menu"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827" }}
+              >
+                <Menu size={22} />
+              </button>
+            ) : (
+              /* Desktop: nav + auth */
+              <>
+                <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  {ABOUT_NAV.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: item.href === "/about" ? "#d1d5db" : "transparent" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = item.href === "/about" ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                    >{item.label}</Link>
+                  ))}
+                </nav>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em" }} onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}>Sign In</Link>
+                  <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", background: "#111827", borderRadius: "8px", textDecoration: "none", letterSpacing: "0.01em" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>Register</Link>
+                </div>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* Full-screen mobile menu */}
+        {menuOpen && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#eaecef", zIndex: 200, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", borderBottom: "1px solid #d1d5db", flexShrink: 0 }}>
+              <Link href="/" onClick={() => setMenuOpen(false)} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <GraduationCap size={16} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>DKP</span>
+              </Link>
+              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "#111827", display: "flex", alignItems: "center" }}>
+                <X size={24} strokeWidth={2} />
+              </button>
+            </div>
+            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "4px" }}>
+              {ABOUT_NAV.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: item.href === "/about" ? "#d1d5db" : "transparent" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = item.href === "/about" ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: "block", padding: "10px 14px", fontSize: "13.5px", fontWeight: 500, color: "#111827", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", background: item.href === "/about" ? "#d1d5db" : "transparent" }}
                 >{item.label}</Link>
               ))}
-            </nav>
-
-            {/* Auth buttons */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-              <Link
-                href="/login"
-                style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
-              >Sign In</Link>
-              <Link
-                href="/register"
-                style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "var(--avatar-theme-color, #111827)", borderRadius: "8px", textDecoration: "none", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-              >Register</Link>
             </div>
           </div>
-        </header>
+        )}
 
         {/* ── HERO SECTION ── */}
         <section style={{ background: "var(--theme-sidebar-gradient, linear-gradient(135deg, #000000 0%, #2d2533 100%))", padding: "80px 32px", color: "#ffffff", transition: "background 0.3s ease" }}>

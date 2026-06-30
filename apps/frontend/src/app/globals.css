@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Mobile header controls ──────────────────────────────── */
+.dkp-nav-desktop  { display: flex !important; }
+.dkp-hamburger    { display: none !important; }
+.dkp-auth-desktop { display: inline-flex !important; }
+.dkp-stats-row    { display: flex; gap: 24px; flex-shrink: 0; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .dkp-nav-desktop  { display: none !important; }
+  .dkp-hamburger    { display: flex !important; align-items: center; justify-content: center; }
+  .dkp-auth-desktop { display: none !important; }
+  .dkp-stats-row    { width: 100%; justify-content: center; gap: 40px; margin-top: 16px; }
+}
+
 /* ── Page transition ─────────────────────────────────────── */
 @keyframes dkp-fade-in {
   from { opacity: 0; transform: translateY(6px); }

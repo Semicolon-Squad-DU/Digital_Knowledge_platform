@@ -154,58 +154,6 @@ function UserFooter({ user, onLogout }: { user: any; onLogout: () => void }) {
   );
 }
 
-// ── Guest banner (shown inside sidebar when not authenticated) ────────────────
-function GuestBanner() {
-  return (
-    <div style={{
-      margin: "12px 10px 4px",
-      borderRadius: 12,
-      background: "rgba(255,255,255,0.07)",
-      border: "1px solid rgba(255,255,255,0.12)",
-      padding: "14px 14px 12px",
-      flexShrink: 0,
-    }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: "0 0 2px", letterSpacing: "-0.01em" }}>
-        Browsing as Guest
-      </p>
-      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", margin: "0 0 12px", lineHeight: 1.5 }}>
-        Sign in to access your dashboard, events&nbsp;&amp; more.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-        <Link
-          href="/login"
-          style={{
-            display: "block", textAlign: "center",
-            padding: "8px 0", borderRadius: 8,
-            background: "#fff", color: "var(--avatar-theme-color, #1a1a2e)",
-            fontSize: 12.5, fontWeight: 700, textDecoration: "none",
-            transition: "opacity 0.15s",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
-          onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-        >
-          Sign In
-        </Link>
-        <Link
-          href="/register"
-          style={{
-            display: "block", textAlign: "center",
-            padding: "8px 0", borderRadius: 8,
-            background: "rgba(255,255,255,0.12)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            color: "#fff", fontSize: 12.5, fontWeight: 600, textDecoration: "none",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
-        >
-          Register
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 // ── Nav items list (reused in both sidebar and drawer) ────────────────────────
 function NavList({ pathname, isAuthenticated, onNav }: { pathname: string; isAuthenticated: boolean; onNav?: () => void }) {
   const visibleNav = isAuthenticated ? APP_NAV : APP_NAV.filter(item => item.public);
@@ -246,86 +194,87 @@ const GUEST_NAV = [
   { label: "About",    href: "/about"    },
 ];
 
+function GuestBrand() {
+  return (
+    <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+      <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <GraduationCap size={16} color="#ffffff" />
+      </div>
+      <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+    </Link>
+  );
+}
+
 function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
   pathname: string; isMobile: boolean; menuOpen: boolean; setMenuOpen: (v: boolean) => void;
 }) {
   return (
     <>
+      {/* Top bar */}
       <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: "64px" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
-          {/* Brand — exact copy of home page */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <GraduationCap size={16} color="#ffffff" />
-            </div>
-            <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
-          </Link>
+          <GuestBrand />
 
-          {/* Nav links — exact copy of home page, hidden on mobile */}
-          {!isMobile && (
-            <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {GUEST_NAV.map(({ label, href }) => {
-                const active = pathname === href || pathname.startsWith(href + "/");
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: active ? "#d1d5db" : "transparent" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = active ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
-                  >{label}</Link>
-                );
-              })}
-            </nav>
+          {isMobile ? (
+            /* Hamburger */
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827" }}
+            >
+              <Menu size={22} />
+            </button>
+          ) : (
+            /* Desktop: center nav + right auth */
+            <>
+              <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                {GUEST_NAV.map(({ label, href }) => {
+                  const active = pathname === href || pathname.startsWith(href + "/");
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: active ? "#d1d5db" : "transparent" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = active ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                    >{label}</Link>
+                  );
+                })}
+              </nav>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}>Sign In</Link>
+                <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>Register</Link>
+              </div>
+            </>
           )}
-
-          {/* Right: Sign In + Register (desktop) or hamburger (mobile) */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-            {!isMobile ? (
-              <>
-                <Link
-                  href="/login"
-                  style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
-                >Sign In</Link>
-                <Link
-                  href="/register"
-                  style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-                >Register</Link>
-              </>
-            ) : (
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px 8px", color: "#4b5563", display: "flex", alignItems: "center" }}
-              >
-                {menuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            )}
-          </div>
         </div>
       </header>
 
-      {/* Mobile dropdown */}
-      {isMobile && menuOpen && (
-        <div style={{ position: "fixed", top: 64, left: 0, right: 0, background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 49, padding: "10px 20px 16px" }}>
-          {GUEST_NAV.map(({ label, href }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMenuOpen(false)}
-                style={{ display: "block", padding: "11px 14px", borderRadius: "6px", textDecoration: "none", marginBottom: 2, fontSize: "13.5px", fontWeight: 500, color: "#4b5563", background: active ? "#d1d5db" : "transparent", letterSpacing: "0.01em" }}
-              >{label}</Link>
-            );
-          })}
-          <div style={{ display: "flex", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid #d1d5db" }}>
-            <Link href="/login" style={{ flex: 1, textAlign: "center", padding: "9px 0", borderRadius: "8px", border: "1.5px solid #d1d5db", fontSize: "13px", fontWeight: 600, color: "#4b5563", textDecoration: "none" }}>Sign In</Link>
-            <Link href="/register" style={{ flex: 1, textAlign: "center", padding: "9px 0", borderRadius: "8px", fontSize: "13px", fontWeight: 600, color: "#fff", background: "var(--avatar-theme-color, #111827)", textDecoration: "none" }}>Register</Link>
+      {/* Full-screen mobile menu */}
+      {menuOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#eaecef", zIndex: 200, display: "flex", flexDirection: "column" }}>
+          {/* Menu top bar */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", borderBottom: "1px solid #d1d5db", flexShrink: 0 }}>
+            <GuestBrand />
+            <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ display: "flex", alignItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "#111827" }}>
+              <X size={24} strokeWidth={2} />
+            </button>
+          </div>
+
+          {/* Nav links — same style as desktop navbar */}
+          <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "4px" }}>
+            {GUEST_NAV.map(({ label, href }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: "block", padding: "10px 14px", fontSize: "13.5px", fontWeight: 500, color: "#111827", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", background: active ? "#d1d5db" : "transparent" }}
+                >{label}</Link>
+              );
+            })}
           </div>
         </div>
       )}
