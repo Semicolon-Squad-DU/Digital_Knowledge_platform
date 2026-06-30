@@ -212,8 +212,8 @@ export default function HomePage() {
                     >{item.label}</Link>
                   ))}
                 </nav>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  {isAuthenticated ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: "170px" }}>
+                  {isAuthenticated && (
                     <button
                       onClick={handleLogout}
                       style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
@@ -222,11 +222,6 @@ export default function HomePage() {
                     >
                       <LogOut size={13} /> Sign Out
                     </button>
-                  ) : (
-                    <>
-                      <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}>Sign In</Link>
-                      <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em", transition: "all 0.2s" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>Register</Link>
-                    </>
                   )}
                 </div>
               </>
