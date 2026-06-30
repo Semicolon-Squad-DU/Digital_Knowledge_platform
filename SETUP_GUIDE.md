@@ -140,4 +140,18 @@ Ask your team lead or check the project documentation in `document.md`.
 
 ---
 
+## Known: Supabase `users` table schema
+
+The live `public.users` table on Supabase contains ~50 extra columns beyond what `init.sql` defines
+(`encrypted_password`, `is_super_admin`, `banned_until`, `is_anonymous`, etc.). These are Supabase
+Auth internal columns added automatically when the project was provisioned — **they are not a code bug**.
+
+All backend queries explicitly name their columns rather than using `SELECT *`, so the extra columns
+are invisible at the application layer and auth continues to work normally. **Do not drop these columns
+— they are managed by Supabase's own Auth service.**
+
+If you ever need a fresh Supabase project, apply `apps/backend/src/core/db/init.sql` first, then
+run `db:migrate` for each incremental migration file in `src/core/db/migrations/`.
+
 **Last Updated:** April 24, 2026
+
