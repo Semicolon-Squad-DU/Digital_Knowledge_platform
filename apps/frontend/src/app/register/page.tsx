@@ -13,13 +13,12 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 
 // ── Role options ──────────────────────────────────────────────────────────────
+// Only non-privileged roles are available for self-service registration.
+// Archivist / librarian / admin accounts are created by an admin via the admin panel.
 const ROLES = [
   { value: "member",         label: "Member",         desc: "Browse and access published content" },
   { value: "student_author", label: "Student Author",  desc: "Submit projects to the showcase" },
   { value: "researcher",     label: "Researcher",      desc: "Publish research outputs and manage labs" },
-  { value: "archivist",      label: "Archivist",       desc: "Upload and manage archive documents" },
-  { value: "librarian",      label: "Librarian",       desc: "Manage library catalog and lending" },
-  { value: "admin",          label: "Admin",           desc: "Full platform access and user management" },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
 

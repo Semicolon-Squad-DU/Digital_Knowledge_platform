@@ -13,13 +13,14 @@ import { useNotifications } from "@/features/notifications/hooks/useNotification
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export const APP_NAV = [
-  { label: "Dashboard",   guestLabel: undefined,    href: "/dashboard", icon: LayoutDashboard, public: false },
-  { label: "Archive",     guestLabel: undefined,    href: "/archive",   icon: Archive,         public: true  },
-  { label: "Research",    guestLabel: undefined,    href: "/research",  icon: FlaskConical,    public: true  },
-  { label: "Submissions", guestLabel: "Showcase",   href: "/showcase",  icon: Send,            public: true  },
-  { label: "Library",     guestLabel: undefined,    href: "/library",   icon: BookOpen,        public: true  },
-  { label: "Events",      guestLabel: undefined,    href: "/events",    icon: Calendar,        public: false },
-  { label: "Admin",       guestLabel: undefined,    href: "/admin",     icon: ShieldCheck,     public: false },
+  { label: "Dashboard",   guestLabel: undefined,    href: "/dashboard",  icon: LayoutDashboard, public: false, roles: undefined },
+  { label: "Archive",     guestLabel: undefined,    href: "/archive",    icon: Archive,         public: true,  roles: undefined },
+  { label: "Research",    guestLabel: undefined,    href: "/research",   icon: FlaskConical,    public: true,  roles: undefined },
+  { label: "Submissions", guestLabel: "Showcase",   href: "/showcase",   icon: Send,            public: true,  roles: undefined },
+  { label: "Library",     guestLabel: undefined,    href: "/library",    icon: BookOpen,        public: true,  roles: undefined },
+  { label: "Events",      guestLabel: undefined,    href: "/events",     icon: Calendar,        public: false, roles: undefined },
+  { label: "Librarian",   guestLabel: undefined,    href: "/librarian",  icon: BookOpen,        public: false, roles: ["librarian", "admin"] as string[] },
+  { label: "Admin",       guestLabel: undefined,    href: "/admin",      icon: ShieldCheck,     public: false, roles: ["admin"] as string[] },
 ];
 
 interface AppLayoutProps {
@@ -155,8 +156,12 @@ function UserFooter({ user, onLogout }: { user: any; onLogout: () => void }) {
 }
 
 // ── Nav items list (reused in both sidebar and drawer) ────────────────────────
-function NavList({ pathname, isAuthenticated, onNav }: { pathname: string; isAuthenticated: boolean; onNav?: () => void }) {
-  const visibleNav = isAuthenticated ? APP_NAV : APP_NAV.filter(item => item.public);
+function NavList({ pathname, isAuthenticated, role, onNav }: { pathname: string; isAuthenticated: boolean; role?: string; onNav?: () => void }) {
+  const visibleNav = APP_NAV.filter(item => {
+    if (!isAuthenticated) return item.public;
+    if (item.roles) return item.roles.includes(role ?? "");
+    return true;
+  });
   return (
     <div style={{ padding: "10px 8px" }}>
       {visibleNav.map(({ label, href, icon }) => (
@@ -317,7 +322,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
         <aside style={SIDEBAR_STYLE}>
           <SidebarBrand />
           <nav style={{ flex: 1, overflowY: "auto" }}>
-            <NavList pathname={pathname} isAuthenticated={isAuthenticated} />
+            <NavList pathname={pathname} isAuthenticated={isAuthenticated} role={user?.role} />
           </nav>
           <UserFooter user={user} onLogout={handleLogout} />
         </aside>
@@ -340,7 +345,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           }}>
             <SidebarBrand onClose={closeDrawer} />
             <div style={{ flex: 1, overflowY: "auto" }}>
-              <NavList pathname={pathname} isAuthenticated={isAuthenticated} onNav={closeDrawer} />
+              <NavList pathname={pathname} isAuthenticated={isAuthenticated} role={user?.role} onNav={closeDrawer} />
             </div>
             <UserFooter user={user} onLogout={() => { handleLogout(); closeDrawer(); }} />
           </div>
