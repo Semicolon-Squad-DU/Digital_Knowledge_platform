@@ -94,6 +94,14 @@ export default function RegisterPage() {
   const [agreed,        setAgreed]        = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
 
+  // OTP verification step
+  const [step,          setStep]          = useState<"register" | "verify" | "pending">("register");
+  const [pendingEmail,  setPendingEmail]  = useState("");
+  const [otp,           setOtp]           = useState("");
+  const [otpError,      setOtpError]      = useState("");
+  const [verifying,     setVerifying]     = useState(false);
+  const [resending,     setResending]     = useState(false);
+
   const { register, handleSubmit, formState: { errors, isSubmitting }, watch } =
     useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -104,12 +112,19 @@ export default function RegisterPage() {
     setError("");
     try {
       const res = await api.post("/auth/register", { ...data, role: selectedRole });
-      const { access_token, refresh_token, user } = res.data.data;
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-      setUser(user);
-      toast.success("Account created successfully!");
-      router.push("/dashboard");
+      const result = res.data.data;
+      if (result.requiresVerification) {
+        setPendingEmail(result.email);
+        setStep("verify");
+        toast.success(`Verification code sent to ${result.email}`);
+      } else {
+        // Fallback: direct login (dev mode without email restriction)
+        localStorage.setItem("access_token", result.access_token);
+        localStorage.setItem("refresh_token", result.refresh_token);
+        setUser(result.user);
+        toast.success("Account created successfully!");
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       const response = (err as { response?: { data?: { message?: string; errors?: { msg: string }[] } } })?.response?.data;
       if (response?.errors?.length) {
@@ -117,6 +132,42 @@ export default function RegisterPage() {
       } else {
         setError(response?.message || "Registration failed. Please try again.");
       }
+    }
+  };
+
+  const onVerifyOtp = async () => {
+    if (otp.length !== 6) { setOtpError("Enter the 6-digit code."); return; }
+    setOtpError(""); setVerifying(true);
+    try {
+      const res = await api.post("/auth/verify-email", { email: pendingEmail, otp });
+      const result = res.data.data;
+      if (result.pendingApproval) {
+        setStep("pending");
+      } else {
+        localStorage.setItem("access_token", result.access_token);
+        localStorage.setItem("refresh_token", result.refresh_token);
+        setUser(result.user);
+        toast.success("Email verified! Welcome to DKP.");
+        router.push("/dashboard");
+      }
+    } catch (err: unknown) {
+      const response = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      setOtpError(response?.message || "Invalid or expired code. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const onResend = async () => {
+    setResending(true);
+    try {
+      await api.post("/auth/resend-verification", { email: pendingEmail });
+      toast.success("New verification code sent!");
+      setOtp(""); setOtpError("");
+    } catch {
+      toast.error("Failed to resend. Please try again.");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -175,6 +226,70 @@ export default function RegisterPage() {
       toast.error("Google SDK is still loading. Please try again.");
     }
   };
+
+  /* ── OTP step ── */
+  if (step === "verify") {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8f9fa" }}>
+        <div style={{ background: "#fff", borderRadius: "14px", padding: "40px 36px", maxWidth: "420px", width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb" }}>
+          <div style={{ textAlign: "center", marginBottom: "28px" }}>
+            <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <GraduationCap size={24} color="#fff" />
+            </div>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Verify your email</h2>
+            <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+              We sent a 6-digit code to <strong>{pendingEmail}</strong>
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "20px" }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              style={{ width: "100%", textAlign: "center", fontSize: "32px", fontWeight: 800, letterSpacing: "12px", padding: "14px 12px", border: `2px solid ${otpError ? "#ef4444" : "#e5e7eb"}`, borderRadius: "10px", outline: "none" }}
+            />
+          </div>
+          {otpError && <p style={{ color: "#ef4444", fontSize: "13px", textAlign: "center", marginBottom: "12px" }}>{otpError}</p>}
+          <button
+            onClick={onVerifyOtp}
+            disabled={verifying || otp.length !== 6}
+            style={{ width: "100%", padding: "13px", background: "var(--avatar-theme-color, #111827)", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 700, cursor: otp.length === 6 ? "pointer" : "not-allowed", opacity: otp.length !== 6 ? 0.5 : 1, marginBottom: "12px" }}
+          >
+            {verifying ? "Verifying…" : "Verify & Continue"}
+          </button>
+          <div style={{ textAlign: "center" }}>
+            <button onClick={onResend} disabled={resending} style={{ background: "none", border: "none", fontSize: "13px", color: "#6b7280", cursor: "pointer", textDecoration: "underline" }}>
+              {resending ? "Sending…" : "Resend code"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Pending approval step (researcher) ── */
+  if (step === "pending") {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8f9fa" }}>
+        <div style={{ background: "#fff", borderRadius: "14px", padding: "40px 36px", maxWidth: "440px", width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb", textAlign: "center" }}>
+          <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <span style={{ fontSize: "24px" }}>⏳</span>
+          </div>
+          <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#111827", margin: "0 0 12px" }}>Awaiting approval</h2>
+          <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 24px" }}>
+            Your email is verified. Your <strong>Researcher</strong> account is now under review by the platform administrator.
+            You will receive an email at <strong>{pendingEmail}</strong> once your account is approved.
+          </p>
+          <Link href="/login" style={{ display: "inline-block", padding: "11px 28px", background: "var(--avatar-theme-color, #111827)", color: "#fff", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
+            Back to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8f9fa" }}>

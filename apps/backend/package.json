@@ -10,7 +10,8 @@
     "lint": "eslint src --ext .ts",
     "db:migrate": "node -r tsx/cjs src/core/db/migrate.ts",
     "db:seed": "node -r tsx/cjs src/core/db/seed.ts",
-    "db:test:setup": "cross-env DATABASE_URL=postgresql://dkp_test_user:dkp_test_password@localhost:5433/dkp_test node -r tsx/cjs src/core/db/migrate.ts"
+    "db:test:setup": "cross-env DATABASE_URL=postgresql://dkp_test_user:dkp_test_password@localhost:5433/dkp_test node -r tsx/cjs src/core/db/migrate.ts",
+    "db:migrate:009": "node -r tsx/cjs src/core/db/apply_migration_009.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.540.0",

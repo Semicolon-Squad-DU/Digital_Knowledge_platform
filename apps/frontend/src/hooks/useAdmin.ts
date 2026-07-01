@@ -159,6 +159,20 @@ export function useDeleteAdminUser() {
   });
 }
 
+export function useApproveUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, approved, reason }: { id: string; approved: boolean; reason?: string }) => {
+      const { data } = await api.post(`/admin/users/${id}/approve`, { approved, reason });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+    },
+  });
+}
+
 export function useAdminConfigs() {
   return useQuery({
     queryKey: ["admin", "configs"],

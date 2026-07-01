@@ -15,7 +15,8 @@ import { useAuthStore } from "@/store/auth.store";
 import {
   useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments,
   useAdminUsers, useCreateAdminUser, useUpdateAdminUser, useDeleteAdminUser,
-  useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs, useAdminHealth
+  useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs, useAdminHealth,
+  useApproveUser,
 } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/library/hooks/useLibrary";
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/features/archive/hooks/useArchive";
@@ -439,9 +440,21 @@ function UsersTab() {
     status: statusFilter,
   });
 
-  const createMutation = useCreateAdminUser();
-  const updateMutation = useUpdateAdminUser();
-  const deleteMutation = useDeleteAdminUser();
+  const createMutation  = useCreateAdminUser();
+  const updateMutation  = useUpdateAdminUser();
+  const deleteMutation  = useDeleteAdminUser();
+  const approveMutation = useApproveUser();
+
+  const pendingUsers = (usersData?.users ?? []).filter((u: any) => u.membership_status === "pending_approval");
+
+  const handleApproveUser = async (u: any, approved: boolean) => {
+    try {
+      await approveMutation.mutateAsync({ id: u.user_id, approved });
+      toast.success(approved ? `${u.name} approved — email sent.` : `${u.name} rejected.`);
+    } catch {
+      toast.error("Failed to process approval");
+    }
+  };
 
   const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -543,6 +556,32 @@ function UsersTab() {
         }
       />
 
+      {/* ── Pending Approval Banner ── */}
+      {pendingUsers.length > 0 && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: 10, padding: "14px 18px", marginBottom: 16 }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#92400e", margin: "0 0 10px" }}>
+            ⏳ {pendingUsers.length} researcher account{pendingUsers.length > 1 ? "s" : ""} awaiting approval
+          </p>
+          {pendingUsers.map((u: any) => (
+            <div key={u.user_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</span>
+                <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>{u.email}</span>
+                {u.department && <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: 6 }}>· {u.department}</span>}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => handleApproveUser(u, true)} style={{ padding: "6px 14px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  Approve
+                </button>
+                <button onClick={() => handleApproveUser(u, false)} style={{ padding: "6px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Filters - responsive */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
         <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
@@ -561,6 +600,8 @@ function UsersTab() {
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
+          <option value="pending_approval">Pending Approval</option>
+          <option value="pending_verification">Pending Verification</option>
           <option value="suspended">Suspended</option>
           <option value="inactive">Inactive</option>
         </select>

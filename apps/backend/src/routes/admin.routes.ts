@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { query, queryOne } from "../core/db/pool";
 import { authenticate, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
+import { sendEmail, accountApprovalEmail } from "../infrastructure/email.service";
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.get(
 
     // Fetch total users count
     const [totalUsers_result] = await query<{ count: string }>(
-      "SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL"
+      "SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL AND membership_status = 'active'"
     );
     totalUsers = parseInt(totalUsers_result.count);
 
@@ -78,6 +79,10 @@ router.get(
     // Storage calculation
     const storagePercentage = Math.min(100, Math.max(1, Math.round(((catalogCount + archiveCount + showcaseCount) / 1000) * 100)));
 
+    const [pendingApprovalResult] = await query<{ count: string }>(
+      "SELECT COUNT(*) as count FROM users WHERE membership_status = 'pending_approval' AND deleted_at IS NULL"
+    );
+
     res.json({
       success: true,
       data: {
@@ -87,6 +92,7 @@ router.get(
         showcaseCount,
         totalDocuments: catalogCount + archiveCount,
         pendingReview,
+        pendingApproval: parseInt(pendingApprovalResult.count),
         activeUsers: parseInt(activeUsers.count),
         storagePercentage,
       },
@@ -577,6 +583,46 @@ router.patch(
       success: true,
       data: updatedUser,
     });
+  })
+);
+
+// POST /api/admin/users/:id/approve — Approve or reject a pending_approval researcher account
+router.post(
+  "/users/:id/approve",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { approved, reason } = req.body as { approved: boolean; reason?: string };
+
+    const user = await queryOne<{ name: string; email: string; membership_status: string }>(
+      "SELECT name, email, membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
+      [id]
+    );
+    if (!user) throw new AppError(404, "User not found");
+    if (user.membership_status !== "pending_approval") {
+      throw new AppError(400, "User is not in pending_approval state");
+    }
+
+    const newStatus = approved ? "active" : "suspended";
+    await query(
+      "UPDATE users SET membership_status = $1, updated_at = NOW() WHERE user_id = $2",
+      [newStatus, id]
+    );
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+       VALUES ($1, $2, 'user', $3, $4)`,
+      [req.user!.user_id, approved ? "APPROVE_USER" : "REJECT_USER", id, JSON.stringify({ reason })]
+    );
+
+    await sendEmail({
+      to: user.email,
+      subject: approved ? "Your DKP researcher account has been approved" : "Your DKP account request update",
+      html: accountApprovalEmail(user.name, approved, reason),
+    });
+
+    res.json({ success: true, data: { approved, membership_status: newStatus } });
   })
 );
 

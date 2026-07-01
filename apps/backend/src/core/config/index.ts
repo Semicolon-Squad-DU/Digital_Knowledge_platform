@@ -54,6 +54,13 @@ export const config = {
     from: process.env.EMAIL_FROM || "noreply@dkp.edu.bd",
   },
 
+  auth: {
+    // Comma-separated list of allowed email domains for self-service registration.
+    // Empty string means all domains are allowed (useful for local dev without real emails).
+    allowedDomains: (process.env.ALLOWED_EMAIL_DOMAINS || "du.ac.bd,cs.du.ac.bd,math.du.ac.bd,phy.du.ac.bd,chem.du.ac.bd").split(",").map(d => d.trim()).filter(Boolean),
+    otpExpiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10),
+  },
+
   library: {
     fineRatePerDay: parseFloat(process.env.FINE_RATE_PER_DAY || "5"),
     loanPeriodDays: parseInt(process.env.LOAN_PERIOD_DAYS || "14", 10),
