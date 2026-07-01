@@ -202,7 +202,7 @@ router.post(
   [
     body("email").isEmail().toLowerCase().withMessage("Valid email required"),
     body("name").trim().notEmpty().withMessage("Name is required"),
-    body("role").isIn(["member", "student_author", "researcher", "archivist", "librarian", "admin"]),
+    body("role").isIn(["member", "student_author", "researcher"]).withMessage("Self-service OAuth only allows non-privileged roles").optional({ values: "falsy" }),
     body("provider").isIn(["google", "sso"]),
     body("providerId").trim().notEmpty(),
   ],
@@ -242,20 +242,16 @@ router.post(
         throw new AppError(403, "Account suspended. Contact administrator.");
       }
 
-      // User already exists - check if role matches
-      // Each user has ONE role, it should not change
-      if (user.role !== role) {
-        throw new AppError(400, `Your account is registered as "${user.role.replace(/_/g, " ")}". You cannot change your role at login. If you need a different role, contact the administrator.`);
-      }
-
-      // Only update name and OAuth info if they changed
+      // Existing user: always use the DB-stored role, never the body role.
+      // This allows admin/librarian/archivist accounts (created via /api/admin/users) to
+      // authenticate via OAuth without needing to send privileged roles in the request body.
       await query(
         "UPDATE users SET oauth_provider = $1, oauth_id = $2, name = $3 WHERE user_id = $4",
         [provider, providerId, name, user.user_id]
       );
     } else {
-      // New OAuth signups can only self-assign non-privileged roles.
-      // archivist/librarian/admin accounts are created via POST /api/admin/users.
+      // New OAuth signups: body role is clamped to non-privileged roles only.
+      // archivist/librarian/admin accounts must be created via POST /api/admin/users.
       const selfServiceRoles = ["member", "student_author", "researcher"];
       const newUserRole = selfServiceRoles.includes(role) ? role : "member";
 

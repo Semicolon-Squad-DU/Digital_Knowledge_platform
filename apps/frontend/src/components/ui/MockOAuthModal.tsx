@@ -157,13 +157,12 @@ const INSTITUTIONS = [
   "Anna University",
 ];
 
+// Self-service OAuth signup is limited to non-privileged roles.
+// Archivist / librarian / admin accounts are created by an admin via POST /api/admin/users.
 const ROLES = [
   { value: "member", label: "Member" },
   { value: "student_author", label: "Student Author" },
   { value: "researcher", label: "Researcher" },
-  { value: "archivist", label: "Archivist" },
-  { value: "librarian", label: "Librarian" },
-  { value: "admin", label: "Admin" },
 ];
 
 const GOOGLE_ACCOUNTS = [
