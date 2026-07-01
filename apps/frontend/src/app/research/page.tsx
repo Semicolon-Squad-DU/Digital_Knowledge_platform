@@ -22,12 +22,14 @@ const TYPE_FILTERS = [
 ];
 
 const PILL: Record<string, { bg: string; color: string }> = {
-  published:  { bg: "#e6f4ea", color: "#1e7e34" },
-  journal:    { bg: "#e8f0fe", color: "#1a56db" },
-  conference: { bg: "#e8f0fe", color: "#1a56db" },
-  thesis:     { bg: "#f3f4f6", color: "#6b7280" },
-  dataset:    { bg: "#e6f4ea", color: "#1e7e34" },
-  report:     { bg: "#f3f4f6", color: "#6b7280" },
+  published:       { bg: "#e6f4ea", color: "#1e7e34" },
+  journal:         { bg: "#e8f0fe", color: "#1a56db" },
+  journal_article: { bg: "#e8f0fe", color: "#1a56db" },
+  conference:      { bg: "#e8f0fe", color: "#1a56db" },
+  conference_paper:{ bg: "#e8f0fe", color: "#1a56db" },
+  thesis:          { bg: "#f3f4f6", color: "#6b7280" },
+  dataset:         { bg: "#e6f4ea", color: "#1e7e34" },
+  report:          { bg: "#f3f4f6", color: "#6b7280" },
 };
 
 function ResearchCard({ item, onView }: {

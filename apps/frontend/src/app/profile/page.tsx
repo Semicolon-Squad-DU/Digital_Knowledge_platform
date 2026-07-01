@@ -24,7 +24,7 @@ const AVATAR_COLORS = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, _hasHydrated } = useAuthStore();
   const [sessionTime, setSessionTime] = useState("");
 
   const { data: history, isLoading: histLoading } = useBorrowingHistory(user?.user_id ?? "");
@@ -63,8 +63,8 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login?redirect=/profile");
-  }, [isAuthenticated, router]);
+    if (_hasHydrated && !isAuthenticated) router.push("/login?redirect=/profile");
+  }, [isAuthenticated, _hasHydrated, router]);
 
   useEffect(() => {
     // Generate active session timestamp
@@ -317,6 +317,7 @@ export default function ProfilePage() {
     }
   };
 
+  if (!_hasHydrated) return null;
   if (!user) return null;
 
   const mockLogs = [

@@ -118,11 +118,11 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
 
 export default function WishlistPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login?redirect=/library/wishlist");
-  }, [isAuthenticated, router]);
+    if (_hasHydrated && !isAuthenticated) router.push("/login?redirect=/library/wishlist");
+  }, [isAuthenticated, _hasHydrated, router]);
 
   const { data: wishlist, isLoading, refetch } = useWishlist();
   const { mutateAsync: removeFromWishlist, isPending: isRemoving } = useRemoveFromWishlist();

@@ -119,11 +119,11 @@ function NotificationCard({ notif, onMarkRead, onNavigate }: {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login?redirect=/notifications");
-  }, [isAuthenticated, router]);
+    if (_hasHydrated && !isAuthenticated) router.push("/login?redirect=/notifications");
+  }, [isAuthenticated, _hasHydrated, router]);
 
   const { data, isLoading } = useNotifications(1, false, isAuthenticated);
   const { mutate: markRead } = useMarkNotificationRead();

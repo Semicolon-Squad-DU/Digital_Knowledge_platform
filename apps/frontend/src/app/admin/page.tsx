@@ -1499,7 +1499,7 @@ function AnnouncementsTab() {
 export default function AdminPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
 
   // Non-admin state
@@ -1545,11 +1545,12 @@ export default function AdminPage() {
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated) { router.push("/login"); return; }
     if (user?.role === "librarian") { router.push("/librarian"); return; }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, _hasHydrated, user, router]);
 
-  if (!isAuthenticated || user?.role === "librarian") return null;
+  if (!_hasHydrated || !isAuthenticated || user?.role === "librarian") return null;
 
   // ── ADMIN: full tabbed panel ──────────────────────────────────────────────
   if (user?.role === "admin") {
