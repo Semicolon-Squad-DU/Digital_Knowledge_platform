@@ -722,7 +722,7 @@ router.post(
 router.get(
   "/audit-logs",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { search, action, entityType, entity_type, page = "1", limit = "10" } = req.query as Record<string, string>;
     const resolvedEntityType = entityType || entity_type;

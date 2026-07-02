@@ -434,4 +434,15 @@ async function storeRefreshToken(user_id: string, token: string): Promise<void> 
   );
 }
 
+// GET /api/auth/profile/:id
+router.get("/profile/:id", asyncHandler(async (req: Request, res: Response) => {
+  const user = await queryOne(
+    `SELECT user_id, name, email, role, department, bio, avatar_url, membership_status, created_at
+     FROM users WHERE user_id = $1 AND deleted_at IS NULL`,
+    [req.params.id]
+  );
+  if (!user) throw new AppError(404, "User profile not found");
+  res.json({ success: true, data: user });
+}));
+
 export default router;

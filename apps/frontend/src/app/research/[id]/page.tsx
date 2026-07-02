@@ -16,6 +16,10 @@ import { cn } from "@/lib/utils";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
 import { AppLayout } from "@/components/layout/AppLayout";
 
+import Link from "next/link";
+import { Pencil } from "lucide-react";
+import { useAuthStore } from "@/store/auth.store";
+
 type CitationFormat = "apa" | "mla" | "bibtex";
 
 // ---------------------------------------------------------------------------
@@ -208,6 +212,7 @@ export default function ResearchDetailPage() {
   const outputId = params?.id ?? "";
   const [activeTab, setActiveTab] = useState<CitationFormat>("apa");
   const [showPdf, setShowPdf] = useState(false);
+  const { user } = useAuthStore();
 
   const { data: output, isLoading } = useQuery({
     queryKey: ["research", "detail", outputId],
@@ -254,17 +259,33 @@ export default function ResearchDetailPage() {
     { key: "bibtex", label: "BibTeX" },
   ];
 
+  const isOwnerOrAdmin = user && (output.uploaded_by === user.user_id || user.role === "admin");
+
   return (
     <AppLayout>
       <div className="page-container py-8 max-w-4xl">
-      <PageHeader
-        title={output.title}
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Research", href: "/research" },
-          { label: "Detail" },
-        ]}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <PageHeader
+          title={output.title}
+          breadcrumb={[
+            { label: "Home", href: "/" },
+            { label: "Research", href: "/research" },
+            { label: "Detail" },
+          ]}
+        />
+        {isOwnerOrAdmin && (
+          <Link
+            href={`/research/${outputId}/edit`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm shrink-0 self-start sm:self-center hover:opacity-90"
+            style={{
+              background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
+            }}
+          >
+            <Pencil size={13} />
+            Edit Research
+          </Link>
+        )}
+      </div>
 
       {/* ── Main info card ─────────────────────────────── */}
       <div className="gh-box mb-5">

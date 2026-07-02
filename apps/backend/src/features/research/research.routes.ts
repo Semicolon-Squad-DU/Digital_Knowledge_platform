@@ -67,7 +67,7 @@ router.post(
 
 // GET /api/research
 router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { q, author, keyword, year, output_type, lab_id, page = "1", limit = "20" } =
+  const { q, author, keyword, year, output_type, lab_id, uploaded_by, page = "1", limit = "20" } =
     req.query as Record<string, string>;
 
   const conditions: string[] = [];
@@ -80,6 +80,7 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
   if (year) { conditions.push(`EXTRACT(YEAR FROM ro.published_date) = $${idx++}`); params.push(parseInt(year)); }
   if (output_type) { conditions.push(`ro.output_type = $${idx++}`); params.push(output_type); }
   if (lab_id) { conditions.push(`ro.lab_id = $${idx++}`); params.push(lab_id); }
+  if (uploaded_by) { conditions.push(`ro.uploaded_by = $${idx++}`); params.push(uploaded_by); }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -289,5 +290,44 @@ router.post(
     res.status(201).json({ success: true, data: output });
   })
 );
+
+// GET /api/research/labs/:id
+router.get("/labs/:id", asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const lab = await queryOne(
+    `SELECT l.*, u.name as head_name, u.email as head_email
+     FROM labs l
+     JOIN users u ON l.head_researcher_id = u.user_id
+     WHERE l.lab_id = $1`,
+    [id]
+  );
+  if (!lab) throw new AppError(404, "Lab not found");
+
+  const members = await query(
+    `SELECT lm.joined_at, u.user_id, u.name, u.email, u.role, u.department
+     FROM lab_members lm
+     JOIN users u ON lm.user_id = u.user_id
+     WHERE lm.lab_id = $1
+     ORDER BY u.name ASC`,
+    [id]
+  );
+
+  const outputs = await query(
+    `SELECT * FROM research_outputs
+     WHERE lab_id = $1
+     ORDER BY published_date DESC, created_at DESC`,
+    [id]
+  );
+
+  res.json({
+    success: true,
+    data: {
+      lab,
+      members,
+      outputs,
+    },
+  });
+}));
 
 export default router;

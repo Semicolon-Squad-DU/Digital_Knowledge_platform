@@ -614,4 +614,80 @@ router.post(
   })
 );
 
+// PATCH /api/archive/bulk-metadata — bulk update metadata for multiple items (archivist/admin only)
+router.patch(
+  "/bulk-metadata",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { ids, category, access_tier, tags } = req.body as {
+      ids: string[];
+      category?: string;
+      access_tier?: string;
+      tags?: string[];
+    };
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new AppError(400, "ids array is required");
+    }
+
+    const updated = await withTransaction(async (client) => {
+      const updates: string[] = [];
+      const params: unknown[] = [];
+      let idx = 1;
+
+      if (category !== undefined) {
+        updates.push(`category = $${idx++}`);
+        params.push(category);
+      }
+      if (access_tier !== undefined) {
+        updates.push(`access_tier = $${idx++}`);
+        params.push(access_tier);
+      }
+
+      if (updates.length > 0) {
+        params.push(ids);
+        await client.query(
+          `UPDATE archive_items SET ${updates.join(", ")}, updated_at = NOW()
+           WHERE item_id = ANY($${idx})`,
+          params
+        );
+      }
+
+      if (tags !== undefined) {
+        await client.query(
+          "DELETE FROM archive_item_tags WHERE item_id = ANY($1)",
+          [ids]
+        );
+
+        if (tags.length > 0) {
+          for (const item_id of ids) {
+            for (const tag_id of tags) {
+              await client.query(
+                "INSERT INTO archive_item_tags (item_id, tag_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+                [item_id, tag_id]
+              );
+            }
+          }
+        }
+      }
+
+      // Add audit logs
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, details, ip_address)
+         VALUES ($1, 'BULK_UPDATE', 'archive_item', $2, $3)`,
+        [
+          req.user!.user_id,
+          JSON.stringify({ ids, category, access_tier, tags_updated: tags !== undefined }),
+          req.ip,
+        ]
+      );
+
+      return { ids, count: ids.length };
+    });
+
+    res.json({ success: true, data: updated });
+  })
+);
+
 export default router;

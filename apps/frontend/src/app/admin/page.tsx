@@ -1481,6 +1481,7 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const isStudent = ["student", "student_author"].includes(user?.role ?? "");
   const memberId = user?.user_id ?? "";
@@ -1715,6 +1716,66 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Bulk metadata modification panel for Archivist */}
+        {user?.role === "archivist" && selectedIds.length > 0 && (
+          <div style={{
+            background: "#eff6ff", border: "1px solid #bfdbfe",
+            borderRadius: 8, padding: "12px 16px", marginBottom: 12,
+            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1e3a8a" }}>
+              Selected {selectedIds.length} item(s)
+            </span>
+            <select
+              id="bulk-category"
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12, outline: "none", color: "#111827" }}
+            >
+              <option value="">-- Change Category --</option>
+              <option value="General">General</option>
+              <option value="Research">Research</option>
+              <option value="Report">Report</option>
+              <option value="Thesis">Thesis</option>
+            </select>
+            <select
+              id="bulk-access"
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12, outline: "none", color: "#111827" }}
+            >
+              <option value="">-- Change Access Tier --</option>
+              <option value="public">Public</option>
+              <option value="member">Member-only</option>
+              <option value="restricted">Restricted</option>
+            </select>
+            <button
+              onClick={async () => {
+                const categorySelect = document.getElementById("bulk-category") as HTMLSelectElement;
+                const accessSelect = document.getElementById("bulk-access") as HTMLSelectElement;
+                const category = categorySelect?.value || undefined;
+                const access_tier = accessSelect?.value || undefined;
+                if (!category && !access_tier) {
+                  toast.error("Please select a category or access tier to update");
+                  return;
+                }
+                try {
+                  const api = (await import("@/lib/api")).default;
+                  await api.patch("/archive/bulk-metadata", { ids: selectedIds, category, access_tier });
+                  toast.success("Bulk metadata updated successfully!");
+                  setSelectedIds([]);
+                  handleRefresh();
+                } catch {
+                  toast.error("Failed to update bulk metadata");
+                }
+              }}
+              style={{
+                padding: "6px 14px", borderRadius: 6, border: "none",
+                background: "var(--avatar-theme-color, #6366f1)", color: "#fff",
+                fontSize: 12, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Apply Bulk Changes
+            </button>
+          </div>
+        )}
+
         {/* Student policy notice */}
         {isStudent && (
           <div style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", border: "1px solid #fcd34d", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
@@ -1817,13 +1878,41 @@ export default function AdminPage() {
             </div>
           ) : (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: user?.role === "archivist" ? "0.3fr 2fr 1.5fr 1fr 1fr 1fr 0.8fr" : "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>
+                {user?.role === "archivist" && (
+                  <input
+                    type="checkbox"
+                    checked={documentsData.items.length > 0 && selectedIds.length === documentsData.items.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(documentsData.items.map((doc: any) => doc.id));
+                      } else {
+                        setSelectedIds([]);
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  />
+                )}
                 {[user?.role === "researcher" ? "SUBMISSION TITLE" : "DOCUMENT DETAIL", user?.role === "researcher" ? "TYPE / COLLABORATORS" : "AUTHOR / FACULTY", "STATUS", "LAST MODIFIED", "ACCESS", "ACTIONS"].map(c => <div key={c}>{c}</div>)}
               </div>
               {documentsData.items.map((doc: any) => {
                 const statusStyle = PILL[doc.status] || PILL.draft;
                 return (
-                  <div key={doc.id} style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb", fontSize: 13 }}>
+                  <div key={doc.id} style={{ display: "grid", gridTemplateColumns: user?.role === "archivist" ? "0.3fr 2fr 1.5fr 1fr 1fr 1fr 0.8fr" : "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb", fontSize: 13 }}>
+                    {user?.role === "archivist" && (
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(doc.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(prev => [...prev, doc.id]);
+                          } else {
+                            setSelectedIds(prev => prev.filter(id => id !== doc.id));
+                          }
+                        }}
+                        style={{ cursor: "pointer" }}
+                      />
+                    )}
                     <div><p style={{ margin: 0, fontWeight: 600, color: "#1f2937" }}>{doc.title}</p><p style={{ margin: "4px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.download_count || 0} downloads</p></div>
                     <div><p style={{ margin: 0, fontWeight: 500, color: "#374151" }}>{typeof doc.authors === "string" ? doc.authors : Array.isArray(doc.authors) ? doc.authors.join(", ") : "—"}</p><p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.department}</p></div>
                     <div><span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 5, fontSize: 11, fontWeight: 700, textTransform: "uppercase", background: statusStyle.bg, color: statusStyle.color }}>{doc.status}</span></div>
