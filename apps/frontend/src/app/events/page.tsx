@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useAuthStore } from "@/store/auth.store";
@@ -136,7 +137,7 @@ export default function EventsPage() {
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Calendar size={19} color="var(--avatar-theme-color, #6366f1)" />
                 </div>
-                <h1 id="events-page-title" style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 id="events-page-title" style={{ fontSize: isMobile ? 24 : 30, fontWeight: 700, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
                   Events
                 </h1>
               </div>
@@ -145,15 +146,15 @@ export default function EventsPage() {
               </p>
             </div>
             {canCreate && (
-              <button
+              <Link
                 id="create-event-btn"
-                onClick={() => setCreateModal(true)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 9, cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0 }}
+                href="/events/create"
+                style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 9, cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0, textDecoration: "none" }}
                 onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}
               >
                 <PlusCircle size={15} /> Create Event
-              </button>
+              </Link>
             )}
           </div>
         </div>
@@ -317,6 +318,9 @@ export default function EventsPage() {
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
+                                justifyContent: "center",
+                                height: "38px",
+                                whiteSpace: "nowrap",
                                 gap: "4px",
                                 padding: "8px 14px",
                                 fontSize: "12px",
@@ -336,6 +340,9 @@ export default function EventsPage() {
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
+                                justifyContent: "center",
+                                height: "38px",
+                                whiteSpace: "nowrap",
                                 gap: "4px",
                                 padding: "8px 14px",
                                 fontSize: "12px",
@@ -359,6 +366,9 @@ export default function EventsPage() {
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
+                            justifyContent: "center",
+                            height: "38px",
+                            whiteSpace: "nowrap",
                             gap: "6px",
                             padding: "8px 18px",
                             fontSize: "12.5px",

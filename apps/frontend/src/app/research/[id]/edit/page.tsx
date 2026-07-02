@@ -89,13 +89,17 @@ export default function EditResearchPage() {
 
     const payload = {
       title: values.title,
-      output_type: values.output_type,
+      output_type: values.output_type as any,
       abstract: values.abstract,
       published_date: values.published_date || null,
       doi: values.doi || null,
       journal_name: values.journal_name || null,
       keywords,
-      authors: values.authors,
+      authors: values.authors.map(a => ({
+        name: a.name,
+        email: a.email || undefined,
+        affiliation: a.affiliation || undefined,
+      })),
     };
 
     try {

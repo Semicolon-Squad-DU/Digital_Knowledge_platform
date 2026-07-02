@@ -433,11 +433,14 @@ function UsersTab() {
   const [editUser, setEditUser] = useState<any>(null);
   const [deleteModal, setDeleteModal] = useState<any>(null);
   const [createUserModal, setCreateUserModal] = useState(false);
+  const [page, setPage] = useState(1);
 
   const { data: usersData, isLoading } = useAdminUsers({
     search,
     role: roleFilter,
     status: statusFilter,
+    page,
+    limit: 10,
   });
 
   const createMutation  = useCreateAdminUser();
@@ -586,17 +589,17 @@ function UsersTab() {
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
         <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
-          <input type="text" placeholder="Search by name or email…" value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Search by name or email…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", width: "100%" }} />
         </div>
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
+        <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Roles</option>
           {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
             <option key={r} value={r}>{r.replace("_"," ")}</option>
           ))}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
@@ -687,6 +690,28 @@ function UsersTab() {
             </div>
           ))
         )}
+      </div>
+
+      {/* Pagination */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>Showing {filtered.length} of {usersData?.total || 0} users</p>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: page === 1 ? 0.5 : 1 }}
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <button style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: "var(--avatar-theme-color)", fontSize: 12, color: "#fff", cursor: "pointer", fontWeight: 700 }}>{page}</button>
+          <button
+            disabled={filtered.length < 10}
+            onClick={() => setPage(p => p + 1)}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: filtered.length < 10 ? 0.5 : 1 }}
+          >
+            <ChevronRight size={13} />
+          </button>
+        </div>
       </div>
 
       {/* Create User Modal */}

@@ -22,12 +22,16 @@ import { ResultCard, type CatalogItem } from "./ResultCard";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { value: "",              label: "All Categories" },
-  { value: "Social Sciences", label: "Social Sciences" },
-  { value: "Science",       label: "Hard Sciences" },
-  { value: "Humanities",    label: "Humanities" },
-  { value: "Technology",    label: "Technology" },
+  { value: "",              label: "All" },
   { value: "Textbook",      label: "Textbooks" },
+  { value: "Reference",     label: "Reference" },
+  { value: "Science",       label: "Science" },
+  { value: "Technology",    label: "Technology" },
+  { value: "Humanities",    label: "Humanities" },
+  { value: "Social Sciences", label: "Social Sciences" },
+  { value: "Novel",         label: "Novels" },
+  { value: "Journal",       label: "Journals" },
+  { value: "Magazine",      label: "Magazines" },
 ];
 
 const SORT_OPTIONS = [
@@ -88,6 +92,7 @@ export default function LibraryPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const router = useRouter();
   const isLibrarian = isAuthenticated && ["librarian", "admin"].includes(user?.role ?? "");
 
   const [searchInput, setSearchInput]   = useState("");
@@ -222,7 +227,7 @@ export default function LibraryPage() {
             </div>
             {isLibrarian && (
               <button
-                onClick={() => setAddModal(true)}
+                onClick={() => router.push("/librarian/book/add")}
                 style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0 }}
                 onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}
@@ -448,54 +453,7 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      {/* Add Book Modal */}
-      <Modal isOpen={addModal} onClose={() => setAddModal(false)} title="Add Book to Catalog" size="lg">
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="form-label">Category</label>
-            <select value={bookForm.category} onChange={e => setBookForm(f => ({...f, category: e.target.value}))} className="form-select">
-              {BOOK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <Input label="Title" required value={bookForm.title} onChange={e => setBookForm(f => ({...f, title: e.target.value}))} placeholder="Book title" />
-          <Input label="Authors" value={bookForm.authors} onChange={e => setBookForm(f => ({...f, authors: e.target.value}))} placeholder="Author 1, Author 2" hint="Comma-separated" />
-          <div className="space-y-1.5">
-            <label className="form-label">Description</label>
-            <textarea value={bookForm.description} onChange={e => setBookForm(f => ({...f, description: e.target.value}))} rows={3} className="form-textarea" placeholder="Brief description..." />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="ISBN" value={bookForm.isbn} onChange={e => setBookForm(f => ({...f, isbn: e.target.value}))} />
-            <Input label="Publisher" value={bookForm.publisher} onChange={e => setBookForm(f => ({...f, publisher: e.target.value}))} />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <Input label="Year" type="number" value={bookForm.year} onChange={e => setBookForm(f => ({...f, year: e.target.value}))} />
-            <Input label="Edition" value={bookForm.edition} onChange={e => setBookForm(f => ({...f, edition: e.target.value}))} />
-            <Input label="Total Copies" type="number" min="1" required value={bookForm.total_copies} onChange={e => setBookForm(f => ({...f, total_copies: e.target.value}))} />
-          </div>
-          <Input label="Shelf Location" value={bookForm.shelf_location} onChange={e => setBookForm(f => ({...f, shelf_location: e.target.value}))} placeholder="e.g. A-12" />
-          <div>
-            <label className="form-label">PDF <span className="font-normal text-[var(--color-fg-muted)]">(optional)</span></label>
-            {pdfFile ? (
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
-                <FileText size={16} className="text-[var(--color-accent-fg)]" />
-                <span className="text-sm flex-1 truncate">{pdfFile.name}</span>
-                <span className="text-xs text-[var(--color-fg-muted)]">{formatFileSize(pdfFile.size)}</span>
-                <button onClick={() => setPdfFile(null)} className="p-1 text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)]"><X size={13} /></button>
-              </div>
-            ) : (
-              <div {...getRootProps()} className={cn("border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-colors", isDragActive ? "border-[var(--color-accent-fg)] bg-[var(--color-accent-subtle)]" : "border-[var(--color-border-default)] hover:border-[var(--color-accent-fg)]")}>
-                <input {...getInputProps()} />
-                <Upload size={18} className="mx-auto mb-1 text-[var(--color-fg-muted)]" />
-                <p className="text-sm text-[var(--color-fg-muted)]">Drag & drop PDF or click to browse</p>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
-            <Button variant="invisible" onClick={() => setAddModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleAddBook} loading={isAdding}>Add to Catalog</Button>
-          </div>
-        </div>
-      </Modal>
+
 
       <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete}
         title="Remove Book" description={`Remove "${deleteTitle}" from the catalog?`}

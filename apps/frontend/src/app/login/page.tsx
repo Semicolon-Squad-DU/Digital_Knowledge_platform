@@ -341,7 +341,7 @@ function LoginForm() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
               <div>
                 <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#111827", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>Select Your Role</h2>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Choose how you'll use the platform</p>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Choose how you&apos;ll use the platform</p>
               </div>
               <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setRoleError(""); }}
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px", color: "#9ca3af" }}>

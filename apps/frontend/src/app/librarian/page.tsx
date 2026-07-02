@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useCreateCatalogItem } from "@/features/library/hooks/useLibrary";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -233,8 +234,19 @@ function IssueBookForm({
       )}
 
       <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
-        <Button variant="invisible" onClick={onCancel}>Cancel</Button>
+        <Button 
+          variant="invisible" 
+          onClick={onCancel}
+          style={{ color: "var(--avatar-theme-color, #1a1a2e)" }}
+        >
+          Cancel
+        </Button>
         <Button
+          style={{
+            background: "var(--theme-sidebar-gradient)",
+            color: "#ffffff",
+            border: "none",
+          }}
           variant="primary"
           onClick={handleSubmit}
           loading={isIssuing}
@@ -325,8 +337,22 @@ function ReturnBookForm({
       )}
 
       <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border-muted)]">
-        <Button variant="invisible" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSubmit} loading={isReturning}>
+        <Button 
+          variant="invisible" 
+          onClick={onCancel}
+          style={{ color: "var(--avatar-theme-color, #1a1a2e)" }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleSubmit} 
+          loading={isReturning}
+          style={{
+            background: "var(--theme-sidebar-gradient)",
+            color: "#ffffff",
+            border: "none",
+          }}
+        >
           Process Return
         </Button>
       </div>
@@ -490,44 +516,81 @@ export default function LibrarianDashboardPage() {
 
   return (
     <AppLayout>
-      <div className="page-container py-8">
-      <PageHeader
-        title="Librarian Dashboard"
-        subtitle="Manage lending, returns, and catalog operations"
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { refetch(); refetchOverdue(); }}
-              icon={<RefreshCw size={14} />}
-              aria-label="Refresh dashboard"
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setReturnModal(true)}
-              icon={<RotateCcw size={15} />}
-            >
-              Process Return
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/librarian/book/add")}
-              icon={<BookMarked size={15} />}
-            >
-              Add Book
-            </Button>
-            <Button
-              onClick={() => setIssueModal(true)}
-              icon={<Plus size={15} />}
-            >
-              Issue Book
-            </Button>
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <BookOpen size={19} color="var(--avatar-theme-color, #6366f1)" />
+                </div>
+                <h1 style={{ fontSize: 30, fontWeight: 700, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                  Librarian Dashboard
+                </h1>
+              </div>
+              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+                Manage lending, returns, and catalog operations
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { refetch(); refetchOverdue(); }}
+                icon={<RefreshCw size={14} />}
+                aria-label="Refresh dashboard"
+                style={{
+                  borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                  color: "var(--avatar-theme-color, #1a1a2e)",
+                }}
+              >
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setReturnModal(true)}
+                icon={<RotateCcw size={15} />}
+                style={{
+                  borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                  color: "var(--avatar-theme-color, #1a1a2e)",
+                }}
+              >
+                Process Return
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/librarian/book/add")}
+                icon={<BookMarked size={15} />}
+                style={{
+                  borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                  color: "var(--avatar-theme-color, #1a1a2e)",
+                }}
+              >
+                Add Book
+              </Button>
+              <Button
+                onClick={() => setIssueModal(true)}
+                icon={<Plus size={15} />}
+                style={{
+                  background: "var(--theme-sidebar-gradient)",
+                  color: "#ffffff",
+                  border: "none",
+                }}
+              >
+                Issue Book
+              </Button>
+            </div>
           </div>
-        }
-      />
+        </div>
+
+        {/* ── Content ─────────────────────────────────────────────────────────── */}
+        <div style={{ padding: "24px 40px" }}>
+        <div className="page-container">
 
       {/* Tab Navigation */}
       <div className="flex gap-4 mb-6 border-b border-slate-200">
@@ -669,50 +732,82 @@ export default function LibrarianDashboardPage() {
                     title: string;
                     due_date: string;
                     days_overdue: number;
-                    fine_amount: number;
-                    fine_id: string;
-                    fine_status: string;
-                  }) => (
-                    <tr key={`${item.transaction_id}-${item.fine_id}`}>
-                      <td className="font-medium text-slate-900">{item.member_name}</td>
-                      <td className="max-w-xs">
-                        <span className="line-clamp-1 text-slate-700">{item.title}</span>
-                      </td>
-                      <td className="text-slate-500 text-sm">{formatDate(item.due_date)}</td>
-                      <td className="text-red-600 font-medium">{item.days_overdue} days</td>
-                      <td className="text-orange-600 font-medium">{item.fine_amount.toFixed(2)}</td>
-                      <td><StatusBadge status={item.fine_status} /></td>
-                      <td className="text-sm flex gap-2">
-                        {item.fine_status !== "waived" && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedFineId(item.fine_id);
-                                setNewAmount(item.fine_amount.toString());
-                                setAdjustReason("");
-                                setAdjustModal(true);
-                              }}
-                              icon={<Edit2 size={13} />}
-                              aria-label="Adjust fine"
-                            >
-                              Adjust
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleWaiveFine(item.fine_id)}
-                              loading={isWaiving}
-                              aria-label="Waive fine"
-                            >
-                              Waive
-                            </Button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                    fine_amount: string | number;
+                    fine_id: string | null;
+                    fine_status: string | null;
+                  }) => {
+                    // Handle cases where fine_id might be null
+                    const fineId = item.fine_id || `no-fine-${item.transaction_id}`;
+                    const fineAmount = typeof item.fine_amount === 'string' ? parseFloat(item.fine_amount) : item.fine_amount;
+                    const fineStatus = item.fine_status || 'pending';
+                    
+                    return (
+                      <tr key={`${item.transaction_id}-${fineId}`}>
+                        <td className="font-medium text-slate-900">{item.member_name}</td>
+                        <td className="max-w-xs">
+                          <span className="line-clamp-1 text-slate-700">{item.title}</span>
+                        </td>
+                        <td className="text-slate-500 text-sm">{formatDate(item.due_date)}</td>
+                        <td className="text-red-600 font-medium">{item.days_overdue} days</td>
+                        <td className="text-orange-600 font-medium">{fineAmount.toFixed(2)}</td>
+                        <td><StatusBadge status={fineStatus} /></td>
+                        <td className="text-sm flex gap-2">
+                          {fineStatus !== "waived" && item.fine_id && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedFineId(item.fine_id!);
+                                  setNewAmount(fineAmount.toString());
+                                  setAdjustReason("");
+                                  setAdjustModal(true);
+                                }}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                  padding: "6px 12px",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  fontWeight: 500,
+                                  color: "#ffffff",
+                                  background: "var(--theme-sidebar-gradient)",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s ease",
+                                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.opacity = "0.9";
+                                  e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.opacity = "1";
+                                  e.currentTarget.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)";
+                                }}
+                                aria-label="Adjust fine"
+                              >
+                                <Edit2 size={13} />
+                                Adjust
+                              </button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleWaiveFine(item.fine_id!)}
+                                loading={isWaiving}
+                                aria-label="Waive fine"
+                                style={{
+                                  borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                                  color: "var(--avatar-theme-color, #1a1a2e)",
+                                }}
+                              >
+                                Waive
+                              </Button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -816,17 +911,32 @@ export default function LibrarianDashboardPage() {
                 setNewAmount("");
                 setAdjustReason("");
               }}
+              style={{
+                borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                color: "var(--avatar-theme-color, #1a1a2e)",
+              }}
             >
               Cancel
             </Button>
-            <Button onClick={handleAdjustFine} loading={isAdjusting}>
+            <Button 
+              onClick={handleAdjustFine} 
+              loading={isAdjusting}
+              style={{
+                background: "var(--theme-sidebar-gradient)",
+                color: "#ffffff",
+                border: "none",
+              }}
+            >
               Adjust Fine
             </Button>
           </div>
         </div>
       </Modal>
-    </div>
+        </div>
+        </div>
+      </div>
     </AppLayout>
   );
 }
+
 

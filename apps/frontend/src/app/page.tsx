@@ -532,17 +532,7 @@ export default function HomePage() {
                   Powering Innovation and Engineering Research at the University of Dhaka
                 </p>
               </div>
-              <div className="dkp-stats-row">
-                {[
-                  { value: "8", label: "Departments" },
-                  { value: "FET", label: "Faculty" },
-                ].map((s) => (
-                  <div key={s.label} style={{ textAlign: "center" }}>
-                    <p style={{ fontSize: "24px", fontWeight: 800, color: "#ffffff", margin: 0, letterSpacing: "-0.03em" }}>{s.value}</p>
-                    <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.65)", margin: "2px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
+
             </div>
 
             {/* Partner card grid */}

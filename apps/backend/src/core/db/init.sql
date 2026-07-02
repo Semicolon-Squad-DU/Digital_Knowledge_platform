@@ -12,7 +12,7 @@ CREATE TYPE user_role AS ENUM (
   'archivist', 'librarian', 'admin'
 );
 
-CREATE TYPE membership_status AS ENUM ('active', 'inactive', 'suspended');
+CREATE TYPE membership_status AS ENUM ('active', 'inactive', 'suspended', 'pending_verification', 'pending_approval');
 
 CREATE TYPE access_tier AS ENUM ('public', 'member', 'staff', 'restricted');
 

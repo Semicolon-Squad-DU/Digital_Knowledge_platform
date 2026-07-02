@@ -537,7 +537,7 @@ export default function UploadArchivePage() {
 
           {/* ── Actions ───────────────────────────────────── */}
           <div className="flex items-center justify-between gap-3 pt-6">
-            <Button type="button" variant="invisible" onClick={() => router.push("/archive")} disabled={uploading}>
+            <Button type="button" variant="default" onClick={() => router.push("/archive")} disabled={uploading}>
               Cancel
             </Button>
             <button

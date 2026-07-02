@@ -247,8 +247,8 @@ export default function LibraryItemPage() {
 
             {/* ─────────── LEFT: PDF VIEWER ─────────── */}
             <div>
-              {item.cover_url ? (
-                <PdfPreview pdfKey={item.cover_url} />
+              {item.document_url ? (
+                <PdfPreview pdfKey={item.document_url} />
               ) : (
                 <div style={{
                   height: 560,

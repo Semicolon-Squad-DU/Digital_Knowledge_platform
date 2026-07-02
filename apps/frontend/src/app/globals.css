@@ -221,8 +221,8 @@ input[type="password"]::-moz-reveal {
   }
 
   .page-title {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     line-height: 1.25;
     letter-spacing: -0.025em;
     color: #0f1117;

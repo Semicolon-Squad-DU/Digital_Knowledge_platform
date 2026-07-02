@@ -8,6 +8,7 @@ import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure
 import { config } from "../../core/config";
 import { BorrowService } from "./borrow.service";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
+import { logger } from "../../core/config/logger";
 
 const router = Router();
 
@@ -82,33 +83,52 @@ router.get(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
-    const overdueTransactions = await query(
-      `SELECT 
-         b.id as transaction_id,
-         b.user_id as member_id,
-         u.name as member_name,
-         u.email as member_email,
-         ci.catalog_id,
-         ci.title,
-         ci.isbn,
-         b.due_date,
-         CURRENT_DATE - b.due_date as days_overdue,
-         COALESCE(b.fine_amount, 0) as fine_amount,
-         f.fine_id,
-         f.status as fine_status,
-         b.borrow_status as status
-       FROM borrows b
-       JOIN users u ON b.user_id = u.user_id
-       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
-       LEFT JOIN fines f ON b.id = f.borrow_id
-       WHERE b.borrow_status IN ('active', 'overdue') AND b.due_date < CURRENT_DATE
-       ORDER BY days_overdue DESC`
-    );
+    try {
+      const overdueTransactions = await query<{
+        transaction_id: string;
+        member_id: string;
+        member_name: string;
+        member_email: string;
+        catalog_id: string;
+        title: string;
+        isbn: string;
+        due_date: string;
+        days_overdue: number;
+        fine_amount: string;
+        fine_id: string | null;
+        fine_status: string | null;
+        status: string;
+      }>(
+        `SELECT 
+           b.id as transaction_id,
+           b.user_id as member_id,
+           u.name as member_name,
+           u.email as member_email,
+           ci.catalog_id,
+           ci.title,
+           ci.isbn,
+           b.due_date,
+           CAST(CURRENT_DATE - b.due_date AS INTEGER) as days_overdue,
+           COALESCE(b.fine_amount, 0) as fine_amount,
+           f.fine_id,
+           f.status as fine_status,
+           b.borrow_status as status
+         FROM borrows b
+         JOIN users u ON b.user_id = u.user_id
+         JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+         LEFT JOIN fines f ON b.id = f.borrow_id
+         WHERE (b.borrow_status = 'overdue' OR (b.borrow_status = 'active' AND b.due_date < CURRENT_DATE))
+         ORDER BY days_overdue DESC NULLS LAST`
+      );
 
-    res.json({
-      success: true,
-      data: overdueTransactions,
-    });
+      res.json({
+        success: true,
+        data: overdueTransactions,
+      });
+    } catch (err) {
+      logger.error("Error fetching overdue transactions", { error: err });
+      throw err;
+    }
   })
 );
 

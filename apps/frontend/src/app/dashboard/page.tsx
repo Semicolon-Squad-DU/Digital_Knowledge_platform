@@ -197,7 +197,7 @@ export default function DashboardPage() {
                   <LayoutDashboard size={19} color="var(--avatar-theme-color, #6366f1)" />
                 </div>
                 <h1 style={{
-                  fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "#0f1117",
+                  fontSize: 28, fontWeight: 800, color: "#0f1117",
                   margin: 0, letterSpacing: "-0.03em",
                 }}>
                   {getGreeting()}, {firstName}.
@@ -208,25 +208,7 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Quick action buttons */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <Link
-                href="/archive"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "9px 16px", borderRadius: 9,
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none",
-                  transition: "border-color 0.15s",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = "#9ca3af")}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = "#e5e7eb")}
-              >
-                <Search size={13} /> Search Archive
-              </Link>
-            </div>
+
           </div>
         </div>
 

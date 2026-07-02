@@ -83,7 +83,7 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
               </span>
             </div>
 
-            {!isGuest && (
+            {!isGuest && user?.role !== "archivist" && user?.role !== "admin" && (
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link href={`/archive/${item.item_id}`}>
                   <Button variant="invisible" size="sm"><Eye size={14} /> View</Button>

@@ -116,7 +116,7 @@ export default function TermsPage() {
           }}>
             <div>
               <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px 0" }}>Questions about these terms?</h2>
-              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Reach out to Semicolon-Squad-DU — we're happy to clarify.</p>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Reach out to Semicolon-Squad-DU — we&apos;re happy to clarify.</p>
             </div>
             <Link
               href="/contact"
