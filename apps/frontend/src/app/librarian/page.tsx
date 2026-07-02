@@ -514,7 +514,7 @@ export default function LibrarianDashboardPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setAddBookModal(true)}
+              onClick={() => router.push("/librarian/book/add")}
               icon={<BookMarked size={15} />}
             >
               Add Book
@@ -721,103 +721,7 @@ export default function LibrarianDashboardPage() {
       )}
 
 
-      {/* Add Book Modal */}
-      <Modal
-        isOpen={addBookModal}
-        onClose={() => setAddBookModal(false)}
-        title="Add Book to Catalog"
-        description="Fill in the book details to add it to the library catalog."
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Title"
-              required
-              value={bookForm.title}
-              onChange={(e) => setBookForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Introduction to Algorithms"
-            />
-            <Input
-              label="ISBN"
-              value={bookForm.isbn}
-              onChange={(e) => setBookForm(f => ({ ...f, isbn: e.target.value }))}
-              placeholder="e.g. 978-0-262-03384-8"
-            />
-          </div>
-          <Input
-            label="Authors"
-            value={bookForm.authors}
-            onChange={(e) => setBookForm(f => ({ ...f, authors: e.target.value }))}
-            placeholder="Author 1, Author 2, ..."
-            hint="Comma-separated"
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Publisher"
-              value={bookForm.publisher}
-              onChange={(e) => setBookForm(f => ({ ...f, publisher: e.target.value }))}
-              placeholder="e.g. MIT Press"
-            />
-            <Input
-              label="Edition"
-              value={bookForm.edition}
-              onChange={(e) => setBookForm(f => ({ ...f, edition: e.target.value }))}
-              placeholder="e.g. 3rd"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Input
-              label="Year"
-              type="number"
-              value={bookForm.year}
-              onChange={(e) => setBookForm(f => ({ ...f, year: e.target.value }))}
-              placeholder="e.g. 2023"
-            />
-            <div className="space-y-1.5">
-              <label className="form-label">Category</label>
-              <select
-                value={bookForm.category}
-                onChange={(e) => setBookForm(f => ({ ...f, category: e.target.value }))}
-                className="form-select"
-              >
-                {["General","Textbook","Reference","Fiction","Non-Fiction","Science","Technology","Mathematics","History","Other"]
-                  .map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <Input
-              label="Total Copies"
-              type="number"
-              required
-              min="1"
-              value={bookForm.total_copies}
-              onChange={(e) => setBookForm(f => ({ ...f, total_copies: e.target.value }))}
-            />
-          </div>
-          <Input
-            label="Shelf Location"
-            value={bookForm.shelf_location}
-            onChange={(e) => setBookForm(f => ({ ...f, shelf_location: e.target.value }))}
-            placeholder="e.g. A-12, Floor 2"
-          />
-          <div className="space-y-1.5">
-            <label className="form-label">Description</label>
-            <textarea
-              value={bookForm.description}
-              onChange={(e) => setBookForm(f => ({ ...f, description: e.target.value }))}
-              rows={3}
-              className="form-textarea"
-              placeholder="Brief description of the book..."
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setAddBookModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleAddBook} loading={isAddingBook} icon={<BookMarked size={14} />}>
-              Add to Catalog
-            </Button>
-          </div>
-        </div>
-      </Modal>
+
 
       {/* Issue Modal */}
       <Modal

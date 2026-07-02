@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   Search, Upload, X, ChevronLeft, ChevronRight,
@@ -10,7 +11,6 @@ import { useArchiveSearch, useDownloadArchiveItem } from "@/features/archive/hoo
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ArchiveCard } from "@/features/archive/components/ArchiveCard";
-import { UploadModal } from "@/features/archive/components/UploadModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import toast from "react-hot-toast";
 
@@ -29,8 +29,8 @@ const FILE_TYPE_OPTIONS = [
 ];
 
 export default function ArchivePage() {
+  const router = useRouter();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
-  const [uploadOpen,     setUploadOpen]     = useState(false);
   const [searchInput,    setSearchInput]    = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterLanguage, setFilterLanguage] = useState("");
@@ -122,7 +122,7 @@ export default function ArchivePage() {
 
             {canUpload && (
               <button
-                onClick={() => setUploadOpen(true)}
+                onClick={() => router.push("/archive/upload")}
                 style={{
                   display: "flex", alignItems: "center", gap: 7,
                   padding: "9px 16px",
@@ -349,8 +349,6 @@ export default function ArchivePage() {
           )}
         </div>
       </div>
-
-      <UploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
     </AppLayout>
   );
 }

@@ -175,7 +175,7 @@ const holdRequests = Array.from({ length: 10 }, (_, i) => ({
 const notifications = Array.from({ length: 20 }, (_, i) => ({
   notification_id: `bbbbbbbb-bbbb-bbbb-bbbb-${String(i + 1).padStart(12, "0")}`,
   user_id: users[i % 16].user_id,
-  type: ["announcement", "new_upload", "due_date_reminder", "access_granted", "fine_issued"][i % 5],
+  type: ["announcement", "new_upload", "due_date_reminder", "access_request_approved", "system"][i % 5],
   title: `Notification ${i + 1}`,
   message: `This is notification message number ${i + 1} for the user.`,
   read: i % 3 === 0,

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useRouter } from "next/navigation";
 import {
   Search, BookOpen,
   ChevronDown, X, Plus,
