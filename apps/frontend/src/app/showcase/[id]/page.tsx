@@ -40,7 +40,7 @@ function DownloadReportButton({ projectId }: { projectId: string }) {
 export default function ShowcaseDetailPage() {
   const params = useParams<{ id: string }>();
   const projectId = params?.id ?? "";
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["showcase", "detail", projectId],
@@ -128,13 +128,18 @@ export default function ShowcaseDetailPage() {
         )}
 
         <div className="mt-5 flex items-center gap-3 text-sm">
-          {project.source_code_url && (
+          {isAuthenticated && project.source_code_url && (
             <a href={project.source_code_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-fg)] hover:underline">
               Source Code
             </a>
           )}
-          {project.report_url && (
+          {isAuthenticated && project.report_url && (
             <DownloadReportButton projectId={projectId} />
+          )}
+          {!isAuthenticated && (project.source_code_url || project.report_url) && (
+            <span className="text-xs text-slate-400 italic">
+              Please <Link href={`/login?redirect=/showcase/${projectId}`} className="text-primary hover:underline font-semibold">sign in</Link> to view source code or report.
+            </span>
           )}
           {(project.status === "pending_review" || project.status === "changes_requested") && (
             <Link href={`/showcase/review/${project.project_id}`} className="text-[var(--color-accent-fg)] hover:underline">

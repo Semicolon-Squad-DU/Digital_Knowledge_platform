@@ -4,6 +4,8 @@ import { ArchiveItem } from "@dkp/shared";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge, getFileIcon } from "@/lib/utils";
 
+import { useAuthStore } from "@/store/auth.store";
+
 interface ArchiveCardProps {
   item: ArchiveItem;
   onDownload?: (id: string) => void;
@@ -12,6 +14,8 @@ interface ArchiveCardProps {
 export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
   const tierBadge   = getAccessTierBadge(item.access_tier);
   const statusBadge = getStatusBadge(item.status);
+  const { user, isAuthenticated } = useAuthStore();
+  const isGuest = !isAuthenticated || user?.role === "guest";
 
   return (
     <div className="surface p-5 hover:shadow-md transition-shadow group">
@@ -44,46 +48,53 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
             </div>
           </div>
 
-          {item.authors?.length > 0 && (
+          {Array.isArray(item.authors) && item.authors.length > 0 && (
             <p className="text-sm mt-1" style={{ color: "var(--color-fg-muted)" }}>
               {item.authors.slice(0, 3).join(", ")}
               {item.authors.length > 3 && ` +${item.authors.length - 3} more`}
             </p>
           )}
 
-          {item.tags?.length > 0 && (
+          {Array.isArray(item.tags) && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {item.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag.tag_id}
-                  className="px-2 py-0.5 rounded text-xs"
-                  style={{ background: "var(--color-canvas-subtle)", color: "var(--color-fg-muted)" }}
-                >
-                  {tag.name_en}
-                </span>
-              ))}
+              {item.tags.slice(0, 4).map((tag) => {
+                if (!tag) return null;
+                const name = typeof tag === "object" ? (tag.name_en || tag.name_bn) : String(tag);
+                const key = typeof tag === "object" ? tag.tag_id : String(tag);
+                return (
+                  <span
+                    key={key}
+                    className="px-2 py-0.5 rounded text-xs"
+                    style={{ background: "var(--color-canvas-subtle)", color: "var(--color-fg-muted)" }}
+                  >
+                    {name}
+                  </span>
+                );
+              })}
             </div>
           )}
 
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center gap-3 text-xs" style={{ color: "var(--color-fg-subtle)" }}>
               <span>{formatDate(item.created_at)}</span>
-              <span>{formatFileSize(item.file_size)}</span>
+              <span>{item.file_size ? formatFileSize(Number(item.file_size)) : "0 B"}</span>
               <span className={`px-2 py-0.5 rounded-full font-medium ${statusBadge.color}`}>
                 {statusBadge.label}
               </span>
             </div>
 
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Link href={`/archive/${item.item_id}`}>
-                <Button variant="invisible" size="sm"><Eye size={14} /> View</Button>
-              </Link>
-              {item.status === "published" && onDownload && (
-                <Button variant="invisible" size="sm" onClick={() => onDownload(item.item_id)}>
-                  <Download size={14} /> Download
-                </Button>
-              )}
-            </div>
+            {!isGuest && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Link href={`/archive/${item.item_id}`}>
+                  <Button variant="invisible" size="sm"><Eye size={14} /> View</Button>
+                </Link>
+                {item.status === "published" && onDownload && (
+                  <Button variant="invisible" size="sm" onClick={() => onDownload(item.item_id)}>
+                    <Download size={14} /> Download
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

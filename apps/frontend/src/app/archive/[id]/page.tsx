@@ -23,6 +23,7 @@ export default function ArchiveItemPage() {
 
   const { user, isAuthenticated } = useAuthStore();
   const isArchivistOrAdmin = isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
+  const isGuest = !isAuthenticated || user?.role === "guest";
 
   const { mutateAsync: updateStatus, isPending: isUpdatingStatus } = useUpdateArchiveStatus();
   const { mutateAsync: uploadVersion, isPending: isUploadingVersion } = useUploadArchiveVersion();
@@ -425,28 +426,30 @@ export default function ArchiveItemPage() {
             ))}
           </div>
 
-          <button
-            onClick={handleDownload}
-            disabled={item.status !== "published" || isDownloading}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "10px 20px",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              border: "none",
-              background: "var(--theme-gradient-160)",
-              color: "#fff",
-              cursor: "pointer",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-              opacity: (item.status !== "published" || isDownloading) ? 0.6 : 1,
-            }}
-          >
-            <Download size={14} />
-            {isDownloading ? "Preparing File..." : "Download Document"}
-          </button>
+          {!isGuest && (
+            <button
+              onClick={handleDownload}
+              disabled={item.status !== "published" || isDownloading}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 20px",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                border: "none",
+                background: "var(--theme-gradient-160)",
+                color: "#fff",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                opacity: (item.status !== "published" || isDownloading) ? 0.6 : 1,
+              }}
+            >
+              <Download size={14} />
+              {isDownloading ? "Preparing File..." : "Download Document"}
+            </button>
+          )}
         </div>
 
         {/* ── ARCHIVIST & ADMIN MANAGEMENT PANEL ── */}

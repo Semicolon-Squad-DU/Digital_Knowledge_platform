@@ -115,7 +115,11 @@ export default function LibraryItemPage() {
   const isLibrarian = ["librarian", "admin"].includes(user?.role ?? "");
 
   const handleWishlist = async () => {
-    if (!isAuthenticated) { toast.error("Please sign in to add to wishlist"); return; }
+    if (!isAuthenticated) {
+      toast.error("Please sign in to add to wishlist");
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     try {
       await addToWishlist(itemId);
       toast.success("Added to wishlist");
@@ -125,7 +129,11 @@ export default function LibraryItemPage() {
   };
 
   const handleHold = async () => {
-    if (!isAuthenticated) { toast.error("Please sign in to reserve books"); return; }
+    if (!isAuthenticated) {
+      toast.error("Please sign in to reserve books");
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     try {
       await placeHold(itemId);
       toast.success("Hold placed — you'll be notified when available");

@@ -95,7 +95,7 @@ router.get("/:id", optionalAuth, asyncHandler(async (req, res: Response) => {
 }));
 
 // GET /api/showcase/:id/download-url
-router.get("/:id/download-url", optionalAuth, asyncHandler(async (req, res: Response) => {
+router.get("/:id/download-url", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const project = await queryOne<{ report_url: string | null }>(
     "SELECT report_url FROM student_projects WHERE project_id = $1",
     [req.params.id]

@@ -6,16 +6,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: string | Date): string {
-  return format(new Date(date), "MMM d, yyyy");
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return "n/a";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "n/a";
+  return format(d, "MMM d, yyyy");
 }
 
-export function formatDateTime(date: string | Date): string {
-  return format(new Date(date), "MMM d, yyyy 'at' h:mm a");
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return "n/a";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "n/a";
+  return format(d, "MMM d, yyyy 'at' h:mm a");
 }
 
-export function timeAgo(date: string | Date): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
+export function timeAgo(date: string | Date | null | undefined): string {
+  if (!date) return "n/a";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "n/a";
+  return formatDistanceToNow(d, { addSuffix: true });
 }
 
 export function formatFileSize(bytes: number): string {
@@ -29,12 +38,14 @@ export function truncate(str: string, length: number): string {
   return str.length > length ? `${str.slice(0, length)}...` : str;
 }
 
-export function getFileIcon(mimeType: string): string {
-  if (mimeType.includes("pdf")) return "📄";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
-  if (mimeType.includes("image")) return "🖼️";
-  if (mimeType.includes("audio")) return "🎵";
-  if (mimeType.includes("video")) return "🎬";
+export function getFileIcon(mimeType: string | null | undefined): string {
+  if (!mimeType) return "📁";
+  const type = String(mimeType).toLowerCase();
+  if (type.includes("pdf")) return "📄";
+  if (type.includes("word") || type.includes("document") || type.includes("msword")) return "📝";
+  if (type.includes("image")) return "🖼️";
+  if (type.includes("audio")) return "🎵";
+  if (type.includes("video")) return "🎬";
   return "📁";
 }
 

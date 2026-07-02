@@ -128,7 +128,7 @@ const studentProjects = Array.from({ length: 20 }, (_, i) => ({
   video_url: null,
   source_code_url: `https://github.com/dkp/project-${i + 1}`,
   thumbnail_url: null,
-  status: ["published", "approved", "pending", "published", "approved"][i % 5],
+  status: ["published", "published", "pending_review", "published", "published"][i % 5],
   advisor_comments: i % 3 === 0 ? "Excellent work, well documented." : null,
   submitted_by: users[(i % 4) + 4].user_id,
 }));
@@ -140,10 +140,12 @@ const lendingTransactions = Array.from({ length: 15 }, (_, i) => {
   const dueDate = isOverdue
     ? new Date(Date.now() - (i + 1) * 86400000).toISOString().split("T")[0]
     : new Date(Date.now() + (i + 3) * 86400000).toISOString().split("T")[0];
+  const issueDate = new Date(new Date(dueDate).getTime() - 14 * 86400000).toISOString().split("T")[0];
   return {
     transaction_id: `88888888-8888-8888-8888-${String(i + 1).padStart(12, "0")}`,
     member_id: users[(i % 6) + 5].user_id,
     catalog_id: catalogItems[i % 40].catalog_id,
+    issue_date: issueDate,
     due_date: dueDate,
     returned_date: isReturned ? new Date().toISOString().split("T")[0] : null,
     status: isReturned ? "returned" : isOverdue ? "overdue" : "active",
@@ -166,8 +168,7 @@ const holdRequests = Array.from({ length: 10 }, (_, i) => ({
   hold_id: `aaaaaaaa-aaaa-aaaa-aaaa-${String(i + 1).padStart(12, "0")}`,
   member_id: users[(i % 6) + 5].user_id,
   catalog_id: catalogItems[(i + 5) % 40].catalog_id,
-  status: ["pending", "ready", "fulfilled", "cancelled"][i % 4],
-  expires_at: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+  status: ["pending", "available", "fulfilled", "cancelled"][i % 4],
 }));
 
 // ─── Notifications (20) ──────────────────────────────────────────────────────
@@ -308,10 +309,10 @@ async function main() {
     for (const lt of lendingTransactions) {
       await client.query(
         `INSERT INTO borrows
-           (id, user_id, resource_id, due_date, return_date, borrow_status)
-         VALUES ($1,$2,$3,$4,$5,$6)
+           (id, user_id, resource_id, issue_date, due_date, return_date, borrow_status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
          ON CONFLICT (id) DO NOTHING`,
-        [lt.transaction_id, lt.member_id, lt.catalog_id, lt.due_date,
+        [lt.transaction_id, lt.member_id, lt.catalog_id, lt.issue_date, lt.due_date,
         lt.returned_date, lt.status]
       );
     }
@@ -329,10 +330,10 @@ async function main() {
     // Hold requests
     for (const h of holdRequests) {
       await client.query(
-        `INSERT INTO hold_requests (hold_id, member_id, catalog_id, status, expires_at)
-         VALUES ($1,$2,$3,$4,$5)
+        `INSERT INTO hold_requests (hold_id, member_id, catalog_id, status)
+         VALUES ($1,$2,$3,$4)
          ON CONFLICT (hold_id) DO NOTHING`,
-        [h.hold_id, h.member_id, h.catalog_id, h.status, h.expires_at]
+        [h.hold_id, h.member_id, h.catalog_id, h.status]
       );
     }
 

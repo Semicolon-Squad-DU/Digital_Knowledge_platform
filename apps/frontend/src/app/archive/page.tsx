@@ -41,6 +41,7 @@ export default function ArchivePage() {
   });
 
   const { data, isLoading, isError } = useArchiveSearch(params);
+  console.log("DEBUG: Archive Search:", { params, data, isLoading, isError });
   const { mutateAsync: download }    = useDownloadArchiveItem();
   const isMobile  = useMediaQuery("(max-width: 767px)");
   const canUpload = _hasHydrated && isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
@@ -291,7 +292,7 @@ export default function ArchivePage() {
                 {hasFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
               </p>
               {hasFilters && (
-                <button type="button" onClick={handleClear} style={{ marginTop: 16, padding: "8px 20px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                <button type="button" onClick={handleClear} style={{ marginTop: 16, padding: "8px 20px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                   Clear filters
                 </button>
               )}

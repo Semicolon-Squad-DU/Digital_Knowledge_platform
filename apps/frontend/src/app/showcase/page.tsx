@@ -310,7 +310,7 @@ export default function ShowcasePage() {
                 {hasFilters ? "Try adjusting your filters or search terms." : "No projects have been published yet."}
               </p>
               {hasFilters && (
-                <button type="button" onClick={clearAll} style={{ marginTop: 16, padding: "8px 20px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                <button type="button" onClick={clearAll} style={{ marginTop: 16, padding: "8px 20px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                   Clear filters
                 </button>
               )}
