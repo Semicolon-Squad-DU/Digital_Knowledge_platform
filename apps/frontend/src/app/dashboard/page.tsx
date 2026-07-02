@@ -226,24 +226,6 @@ export default function DashboardPage() {
               >
                 <Search size={13} /> Search Archive
               </Link>
-              <Link
-                href="/showcase/submit"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "9px 16px", borderRadius: 9,
-                  background: "var(--avatar-theme-color, #1a1a2e)",
-                  border: "none",
-                  fontSize: 13, fontWeight: 700,
-                  color: "#fff",
-                  textDecoration: "none",
-                  transition: "opacity 0.15s",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-              >
-                <Plus size={13} /> New Submission
-              </Link>
             </div>
           </div>
         </div>

@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  description?: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   persistent?: boolean;
@@ -36,8 +36,8 @@ export function Modal({ isOpen, onClose, title, description, children, size = "m
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(1,4,9,0.5)" }}
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6 md:p-8 backdrop-blur-sm transition-all duration-300 animate-fade-in"
+      style={{ background: "radial-gradient(circle, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%)" }}
       onClick={(e) => { if (!persistent && e.target === overlayRef.current) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -46,10 +46,11 @@ export function Modal({ isOpen, onClose, title, description, children, size = "m
       <div
         className={cn("w-full rounded-md border animate-scale-in overflow-hidden flex flex-col", sizes[size])}
         style={{
-          background: "var(--color-canvas-default)",
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
           borderColor: "var(--color-border-default)",
           boxShadow: "0 1px 3px rgba(31,35,40,0.12), 0 8px 24px rgba(66,74,83,0.12)",
-          maxHeight: "90vh",
+          margin: "40px auto",
+          maxHeight: "calc(100vh - 80px)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -59,7 +60,7 @@ export function Modal({ isOpen, onClose, title, description, children, size = "m
             style={{ borderColor: "var(--color-border-default)", background: "var(--color-canvas-subtle)" }}
           >
             <div>
-              <h2 id="modal-title" className="text-sm font-semibold" style={{ color: "var(--color-fg-default)" }}>
+              <h2 id="modal-title" className="text-lg font-extrabold tracking-tight" style={{ color: "var(--color-fg-default)" }}>
                 {title}
               </h2>
               {description && (
