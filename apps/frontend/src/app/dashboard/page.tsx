@@ -191,13 +191,13 @@ export default function DashboardPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <div style={{
                   width: 38, height: 38, borderRadius: 10,
-                  background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+                  background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, #fff)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <LayoutDashboard size={19} color="var(--avatar-theme-color, #6366f1)" />
+                  <LayoutDashboard size={19} color="var(--avatar-theme-color, #1a1a2e)" />
                 </div>
                 <h1 style={{
-                  fontSize: 28, fontWeight: 800, color: "#0f1117",
+                  fontSize: 28, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)",
                   margin: 0, letterSpacing: "-0.03em",
                 }}>
                   {getGreeting()}, {firstName}.

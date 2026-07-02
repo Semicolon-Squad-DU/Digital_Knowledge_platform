@@ -165,7 +165,7 @@ export default function ResearchPage() {
                 }}>
                   <FlaskConical size={19} color="var(--avatar-theme-color, #6366f1)" />
                 </div>
-                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
                   Research
                 </h1>
               </div>

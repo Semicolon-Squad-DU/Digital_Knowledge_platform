@@ -526,10 +526,10 @@ export default function LibrarianDashboardPage() {
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <BookOpen size={19} color="var(--avatar-theme-color, #6366f1)" />
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <BookOpen size={19} color="var(--avatar-theme-color, #1a1a2e)" />
                 </div>
-                <h1 style={{ fontSize: 30, fontWeight: 700, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 style={{ fontSize: 30, fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
                   Librarian Dashboard
                 </h1>
               </div>

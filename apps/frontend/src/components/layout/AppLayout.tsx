@@ -72,8 +72,8 @@ function NavLink({ label, href, icon: Icon, active, onClick }: {
 function SidebarBrand({ onClose }: { onClose?: () => void }) {
   return (
     <div style={{
-      height: 64, padding: "0 18px",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
+      height: 64, padding: "0 18px 8px 18px",
+      display: "flex", alignItems: "flex-end", justifyContent: "space-between",
       borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
     }}>
       <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
@@ -85,7 +85,7 @@ function SidebarBrand({ onClose }: { onClose?: () => void }) {
           <GraduationCap size={15} color="#fff" />
         </div>
         <div>
-          <p style={{ fontSize: 14.5, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.2, letterSpacing: "-0.02em" }}>Digital Knowledge</p>
+          <p style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 950, color: "#fff", margin: 0, lineHeight: 1.2, letterSpacing: "-0.02em" }}>Digital Knowledge</p>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "2px 0 0", letterSpacing: "0.01em" }}>Academic Portal</p>
         </div>
       </Link>
@@ -183,7 +183,7 @@ const SIDEBAR_STYLE: React.CSSProperties = {
   width: 224, flexShrink: 0,
   background: "var(--theme-sidebar-gradient)",
   borderRight: "none",
-  borderRadius: "0 18px 18px 0",
+  borderRadius: "0",
   boxShadow: "4px 0 28px rgba(0,0,0,0.18)",
   display: "flex", flexDirection: "column",
   position: "sticky", top: 0, height: "100vh", overflowY: "auto",
@@ -337,7 +337,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
           <div style={{
             position: "fixed", left: 0, top: 0, width: 270, height: "100dvh",
             background: "var(--theme-sidebar-gradient)",
-            borderRight: "none", borderRadius: "0 18px 18px 0",
+            borderRight: "none", borderRadius: "0",
             boxShadow: "4px 0 32px rgba(0,0,0,0.22)", overflow: "hidden",
             display: "flex", flexDirection: "column", zIndex: 40,
             transform: open ? "translateX(0)" : "translateX(-100%)",

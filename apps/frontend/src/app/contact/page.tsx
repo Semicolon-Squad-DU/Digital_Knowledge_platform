@@ -82,7 +82,7 @@ export default function ContactPage() {
       `}</style>
 
       {/* Minimal Nav */}
-      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+      <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
             <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -104,7 +104,7 @@ export default function ContactPage() {
 
       <main style={{ flex: 1 }}>
         {/* Hero */}
-        <div style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", padding: "52px 32px 44px", textAlign: "center" }}>
+        <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)", borderBottom: "1px solid #e5e7eb", padding: "52px 32px 44px", textAlign: "center" }}>
           <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--avatar-theme-color, #111827)", opacity: 0.65, margin: "0 0 12px 0" }}>
             Reach Out
           </p>

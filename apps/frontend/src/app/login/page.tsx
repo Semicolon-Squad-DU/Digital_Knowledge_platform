@@ -191,7 +191,7 @@ function LoginForm() {
           }}>
             {/* Heading */}
             <div style={{ marginBottom: "28px" }}>
-              <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", lineHeight: 1.15, margin: "0 0 6px 0" }}>
+              <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.025em", lineHeight: 1.15, margin: "0 0 6px 0" }}>
                 Sign In
               </h1>
               <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>

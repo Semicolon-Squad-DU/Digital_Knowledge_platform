@@ -325,7 +325,7 @@ export default function RegisterPage() {
 
         {/* ── Centered Hero ── */}
         <div style={{ textAlign: "center", padding: "44px 20px 32px", maxWidth: "560px", margin: "0 auto" }}>
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 38px)", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 0 12px 0" }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 38px)", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 0 12px 0" }}>
             Join the Platform.
           </h1>
           <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: 1.7, margin: 0 }}>

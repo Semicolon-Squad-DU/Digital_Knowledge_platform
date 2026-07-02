@@ -137,7 +137,7 @@ export default function EventsPage() {
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Calendar size={19} color="var(--avatar-theme-color, #6366f1)" />
                 </div>
-                <h1 id="events-page-title" style={{ fontSize: isMobile ? 24 : 30, fontWeight: 700, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 id="events-page-title" style={{ fontSize: isMobile ? 24 : 30, fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
                   Events
                 </h1>
               </div>

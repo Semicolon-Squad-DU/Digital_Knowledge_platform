@@ -178,7 +178,7 @@ export default function ShowcasePage() {
                 }}>
                   <Send size={17} color="var(--avatar-theme-color, #6366f1)" />
                 </div>
-                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "#0f1117", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
                   Showcase
                 </h1>
               </div>

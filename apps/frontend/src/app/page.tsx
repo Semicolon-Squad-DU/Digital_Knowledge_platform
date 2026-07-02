@@ -323,7 +323,7 @@ export default function HomePage() {
 
               <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "-15%", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
                 <div style={{ position: "relative", width: "100%", maxWidth: "1000px", zIndex: 1 }}>
-                  <img src="/hero-graphic.png" alt="Platform Graphic" style={{ width: "100%", objectFit: "contain", display: "block", mixBlendMode: "multiply", opacity: 0.9 }} />
+                  <img src="/hero-graphic.png" alt="Platform Graphic" style={{ width: "100%", objectFit: "contain", display: "block", mixBlendMode: "normal", opacity: 1 }} />
                   <div style={{
                     position: "absolute",
                     top: 0,
@@ -331,7 +331,7 @@ export default function HomePage() {
                     width: "100%",
                     height: "100%",
                     background: "transparent",
-                    mixBlendMode: "color",
+                    mixBlendMode: "normal",
                     zIndex: 2,
                     pointerEvents: "none",
                     opacity: 0
@@ -411,7 +411,7 @@ export default function HomePage() {
                   <h2 style={{
                     fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
                     fontWeight: 800,
-                    color: "#0f1117",
+                    color: "var(--avatar-theme-color, #1a1a2e)",
                     margin: "0 0 14px 0",
                     letterSpacing: "-0.03em",
                     lineHeight: 1.15,

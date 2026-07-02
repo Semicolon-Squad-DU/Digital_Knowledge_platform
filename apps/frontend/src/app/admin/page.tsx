@@ -1570,10 +1570,10 @@ export default function AdminPage() {
           {/* Hero banner */}
           <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)", borderBottom: "1px solid #e5e7eb", padding: isMobile ? "24px 18px 20px" : "32px 40px 28px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ShieldCheck size={19} color="var(--avatar-theme-color, #6366f1)" />
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={19} color="var(--avatar-theme-color, #1a1a2e)" />
               </div>
-              <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", margin: 0 }}>
+              <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.03em", margin: 0 }}>
                 Administration
               </h1>
             </div>
