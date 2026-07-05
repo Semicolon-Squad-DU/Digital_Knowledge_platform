@@ -124,20 +124,20 @@ export function getFailedJobs(): Readonly<FailedJob[]> {
 async function checkOverdueAndSendReminders(): Promise<void> {
   // 3-day reminder
   const threeDayReminders = await query<{
-    transaction_id: string;
+    borrow_id: string;
     member_id: string;
     member_name: string;
     member_email: string;
     book_title: string;
     due_date: string;
   }>(
-    `SELECT lt.transaction_id, lt.member_id, u.name as member_name, u.email as member_email,
-            ci.title as book_title, lt.due_date
-     FROM lending_transactions lt
-     JOIN users u ON lt.member_id = u.user_id
-     JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-     WHERE lt.status = 'active'
-       AND lt.due_date = CURRENT_DATE + INTERVAL '3 days'`
+    `SELECT b.id as borrow_id, b.user_id as member_id, u.name as member_name, u.email as member_email,
+            ci.title as book_title, b.due_date
+     FROM borrows b
+     JOIN users u ON b.user_id = u.user_id
+     JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+     WHERE b.borrow_status = 'active'
+       AND b.due_date = CURRENT_DATE + INTERVAL '3 days'`
   );
 
   for (const reminder of threeDayReminders) {
@@ -163,12 +163,12 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     book_title: string;
     due_date: string;
   }>(
-    `SELECT lt.member_id, u.name as member_name, u.email as member_email,
-            ci.title as book_title, lt.due_date
-     FROM lending_transactions lt
-     JOIN users u ON lt.member_id = u.user_id
-     JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-     WHERE lt.status = 'active' AND lt.due_date = CURRENT_DATE`
+    `SELECT b.user_id as member_id, u.name as member_name, u.email as member_email,
+            ci.title as book_title, b.due_date
+     FROM borrows b
+     JOIN users u ON b.user_id = u.user_id
+     JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+     WHERE b.borrow_status = 'active' AND b.due_date = CURRENT_DATE`
   );
 
   for (const reminder of todayReminders) {
@@ -182,7 +182,7 @@ async function checkOverdueAndSendReminders(): Promise<void> {
       `INSERT INTO notifications (user_id, type, title, message, action_url)
        VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
        ON CONFLICT DO NOTHING`,
-      [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`, "/dashboard"]
+      [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`]
     ).catch(() => {});
   }
 
@@ -193,43 +193,38 @@ async function checkOverdueAndSendReminders(): Promise<void> {
 }
 
 async function calculateOverdueFines(): Promise<void> {
-  // Mark overdue transactions
+  // Mark overdue borrows
   await query(
-    `UPDATE lending_transactions
-     SET status = 'overdue'
-     WHERE status = 'active' AND due_date < CURRENT_DATE`
+    `UPDATE borrows
+     SET borrow_status = 'overdue'
+     WHERE borrow_status = 'active' AND due_date < CURRENT_DATE`
   );
 
   // Calculate and upsert fines for overdue items
   const overdueItems = await query<{
-    transaction_id: string;
+    borrow_id: string;
     member_id: string;
     due_date: string;
     book_title: string;
   }>(
-    `SELECT lt.transaction_id, lt.member_id, lt.due_date, ci.title as book_title
-     FROM lending_transactions lt
-     JOIN catalog_items ci ON lt.catalog_id = ci.catalog_id
-     WHERE lt.status = 'overdue'`
+    `SELECT b.id as borrow_id, b.user_id as member_id, b.due_date, ci.title as book_title
+     FROM borrows b
+     JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+     WHERE b.borrow_status = 'overdue'`
   );
 
   for (const item of overdueItems) {
     const daysOverdue = Math.floor(
       (Date.now() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)
     );
-    const fineAmount = daysOverdue * config.library.fineRatePerDay;
+    const fineAmount = Math.max(daysOverdue, 1) * config.library.fineRatePerDay;
 
     await query(
-      `INSERT INTO fines (member_id, transaction_id, amount, reason)
+      `INSERT INTO fines (member_id, borrow_id, amount, reason)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (transaction_id) DO UPDATE SET amount = $3`,
-      [item.member_id, item.transaction_id, fineAmount, `Overdue fine for "${item.book_title}"`]
-    ).catch(() => {
-      query(
-        "UPDATE fines SET amount = $1 WHERE transaction_id = $2 AND status = 'pending'",
-        [fineAmount, item.transaction_id]
-      ).catch(() => {});
-    });
+       ON CONFLICT (borrow_id) DO UPDATE SET amount = $3, updated_at = NOW()`,
+      [item.member_id, item.borrow_id, fineAmount, `Overdue fine for "${item.book_title}"`]
+    );
   }
 
   logger.info("Overdue fines calculated", { count: overdueItems.length });
