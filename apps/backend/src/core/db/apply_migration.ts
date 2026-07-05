@@ -1,25 +1,25 @@
-import { pool } from "./pool";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import { pool } from "./pool";
+import { logger } from "../config/logger";
 
 async function main() {
-  const sqlPath = resolve(__dirname, "migrations", "004_system_configs.sql");
-  const sql = readFileSync(sqlPath, "utf8");
-  console.log("Applying sql from", sqlPath);
-  
+  const file = process.argv[2] || "009_email_verification.sql";
+  const sql = readFileSync(resolve(__dirname, "migrations", file), "utf8");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     await client.query(sql);
     await client.query("COMMIT");
-    console.log("Migration 004 applied successfully!");
+    logger.info(`Migration ${file} applied successfully`);
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Migration failed:", err);
+    logger.error(`Migration ${file} failed`, { error: (err as Error).message });
+    process.exitCode = 1;
   } finally {
     client.release();
     await pool.end();
   }
 }
 
-main().catch(console.error);
+main().catch(e => { console.error(e); process.exit(1); });

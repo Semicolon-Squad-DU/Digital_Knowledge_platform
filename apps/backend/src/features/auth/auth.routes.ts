@@ -65,8 +65,8 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
   const allowedRoles = ["member", "student_author", "researcher"];
   const assignedRole = role && allowedRoles.includes(role) ? role : "member";
 
-  // Researchers need admin approval after email verification; others activate immediately.
-  const initialStatus = assignedRole === "researcher" ? "pending_verification" : "pending_verification";
+  // Everyone starts unverified; the researcher → pending_approval branch happens at verify time.
+  const initialStatus = "pending_verification";
 
   const otp = generateOtp();
   const otpExpires = new Date(Date.now() + config.auth.otpExpiryMinutes * 60 * 1000);
@@ -236,6 +236,14 @@ router.post(
       throw new AppError(403, "Account suspended. Contact administrator.");
     }
 
+    if (user.membership_status === "pending_verification") {
+      throw new AppError(403, "Email not verified. Please verify your email with the code we sent you.");
+    }
+
+    if (user.membership_status === "pending_approval") {
+      throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
+    }
+
     const { password_hash: _, ...safeUser } = user;
     const tokens = generateTokens(user.user_id, user.email, user.role as never);
     await storeRefreshToken(user.user_id, tokens.refresh_token);
@@ -268,7 +276,17 @@ router.post("/refresh", asyncHandler(async (req: Request, res: Response) => {
 
   if (!stored) throw new AppError(401, "Refresh token expired or revoked");
 
-  const tokens = generateTokens(payload.user_id, payload.email, payload.role as never);
+  // Re-check account standing so suspension/deactivation takes effect on next refresh
+  const account = await queryOne<{ membership_status: string; role: string }>(
+    "SELECT membership_status, role FROM users WHERE user_id = $1 AND deleted_at IS NULL",
+    [payload.user_id]
+  );
+  if (!account || account.membership_status !== "active") {
+    await query("DELETE FROM refresh_tokens WHERE token_hash = $1", [tokenHash]);
+    throw new AppError(403, "Account is not active. Contact administrator.");
+  }
+
+  const tokens = generateTokens(payload.user_id, payload.email, account.role as never);
   await storeRefreshToken(payload.user_id, tokens.refresh_token);
 
   // Revoke old token
@@ -373,6 +391,25 @@ router.post(
         throw new AppError(403, "Account suspended. Contact administrator.");
       }
 
+      if (user.membership_status === "pending_approval") {
+        throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
+      }
+
+      // The OAuth provider vouches for the email, so a password-registered account
+      // stuck in pending_verification can be promoted here — except researchers,
+      // who still require admin approval.
+      if (user.membership_status === "pending_verification") {
+        const promotedStatus = user.role === "researcher" ? "pending_approval" : "active";
+        await query(
+          "UPDATE users SET email_verified = TRUE, membership_status = $1 WHERE user_id = $2",
+          [promotedStatus, user.user_id]
+        );
+        if (promotedStatus === "pending_approval") {
+          throw new AppError(403, "Your email is verified. Your Researcher account is now pending admin approval.");
+        }
+        user.membership_status = promotedStatus;
+      }
+
       // Existing user: always use the DB-stored role, never the body role.
       // This allows admin/librarian/archivist accounts (created via /api/admin/users) to
       // authenticate via OAuth without needing to send privileged roles in the request body.
@@ -381,10 +418,17 @@ router.post(
         [provider, providerId, name, user.user_id]
       );
     } else {
-      // New OAuth signups: body role is clamped to non-privileged roles only.
+      // New OAuth signups follow the same rules as password registration:
+      // institutional domain restriction, and researchers await admin approval.
+      if (!isDomainAllowed(email)) {
+        throw new AppError(403, "Registration is restricted to institutional email addresses.");
+      }
+
+      // Body role is clamped to non-privileged roles only.
       // archivist/librarian/admin accounts must be created via POST /api/admin/users.
       const selfServiceRoles = ["member", "student_author", "researcher"];
       const newUserRole = selfServiceRoles.includes(role) ? role : "member";
+      const newUserStatus = newUserRole === "researcher" ? "pending_approval" : "active";
 
       user = await queryOne<{
         user_id: string;
@@ -395,11 +439,15 @@ router.post(
         oauth_provider: string;
         oauth_id: string;
       }>(
-        `INSERT INTO users (name, email, role, oauth_provider, oauth_id, department, membership_status)
-         VALUES ($1, $2, $3, $4, $5, $6, 'active')
+        `INSERT INTO users (name, email, role, oauth_provider, oauth_id, department, membership_status, email_verified)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)
          RETURNING user_id, name, email, role, membership_status, oauth_provider, oauth_id`,
-        [name, email, newUserRole, provider, providerId, department ?? null]
+        [name, email, newUserRole, provider, providerId, department ?? null, newUserStatus]
       );
+
+      if (newUserStatus === "pending_approval") {
+        throw new AppError(403, "Your Researcher account has been created and is pending admin approval. You will receive an email once approved.");
+      }
     }
 
     const tokens = generateTokens(user!.user_id, user!.email, user!.role as never);
