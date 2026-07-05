@@ -316,7 +316,9 @@ router.get(
 
 // GET /api/library/fines/:member_id
 router.get("/fines/:member_id", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
-  if (req.user!.role === "member" && req.user!.user_id !== req.params.member_id) {
+  // Only library staff may view other members' fines
+  const isStaff = ["librarian", "admin"].includes(req.user!.role);
+  if (!isStaff && req.user!.user_id !== req.params.member_id) {
     throw new AppError(403, "Access denied");
   }
 

@@ -482,8 +482,8 @@ async function storeRefreshToken(user_id: string, token: string): Promise<void> 
   );
 }
 
-// GET /api/auth/profile/:id
-router.get("/profile/:id", asyncHandler(async (req: Request, res: Response) => {
+// GET /api/auth/profile/:id — requires login so emails can't be harvested anonymously
+router.get("/profile/:id", authenticate, asyncHandler(async (req: Request, res: Response) => {
   const user = await queryOne(
     `SELECT user_id, name, email, role, department, bio, avatar_url, membership_status, created_at
      FROM users WHERE user_id = $1 AND deleted_at IS NULL`,
