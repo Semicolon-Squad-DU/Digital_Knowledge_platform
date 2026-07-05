@@ -1,4 +1,4 @@
-import { Router, Response } from "express";
+import { Router, Request, Response } from "express";
 import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
