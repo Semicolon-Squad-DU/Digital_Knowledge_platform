@@ -5,12 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,17 +23,44 @@ export default function ForgotPasswordPage() {
       toast.error("Please enter your email");
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await api.post("/auth/forgot-password", { email });
       setIsSubmitted(true);
-      toast.success("Reset link sent to your email!");
+      toast.success("If that email is registered, a reset code has been sent.");
     } catch (error) {
-      toast.error("Failed to send reset link");
+      toast.error("Failed to send reset code");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      toast.error("Enter the 6-digit code from your email");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await api.post("/auth/reset-password", { email, otp, new_password: newPassword });
+      toast.success("Password reset! Sign in with your new password.");
+      router.push("/login");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to reset password");
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -170,7 +202,7 @@ export default function ForgotPasswordPage() {
                 margin: "0 0 24px 0",
                 lineHeight: 1.5
               }}>
-                Enter your email address and we&apos;ll send you a link to reset your password.
+                Enter your email address and we&apos;ll send you a 6-digit code to reset your password.
               </p>
 
               {/* Form */}
@@ -235,7 +267,7 @@ export default function ForgotPasswordPage() {
                     if (!isLoading) e.currentTarget.style.opacity = "1";
                   }}
                 >
-                  {isLoading ? "Sending..." : "Send Reset Link"}
+                  {isLoading ? "Sending..." : "Send Reset Code"}
                 </button>
               </form>
 
@@ -293,47 +325,102 @@ export default function ForgotPasswordPage() {
                 margin: "0 0 24px 0",
                 lineHeight: 1.5
               }}>
-                We&apos;ve sent a password reset link to <strong>{email}</strong>. Click the link in the email to reset your password.
+                We&apos;ve sent a 6-digit reset code to <strong>{email}</strong>. Enter it below with your new password.
               </p>
 
-              <div style={{
-                padding: "16px",
-                background: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-                borderRadius: "8px",
-                marginBottom: "24px"
-              }}>
-                <p style={{
-                  fontSize: "13px",
-                  color: "#166534",
-                  margin: 0,
-                  lineHeight: 1.5
-                }}>
-                  Didn&apos;t receive the email? Check your spam folder or try again.
-                </p>
-              </div>
+              <form onSubmit={handleReset} style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>
+                    Reset Code
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    placeholder="123456"
+                    style={{
+                      width: "100%", padding: "10px 12px", fontSize: "18px", letterSpacing: "0.3em",
+                      textAlign: "center", border: "1px solid #d1d5db", borderRadius: "8px",
+                      background: "#ffffff", color: "#111827", boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    style={{
+                      width: "100%", padding: "10px 12px", fontSize: "14px", border: "1px solid #d1d5db",
+                      borderRadius: "8px", background: "#ffffff", color: "#111827", boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    style={{
+                      width: "100%", padding: "10px 12px", fontSize: "14px", border: "1px solid #d1d5db",
+                      borderRadius: "8px", background: "#ffffff", color: "#111827", boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isResetting}
+                  style={{
+                    width: "100%",
+                    padding: "10px 16px",
+                    background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: isResetting ? "not-allowed" : "pointer",
+                    opacity: isResetting ? 0.7 : 1,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {isResetting ? "Resetting..." : "Reset Password"}
+                </button>
+              </form>
 
               <button
                 onClick={() => {
                   setIsSubmitted(false);
-                  setEmail("");
+                  setOtp("");
+                  setNewPassword("");
+                  setConfirmPassword("");
                 }}
                 style={{
                   width: "100%",
                   padding: "10px 16px",
-                  background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%)",
-                  color: "#ffffff",
-                  border: "none",
+                  background: "transparent",
+                  color: "var(--avatar-theme-color, #111827)",
+                  border: "1px solid #d1d5db",
                   borderRadius: "8px",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.2s"
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
-                Try Another Email
+                Send a New Code
               </button>
 
               <p style={{

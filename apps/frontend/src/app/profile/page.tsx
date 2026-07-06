@@ -11,6 +11,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
+import api from "@/lib/api";
 import toast from "react-hot-toast";
 
 
@@ -52,6 +53,7 @@ export default function ProfilePage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Activity Log view state
   const [showActivityLog, setShowActivityLog] = useState(false);
@@ -142,7 +144,7 @@ export default function ProfilePage() {
     toast.success("Preferences updated");
   };
 
-  const handleChangePasswordSubmit = (e: React.FormEvent) => {
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oldPassword || !newPassword || !confirmPassword) {
       toast.error("Please fill in all fields.");
@@ -152,11 +154,24 @@ export default function ProfilePage() {
       toast.error("New passwords do not match.");
       return;
     }
-    toast.success("Password updated successfully!");
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setShowPasswordModal(false);
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters.");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await api.post("/auth/change-password", { old_password: oldPassword, new_password: newPassword });
+      toast.success("Password updated successfully!");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordModal(false);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string; errors?: Array<{ msg: string }> } } })?.response?.data;
+      toast.error(msg?.message || msg?.errors?.[0]?.msg || "Failed to update password.");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleExportData = () => {
@@ -792,6 +807,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   type="submit"
+                  disabled={changingPassword}
                   style={{
                     padding: "8px 16px",
                     borderRadius: "6px",
@@ -800,10 +816,11 @@ export default function ProfilePage() {
                     color: "#ffffff",
                     fontSize: "12px",
                     fontWeight: 600,
-                    cursor: "pointer"
+                    cursor: changingPassword ? "not-allowed" : "pointer",
+                    opacity: changingPassword ? 0.6 : 1
                   }}
                 >
-                  Save Changes
+                  {changingPassword ? "Saving…" : "Save Changes"}
                 </button>
               </div>
             </form>

@@ -482,6 +482,120 @@ async function storeRefreshToken(user_id: string, token: string): Promise<void> 
   );
 }
 
+// POST /api/auth/change-password — authenticated password update
+router.post(
+  "/change-password",
+  authenticate,
+  [
+    body("old_password").notEmpty().withMessage("Current password is required"),
+    body("new_password").isLength({ min: 8 }).withMessage("New password must be at least 8 characters"),
+  ],
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { old_password, new_password } = req.body as { old_password: string; new_password: string };
+
+    const user = await queryOne<{ password_hash: string | null }>(
+      "SELECT password_hash FROM users WHERE user_id = $1 AND deleted_at IS NULL",
+      [req.user!.user_id]
+    );
+    if (!user) throw new AppError(404, "Account not found");
+    if (!user.password_hash) throw new AppError(400, "This account uses OAuth sign-in and has no password.");
+
+    if (!(await bcrypt.compare(old_password, user.password_hash))) {
+      throw new AppError(401, "Current password is incorrect");
+    }
+
+    const password_hash = await bcrypt.hash(new_password, 12);
+    await query("UPDATE users SET password_hash = $1 WHERE user_id = $2", [password_hash, req.user!.user_id]);
+
+    // Revoke all refresh tokens so stolen sessions die with the old password
+    await query("DELETE FROM refresh_tokens WHERE user_id = $1", [req.user!.user_id]);
+
+    logger.info("Password changed", { user_id: req.user!.user_id });
+    res.json({ success: true, data: { message: "Password updated. Please sign in again on other devices." } });
+  })
+);
+
+// POST /api/auth/forgot-password — sends a reset code (reuses the OTP columns)
+router.post(
+  "/forgot-password",
+  [body("email").isEmail().toLowerCase()],
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body as { email: string };
+
+    const user = await queryOne<{ user_id: string; name: string; password_hash: string | null }>(
+      "SELECT user_id, name, password_hash FROM users WHERE email = $1 AND deleted_at IS NULL",
+      [email]
+    );
+
+    // Always return 200 to avoid email enumeration
+    if (user && user.password_hash) {
+      const otp = generateOtp();
+      const otpExpires = new Date(Date.now() + config.auth.otpExpiryMinutes * 60 * 1000);
+      await query(
+        "UPDATE users SET verification_otp = $1, verification_otp_expires = $2 WHERE user_id = $3",
+        [otp, otpExpires, user.user_id]
+      );
+      await sendEmail({
+        to: email,
+        subject: "Your DKP password reset code",
+        html: verificationOtpEmail(user.name, otp, config.auth.otpExpiryMinutes),
+      });
+    }
+
+    res.json({ success: true, data: { message: "If that email is registered, a reset code has been sent." } });
+  })
+);
+
+// POST /api/auth/reset-password — completes the reset with the emailed code
+router.post(
+  "/reset-password",
+  [
+    body("email").isEmail().toLowerCase(),
+    body("otp").isLength({ min: 6, max: 6 }).isNumeric().withMessage("Reset code must be a 6-digit number"),
+    body("new_password").isLength({ min: 8 }).withMessage("New password must be at least 8 characters"),
+  ],
+  asyncHandler(async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { email, otp, new_password } = req.body as { email: string; otp: string; new_password: string };
+
+    const user = await queryOne<{
+      user_id: string; verification_otp: string | null; verification_otp_expires: string | null;
+    }>(
+      "SELECT user_id, verification_otp, verification_otp_expires FROM users WHERE email = $1 AND deleted_at IS NULL",
+      [email]
+    );
+
+    if (!user || !user.verification_otp || user.verification_otp !== otp) {
+      throw new AppError(400, "Invalid reset code.");
+    }
+    if (!user.verification_otp_expires || new Date(user.verification_otp_expires) < new Date()) {
+      throw new AppError(400, "Reset code has expired. Please request a new one.");
+    }
+
+    const password_hash = await bcrypt.hash(new_password, 12);
+    await query(
+      `UPDATE users SET password_hash = $1, verification_otp = NULL, verification_otp_expires = NULL
+       WHERE user_id = $2`,
+      [password_hash, user.user_id]
+    );
+    await query("DELETE FROM refresh_tokens WHERE user_id = $1", [user.user_id]);
+
+    logger.info("Password reset completed", { user_id: user.user_id });
+    res.json({ success: true, data: { message: "Password reset. You can now sign in with your new password." } });
+  })
+);
+
 // GET /api/auth/profile/:id — requires login so emails can't be harvested anonymously
 router.get("/profile/:id", authenticate, asyncHandler(async (req: Request, res: Response) => {
   const user = await queryOne(
