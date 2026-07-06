@@ -1512,9 +1512,11 @@ export default function AdminPage() {
   const memberId = user?.user_id ?? "";
 
   const { data: adminStats, isLoading: statsLoading } = useAdminStats();
-  const { data: catalogDocsData, isLoading: catalogDocsLoading } = useCatalogDocuments({ page: currentPage, limit: 10, search: searchQuery, status: filterStatus !== "all" ? filterStatus : undefined });
-  const { data: researchSubmissionsData, isLoading: researchLoading } = useResearcherSubmissions({ page: currentPage, limit: 10, search: searchQuery, status: filterStatus !== "all" ? filterStatus : undefined });
-  const { data: archiveDocsData, isLoading: archiveLoading } = useArchiveDocuments({ page: currentPage, limit: 10, search: searchQuery, status: filterStatus !== "all" ? filterStatus : undefined });
+  const docParams = { page: currentPage, limit: 10, search: searchQuery, status: filterStatus !== "all" ? filterStatus : undefined };
+  // Each documents endpoint is role-scoped on the backend — only fetch the one this role may call
+  const { data: catalogDocsData, isLoading: catalogDocsLoading } = useCatalogDocuments(docParams, ["librarian", "admin"].includes(user?.role ?? ""));
+  const { data: researchSubmissionsData, isLoading: researchLoading } = useResearcherSubmissions(docParams, user?.role === "researcher");
+  const { data: archiveDocsData, isLoading: archiveLoading } = useArchiveDocuments(docParams, ["librarian", "admin", "archivist"].includes(user?.role ?? ""));
   const { data: borrowHistory, isLoading: borrowLoading } = useBorrowingHistory(memberId);
   const { data: memberHolds, isLoading: holdsLoading } = useMemberHolds(memberId);
   const { data: finesData, isLoading: finesLoading } = useMemberFines(memberId);

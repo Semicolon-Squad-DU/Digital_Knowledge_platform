@@ -34,7 +34,7 @@ export function useAdminStats() {
   });
 }
 
-export function useCatalogDocuments(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+export function useCatalogDocuments(params?: { page?: number; limit?: number; status?: string; search?: string }, enabled = true) {
   return useQuery({
     queryKey: ["admin", "catalog", params],
     queryFn: async () => {
@@ -42,10 +42,11 @@ export function useCatalogDocuments(params?: { page?: number; limit?: number; st
       return data.data;
     },
     staleTime: 30_000,
+    enabled,
   });
 }
 
-export function useResearcherSubmissions(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+export function useResearcherSubmissions(params?: { page?: number; limit?: number; status?: string; search?: string }, enabled = true) {
   return useQuery({
     queryKey: ["admin", "my-submissions", params],
     queryFn: async () => {
@@ -53,10 +54,11 @@ export function useResearcherSubmissions(params?: { page?: number; limit?: numbe
       return data.data;
     },
     staleTime: 30_000,
+    enabled,
   });
 }
 
-export function useArchiveDocuments(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+export function useArchiveDocuments(params?: { page?: number; limit?: number; status?: string; search?: string }, enabled = true) {
   return useQuery({
     queryKey: ["admin", "archive", params],
     queryFn: async () => {
@@ -64,6 +66,7 @@ export function useArchiveDocuments(params?: { page?: number; limit?: number; st
       return data.data;
     },
     staleTime: 30_000,
+    enabled,
   });
 }
 

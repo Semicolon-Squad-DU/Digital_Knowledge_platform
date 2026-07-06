@@ -29,6 +29,22 @@ function getGreeting() {
   return "Good evening";
 }
 
+// Primary quick actions per role — each role sees the thing they actually do here
+const ROLE_ACTIONS: Record<string, Array<{ label: string; href: string; icon: React.ElementType; primary?: boolean }>> = {
+  member:         [{ label: "Browse Library", href: "/library", icon: BookOpen, primary: true },
+                   { label: "My Wishlist", href: "/library/wishlist", icon: Heart }],
+  student_author: [{ label: "Submit Project", href: "/showcase/submit", icon: Plus, primary: true },
+                   { label: "My Showcase", href: "/showcase", icon: FolderOpen }],
+  researcher:     [{ label: "Submit Research", href: "/research/upload", icon: Plus, primary: true },
+                   { label: "Research Repository", href: "/research", icon: Search }],
+  archivist:      [{ label: "Upload Document", href: "/archive/upload", icon: Plus, primary: true },
+                   { label: "Browse Archive", href: "/archive", icon: Archive }],
+  librarian:      [{ label: "Librarian Desk", href: "/librarian", icon: BookOpen, primary: true },
+                   { label: "Add Book", href: "/librarian/book/add", icon: Plus }],
+  admin:          [{ label: "Admin Console", href: "/admin", icon: Lock, primary: true },
+                   { label: "Upload Document", href: "/archive/upload", icon: Plus }],
+};
+
 function todayLabel() {
   return new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 }
@@ -208,7 +224,25 @@ export default function DashboardPage() {
               </p>
             </div>
 
-
+            {/* Role-aware quick actions */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              {(ROLE_ACTIONS[user?.role ?? ""] ?? []).map(({ label, href, icon: Icon, primary }) => (
+                <Link
+                  key={href + label}
+                  href={href}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    padding: "10px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                    textDecoration: "none", transition: "all 0.15s",
+                    ...(primary
+                      ? { background: "var(--avatar-theme-color, #111827)", color: "#fff", border: "1px solid transparent", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }
+                      : { background: "#fff", color: "#374151", border: "1px solid #d1d5db" }),
+                  }}
+                >
+                  <Icon size={14} /> {label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 

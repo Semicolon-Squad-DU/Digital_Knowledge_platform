@@ -16,7 +16,7 @@ export const APP_NAV = [
   { label: "Dashboard",   guestLabel: undefined,    href: "/dashboard",  icon: LayoutDashboard, public: false, roles: undefined },
   { label: "Archive",     guestLabel: undefined,    href: "/archive",    icon: Archive,         public: true,  roles: undefined },
   { label: "Research",    guestLabel: undefined,    href: "/research",   icon: FlaskConical,    public: true,  roles: undefined },
-  { label: "Submissions", guestLabel: "Showcase",   href: "/showcase",   icon: Send,            public: true,  roles: undefined },
+  { label: "Showcase",    guestLabel: "Showcase",   href: "/showcase",   icon: Send,            public: true,  roles: undefined },
   { label: "Library",     guestLabel: undefined,    href: "/library",    icon: BookOpen,        public: true,  roles: undefined },
   { label: "Events",      guestLabel: undefined,    href: "/events",     icon: Calendar,        public: false, roles: undefined },
   { label: "Librarian",   guestLabel: undefined,    href: "/librarian",  icon: BookOpen,        public: false, roles: ["librarian", "admin"] as string[] },

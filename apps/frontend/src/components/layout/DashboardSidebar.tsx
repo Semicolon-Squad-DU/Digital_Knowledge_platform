@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Archive", href: "/archive", icon: Archive },
   { label: "Research", href: "/research", icon: FlaskConical },
-  { label: "Submissions", href: "/showcase", icon: Send },
+  { label: "Showcase", href: "/showcase", icon: Send },
   { label: "Library", href: "/library", icon: BookOpen },
   { label: "Admin", href: "/admin", icon: ShieldCheck },
 ];
