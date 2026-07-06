@@ -161,7 +161,7 @@ CREATE TABLE research_outputs (
   doi            VARCHAR(255),
   dkp_identifier VARCHAR(100) NOT NULL UNIQUE,
   file_url       TEXT,
-  output_type    VARCHAR(50) NOT NULL DEFAULT 'journal_article',
+  output_type    VARCHAR(50) NOT NULL DEFAULT 'journal',
   lab_id         UUID REFERENCES labs(lab_id),
   published_date DATE,
   journal_name   VARCHAR(255),
