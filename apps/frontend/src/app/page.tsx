@@ -4,7 +4,8 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
-import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X } from "lucide-react";
+import api from "@/lib/api";
+import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X, ShieldCheck, UserRound, Landmark, MailCheck, Rocket, FileText, Calendar } from "lucide-react";
 
 const PARTNERS = [
   { id: 1, name: "CSE",  full: "Computer Science & Engineering" },
@@ -29,6 +30,73 @@ const QUICK_LINKS = [
 const TYPEWRITER_HEADING = "Empowering Research, Learning & Innovation";
 const TYPEWRITER_BODY = "Discover academic resources, explore student research projects, browse digital archives, and connect with university knowledge systems from a single intelligent platform.";
 
+const ROLE_CARDS = [
+  { icon: UserRound,    title: "Members",         desc: "Borrow books, place holds, and build a personal reading wishlist from the full catalog." },
+  { icon: Star,         title: "Student Authors", desc: "Publish course projects to the university showcase with advisor review and feedback." },
+  { icon: FlaskConical, title: "Researchers",     desc: "Submit publications and datasets with DOIs, citations, and lab affiliations." },
+  { icon: Archive,      title: "Archivists",      desc: "Preserve institutional documents with versioning and tiered access control." },
+  { icon: BookOpen,     title: "Librarians",      desc: "Issue and return books, manage fines, and keep the lending catalog moving." },
+  { icon: ShieldCheck,  title: "Administrators",  desc: "Approve accounts, audit every sensitive action, and configure the platform." },
+];
+
+const HOW_IT_WORKS = [
+  { step: "01", icon: Landmark,  title: "Register",   desc: "Sign up with your institutional university email address." },
+  { step: "02", icon: MailCheck, title: "Verify",     desc: "Enter the 6-digit code we send to your inbox to activate your account." },
+  { step: "03", icon: Rocket,    title: "Contribute", desc: "Land in a workspace built for your role and start exploring." },
+];
+
+// Animated counter — starts counting only when scrolled into view
+function CountUp({ value }: { value: number | null }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [display, setDisplay] = useState(0);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || value === null) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || started.current) return;
+      started.current = true;
+      obs.disconnect();
+      const duration = 1400;
+      const t0 = performance.now();
+      const tick = (t: number) => {
+        const p = Math.min((t - t0) / duration, 1);
+        setDisplay(Math.round(value * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.4 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [value]);
+
+  return <span ref={ref}>{value === null ? "—" : display.toLocaleString()}</span>;
+}
+
+// Fade-up on scroll — one observer per element, disconnects after firing,
+// transform/opacity only so it never causes layout work
+function Reveal({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
+    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={`home-reveal${visible ? " is-visible" : ""}`} style={{ transitionDelay: `${delay}ms`, ...style }}>
+      {children}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -42,6 +110,35 @@ export default function HomePage() {
   const [headerVisible, setHeaderVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const lastScrollY = useRef(0);
+
+  // Live platform data for the stats strip and latest-content section
+  const [stats, setStats] = useState<{ archive: number | null; research: number | null; showcase: number | null; catalog: number | null }>({
+    archive: null, research: null, showcase: null, catalog: null,
+  });
+  const [latestResearch, setLatestResearch] = useState<Array<{ output_id: string; title: string; output_type: string; published_date?: string }>>([]);
+  const [latestArchive, setLatestArchive] = useState<Array<{ item_id: string; title_en: string; category: string; created_at?: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [arch, res, show, cat] = await Promise.allSettled([
+        api.get("/archive/search", { params: { limit: 3 } }),
+        api.get("/research", { params: { limit: 3 } }),
+        api.get("/showcase", { params: { limit: 1 } }),
+        api.get("/library/catalog/search", { params: { limit: 1 } }),
+      ]);
+      if (cancelled) return;
+      setStats({
+        archive:  arch.status === "fulfilled" ? arch.value.data.data.total ?? null : null,
+        research: res.status  === "fulfilled" ? res.value.data.data.total ?? null : null,
+        showcase: show.status === "fulfilled" ? show.value.data.data.total ?? show.value.data.data.items?.length ?? null : null,
+        catalog:  cat.status  === "fulfilled" ? cat.value.data.data.total ?? null : null,
+      });
+      if (res.status === "fulfilled")  setLatestResearch(res.value.data.data.items ?? []);
+      if (arch.status === "fulfilled") setLatestArchive(arch.value.data.data.items ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const AUTH_LINE_1 = "Yuki-2,";
   const AUTH_LINE_2 = "your research workspace is ready.";
@@ -161,12 +258,42 @@ export default function HomePage() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes homeFloat { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+
+        /* Scroll-reveal: transform/opacity only, GPU-composited */
+        .home-reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s cubic-bezier(.22,.61,.36,1), transform .65s cubic-bezier(.22,.61,.36,1); }
+        .home-reveal.is-visible { opacity: 1; transform: none; }
+
+        /* Card micro-interactions (CSS-only, no JS handlers) */
+        .home-card-lift { transition: transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s ease, border-color .28s ease, background .28s ease; }
+        .home-card-lift:hover { transform: translateY(-6px); box-shadow: 0 16px 36px rgba(0,0,0,.11); }
+        .home-explore-card:hover { box-shadow: 0 16px 40px rgba(0,0,0,.32) !important; }
+        .home-card-icon { transition: transform .28s cubic-bezier(.34,1.56,.64,1); }
+        .home-card-lift:hover .home-card-icon { transform: scale(1.12) rotate(-5deg); }
+        .home-cta-arrow { transition: transform .22s ease; }
+        .home-card-lift:hover .home-cta-arrow, .home-latest-row:hover .home-cta-arrow { transform: translateX(5px); }
+        .home-latest-row { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+        .home-latest-row:hover { transform: translateX(5px); border-color: var(--avatar-theme-color, #9ca3af) !important; box-shadow: 0 6px 18px rgba(0,0,0,.07); }
+        .home-step-icon { animation: homeFloat 3.2s ease-in-out infinite alternate; }
+        .home-step-icon:nth-of-type(2) { animation-delay: .5s; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .home-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+          .home-card-lift, .home-latest-row, .home-card-icon, .home-cta-arrow { transition: none !important; }
+          .home-step-icon { animation: none !important; }
+        }
         @media (max-width: 768px) {
           .home-partner-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .home-footer { grid-template-columns: 1fr 1fr !important; }
+          .home-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .home-explore-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .home-role-grid { grid-template-columns: 1fr !important; }
+          .home-latest-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 480px) {
           .home-footer { grid-template-columns: 1fr !important; }
+          .home-stats-grid { grid-template-columns: 1fr !important; }
+          .home-explore-grid { grid-template-columns: 1fr !important; }
         }
       `}} />
 
@@ -510,6 +637,205 @@ export default function HomePage() {
                     <ArrowRight size={16} />
                   </Link>
                 </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── LIVE PLATFORM STATS ────────────────────────────────────────────── */}
+        <section style={{ background: "#ffffff", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <Reveal>
+              <div style={{ textAlign: "center", marginBottom: "44px" }}>
+                <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--avatar-theme-color)", margin: "0 0 10px 0", opacity: 0.8 }}>
+                  The Platform in Numbers
+                </p>
+                <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+                  A Living Knowledge Base
+                </h2>
+              </div>
+            </Reveal>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }} className="home-stats-grid">
+              {[
+                { label: "Archive Documents",   value: stats.archive,  icon: Archive },
+                { label: "Research Outputs",    value: stats.research, icon: FlaskConical },
+                { label: "Books in Catalog",    value: stats.catalog,  icon: BookOpen },
+                { label: "Student Projects",    value: stats.showcase, icon: Star },
+              ].map(({ label, value, icon: Icon }, i) => (
+                <Reveal key={label} delay={i * 90}>
+                  <div className="home-card-lift" style={{ background: "#f8f9fa", border: "1px solid #e5e7eb", borderRadius: "14px", padding: "28px 22px", textAlign: "center", cursor: "default", height: "100%" }}>
+                    <div className="home-card-icon" style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                      <Icon size={18} color="#ffffff" />
+                    </div>
+                    <p style={{ fontSize: "clamp(26px, 3.5vw, 38px)", fontWeight: 800, color: "var(--avatar-theme-color, #111827)", margin: "0 0 4px 0", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                      <CountUp value={value} />
+                    </p>
+                    <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, fontWeight: 600 }}>{label}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── EXPLORE THE PLATFORM ───────────────────────────────────────────── */}
+        <section style={{ background: "#f8f9fa", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <Reveal>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px", marginBottom: "40px" }}>
+                <div>
+                  <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--avatar-theme-color)", margin: "0 0 10px 0", opacity: 0.8 }}>
+                    Explore
+                  </p>
+                  <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+                    Four Collections, One Platform
+                  </h2>
+                </div>
+              </div>
+            </Reveal>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }} className="home-explore-grid">
+              {QUICK_LINKS.map(({ label, href, icon: Icon, bg, desc }, i) => (
+                <Reveal key={href} delay={i * 90}>
+                  <Link
+                    href={href}
+                    className="home-card-lift home-explore-card"
+                    style={{ background: bg, borderRadius: "14px", padding: "26px 22px", display: "flex", flexDirection: "column", gap: "12px", textDecoration: "none", border: "1px solid rgba(255,255,255,0.06)", height: "100%", boxSizing: "border-box" }}
+                  >
+                    <div className="home-card-icon" style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Icon size={18} color="#ffffff" />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: "15px", fontWeight: 700, color: "#ffffff", margin: "0 0 5px 0", letterSpacing: "-0.01em" }}>{label}</p>
+                      <p style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.5 }}>{desc}</p>
+                    </div>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: "auto" }}>
+                      Browse <span className="home-cta-arrow" style={{ display: "inline-flex" }}><ArrowRight size={13} /></span>
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── BUILT FOR EVERY ROLE ───────────────────────────────────────────── */}
+        <section style={{ background: "#ffffff", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <Reveal>
+              <div style={{ textAlign: "center", marginBottom: "44px" }}>
+                <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--avatar-theme-color)", margin: "0 0 10px 0", opacity: 0.8 }}>
+                  Role-Based Workspaces
+                </p>
+                <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: "0 0 12px 0", letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+                  Built for Every Role on Campus
+                </h2>
+                <p style={{ fontSize: "14.5px", color: "#6b7280", margin: "0 auto", maxWidth: "520px", lineHeight: 1.65 }}>
+                  Six access levels, each with its own dashboard, permissions, and tools — enforced on every request.
+                </p>
+              </div>
+            </Reveal>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }} className="home-role-grid">
+              {ROLE_CARDS.map(({ icon: Icon, title, desc }, i) => (
+                <Reveal key={title} delay={(i % 3) * 90}>
+                  <div className="home-card-lift" style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "14px", padding: "24px 22px", display: "flex", flexDirection: "column", gap: "12px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "11px" }}>
+                      <div className="home-card-icon" style={{ width: "36px", height: "36px", borderRadius: "9px", background: "color-mix(in srgb, var(--avatar-theme-color, #111827) 10%, #fff)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Icon size={16} color="var(--avatar-theme-color, #111827)" />
+                      </div>
+                      <p style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.01em" }}>{title}</p>
+                    </div>
+                    <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: 1.6 }}>{desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FRESH FROM THE PLATFORM ────────────────────────────────────────── */}
+        {(latestResearch.length > 0 || latestArchive.length > 0) && (
+          <section style={{ background: "#f8f9fa", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+            <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+              <Reveal>
+                <div style={{ marginBottom: "40px" }}>
+                  <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--avatar-theme-color)", margin: "0 0 10px 0", opacity: 0.8 }}>
+                    Fresh From the Platform
+                  </p>
+                  <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+                    Recently Added
+                  </h2>
+                </div>
+              </Reveal>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "28px" }} className="home-latest-grid">
+                {[
+                  { heading: "Latest Research", href: "/research", items: latestResearch.map(r => ({ key: r.output_id, href: `/research/${r.output_id}`, title: r.title, meta: r.output_type?.replace(/_/g, " "), date: r.published_date, icon: FlaskConical })) },
+                  { heading: "New in the Archive", href: "/archive", items: latestArchive.map(a => ({ key: a.item_id, href: `/archive/${a.item_id}`, title: a.title_en, meta: a.category, date: a.created_at, icon: FileText })) },
+                ].map(({ heading, href, items }, col) => (
+                  <Reveal key={heading} delay={col * 120}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                        <p style={{ fontSize: "14px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.01em" }}>{heading}</p>
+                        <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "12.5px", fontWeight: 600, color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none" }}>
+                          View all <ArrowRight size={12} />
+                        </Link>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {items.map(({ key, href: itemHref, title, meta, date, icon: Icon }) => (
+                          <Link
+                            key={key}
+                            href={itemHref}
+                            className="home-latest-row"
+                            style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", display: "flex", alignItems: "center", gap: "14px", textDecoration: "none" }}
+                          >
+                            <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Icon size={15} color="#4b5563" />
+                            </div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <p style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827", margin: "0 0 3px 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</p>
+                              <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0, textTransform: "capitalize", display: "flex", alignItems: "center", gap: "6px" }}>
+                                {meta}
+                                {date && <><span>·</span><Calendar size={10} /> {new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</>}
+                              </p>
+                            </div>
+                            <span className="home-cta-arrow" style={{ display: "inline-flex", flexShrink: 0 }}><ArrowRight size={14} color="#9ca3af" /></span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── HOW IT WORKS (guests) ──────────────────────────────────────────── */}
+        {!isAuthenticated && (
+          <section style={{ background: "#ffffff", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+            <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+              <Reveal>
+                <div style={{ textAlign: "center", marginBottom: "44px" }}>
+                  <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--avatar-theme-color)", margin: "0 0 10px 0", opacity: 0.8 }}>
+                    Getting Started
+                  </p>
+                  <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+                    Three Steps to Join
+                  </h2>
+                </div>
+              </Reveal>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }} className="home-role-grid">
+                {HOW_IT_WORKS.map(({ step, icon: Icon, title, desc }, i) => (
+                  <Reveal key={step} delay={i * 140}>
+                    <div style={{ padding: "28px 24px", textAlign: "center", position: "relative" }}>
+                      <p style={{ fontSize: "44px", fontWeight: 800, color: "#f3f4f6", margin: "0 0 -30px 0", letterSpacing: "-0.04em", userSelect: "none" }}>{step}</p>
+                      <div className="home-step-icon" style={{ width: "44px", height: "44px", borderRadius: "12px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", position: "relative", boxShadow: "0 6px 16px rgba(0,0,0,0.15)", animationDelay: `${i * 0.4}s` }}>
+                        <Icon size={19} color="#ffffff" />
+                      </div>
+                      <p style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: "0 0 8px 0", letterSpacing: "-0.01em" }}>{title}</p>
+                      <p style={{ fontSize: "13.5px", color: "#6b7280", margin: "0 auto", maxWidth: "240px", lineHeight: 1.65 }}>{desc}</p>
+                    </div>
+                  </Reveal>
+                ))}
               </div>
             </div>
           </section>
