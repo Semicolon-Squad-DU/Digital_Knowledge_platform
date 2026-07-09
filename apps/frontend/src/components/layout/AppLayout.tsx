@@ -84,9 +84,13 @@ function SidebarBrand({ onClose }: { onClose?: () => void }) {
         }}>
           <GraduationCap size={15} color="#fff" />
         </div>
-        <div>
-          <p style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 950, color: "#fff", margin: 0, lineHeight: 1.2, letterSpacing: "-0.02em" }}>Digital Knowledge</p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "2px 0 0", letterSpacing: "0.01em" }}>Academic Portal</p>
+        <div style={{ minWidth: 0 }}>
+          <p style={{
+            fontSize: "clamp(13px, 2vw, 18px)", fontWeight: 950, color: "#fff", margin: 0,
+            lineHeight: 1.2, letterSpacing: "-0.02em",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>Digital Knowledge</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "2px 0 0", letterSpacing: "0.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Academic Portal</p>
         </div>
       </Link>
       {onClose && (
