@@ -10,7 +10,7 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getAccessTierBadge } from "@/lib/utils";
 
 const TYPE_FILTERS = [
   { value: "", label: "All" },
@@ -37,11 +37,12 @@ function ResearchCard({ item, onView }: {
     output_id: string; title: string; abstract?: string;
     authors?: Array<{ name: string }>; output_type: string;
     published_date: string; journal_name?: string; doi?: string;
-    dkp_identifier: string;
+    dkp_identifier: string; access_tier?: string;
   };
   onView: (id: string) => void;
 }) {
   const typePill = PILL[item.output_type] ?? { bg: "#f3f4f6", color: "#6b7280" };
+  const tierBadge = item.access_tier ? getAccessTierBadge(item.access_tier) : null;
   return (
     <div
       onClick={() => onView(item.output_id)}
@@ -67,6 +68,11 @@ function ResearchCard({ item, onView }: {
           }}>
             {item.output_type}
           </span>
+          {tierBadge && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${tierBadge.color}`}>
+              {tierBadge.label}
+            </span>
+          )}
           {item.published_date && (
             <span style={{ fontSize: 11.5, color: "#9ca3af", display: "flex", alignItems: "center", gap: 4 }}>
               <Calendar size={11} /> {formatDate(item.published_date)}

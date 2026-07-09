@@ -5,6 +5,8 @@ import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { uploadSingle } from "../../core/middleware/upload.middleware";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
 import { logger } from "../../core/config/logger";
+import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
+import { AccessTier } from "@dkp/shared";
 
 const router = Router();
 
@@ -70,9 +72,12 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
   const { q, author, keyword, year, output_type, lab_id, uploaded_by, page = "1", limit = "20" } =
     req.query as Record<string, string>;
 
-  const conditions: string[] = [];
-  const params: unknown[] = [];
-  let idx = 1;
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+
+  const conditions: string[] = ["ro.access_tier = ANY($1)"];
+  const params: unknown[] = [allowedTiers];
+  let idx = 2;
 
   if (q) { conditions.push(`(ro.title ILIKE $${idx} OR ro.abstract ILIKE $${idx})`); params.push(`%${q}%`); idx++; }
   if (author) { conditions.push(`ro.authors::text ILIKE $${idx++}`); params.push(`%${author}%`); }
@@ -82,7 +87,7 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
   if (lab_id) { conditions.push(`ro.lab_id = $${idx++}`); params.push(lab_id); }
   if (uploaded_by) { conditions.push(`ro.uploaded_by = $${idx++}`); params.push(uploaded_by); }
 
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where = `WHERE ${conditions.join(" AND ")}`;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   const [{ count }] = await query<{ count: string }>(
@@ -127,19 +132,25 @@ router.get("/:id/cite", asyncHandler(async (req, res: Response) => {
 
 // GET /api/research/:id/download-url
 router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const output = await queryOne<{ file_url: string }>(
-    "SELECT file_url FROM research_outputs WHERE output_id = $1",
+  const output = await queryOne<{ file_url: string; access_tier: AccessTier }>(
+    "SELECT file_url, access_tier FROM research_outputs WHERE output_id = $1",
     [req.params.id]
   );
   if (!output || !output.file_url) throw new AppError(404, "File not found");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  if (!allowedTiers.includes(output.access_tier)) {
+    throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
+  }
 
   const url = await getPresignedUrl(output.file_url);
   res.json({ success: true, data: { url } });
 }));
 
 // GET /api/research/:id
-router.get("/:id", asyncHandler(async (req, res: Response) => {
-  const output = await queryOne(
+router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const output = await queryOne<{ access_tier: AccessTier }>(
     `SELECT ro.*, u.name as uploader_name, l.name as lab_name
      FROM research_outputs ro
      JOIN users u ON ro.uploaded_by = u.user_id
@@ -148,6 +159,13 @@ router.get("/:id", asyncHandler(async (req, res: Response) => {
     [req.params.id]
   );
   if (!output) throw new AppError(404, "Research output not found");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  if (!allowedTiers.includes(output.access_tier)) {
+    throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
+  }
+
   res.json({ success: true, data: output });
 }));
 

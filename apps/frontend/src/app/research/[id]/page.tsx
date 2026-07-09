@@ -12,7 +12,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
-import { cn } from "@/lib/utils";
+import { cn, getAccessTierBadge } from "@/lib/utils";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -333,6 +333,17 @@ export default function ResearchDetailPage() {
                 {output.dkp_identifier}
               </code>
             </div>
+            {output.access_tier && (
+              <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
+                <span className="font-medium text-[var(--color-fg-default)]">Access:</span>
+                <span className={cn(
+                  "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                  getAccessTierBadge(output.access_tier).color
+                )}>
+                  {getAccessTierBadge(output.access_tier).label}
+                </span>
+              </div>
+            )}
             {output.journal_name && (
               <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
                 <span className="font-medium text-[var(--color-fg-default)]">Journal:</span>

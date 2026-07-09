@@ -19,7 +19,7 @@ import toast from "react-hot-toast";
 import api from "@/lib/api";
 
 // ── PDF Preview ─────────────────────────────────────────────────────────────────────
-function PdfPreview({ pdfKey }: { pdfKey: string }) {
+function PdfPreview({ itemId }: { itemId: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,23 +27,17 @@ function PdfPreview({ pdfKey }: { pdfKey: string }) {
     let cancelled = false;
     setLoading(true);
 
-    // Clean S3 key by removing S3 scheme/prefix if present
-    const cleanKey = pdfKey.replace(/^local:\/\//, "");
-
-    api.get("/archive/download-url", { params: { key: cleanKey } })
+    api.get(`/library/catalog/${itemId}/download-url`)
       .then(({ data }) => {
-        if (!cancelled) {
-          const urlWithIp = data.data.url.replace("localhost:9000", "127.0.0.1:9000");
-          setUrl(urlWithIp);
-        }
+        // Presigned URLs sign the Host header (X-Amz-SignedHeaders=host) —
+        // rewriting the hostname after signing invalidates the signature.
+        if (!cancelled) setUrl(data.data.url);
       })
-      .catch(() => {
-        if (!cancelled) setUrl(`http://127.0.0.1:9000/dkp-files/${cleanKey}`);
-      })
+      .catch(() => { if (!cancelled) setUrl(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [pdfKey]);
+  }, [itemId]);
 
   if (loading) {
     return (
@@ -248,7 +242,7 @@ export default function LibraryItemPage() {
             {/* ─────────── LEFT: PDF VIEWER ─────────── */}
             <div>
               {item.document_url ? (
-                <PdfPreview pdfKey={item.document_url} />
+                <PdfPreview itemId={itemId} />
               ) : (
                 <div style={{
                   height: 560,
