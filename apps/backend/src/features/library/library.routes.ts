@@ -14,7 +14,7 @@ const router = Router();
 
 // GET /api/library/catalog/search
 router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { q, author, isbn, category, availability, year_from, year_to, page, limit } =
+  const { query: q, author, isbn, category, availability, year_from, year_to, page, limit } =
     req.query as Record<string, string>;
 
   const result = await searchCatalog({

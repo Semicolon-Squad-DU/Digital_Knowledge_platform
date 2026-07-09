@@ -17,7 +17,7 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
 
   const {
-    q, category, language, file_type, date_from, date_to, tags, page, limit,
+    query: q, category, language, file_type, date_from, date_to, tags, page, limit,
   } = req.query as Record<string, string>;
 
   const result = await searchArchive({

@@ -41,7 +41,6 @@ export default function ArchivePage() {
   });
 
   const { data, isLoading, isError } = useArchiveSearch(params);
-  console.log("DEBUG: Archive Search:", { params, data, isLoading, isError });
   const { mutateAsync: download }    = useDownloadArchiveItem();
   const isMobile  = useMediaQuery("(max-width: 767px)");
   const canUpload = _hasHydrated && isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
