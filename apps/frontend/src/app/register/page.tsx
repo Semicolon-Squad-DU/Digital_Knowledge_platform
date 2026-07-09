@@ -13,14 +13,24 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 
 // ── Role options ──────────────────────────────────────────────────────────────
-// Only non-privileged roles are available for self-service registration.
-// Archivist / librarian / admin accounts are created by an admin via the admin panel.
+// All roles are available for self-service registration. Member / Student
+// Author get active accounts immediately; Researcher / Archivist / Librarian /
+// Admin land in "pending_approval" after email verification and require an
+// existing admin to approve them before they get real access (see
+// APPROVAL_REQUIRED_ROLES in the backend's auth.routes.ts).
 const ROLES = [
   { value: "member",         label: "Member",         desc: "Browse and access published content" },
   { value: "student_author", label: "Student Author",  desc: "Submit projects to the showcase" },
   { value: "researcher",     label: "Researcher",      desc: "Publish research outputs and manage labs" },
+  { value: "archivist",      label: "Archivist",       desc: "Upload and manage archive documents" },
+  { value: "librarian",      label: "Librarian",       desc: "Manage library catalog and lending" },
+  { value: "admin",          label: "Admin",           desc: "Full platform access and user management" },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
+
+function roleLabel(role: string): string {
+  return ROLES.find(r => r.value === role)?.label ?? role;
+}
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 const schema = z.object({
@@ -97,6 +107,7 @@ export default function RegisterPage() {
   // OTP verification step
   const [step,          setStep]          = useState<"register" | "verify" | "pending">("register");
   const [pendingEmail,  setPendingEmail]  = useState("");
+  const [pendingRole,   setPendingRole]   = useState<RoleValue>("member");
   const [otp,           setOtp]           = useState("");
   const [otpError,      setOtpError]      = useState("");
   const [verifying,     setVerifying]     = useState(false);
@@ -115,6 +126,7 @@ export default function RegisterPage() {
       const result = res.data.data;
       if (result.requiresVerification) {
         setPendingEmail(result.email);
+        setPendingRole(result.role);
         setStep("verify");
         toast.success(`Verification code sent to ${result.email}`);
       } else {
@@ -280,7 +292,7 @@ export default function RegisterPage() {
           </div>
           <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#111827", margin: "0 0 12px" }}>Awaiting approval</h2>
           <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 24px" }}>
-            Your email is verified. Your <strong>Researcher</strong> account is now under review by the platform administrator.
+            Your email is verified. Your <strong>{roleLabel(pendingRole)}</strong> account is now under review by the platform administrator.
             You will receive an email at <strong>{pendingEmail}</strong> once your account is approved.
           </p>
           <Link href="/login" style={{ display: "inline-block", padding: "11px 28px", background: "var(--avatar-theme-color, #111827)", color: "#fff", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>

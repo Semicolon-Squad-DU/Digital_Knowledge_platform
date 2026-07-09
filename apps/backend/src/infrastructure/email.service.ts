@@ -59,16 +59,16 @@ export function verificationOtpEmail(name: string, otp: string, expiryMinutes: n
     </div>`;
 }
 
-export function accountApprovalEmail(name: string, approved: boolean, reason?: string): string {
+export function accountApprovalEmail(name: string, approved: boolean, reason?: string, roleLabel = "Researcher"): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; padding: 32px; border-radius: 12px;">
       <h1 style="color: #111827; font-size: 22px;">Digital Knowledge Platform</h1>
       <div style="background: #fff; border-radius: 10px; padding: 28px; border: 1px solid #e5e7eb;">
         <p>Hi <strong>${name}</strong>,</p>
         ${approved
-          ? `<p>Your <strong>Researcher</strong> account has been <span style="color:#16a34a;font-weight:700;">approved</span>. You can now sign in and access all researcher features.</p>
+          ? `<p>Your <strong>${roleLabel}</strong> account has been <span style="color:#16a34a;font-weight:700;">approved</span>. You can now sign in and access all ${roleLabel.toLowerCase()} features.</p>
              <p style="text-align:center;margin:24px 0;"><a href="${config.frontendUrl}/login" style="background:#111827;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;">Sign In</a></p>`
-          : `<p>Unfortunately your Researcher account request was <span style="color:#dc2626;font-weight:700;">not approved</span>.</p>
+          : `<p>Unfortunately your ${roleLabel} account request was <span style="color:#dc2626;font-weight:700;">not approved</span>.</p>
              ${reason ? `<p style="color:#6b7280;">Reason: ${reason}</p>` : ""}
              <p>If you believe this is an error, please contact the platform administrator.</p>`
         }

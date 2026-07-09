@@ -1237,7 +1237,7 @@ function BackupsTab() {
         )}
         {!isLoading && backups.length === 0 && (
           <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
-            No backups yet — click "Generate Backup Now" to create one.
+            No backups yet — click &quot;Generate Backup Now&quot; to create one.
           </div>
         )}
         {backups.map((b, i) => {

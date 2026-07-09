@@ -19,6 +19,16 @@ function isDomainAllowed(email: string): boolean {
   return config.auth.allowedDomains.some(d => domain === d || domain?.endsWith("." + d));
 }
 
+// All 6 roles are available for self-service registration. The 4 privileged
+// ones (researcher, archivist, librarian, admin) don't get real access until
+// an existing admin approves them — see APPROVAL_REQUIRED_ROLES below.
+export const SELF_SERVICE_ROLES = ["member", "student_author", "researcher", "archivist", "librarian", "admin"];
+export const APPROVAL_REQUIRED_ROLES = ["researcher", "archivist", "librarian", "admin"];
+
+function roleLabel(role: string): string {
+  return role.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
 const router = Router();
 
 export const registerValidation = [
@@ -29,7 +39,7 @@ export const registerValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .withMessage("Password must be 8+ chars with uppercase, lowercase, digit, and special char"),
   body("department").optional().trim(),
-  body("role").optional().isIn(["member", "student_author", "researcher"])
+  body("role").optional().isIn(SELF_SERVICE_ROLES)
     .withMessage("Invalid role selected"),
 ];
 
@@ -62,10 +72,10 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
   }
 
   const password_hash = await bcrypt.hash(password, 12);
-  const allowedRoles = ["member", "student_author", "researcher"];
-  const assignedRole = role && allowedRoles.includes(role) ? role : "member";
+  const assignedRole = role && SELF_SERVICE_ROLES.includes(role) ? role : "member";
 
-  // Everyone starts unverified; the researcher → pending_approval branch happens at verify time.
+  // Everyone starts unverified; the pending_approval branch (for privileged
+  // roles) happens at verify time.
   const initialStatus = "pending_verification";
 
   const otp = generateOtp();
@@ -130,8 +140,9 @@ router.post(
       throw new AppError(400, "Verification code has expired. Please request a new one.");
     }
 
-    // Researchers go into pending_approval; member/student_author become active immediately.
-    const newStatus = user.role === "researcher" ? "pending_approval" : "active";
+    // Privileged roles (researcher, archivist, librarian, admin) go into
+    // pending_approval; member/student_author become active immediately.
+    const newStatus = APPROVAL_REQUIRED_ROLES.includes(user.role) ? "pending_approval" : "active";
 
     await query(
       `UPDATE users SET email_verified = TRUE, membership_status = $1,
@@ -147,7 +158,8 @@ router.post(
         success: true,
         data: {
           pendingApproval: true,
-          message: "Your email is verified. Your Researcher account is now pending admin approval. You will receive an email once approved.",
+          role: user.role,
+          message: `Your email is verified. Your ${roleLabel(user.role)} account is now pending admin approval. You will receive an email once approved.`,
         },
       });
     }
@@ -360,7 +372,7 @@ router.post(
   [
     body("email").isEmail().toLowerCase().withMessage("Valid email required"),
     body("name").trim().notEmpty().withMessage("Name is required"),
-    body("role").isIn(["member", "student_author", "researcher"]).withMessage("Self-service OAuth only allows non-privileged roles").optional({ values: "falsy" }),
+    body("role").isIn(SELF_SERVICE_ROLES).withMessage("Invalid role selected").optional({ values: "falsy" }),
     body("provider").isIn(["google", "sso"]),
     body("providerId").trim().notEmpty(),
   ],
@@ -405,16 +417,16 @@ router.post(
       }
 
       // The OAuth provider vouches for the email, so a password-registered account
-      // stuck in pending_verification can be promoted here — except researchers,
-      // who still require admin approval.
+      // stuck in pending_verification can be promoted here — except privileged
+      // roles, which still require admin approval.
       if (user.membership_status === "pending_verification") {
-        const promotedStatus = user.role === "researcher" ? "pending_approval" : "active";
+        const promotedStatus = APPROVAL_REQUIRED_ROLES.includes(user.role) ? "pending_approval" : "active";
         await query(
           "UPDATE users SET email_verified = TRUE, membership_status = $1 WHERE user_id = $2",
           [promotedStatus, user.user_id]
         );
         if (promotedStatus === "pending_approval") {
-          throw new AppError(403, "Your email is verified. Your Researcher account is now pending admin approval.");
+          throw new AppError(403, `Your email is verified. Your ${roleLabel(user.role)} account is now pending admin approval.`);
         }
         user.membership_status = promotedStatus;
       }
@@ -428,16 +440,13 @@ router.post(
       );
     } else {
       // New OAuth signups follow the same rules as password registration:
-      // institutional domain restriction, and researchers await admin approval.
+      // institutional domain restriction, and privileged roles await admin approval.
       if (!isDomainAllowed(email)) {
         throw new AppError(403, "Registration is restricted to institutional email addresses.");
       }
 
-      // Body role is clamped to non-privileged roles only.
-      // archivist/librarian/admin accounts must be created via POST /api/admin/users.
-      const selfServiceRoles = ["member", "student_author", "researcher"];
-      const newUserRole = selfServiceRoles.includes(role) ? role : "member";
-      const newUserStatus = newUserRole === "researcher" ? "pending_approval" : "active";
+      const newUserRole = SELF_SERVICE_ROLES.includes(role) ? role : "member";
+      const newUserStatus = APPROVAL_REQUIRED_ROLES.includes(newUserRole) ? "pending_approval" : "active";
 
       user = await queryOne<{
         user_id: string;
@@ -455,7 +464,7 @@ router.post(
       );
 
       if (newUserStatus === "pending_approval") {
-        throw new AppError(403, "Your Researcher account has been created and is pending admin approval. You will receive an email once approved.");
+        throw new AppError(403, `Your ${roleLabel(newUserRole)} account has been created and is pending admin approval. You will receive an email once approved.`);
       }
     }
 

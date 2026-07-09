@@ -1,4 +1,4 @@
-import { registerValidation, generateTokens } from "../auth.routes";
+import { registerValidation, generateTokens, SELF_SERVICE_ROLES, APPROVAL_REQUIRED_ROLES } from "../auth.routes";
 import { validationResult } from "express-validator";
 import type { Request } from "express";
 
@@ -22,21 +22,17 @@ describe("registerValidation", () => {
     expect(result.isEmpty()).toBe(true);
   });
 
-  it.each(["member", "student_author", "researcher"])(
-    "accepts the non-privileged role '%s'",
+  // All 6 roles are selectable at registration. The privileged ones
+  // (researcher, archivist, librarian, admin) still pass field validation
+  // here — the actual gate is that they land in "pending_approval" and need
+  // an existing admin to approve them (enforced in the /verify-email and
+  // /oauth-login route handlers via APPROVAL_REQUIRED_ROLES), not a
+  // rejection at this validation layer.
+  it.each(["member", "student_author", "researcher", "archivist", "librarian", "admin"])(
+    "accepts role '%s' at the registration form layer",
     async (role) => {
       const result = await runValidation({ ...validBase, role });
       expect(result.isEmpty()).toBe(true);
-    }
-  );
-
-  it.each(["admin", "librarian", "archivist"])(
-    "rejects the privileged role '%s' on public registration",
-    async (role) => {
-      const result = await runValidation({ ...validBase, role });
-      expect(result.isEmpty()).toBe(false);
-      const errors = result.array();
-      expect(errors.some((e) => "path" in e && e.path === "role")).toBe(true);
     }
   );
 
@@ -53,6 +49,28 @@ describe("registerValidation", () => {
   it("rejects a missing name", async () => {
     const result = await runValidation({ ...validBase, name: "" });
     expect(result.isEmpty()).toBe(false);
+  });
+});
+
+describe("role approval gating", () => {
+  // This exact boundary was accidentally reverted once already — keep it
+  // pinned so member/student_author never silently require approval, and
+  // the privileged roles never silently skip it.
+  it("requires admin approval only for researcher, archivist, librarian, and admin", () => {
+    expect(new Set(APPROVAL_REQUIRED_ROLES)).toEqual(
+      new Set(["researcher", "archivist", "librarian", "admin"])
+    );
+  });
+
+  it("grants member and student_author immediate active status (no approval)", () => {
+    expect(APPROVAL_REQUIRED_ROLES).not.toContain("member");
+    expect(APPROVAL_REQUIRED_ROLES).not.toContain("student_author");
+  });
+
+  it("every approval-required role is still a valid self-service registration choice", () => {
+    for (const role of APPROVAL_REQUIRED_ROLES) {
+      expect(SELF_SERVICE_ROLES).toContain(role);
+    }
   });
 });
 

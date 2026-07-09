@@ -597,7 +597,8 @@ router.patch(
   })
 );
 
-// POST /api/admin/users/:id/approve — Approve or reject a pending_approval researcher account
+// POST /api/admin/users/:id/approve — Approve or reject a pending_approval account
+// (researcher, archivist, librarian, or admin — all privileged self-registered roles land here)
 router.post(
   "/users/:id/approve",
   authenticate,
@@ -606,8 +607,8 @@ router.post(
     const { id } = req.params;
     const { approved, reason } = req.body as { approved: boolean; reason?: string };
 
-    const user = await queryOne<{ name: string; email: string; membership_status: string }>(
-      "SELECT name, email, membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
+    const user = await queryOne<{ name: string; email: string; role: string; membership_status: string }>(
+      "SELECT name, email, role, membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
       [id]
     );
     if (!user) throw new AppError(404, "User not found");
@@ -624,13 +625,14 @@ router.post(
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
        VALUES ($1, $2, 'user', $3, $4)`,
-      [req.user!.user_id, approved ? "APPROVE_USER" : "REJECT_USER", id, JSON.stringify({ reason })]
+      [req.user!.user_id, approved ? "APPROVE_USER" : "REJECT_USER", id, JSON.stringify({ reason, role: user.role })]
     );
 
+    const roleLabel = user.role.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
     await sendEmail({
       to: user.email,
-      subject: approved ? "Your DKP researcher account has been approved" : "Your DKP account request update",
-      html: accountApprovalEmail(user.name, approved, reason),
+      subject: approved ? `Your DKP ${roleLabel.toLowerCase()} account has been approved` : "Your DKP account request update",
+      html: accountApprovalEmail(user.name, approved, reason, roleLabel),
     });
 
     res.json({ success: true, data: { approved, membership_status: newStatus } });

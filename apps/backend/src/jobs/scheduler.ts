@@ -1,4 +1,4 @@
-import cron from "node-cron";
+import cron, { type ScheduledTask } from "node-cron";
 import { query, queryOne } from "../core/db/pool";
 import { config } from "../core/config";
 import { sendEmail, dueDateReminderEmail } from "../infrastructure/email.service";
@@ -126,7 +126,7 @@ export function getFailedJobs(): Readonly<FailedJob[]> {
 // Admin > Backups schedule UI takes effect immediately without a restart.
 // ---------------------------------------------------------------------------
 
-let backupTask: cron.ScheduledTask | null = null;
+let backupTask: ScheduledTask | null = null;
 
 export async function loadBackupSchedule(): Promise<void> {
   const [enabledConfig, cronConfig] = await Promise.all([

@@ -36,7 +36,8 @@ CREATE TYPE notification_type AS ENUM (
 );
 
 CREATE TYPE audit_action AS ENUM (
-  'CREATE', 'UPDATE', 'DELETE', 'ACCESS', 'LOGIN', 'LOGOUT', 'DOWNLOAD', 'STATUS_CHANGE', 'BACKUP', 'RESTORE'
+  'CREATE', 'UPDATE', 'DELETE', 'ACCESS', 'LOGIN', 'LOGOUT', 'DOWNLOAD', 'STATUS_CHANGE', 'BACKUP', 'RESTORE',
+  'APPROVE_USER', 'REJECT_USER'
 );
 
 CREATE TYPE access_request_status AS ENUM ('pending', 'approved', 'denied');
