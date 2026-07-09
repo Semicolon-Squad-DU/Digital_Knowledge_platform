@@ -24,6 +24,71 @@ const users = [
   { user_id: "11111111-1111-1111-1111-111111111116", name: "Student Tanvir", email: "student4@dkp.edu.bd", role: "student_author", department: "CSE", bio: "Final year CSE" },
 ];
 
+// ─── Real DU CSE faculty (advisors) ─────────────────────────────────────────
+// Sourced from https://www.du.ac.bd/body/FacultyMembers/CSE — used to populate
+// the Showcase submission form's Advisor dropdown with real names instead of
+// synthetic ones. No email was listed on the page; addresses below are
+// constructed placeholders (firstname.lastname@cse.du.ac.bd), not verified
+// real contact info.
+const DU_CSE_FACULTY: { name: string; designation: string }[] = [
+  { name: "Dr. Md. Abdur Razzaque", designation: "Professor & Chairman" },
+  { name: "Dr. Suraiya Pervin", designation: "Professor" },
+  { name: "Dr. Md. Haider Ali", designation: "Professor" },
+  { name: "Dr. Hafiz Md. Hasan Babu", designation: "Professor" },
+  { name: "Dr. Md. Rezaul Karim", designation: "Professor" },
+  { name: "Dr. Md. Hasanuzzaman", designation: "Professor (Leave)" },
+  { name: "Dr. Shabbir Ahmed", designation: "Professor" },
+  { name: "Dr. Md. Mustafizur Rahman", designation: "Professor" },
+  { name: "Dr. Saifuddin Md. Tareeq", designation: "Professor" },
+  { name: "Dr. Chowdhury Farhan Ahmed", designation: "Professor" },
+  { name: "Dr. Md. Mamun-Or-Rashid", designation: "Professor" },
+  { name: "Dr. Mosaddek Hossain Kamal", designation: "Professor" },
+  { name: "Dr. Muhammad Asif Hossain Khan", designation: "Professor" },
+  { name: "Dr. Upama Kabir", designation: "Professor" },
+  { name: "Dr. Moinul Islam Zaber", designation: "Professor (Leave)" },
+  { name: "Abu Ahmed Ferdaus", designation: "Associate Professor" },
+  { name: "Dr. Mosarrat Jahan", designation: "Associate Professor" },
+  { name: "Dr. Ismat Rahman", designation: "Associate Professor" },
+  { name: "Dr. Sarker Tanveer Ahmed Rumee", designation: "Associate Professor" },
+  { name: "Dr. Md. Mosaddek Khan", designation: "Associate Professor" },
+  { name: "Dr. Muhammad Ibrahim", designation: "Associate Professor" },
+  { name: "Hasnain Heickal", designation: "Assistant Professor (Study Leave)" },
+  { name: "Md. Mahmudur Rahman", designation: "Assistant Professor" },
+  { name: "Md. Ashraful Islam", designation: "Assistant Professor (Study Leave)" },
+  { name: "Md. Fahim Arefin", designation: "Lecturer" },
+  { name: "Redwan Ahmed Rizvee", designation: "Lecturer (Leave)" },
+  { name: "Md. Tanvir Alam", designation: "Lecturer" },
+  { name: "Jargis Ahmed", designation: "Lecturer" },
+  { name: "Palash Roy", designation: "Lecturer" },
+  { name: "Md. Ahasanul Alam", designation: "Lecturer" },
+  { name: "Md. Aminul Kader Bulbul", designation: "Lecturer" },
+  { name: "Shabab Murshed", designation: "Lecturer" },
+];
+
+const usedFacultyEmails = new Set<string>();
+function facultyEmail(name: string): string {
+  const parts = name.replace(/^Dr\.\s*/, "").split(/\s+/).filter(Boolean);
+  const first = parts[0].replace(/[^a-zA-Z]/g, "").toLowerCase();
+  const last = parts[parts.length - 1].replace(/[^a-zA-Z]/g, "").toLowerCase();
+  let slug = `${first}.${last}`;
+  let email = `${slug}@cse.du.ac.bd`;
+  let n = 2;
+  while (usedFacultyEmails.has(email)) { email = `${slug}${n}@cse.du.ac.bd`; n += 1; }
+  usedFacultyEmails.add(email);
+  return email;
+}
+
+const duCseFacultyUsers = DU_CSE_FACULTY.map((f, i) => ({
+  user_id: `11111111-1111-1111-1111-1111111121${String(i + 1).padStart(2, "0")}`,
+  name: f.name,
+  email: facultyEmail(f.name),
+  role: "researcher",
+  department: "CSE",
+  bio: `${f.designation}, Department of Computer Science and Engineering, University of Dhaka`,
+}));
+
+users.push(...duCseFacultyUsers);
+
 // ─── Tags (20) ───────────────────────────────────────────────────────────────
 const tags = [
   { tag_id: "22222222-2222-2222-2222-222222222201", name_en: "thesis", name_bn: "থিসিস" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -30,7 +30,7 @@ const teamMemberSchema = z.object({
 const schema = z.object({
   title:          z.string().min(5, "Title must be at least 5 characters"),
   abstract:       z.string().min(50, "Abstract must be at least 50 characters"),
-  advisor_name:   z.string().min(1, "Advisor is required"),
+  advisor_id:     z.string().min(1, "Advisor is required"),
   semester:       z.string().min(1, "Semester is required"),
   department:     z.string().min(1, "Department is required"),
   technologies:   z.string().optional(),
@@ -66,10 +66,28 @@ export default function SubmitProjectPage() {
   const [pdfFile, setPdfFile]   = useState<File | null>(null);
   const [pdfError, setPdfError] = useState<string>("");
 
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      team_members: [{ name: user?.name ?? "", student_id: "", email: user?.email ?? "", role: "Lead" }],
+    },
+  });
+
+  const selectedDepartment = watch("department");
+
   const { data: advisorData } = useQuery({
-    queryKey: ["advisors"],
+    queryKey: ["advisors", selectedDepartment],
     queryFn: async () => {
-      const { data } = await api.get("/auth/advisors");
+      const { data } = await api.get("/auth/advisors", {
+        params: selectedDepartment ? { department: selectedDepartment } : undefined,
+      });
       return data.data as { user_id: string; name: string; department: string }[];
     },
   });
@@ -79,18 +97,14 @@ export default function SubmitProjectPage() {
       label: u.department ? `${u.name} (${u.department})` : u.name,
     }));
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      team_members: [{ name: user?.name ?? "", student_id: "", email: user?.email ?? "", role: "Lead" }],
-    },
-  });
+  // Selected advisor no longer valid for the current department — clear it
+  const prevDepartment = useRef(selectedDepartment);
+  useEffect(() => {
+    if (prevDepartment.current !== selectedDepartment) {
+      setValue("advisor_id", "");
+      prevDepartment.current = selectedDepartment;
+    }
+  }, [selectedDepartment, setValue]);
 
   const { fields, append, remove } = useFieldArray({ control, name: "team_members" });
 
@@ -117,17 +131,10 @@ export default function SubmitProjectPage() {
 
   // Submit
   const onSubmit = async (values: FormValues) => {
-    // Resolve advisor_name to advisor_id
-    const typedName = values.advisor_name.trim().toLowerCase();
-    const matched = advisorData?.find(
-      (a) => a.name.toLowerCase().includes(typedName) || typedName.includes(a.name.toLowerCase())
-    );
-    const resolvedAdvisorId = matched ? matched.user_id : (advisorData?.[0]?.user_id ?? "");
-
     const fd = new FormData();
     fd.append("title",        values.title);
     fd.append("abstract",     values.abstract);
-    fd.append("advisor_id",   resolvedAdvisorId);
+    fd.append("advisor_id",   values.advisor_id);
     fd.append("semester",     values.semester);
     fd.append("department",   values.department);
     fd.append("team_members", JSON.stringify(values.team_members));
@@ -278,10 +285,11 @@ export default function SubmitProjectPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
+                <Select
                   label="Department"
                   required
-                  placeholder="e.g. CSE"
+                  placeholder="Select department"
+                  options={DEPARTMENTS.map((d) => ({ value: d, label: d }))}
                   error={errors.department?.message}
                   {...register("department")}
                 />
@@ -293,13 +301,20 @@ export default function SubmitProjectPage() {
                   {...register("semester")}
                 />
               </div>
-              <Input
+              <Select
                 label="Advisor"
                 required
-                placeholder="e.g. Dr. Rahim"
-                error={errors.advisor_name?.message}
-                {...register("advisor_name")}
+                placeholder={selectedDepartment ? "Select advisor" : "Select a department first"}
+                options={advisors}
+                error={errors.advisor_id?.message}
+                disabled={!selectedDepartment || advisors.length === 0}
+                {...register("advisor_id")}
               />
+              {selectedDepartment && advisors.length === 0 && (
+                <p style={{ fontSize: 12, color: "#9ca3af", marginTop: -8 }}>
+                  No advisors on file for {selectedDepartment} yet.
+                </p>
+              )}
               <Input
                 label="Technologies Used"
                 placeholder="React, Node.js, Python, Arduino (comma-separated)"

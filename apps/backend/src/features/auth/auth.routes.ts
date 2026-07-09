@@ -306,14 +306,23 @@ router.post("/logout", authenticate, asyncHandler(async (req: AuthRequest, res: 
   res.json({ success: true, message: "Logged out successfully" });
 }));
 
-// GET /api/auth/advisors — public list of all researchers (faculty/advisors)
-router.get("/advisors", asyncHandler(async (_req: Request, res: Response) => {
-  const advisors = await query(
-    `SELECT user_id, name, department
-     FROM users
-     WHERE role = 'researcher' AND deleted_at IS NULL
-     ORDER BY name ASC`
-  );
+// GET /api/auth/advisors — public list of researchers (faculty/advisors), optionally scoped by department
+router.get("/advisors", asyncHandler(async (req: Request, res: Response) => {
+  const { department } = req.query as { department?: string };
+  const advisors = department
+    ? await query(
+        `SELECT user_id, name, department
+         FROM users
+         WHERE role = 'researcher' AND deleted_at IS NULL AND department = $1
+         ORDER BY name ASC`,
+        [department]
+      )
+    : await query(
+        `SELECT user_id, name, department
+         FROM users
+         WHERE role = 'researcher' AND deleted_at IS NULL
+         ORDER BY name ASC`
+      );
   res.json({ success: true, data: advisors });
 }));
 
