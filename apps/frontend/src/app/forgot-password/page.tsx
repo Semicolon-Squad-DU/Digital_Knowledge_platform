@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { Mail, CheckCircle, GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
+import { Input } from "@/components/ui/Input";
 import api from "@/lib/api";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -64,389 +65,259 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const inputBase: React.CSSProperties = {
+    display: "block", width: "100%", padding: "10px 12px",
+    fontSize: "13.5px", color: "#111827", background: "#ffffff",
+    border: "1.5px solid #e5e7eb", borderRadius: "8px",
+    outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
+  };
+
   return (
-    <div style={{
-      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-      background: "var(--theme-gradient-160)",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      {/* Background Mock Content */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        padding: "32px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-        background: "#f9fafb",
-        zIndex: 0
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ height: "28px", width: "200px", background: "#e5e7eb", borderRadius: "6px" }} />
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ height: "36px", width: "80px", background: "#e5e7eb", borderRadius: "6px" }} />
-            <div style={{ height: "36px", width: "36px", borderRadius: "50%", background: "#e5e7eb" }} />
-          </div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
-          {[1, 2, 3].map((i) => (
-            <div key={i} style={{ height: "100px", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px" }}>
-              <div style={{ height: "12px", width: "40px", background: "#f3f4f6", marginBottom: "12px" }} />
-              <div style={{ height: "24px", width: "80px", background: "#e5e7eb" }} />
+    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+
+      {/* ── Nav ── */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <GraduationCap size={13} color="#ffffff" />
             </div>
-          ))}
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
+          </Link>
+          <Link href="/login"
+            style={{ fontSize: "13px", fontWeight: 600, color: "#4b5563", textDecoration: "none", transition: "color 0.2s" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#4b5563")}
+          >
+            Back to Sign In
+          </Link>
         </div>
-      </div>
-
-      {/* Backdrop blur overlay */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backdropFilter: "blur(5px)",
-        WebkitBackdropFilter: "blur(5px)",
-        background: "rgba(0, 0, 0, 0.4)",
-        pointerEvents: "none",
-        zIndex: 1
-      }} />
-
-      {/* Navbar */}
-      <header style={{
-        padding: "14px 24px",
-        borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
-        background: "rgba(255, 255, 255, 0.75)",
-        backdropFilter: "blur(15px)",
-        WebkitBackdropFilter: "blur(15px)",
-        position: "relative",
-        zIndex: 2
-      }}>
-        <Link
-          href="/login"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "13px",
-            color: "var(--avatar-theme-color, #000000)",
-            fontWeight: 700,
-            textDecoration: "none",
-            transition: "color 0.2s"
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >
-          <ArrowLeft size={14} strokeWidth={2.5} />
-          Back to Sign In
-        </Link>
       </header>
 
-      {/* Main Content */}
-      <main style={{
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px",
-        position: "relative",
-        zIndex: 2
-      }}>
-        <div style={{
-          width: "100%",
-          maxWidth: "420px",
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          borderRadius: "16px",
-          border: "1px solid rgba(255, 255, 255, 0.3)",
-          padding: "40px 32px",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)"
-        }}>
+      {/* ── Main ── */}
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 16px" }}>
+        <div style={{ width: "100%", maxWidth: "420px" }}>
+
+          {/* Card */}
+          <div style={{
+            background: "#ffffff", borderRadius: "16px",
+            border: "1px solid #e5e7eb", padding: "40px 36px 32px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+          }}>
           {!isSubmitted ? (
             <>
-              {/* Icon */}
-              <div style={{
-                width: "56px",
-                height: "56px",
-                background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%)",
-                borderRadius: "12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "24px"
-              }}>
-                <Mail size={28} color="#ffffff" />
+              {/* Heading */}
+              <div style={{ marginBottom: "28px" }}>
+                <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.025em", lineHeight: 1.15, margin: "0 0 6px 0" }}>
+                  Forgot Password?
+                </h1>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                  Enter your email and we&apos;ll send you a reset code.
+                </p>
               </div>
 
-              {/* Title */}
-              <h1 style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                color: "#111827",
-                margin: "0 0 8px 0",
-                lineHeight: 1.2
-              }}>
-                Forgot Password?
-              </h1>
-              <p style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                margin: "0 0 24px 0",
-                lineHeight: 1.5
-              }}>
-                Enter your email address and we&apos;ll send you a 6-digit code to reset your password.
-              </p>
-
               {/* Form */}
-              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div>
-                  <label style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#111827",
-                    marginBottom: "8px"
-                  }}>
-                    Email Address
+              <form onSubmit={handleSubmit} noValidate>
+                {/* Email */}
+                <div style={{ marginBottom: "20px" }}>
+                  <label htmlFor="forgot-email" style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>
+                    Email address
                   </label>
                   <input
+                    id="forgot-email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      fontSize: "14px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      background: "#ffffff",
-                      color: "#111827",
-                      boxSizing: "border-box",
-                      transition: "all 0.2s"
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(var(--avatar-theme-color), 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#d1d5db";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
+                    style={{ ...inputBase, borderColor: "#e5e7eb" }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #111827)"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
                   />
                 </div>
 
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isLoading}
                   style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%)",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+                    padding: "12px 16px", fontSize: "13.5px", fontWeight: 700,
+                    background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
+                    border: "none", borderRadius: "8px",
                     cursor: isLoading ? "not-allowed" : "pointer",
-                    transition: "all 0.2s",
-                    opacity: isLoading ? 0.7 : 1
+                    opacity: isLoading ? 0.7 : 1,
+                    transition: "opacity 0.2s",
                   }}
-                  onMouseEnter={(e) => {
-                    if (!isLoading) e.currentTarget.style.opacity = "0.9";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isLoading) e.currentTarget.style.opacity = "1";
-                  }}
+                  onMouseEnter={e => { if (!isLoading) e.currentTarget.style.opacity = "0.87"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = isLoading ? "0.7" : "1"; }}
                 >
-                  {isLoading ? "Sending..." : "Send Reset Code"}
+                  {isLoading ? (
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : <Mail size={15} strokeWidth={2.5} />}
+                  Send Reset Code
                 </button>
               </form>
 
-              {/* Back to Sign In */}
-              <p style={{
-                fontSize: "13px",
-                color: "#6b7280",
-                textAlign: "center",
-                margin: "24px 0 0 0"
-              }}>
-                Remember your password?{" "}
-                <Link
-                  href="/login"
-                  style={{
-                    color: "var(--avatar-theme-color)",
-                    textDecoration: "none",
-                    fontWeight: 600,
-                    transition: "opacity 0.2s"
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              {/* Divider + Back link */}
+              <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 18px" }} />
+              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
                 >
-                  Sign In
+                  Back to Sign In
                 </Link>
               </p>
             </>
           ) : (
             <>
-              {/* Success State */}
-              <div style={{
-                width: "56px",
-                height: "56px",
-                background: "linear-gradient(135deg, #16a34a 0%, rgba(255,255,255,0.45) 100%)",
-                borderRadius: "12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "24px"
-              }}>
-                <CheckCircle size={28} color="#ffffff" />
+              {/* Heading */}
+              <div style={{ marginBottom: "28px" }}>
+                <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.025em", lineHeight: 1.15, margin: "0 0 6px 0" }}>
+                  Check Your Email
+                </h1>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                  We sent a reset code to <strong>{email}</strong>
+                </p>
               </div>
 
-              <h1 style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                color: "#111827",
-                margin: "0 0 8px 0",
-                lineHeight: 1.2
-              }}>
-                Check Your Email
-              </h1>
-              <p style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                margin: "0 0 24px 0",
-                lineHeight: 1.5
-              }}>
-                We&apos;ve sent a 6-digit reset code to <strong>{email}</strong>. Enter it below with your new password.
-              </p>
-
-              <form onSubmit={handleReset} style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "16px" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>
-                    Reset Code
+              {/* Form */}
+              <form onSubmit={handleReset} noValidate>
+                {/* Reset Code */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label htmlFor="reset-code" style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>
+                    6-digit code
                   </label>
                   <input
+                    id="reset-code"
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                    placeholder="123456"
-                    style={{
-                      width: "100%", padding: "10px 12px", fontSize: "18px", letterSpacing: "0.3em",
-                      textAlign: "center", border: "1px solid #d1d5db", borderRadius: "8px",
-                      background: "#ffffff", color: "#111827", boxSizing: "border-box"
-                    }}
+                    placeholder="000000"
+                    style={{ ...inputBase, borderColor: "#e5e7eb", letterSpacing: "0.15em", textAlign: "center", fontSize: "16px", fontWeight: 600 }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #111827)"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
                   />
                 </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>
-                    New Password
+
+                {/* New Password */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label htmlFor="reset-password" style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>
+                    New password
                   </label>
-                  <input
+                  <Input
+                    id="reset-password"
                     type="password"
+                    placeholder="••••••••"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                    style={{
-                      width: "100%", padding: "10px 12px", fontSize: "14px", border: "1px solid #d1d5db",
-                      borderRadius: "8px", background: "#ffffff", color: "#111827", boxSizing: "border-box"
-                    }}
+                    className="w-full"
                   />
                 </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>
-                    Confirm New Password
+
+                {/* Confirm Password */}
+                <div style={{ marginBottom: "20px" }}>
+                  <label htmlFor="reset-confirm" style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>
+                    Confirm password
                   </label>
-                  <input
+                  <Input
+                    id="reset-confirm"
                     type="password"
+                    placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat new password"
-                    style={{
-                      width: "100%", padding: "10px 12px", fontSize: "14px", border: "1px solid #d1d5db",
-                      borderRadius: "8px", background: "#ffffff", color: "#111827", boxSizing: "border-box"
-                    }}
+                    className="w-full"
                   />
                 </div>
+
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isResetting}
                   style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%)",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+                    padding: "12px 16px", fontSize: "13.5px", fontWeight: 700,
+                    background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
+                    border: "none", borderRadius: "8px",
                     cursor: isResetting ? "not-allowed" : "pointer",
                     opacity: isResetting ? 0.7 : 1,
-                    transition: "all 0.2s"
+                    transition: "opacity 0.2s",
                   }}
+                  onMouseEnter={e => { if (!isResetting) e.currentTarget.style.opacity = "0.87"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = isResetting ? "0.7" : "1"; }}
                 >
-                  {isResetting ? "Resetting..." : "Reset Password"}
+                  {isResetting ? (
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : <CheckCircle size={15} strokeWidth={2.5} />}
+                  Reset Password
                 </button>
               </form>
 
-              <button
-                onClick={() => {
-                  setIsSubmitted(false);
-                  setOtp("");
-                  setNewPassword("");
-                  setConfirmPassword("");
-                }}
-                style={{
-                  width: "100%",
-                  padding: "10px 16px",
-                  background: "transparent",
-                  color: "var(--avatar-theme-color, #111827)",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                Send a New Code
-              </button>
+              {/* Resend link */}
+              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: "20px 0 0 0" }}>
+                No code?{" "}
+                <button
+                  type="button"
+                  onClick={() => { setIsSubmitted(false); setOtp(""); setNewPassword(""); setConfirmPassword(""); }}
+                  style={{ background: "none", border: "none", color: "#111827", fontWeight: 700, cursor: "pointer", textDecoration: "none", transition: "opacity 0.2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.8")}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                >
+                  Send again
+                </button>
+              </p>
 
-              <p style={{
-                fontSize: "13px",
-                color: "#6b7280",
-                textAlign: "center",
-                margin: "24px 0 0 0"
-              }}>
-                <Link
-                  href="/login"
-                  style={{
-                    color: "var(--avatar-theme-color)",
-                    textDecoration: "none",
-                    fontWeight: 600,
-                    transition: "opacity 0.2s"
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              {/* Divider + Back link */}
+              <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 18px" }} />
+              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
+                <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
                 >
                   Back to Sign In
                 </Link>
               </p>
             </>
           )}
+          </div>
         </div>
       </main>
+
+      {/* ── Footer ── */}
+      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform</p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {[{ l: "Privacy", h: "/privacy" }, { l: "Terms", h: "/terms" }, { l: "Contact", h: "/contact" }].map(x => (
+              <Link key={x.l} href={x.h} style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+              >{x.l}</Link>
+            ))}
+          </div>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f8f9fa" }}>
+        <div style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Loading…</div>
+      </div>
+    }>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

@@ -751,7 +751,7 @@ export default function HomePage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid">
               {ROLE_CARDS.map(({ icon: Icon, title, desc }, i) => (
                 <Reveal key={title} delay={(i % 3) * 90}>
-                  <div className="home-card-lift" style={{ background: "#fafaf8", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
+                  <div className="home-card-lift" style={{ background: "#fafaf8", border: "1px solid rgba(0, 0, 0, 0.08)", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <div className="home-card-icon" style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Icon size={17} color="#ffffff" />
@@ -800,7 +800,7 @@ export default function HomePage() {
                             key={key}
                             href={itemHref}
                             className="home-latest-row"
-                            style={{ background: "#ffffff", borderRadius: "14px", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", textDecoration: "none", boxShadow: "0 1px 2px rgba(0,0,0,.03)" }}
+                            style={{ background: "#ffffff", border: "1px solid rgba(0, 0, 0, 0.08)", borderRadius: "14px", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", textDecoration: "none", boxShadow: "0 1px 2px rgba(0,0,0,.03)" }}
                           >
                             <div style={{ width: "38px", height: "38px", borderRadius: "11px", background: "#f4f4f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               <Icon size={15} color="#0d0d12" />
@@ -964,7 +964,7 @@ export default function HomePage() {
 
             {/* Legal column */}
             <div>
-              <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#6b7280", margin: "0 0 16px 0" }}>
+              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }}>
                 Legal
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
@@ -974,7 +974,7 @@ export default function HomePage() {
                   { label: "Contact Us", href: "/contact" },
                 ].map((l) => (
                   <Link key={l.label} href={l.href}
-                    style={{ fontSize: "14px", color: "#374151", textDecoration: "none", fontWeight: 500, transition: "color 0.18s" }}
+                    style={{ fontSize: "13.5px", color: "#4b5563", textDecoration: "none", fontWeight: 400, transition: "color 0.18s", lineHeight: 1.6 }}
                     onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
                     onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
                   >{l.label}</Link>
@@ -984,15 +984,10 @@ export default function HomePage() {
 
             {/* Team column */}
             <div>
-              <p style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#6b7280", margin: "0 0 16px 0" }}>
+              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }}>
                 Team
               </p>
               <p style={{ fontSize: "13.5px", color: "#1f2937", margin: "0 0 10px 0", fontWeight: 700 }}>Semicolon-Squad-DU</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-                {["Faria Yasmin", "Yuki Bhuiyan", "Nuruzzaman", "Hasibul Islam"].map(name => (
-                  <p key={name} style={{ fontSize: "13.5px", color: "#4b5563", margin: 0 }}>{name}</p>
-                ))}
-              </div>
             </div>
           </div>
 
