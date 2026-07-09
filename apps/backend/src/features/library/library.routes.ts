@@ -135,7 +135,7 @@ router.get(
 // GET /api/library/wishlist
 router.get("/wishlist", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const items = await query(
-    `SELECT w.*, ci.title, ci.authors, ci.available_copies, ci.cover_url
+    `SELECT w.*, ci.title, ci.authors, ci.available_copies, ci.cover_url, ci.category, ci.year, ci.publisher
      FROM wishlists w
      JOIN catalog_items ci ON w.catalog_id = ci.catalog_id
      WHERE w.member_id = $1
@@ -186,6 +186,25 @@ router.post("/holds", authenticate, asyncHandler(async (req: AuthRequest, res: R
   );
 
   res.status(201).json({ success: true, data: { ...hold, queue_position: parseInt(count) } });
+}));
+
+// DELETE /api/library/holds/:id — cancel a hold (owner or librarian/admin)
+router.delete("/holds/:id", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const hold = await queryOne<{ hold_id: string; member_id: string; status: string }>(
+    "SELECT hold_id, member_id, status FROM hold_requests WHERE hold_id = $1",
+    [req.params.id]
+  );
+  if (!hold) throw new AppError(404, "Hold not found");
+
+  if (!["librarian", "admin"].includes(req.user!.role) && req.user!.user_id !== hold.member_id) {
+    throw new AppError(403, "Access denied");
+  }
+  if (!["pending", "available"].includes(hold.status)) {
+    throw new AppError(409, `Hold is already ${hold.status} and cannot be cancelled`);
+  }
+
+  await query("UPDATE hold_requests SET status = 'cancelled' WHERE hold_id = $1", [req.params.id]);
+  res.json({ success: true, message: "Hold cancelled" });
 }));
 
 // POST /api/library/issue
@@ -275,7 +294,7 @@ router.get(
   "/member/:id/history",
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (req.user!.role === "member" && req.user!.user_id !== req.params.id) {
+    if (!["librarian", "admin"].includes(req.user!.role) && req.user!.user_id !== req.params.id) {
       throw new AppError(403, "Access denied");
     }
 
@@ -297,7 +316,7 @@ router.get(
   "/member/:id/holds",
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (req.user!.role === "member" && req.user!.user_id !== req.params.id) {
+    if (!["librarian", "admin"].includes(req.user!.role) && req.user!.user_id !== req.params.id) {
       throw new AppError(403, "Access denied");
     }
 
