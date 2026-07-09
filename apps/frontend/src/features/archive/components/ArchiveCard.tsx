@@ -4,8 +4,6 @@ import { ArchiveItem } from "@dkp/shared";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge, getFileIcon } from "@/lib/utils";
 
-import { useAuthStore } from "@/store/auth.store";
-
 interface ArchiveCardProps {
   item: ArchiveItem;
   onDownload?: (id: string) => void;
@@ -14,8 +12,6 @@ interface ArchiveCardProps {
 export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
   const tierBadge   = getAccessTierBadge(item.access_tier);
   const statusBadge = getStatusBadge(item.status);
-  const { user, isAuthenticated } = useAuthStore();
-  const isGuest = !isAuthenticated || user?.role === "guest";
 
   return (
     <div className="surface p-5 hover:shadow-md transition-shadow group">
@@ -74,7 +70,7 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
             <div className="flex items-center gap-3 text-xs" style={{ color: "var(--color-fg-subtle)" }}>
               <span>{formatDate(item.created_at)}</span>
               <span>{item.file_size ? formatFileSize(Number(item.file_size)) : "0 B"}</span>
@@ -83,18 +79,16 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
               </span>
             </div>
 
-            {!isGuest && user?.role !== "archivist" && user?.role !== "admin" && (
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Link href={`/archive/${item.item_id}`}>
-                  <Button variant="invisible" size="sm"><Eye size={14} /> View</Button>
-                </Link>
-                {item.status === "published" && onDownload && (
-                  <Button variant="invisible" size="sm" onClick={() => onDownload(item.item_id)}>
-                    <Download size={14} /> Download
-                  </Button>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              <Link href={`/archive/${item.item_id}`}>
+                <Button variant="invisible" size="sm"><Eye size={14} /> View</Button>
+              </Link>
+              {item.status === "published" && onDownload && (
+                <Button variant="invisible" size="sm" onClick={() => onDownload(item.item_id)}>
+                  <Download size={14} /> Download
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
