@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import api from "@/lib/api";
-import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X, ShieldCheck, UserRound, Landmark, MailCheck, Rocket, FileText, Calendar } from "lucide-react";
+import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X, ShieldCheck, UserRound, Landmark, MailCheck, Rocket, FileText, Calendar, Users, Trophy } from "lucide-react";
 
 const PARTNERS = [
   { id: 1, name: "CSE",  full: "Computer Science & Engineering" },
@@ -21,10 +21,18 @@ const PARTNERS = [
 
 
 const QUICK_LINKS = [
-  { label: "Browse Archive", href: "/archive", icon: Archive, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Search institutional documents" },
-  { label: "Library Catalog", href: "/library", icon: BookOpen, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Books, journals & more" },
-  { label: "Research Repository", href: "/research", icon: FlaskConical, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Faculty publications & datasets" },
-  { label: "Showcase Gallery", href: "/showcase", icon: Star, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Student project highlights" },
+  { label: "Institutional Archive", href: "/archive", icon: Archive, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Preserving the university's documents and history" },
+  { label: "University Library", href: "/library", icon: BookOpen, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Books, journals, and reference works for every discipline" },
+  { label: "Research & Publications", href: "/research", icon: FlaskConical, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Faculty scholarship, papers, and datasets" },
+  { label: "Student Showcase", href: "/showcase", icon: Star, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Projects and achievements from across the departments" },
+];
+
+const CAMPUS_LIFE = [
+  { icon: BookOpen,      label: "Central Library" },
+  { icon: FlaskConical,  label: "Research Laboratories" },
+  { icon: Users,         label: "Student Societies" },
+  { icon: Star,          label: "Cultural Festivals" },
+  { icon: Trophy,        label: "Convocation & Ceremonies" },
 ];
 
 const TYPEWRITER_HEADING = "Empowering Research, Learning & Innovation";
@@ -94,6 +102,46 @@ function Reveal({ children, delay = 0, style }: { children: React.ReactNode; del
     <div ref={ref} className={`home-reveal${visible ? " is-visible" : ""}`} style={{ transitionDelay: `${delay}ms`, ...style }}>
       {children}
     </div>
+  );
+}
+
+// Hand-drawn line-art colonnade motif — no photography needed, purely decorative
+function ColonnadeMotif({ opacity = 0.07, style }: { opacity?: number; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 400 160" fill="none" style={{ display: "block", ...style }} aria-hidden="true">
+      <g stroke="#0d0d12" strokeOpacity={opacity} strokeWidth="1.5">
+        <path d="M40 40 L200 10 L360 40" />
+        <line x1="30" y1="40" x2="370" y2="40" />
+        {[60, 120, 180, 220, 280, 340].map((x) => (
+          <g key={x}>
+            <line x1={x} y1="44" x2={x} y2="120" />
+            <line x1={x - 8} y1="44" x2={x + 8} y2="44" />
+            <line x1={x - 8} y1="120" x2={x + 8} y2="120" />
+          </g>
+        ))}
+        <line x1="20" y1="124" x2="380" y2="124" />
+        <line x1="10" y1="134" x2="390" y2="134" />
+        <line x1="0" y1="144" x2="400" y2="144" />
+      </g>
+    </svg>
+  );
+}
+
+// Simple heraldic seal mark — circular monogram, no external crest asset needed
+function SealMark({ size = 56 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
+      <circle cx="50" cy="50" r="47" fill="none" stroke="#0d0d12" strokeWidth="1.5" />
+      <circle cx="50" cy="50" r="39" fill="none" stroke="#0d0d12" strokeWidth="1" />
+      {Array.from({ length: 24 }).map((_, i) => {
+        const angle = (i / 24) * 2 * Math.PI;
+        const x1 = 50 + 43 * Math.cos(angle), y1 = 50 + 43 * Math.sin(angle);
+        const x2 = 50 + 47 * Math.cos(angle), y2 = 50 + 47 * Math.sin(angle);
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#0d0d12" strokeWidth="1" />;
+      })}
+      <text x="50" y="46" textAnchor="middle" fontSize="15" fontWeight="700" fill="#0d0d12" fontFamily="var(--font-serif, serif)">DU</text>
+      <text x="50" y="63" textAnchor="middle" fontSize="9" fontWeight="600" fill="#0d0d12" letterSpacing="1">1921</text>
+    </svg>
   );
 }
 
@@ -276,16 +324,15 @@ export default function HomePage() {
         .home-latest-row:hover { transform: translateX(5px); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 20px rgba(0,0,0,.07); }
         .home-step-icon { animation: homeFloat 3.2s ease-in-out infinite alternate; }
 
-        /* Stats: hairline dividers between borderless columns */
-        .home-stats-grid > div { border-left: 1px solid #e4e4e7; }
-        .home-stats-grid > div:first-child { border-left: none; }
+        /* Quick facts ribbon: hairline dividers between inline items */
+        .home-facts-item { border-left: 1px solid #e4e4e7; }
+        .home-facts-item:first-child { border-left: none; }
 
         /* How-it-works: hairline connector across the three steps (desktop) */
         .home-steps { position: relative; }
         .home-steps::before { content: ""; position: absolute; top: 72px; left: 12%; right: 12%; height: 1px; background: #e4e4e7; }
 
         @media (max-width: 768px) {
-          .home-stats-grid > div { border-left: none !important; }
           .home-steps::before { display: none; }
         }
 
@@ -297,15 +344,14 @@ export default function HomePage() {
         @media (max-width: 768px) {
           .home-partner-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .home-footer { grid-template-columns: 1fr 1fr !important; }
-          .home-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .home-explore-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .home-role-grid { grid-template-columns: 1fr !important; }
           .home-latest-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 480px) {
           .home-footer { grid-template-columns: 1fr !important; }
-          .home-stats-grid { grid-template-columns: 1fr !important; }
           .home-explore-grid { grid-template-columns: 1fr !important; }
+          .home-facts-item { border-left: none !important; padding: 4px 22px !important; }
         }
       `}} />
 
@@ -654,42 +700,53 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ── LIVE PLATFORM STATS ────────────────────────────────────────────── */}
-        <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        {/* ── HERITAGE & MISSION ─────────────────────────────────────────────── */}
+        <section style={{ background: "#ffffff", padding: "clamp(88px, 11vw, 140px) 32px clamp(64px, 8vw, 100px)", borderTop: "1px solid #e4e4e7", position: "relative", overflow: "hidden" }}>
+          <div style={{ maxWidth: "980px", margin: "0 auto", position: "relative", zIndex: 1 }}>
             <Reveal>
-              <div style={{ textAlign: "center", marginBottom: "52px" }}>
-                <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
-                  The Platform in Numbers
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
+                <SealMark size={52} />
+                <div style={{ height: "34px", width: "1px", background: "#e4e4e7" }} />
+                <p style={{ fontSize: "12.5px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: 0, lineHeight: 1.5 }}>
+                  University of Dhaka<br /><span style={{ fontWeight: 500, opacity: 0.8 }}>Established 1921</span>
                 </p>
-                <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
-                  A Living Knowledge Base
-                </h2>
+              </div>
+              <h2 style={{
+                fontFamily: "var(--font-serif, serif)",
+                fontSize: "clamp(34px, 5.5vw, 58px)",
+                fontWeight: 700,
+                color: "#0d0d12",
+                margin: "0 0 26px 0",
+                letterSpacing: "-0.015em",
+                lineHeight: 1.12,
+                maxWidth: "820px",
+              }}>
+                Over a century of teaching, research, and discovery.
+              </h2>
+              <p style={{ fontSize: "clamp(16px, 1.8vw, 19px)", color: "#3f3f46", margin: "0 0 40px 0", lineHeight: 1.75, maxWidth: "680px" }}>
+                The Digital Knowledge Platform is the shared home for the university&apos;s academic record —
+                archives, publications, books, and student work — preserved and made discoverable
+                for every generation that studies here.
+              </p>
+            </Reveal>
+            <Reveal delay={120}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {CAMPUS_LIFE.map(({ icon: Icon, label }) => (
+                  <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "8px 16px", borderRadius: "999px", border: "1px solid #e4e4e7", fontSize: "13px", fontWeight: 600, color: "#3f3f46" }}>
+                    <Icon size={13} color="#71717a" />
+                    {label}
+                  </span>
+                ))}
               </div>
             </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }} className="home-stats-grid">
-              {[
-                { label: "Archive Documents", value: stats.archive },
-                { label: "Research Outputs",  value: stats.research },
-                { label: "Books in Catalog",  value: stats.catalog },
-                { label: "Student Projects",  value: stats.showcase },
-              ].map(({ label, value }, i) => (
-                <Reveal key={label} delay={i * 90}>
-                  <div style={{ padding: "8px 24px", textAlign: "center" }}>
-                    <p style={{ fontSize: "clamp(44px, 6vw, 64px)", fontWeight: 800, color: "#0d0d12", margin: "0 0 8px 0", letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-                      <CountUp value={value} />
-                    </p>
-                    <p style={{ fontSize: "12px", color: "#71717a", margin: 0, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
           </div>
+          <ColonnadeMotif
+            opacity={0.06}
+            style={{ position: "absolute", right: "-4%", bottom: "-6%", width: "min(560px, 60vw)", height: "auto", pointerEvents: "none", zIndex: 0 }}
+          />
         </section>
 
-        {/* ── EXPLORE THE PLATFORM ───────────────────────────────────────────── */}
+        {/* ── FOUR PILLARS ───────────────────────────────────────────────────── */}
         <section style={{ background: "#fafaf8", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
@@ -697,10 +754,10 @@ export default function HomePage() {
                 <div>
                   <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
                     <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
-                    Explore
+                    The Four Pillars
                   </p>
-                  <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
-                    Four Collections, One Platform
+                  <h2 style={{ fontFamily: "var(--font-serif, serif)", fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.01em", lineHeight: 1.15 }}>
+                    Teaching, Research, Heritage &amp; Community
                   </h2>
                 </div>
               </div>
@@ -730,42 +787,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── BUILT FOR EVERY ROLE ───────────────────────────────────────────── */}
-        <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <Reveal>
-              <div style={{ textAlign: "center", marginBottom: "52px" }}>
-                <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
-                  Role-Based Workspaces
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
-                </p>
-                <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: "0 0 14px 0", letterSpacing: "-0.035em", lineHeight: 1.1 }}>
-                  Built for Every Role on Campus
-                </h2>
-                <p style={{ fontSize: "16px", color: "#52525b", margin: "0 auto", maxWidth: "540px", lineHeight: 1.65 }}>
-                  Six access levels, each with its own dashboard, permissions, and tools — enforced on every request.
-                </p>
-              </div>
-            </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid">
-              {ROLE_CARDS.map(({ icon: Icon, title, desc }, i) => (
-                <Reveal key={title} delay={(i % 3) * 90}>
-                  <div className="home-card-lift" style={{ background: "#fafaf8", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <div className="home-card-icon" style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Icon size={17} color="#ffffff" />
-                      </div>
-                      <p style={{ fontSize: "16px", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.015em" }}>{title}</p>
-                    </div>
-                    <p style={{ fontSize: "14px", color: "#52525b", margin: 0, lineHeight: 1.65 }}>{desc}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ── FRESH FROM THE PLATFORM ────────────────────────────────────────── */}
         {(latestResearch.length > 0 || latestArchive.length > 0) && (
           <section style={{ background: "#fafaf8", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
@@ -776,7 +797,7 @@ export default function HomePage() {
                     <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
                     Fresh From the Platform
                   </p>
-                  <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
+                  <h2 style={{ fontFamily: "var(--font-serif, serif)", fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.01em", lineHeight: 1.15 }}>
                     Recently Added
                   </h2>
                 </div>
@@ -824,6 +845,43 @@ export default function HomePage() {
           </section>
         )}
 
+        {/* ── OUR COMMUNITY ──────────────────────────────────────────────────── */}
+        <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <Reveal>
+              <div style={{ textAlign: "center", marginBottom: "52px" }}>
+                <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
+                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+                  Our Community
+                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+                </p>
+                <h2 style={{ fontFamily: "var(--font-serif, serif)", fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 700, color: "#0d0d12", margin: "0 0 14px 0", letterSpacing: "-0.01em", lineHeight: 1.15 }}>
+                  Built for Everyone on Campus
+                </h2>
+                <p style={{ fontSize: "16px", color: "#52525b", margin: "0 auto", maxWidth: "560px", lineHeight: 1.65 }}>
+                  From first-year students to senior faculty and administrators — six access levels,
+                  each with a home suited to their work.
+                </p>
+              </div>
+            </Reveal>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid">
+              {ROLE_CARDS.map(({ icon: Icon, title, desc }, i) => (
+                <Reveal key={title} delay={(i % 3) * 90}>
+                  <div className="home-card-lift" style={{ background: "#fafaf8", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div className="home-card-icon" style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Icon size={17} color="#ffffff" />
+                      </div>
+                      <p style={{ fontSize: "16px", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.015em" }}>{title}</p>
+                    </div>
+                    <p style={{ fontSize: "14px", color: "#52525b", margin: 0, lineHeight: 1.65 }}>{desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ── HOW IT WORKS (guests) ──────────────────────────────────────────── */}
         {!isAuthenticated && (
           <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
@@ -835,7 +893,7 @@ export default function HomePage() {
                     Getting Started
                     <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
                   </p>
-                  <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
+                  <h2 style={{ fontFamily: "var(--font-serif, serif)", fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.01em", lineHeight: 1.15 }}>
                     Three Steps to Join
                   </h2>
                 </div>
@@ -857,6 +915,25 @@ export default function HomePage() {
             </div>
           </section>
         )}
+
+        {/* ── QUICK FACTS (quiet, secondary to identity) ─────────────────────── */}
+        <section style={{ background: "#fafaf8", padding: "34px 32px", borderTop: "1px solid #e4e4e7" }}>
+          <Reveal>
+            <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: "10px 0" }} className="home-facts-ribbon">
+              {[
+                { label: "Archive Documents", value: stats.archive },
+                { label: "Research Outputs",  value: stats.research },
+                { label: "Books in Catalog",  value: stats.catalog },
+                { label: "Student Projects",  value: stats.showcase },
+              ].map(({ label, value }) => (
+                <span key={label} style={{ display: "inline-flex", alignItems: "baseline", gap: "6px", padding: "0 22px", fontVariantNumeric: "tabular-nums" }} className="home-facts-item">
+                  <span style={{ fontSize: "20px", fontWeight: 800, color: "#0d0d12", letterSpacing: "-0.02em" }}><CountUp value={value} /></span>
+                  <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#71717a", letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</span>
+                </span>
+              ))}
+            </div>
+          </Reveal>
+        </section>
 
         {/* ── PARTNER NETWORK ────────────────────────────────────────────────── */}
         <section id="network-section" style={{ background: "var(--theme-sidebar-gradient)", padding: "80px 32px 72px" }} className="home-partner-section">
