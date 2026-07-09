@@ -216,13 +216,24 @@ const catalogContent: { title: string; authors: string[]; publisher: string; cat
   { title: "Nirbashito Kobi", authors: ["Taslima Nasrin"], publisher: "Ananda Publishers", category: "Novel", year: 1994, description: "A memoir and poetry collection from an exiled Bangladeshi writer." },
 ];
 
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1: return `${n}st`;
+    case 2: return `${n}nd`;
+    case 3: return `${n}rd`;
+    default: return `${n}th`;
+  }
+}
+
 const catalogItems = catalogContent.map((c, i) => ({
   catalog_id: `55555555-5555-5555-5555-${String(i + 1).padStart(12, "0")}`,
   title: c.title,
   isbn: `978${String(1000000000 + i).slice(0, 10)}`,
   authors: c.authors,
   publisher: c.publisher,
-  edition: `${(i % 5) + 1}th`,
+  edition: ordinal((i % 5) + 1),
   year: c.year,
   category: c.category,
   total_copies: 5 + (i % 6),
