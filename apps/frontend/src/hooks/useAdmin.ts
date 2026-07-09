@@ -211,6 +211,91 @@ export function useAdminAuditLogs(params?: { search?: string; action?: string; e
   });
 }
 
+export interface BackupRecord {
+  backup_id: string;
+  filename: string;
+  s3_key: string | null;
+  size_bytes: number | null;
+  status: "running" | "completed" | "failed";
+  triggered_by: "scheduled" | "manual";
+  triggered_by_user: string | null;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export function useBackups() {
+  return useQuery({
+    queryKey: ["admin", "backups"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/backups");
+      return data.data as BackupRecord[];
+    },
+    staleTime: 5_000,
+    refetchInterval: (query) => (query.state.data?.some((b) => b.status === "running") ? 3_000 : false),
+  });
+}
+
+export function useGenerateBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/admin/backups/generate");
+      return data.data as BackupRecord;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "backups"] });
+    },
+  });
+}
+
+export function useDownloadBackup() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.get(`/admin/backups/${id}/download`);
+      return data.data.url as string;
+    },
+  });
+}
+
+export function useRestoreBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, confirmFilename }: { id: string; confirmFilename: string }) => {
+      const { data } = await api.post(`/admin/backups/${id}/restore`, { confirmFilename });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "backups"] });
+    },
+  });
+}
+
+export function useBackupSchedule() {
+  return useQuery({
+    queryKey: ["admin", "backups", "schedule"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/backups/schedule");
+      return data.data as { cronExpression: string; enabled: boolean };
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useUpdateBackupSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (schedule: { cronExpression: string; enabled: boolean }) => {
+      const { data } = await api.put("/admin/backups/schedule", schedule);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "backups", "schedule"] });
+    },
+  });
+}
+
 export function useAdminHealth() {
   return useQuery({
     queryKey: ["admin", "health"],

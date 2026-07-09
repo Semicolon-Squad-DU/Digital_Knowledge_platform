@@ -1,8 +1,9 @@
 import cron from "node-cron";
-import { query } from "../core/db/pool";
+import { query, queryOne } from "../core/db/pool";
 import { config } from "../core/config";
 import { sendEmail, dueDateReminderEmail } from "../infrastructure/email.service";
 import { retryQueuedUploads } from "../infrastructure/s3.service";
+import { performBackup } from "../infrastructure/backup.service";
 import { logger } from "../core/config/logger";
 
 // ---------------------------------------------------------------------------
@@ -79,7 +80,7 @@ async function withRetry(name: string, fn: JobFn, maxAttempts = 3): Promise<void
 // Scheduler bootstrap
 // ---------------------------------------------------------------------------
 
-export function startScheduler(): void {
+export async function startScheduler(): Promise<void> {
   // Daily at 8 AM: overdue check + fines
   cron.schedule("0 8 * * *", async () => {
     logger.info("Running daily overdue check");
@@ -106,6 +107,8 @@ export function startScheduler(): void {
     }
   });
 
+  await loadBackupSchedule();
+
   logger.info("Job scheduler started");
 }
 
@@ -115,6 +118,55 @@ export function startScheduler(): void {
 
 export function getFailedJobs(): Readonly<FailedJob[]> {
   return failedJobsLog;
+}
+
+// ---------------------------------------------------------------------------
+// Scheduled backups — dynamically reconfigurable at runtime from the
+// backup_cron_expression / backup_enabled keys in system_configs, so the
+// Admin > Backups schedule UI takes effect immediately without a restart.
+// ---------------------------------------------------------------------------
+
+let backupTask: cron.ScheduledTask | null = null;
+
+export async function loadBackupSchedule(): Promise<void> {
+  const [enabledConfig, cronConfig] = await Promise.all([
+    queryOne<{ value: string }>("SELECT value FROM system_configs WHERE key = 'backup_enabled'"),
+    queryOne<{ value: string }>("SELECT value FROM system_configs WHERE key = 'backup_cron_expression'"),
+  ]);
+
+  applyBackupSchedule(
+    cronConfig?.value || "0 9 * * *",
+    enabledConfig ? enabledConfig.value === "true" : true
+  );
+}
+
+export function applyBackupSchedule(cronExpression: string, enabled: boolean): void {
+  if (backupTask) {
+    backupTask.stop();
+    backupTask = null;
+  }
+
+  if (!enabled) {
+    logger.info("Scheduled backups disabled");
+    return;
+  }
+
+  if (!cron.validate(cronExpression)) {
+    logger.error("Invalid backup cron expression, scheduled backups not started", { cronExpression });
+    return;
+  }
+
+  backupTask = cron.schedule(cronExpression, async () => {
+    logger.info("Running scheduled database backup");
+    await withRetry("runScheduledBackup", async () => {
+      const record = await performBackup("scheduled");
+      if (record.status !== "completed") {
+        throw new Error(record.error_message || "Scheduled backup failed");
+      }
+    });
+  });
+
+  logger.info("Backup job scheduled", { cronExpression });
 }
 
 // ---------------------------------------------------------------------------

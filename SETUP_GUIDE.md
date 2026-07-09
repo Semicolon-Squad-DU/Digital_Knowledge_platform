@@ -7,6 +7,7 @@ This guide explains how to set up the Digital Knowledge Platform (DKP) with the 
 - Node.js v18+ installed
 - npm or yarn installed
 - Supabase account (provided by team lead)
+- PostgreSQL client tools (`pg_dump` / `psql`) on your PATH — required for the Admin > Backups feature to generate/restore backups when running the backend directly on your host. Install via `brew install libpq` (macOS), `apt install postgresql-client` (Linux), or the [EDB installer](https://www.postgresql.org/download/windows/) (Windows). Not needed if you only run the backend via Docker (`apps/backend/Dockerfile` already bundles it).
 
 ## Step 1: Clone & Install
 

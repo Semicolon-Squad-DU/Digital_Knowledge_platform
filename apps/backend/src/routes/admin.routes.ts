@@ -1,9 +1,20 @@
 import { Router, Response } from "express";
 import bcrypt from "bcryptjs";
+import cron from "node-cron";
 import { query, queryOne } from "../core/db/pool";
 import { authenticate, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
 import { sendEmail, accountApprovalEmail } from "../infrastructure/email.service";
+import { s3Client } from "../infrastructure/s3.service";
+import { esClient } from "../infrastructure/elasticsearch.service";
+import {
+  listBackups,
+  getBackup,
+  performBackup,
+  getBackupDownloadUrl,
+  restoreBackup,
+} from "../infrastructure/backup.service";
+import { applyBackupSchedule } from "../jobs/scheduler";
 
 const router = Router();
 
@@ -809,7 +820,6 @@ router.get(
 
     // 2. Check MinIO / S3 Connection
     try {
-      const { s3Client } = require("../services/s3.service");
       const { ListBucketsCommand } = require("@aws-sdk/client-s3");
       await s3Client.send(new ListBucketsCommand({}));
     } catch (err: any) {
@@ -826,7 +836,6 @@ router.get(
 
     // 3. Check Elasticsearch Connection
     try {
-      const { esClient } = require("../services/elasticsearch.service");
       await esClient.ping();
     } catch (err: any) {
       esStatus = "unhealthy";
@@ -840,16 +849,28 @@ router.get(
       });
     }
 
-    // Add dynamic alerts if database/s3/elasticsearch are healthy so there are items to show
-    if (alerts.length === 0) {
-      alerts.push({
-        id: "alert-backup",
-        type: "info",
-        title: "Backup Completed Successfully",
-        message: "Scheduled automated database backup successfully generated and stored in S3 bucket.",
-        timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
-        read: true,
-      });
+    // Surface the real status of the most recent backup, if one exists
+    const [latestBackup] = await listBackups(1);
+    if (latestBackup) {
+      if (latestBackup.status === "failed") {
+        alerts.push({
+          id: `alert-backup-${latestBackup.backup_id}`,
+          type: "error_spike",
+          title: "Backup Failed",
+          message: `Backup "${latestBackup.filename}" failed: ${latestBackup.error_message || "unknown error"}`,
+          timestamp: latestBackup.completed_at || latestBackup.started_at,
+          read: false,
+        });
+      } else if (latestBackup.status === "completed") {
+        alerts.push({
+          id: `alert-backup-${latestBackup.backup_id}`,
+          type: "info",
+          title: "Backup Completed Successfully",
+          message: `Backup "${latestBackup.filename}" was generated and stored in the S3 bucket.`,
+          timestamp: latestBackup.completed_at || latestBackup.started_at,
+          read: true,
+        });
+      }
     }
 
     res.json({
@@ -865,6 +886,150 @@ router.get(
         alerts,
       },
     });
+  })
+);
+
+// GET /api/admin/backups — List database backups
+router.get(
+  "/backups",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const backups = await listBackups();
+    res.json({ success: true, data: backups });
+  })
+);
+
+// POST /api/admin/backups/generate — Trigger a manual backup (pg_dump -> gzip -> S3)
+router.post(
+  "/backups/generate",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const record = await performBackup("manual", req.user!.user_id);
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+       VALUES ($1, 'BACKUP', 'backup', $2, $3)`,
+      [req.user!.user_id, record.backup_id, JSON.stringify({ status: record.status, filename: record.filename })]
+    );
+
+    if (record.status === "failed") {
+      res.status(502).json({ success: false, message: record.error_message, data: record });
+      return;
+    }
+
+    res.status(201).json({ success: true, data: record });
+  })
+);
+
+// GET /api/admin/backups/:id/download — Presigned S3 download URL for a completed backup
+router.get(
+  "/backups/:id/download",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const url = await getBackupDownloadUrl(req.params.id).catch((err: Error) => {
+      throw new AppError(400, err.message);
+    });
+    res.json({ success: true, data: { url } });
+  })
+);
+
+// POST /api/admin/backups/:id/restore — Restore a backup into the live database.
+// Requires the admin to type the exact backup filename as confirmation, and
+// always takes a fresh safety backup first.
+router.post(
+  "/backups/:id/restore",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { confirmFilename } = req.body as { confirmFilename?: string };
+
+    const backup = await getBackup(id);
+    if (!backup) throw new AppError(404, "Backup not found");
+    if (!confirmFilename || confirmFilename !== backup.filename) {
+      throw new AppError(400, "confirmFilename must exactly match the backup's filename to proceed");
+    }
+
+    try {
+      const result = await restoreBackup(id, req.user!.user_id);
+
+      await query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+         VALUES ($1, 'RESTORE', 'backup', $2, $3)`,
+        [req.user!.user_id, id, JSON.stringify({ filename: backup.filename, preRestoreBackupId: result.preRestoreBackup.backup_id })]
+      );
+
+      res.json({ success: true, data: result });
+    } catch (err) {
+      await query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+         VALUES ($1, 'RESTORE', 'backup', $2, $3)`,
+        [req.user!.user_id, id, JSON.stringify({ filename: backup.filename, error: (err as Error).message })]
+      );
+      throw new AppError(502, (err as Error).message);
+    }
+  })
+);
+
+// GET /api/admin/backups/schedule — Current backup cron schedule
+router.get(
+  "/backups/schedule",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const rows = await query<{ key: string; value: string }>(
+      "SELECT key, value FROM system_configs WHERE key IN ('backup_cron_expression', 'backup_enabled')"
+    );
+    const configMap = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    res.json({
+      success: true,
+      data: {
+        cronExpression: configMap.backup_cron_expression || "0 9 * * *",
+        enabled: configMap.backup_enabled !== "false",
+      },
+    });
+  })
+);
+
+// PUT /api/admin/backups/schedule — Update backup cron schedule (takes effect immediately)
+router.put(
+  "/backups/schedule",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { cronExpression, enabled } = req.body as { cronExpression?: string; enabled?: boolean };
+
+    if (!cronExpression || typeof enabled !== "boolean") {
+      throw new AppError(400, "cronExpression (string) and enabled (boolean) are required");
+    }
+
+    if (!cron.validate(cronExpression)) {
+      throw new AppError(400, "Invalid cron expression");
+    }
+
+    await query(
+      `INSERT INTO system_configs (key, value) VALUES ('backup_cron_expression', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [cronExpression]
+    );
+    await query(
+      `INSERT INTO system_configs (key, value) VALUES ('backup_enabled', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [String(enabled)]
+    );
+
+    applyBackupSchedule(cronExpression, enabled);
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, details)
+       VALUES ($1, 'UPDATE', 'backup_schedule', $2)`,
+      [req.user!.user_id, JSON.stringify({ cronExpression, enabled })]
+    );
+
+    res.json({ success: true, data: { cronExpression, enabled } });
   })
 );
 

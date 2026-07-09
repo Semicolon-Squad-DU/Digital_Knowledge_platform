@@ -130,7 +130,7 @@ async function bootstrap(): Promise<void> {
     await initializeElasticsearch();
 
     if (config.env !== "test") {
-      startScheduler();
+      await startScheduler();
     }
 
     const server = app.listen(config.port, "0.0.0.0", () => {

@@ -16,7 +16,8 @@ import {
   useAdminStats, useCatalogDocuments, useResearcherSubmissions, useArchiveDocuments,
   useAdminUsers, useCreateAdminUser, useUpdateAdminUser, useDeleteAdminUser,
   useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs, useAdminHealth,
-  useApproveUser,
+  useApproveUser, useBackups, useGenerateBackup, useDownloadBackup, useRestoreBackup,
+  useBackupSchedule, useUpdateBackupSchedule, type BackupRecord,
 } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/library/hooks/useLibrary";
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/features/archive/hooks/useArchive";
@@ -92,12 +93,6 @@ const MOCK_AUDIT = [
   { log_id: "l4", user_id: "u4", user_name: "Fatema Begum", action: "STATUS_CHANGE", entity_type: "catalog_item", entity_id: "c1", details: { from: "draft", to: "published" }, timestamp: "2026-05-27T14:20:00Z" },
   { log_id: "l5", user_id: "u3", user_name: "Karim Hossain", action: "ACCESS", entity_type: "archive_item", entity_id: "a1", details: { access_tier: "restricted" }, timestamp: "2026-05-27T11:05:00Z" },
   { log_id: "l6", user_id: "u1", user_name: "Arif Rahman", action: "DELETE", entity_type: "user", entity_id: "u7", details: { mode: "anonymize" }, timestamp: "2026-05-26T17:00:00Z" },
-];
-
-const MOCK_BACKUPS = [
-  { backup_id: "b1", filename: "dkp_backup_2026-05-28_09-00.sql.gz", size_bytes: 52428800, created_at: "2026-05-28T09:00:00Z", status: "completed" },
-  { backup_id: "b2", filename: "dkp_backup_2026-05-27_09-00.sql.gz", size_bytes: 51380224, created_at: "2026-05-27T09:00:00Z", status: "completed" },
-  { backup_id: "b3", filename: "dkp_backup_2026-05-26_09-00.sql.gz", size_bytes: 50331648, created_at: "2026-05-26T09:00:00Z", status: "completed" },
 ];
 
 const MOCK_ALERTS = [
@@ -1105,21 +1100,86 @@ function ConfigTab() {
 
 
 // ── Tab: Backups ──────────────────────────────────────────────────────────────
+const BACKUP_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  completed: { bg: "#d1fae5", color: "#065f46" },
+  running:   { bg: "#e8f0fe", color: "#1a56db" },
+  failed:    { bg: "#fde8e8", color: "#c81e1e" },
+};
+
 function BackupsTab() {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [generating, setGenerating] = useState(false);
+  const { data: backups = [], isLoading } = useBackups();
+  const { data: schedule } = useBackupSchedule();
+  const generateMutation = useGenerateBackup();
+  const downloadMutation = useDownloadBackup();
+  const restoreMutation = useRestoreBackup();
+  const updateScheduleMutation = useUpdateBackupSchedule();
 
-  const handleGenerate = () => {
-    setGenerating(true);
-    setTimeout(() => {
-      setGenerating(false);
-      toast.success("Backup generated and uploaded to S3 successfully");
-    }, 2000);
-  };
+  const [cronInput, setCronInput] = useState("");
+  const [enabledInput, setEnabledInput] = useState(true);
+  const [restoreTarget, setRestoreTarget] = useState<BackupRecord | null>(null);
+  const [confirmFilename, setConfirmFilename] = useState("");
 
-  const formatBytes = (bytes: number) => {
+  useEffect(() => {
+    if (schedule) {
+      setCronInput(schedule.cronExpression);
+      setEnabledInput(schedule.enabled);
+    }
+  }, [schedule]);
+
+  const formatBytes = (bytes: number | null) => {
+    if (!bytes) return "—";
     if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
     return `${(bytes / 1024).toFixed(0)} KB`;
+  };
+
+  const handleGenerate = () => {
+    generateMutation.mutate(undefined, {
+      onSuccess: (record) => {
+        if (record.status === "failed") {
+          toast.error(`Backup failed: ${record.error_message ?? "unknown error"}`);
+        } else {
+          toast.success("Backup generated and uploaded to S3 successfully");
+        }
+      },
+      onError: () => toast.error("Failed to trigger backup"),
+    });
+  };
+
+  const handleDownload = async (id: string) => {
+    try {
+      const url = await downloadMutation.mutateAsync(id);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Download failed — backup may not be available");
+    }
+  };
+
+  const handleUpdateSchedule = () => {
+    updateScheduleMutation.mutate(
+      { cronExpression: cronInput, enabled: enabledInput },
+      {
+        onSuccess: () => toast.success("Backup schedule updated"),
+        onError: () => toast.error("Invalid cron expression or update failed"),
+      }
+    );
+  };
+
+  const handleConfirmRestore = () => {
+    if (!restoreTarget) return;
+    restoreMutation.mutate(
+      { id: restoreTarget.backup_id, confirmFilename },
+      {
+        onSuccess: () => {
+          toast.success(`Restored from "${restoreTarget.filename}"`);
+          setRestoreTarget(null);
+          setConfirmFilename("");
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Restore failed");
+        },
+      }
+    );
   };
 
   return (
@@ -1128,8 +1188,8 @@ function BackupsTab() {
         title="Backup Management"
         desc="Generate, schedule, and restore database backups stored in S3/MinIO."
         action={
-          <button onClick={handleGenerate} disabled={generating} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: generating ? "not-allowed" : "pointer", opacity: generating ? 0.7 : 1 }}>
-            <Database size={14} /> {generating ? "Generating…" : "Generate Backup Now"}
+          <button onClick={handleGenerate} disabled={generateMutation.isPending} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: generateMutation.isPending ? "not-allowed" : "pointer", opacity: generateMutation.isPending ? 0.7 : 1 }}>
+            <Database size={14} /> {generateMutation.isPending ? "Generating…" : "Generate Backup Now"}
           </button>
         }
       />
@@ -1139,23 +1199,28 @@ function BackupsTab() {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 14px", display: "flex", alignItems: "center", gap: 8 }}>
           <Calendar size={14} color="var(--avatar-theme-color)" /> Backup Schedule
         </h3>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+          <div style={{ flex: 1, minWidth: 180 }}>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Cron Expression</label>
-            <input type="text" defaultValue="0 9 * * *" placeholder="e.g. 0 9 * * *"
+            <input type="text" value={cronInput} onChange={e => setCronInput(e.target.value)} placeholder="e.g. 0 9 * * *"
               style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }}
               onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
               onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }} />
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>Current: daily at 09:00 UTC</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
+              {schedule ? `Active: ${schedule.enabled ? schedule.cronExpression : "disabled"}` : "Loading current schedule…"}
+            </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 20 }}>
             <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>Enabled</span>
-            <div style={{ width: 44, height: 24, borderRadius: 12, background: "var(--avatar-theme-color)", position: "relative", cursor: "pointer" }}>
-              <span style={{ position: "absolute", top: 3, left: 23, width: 18, height: 18, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            <div
+              onClick={() => setEnabledInput(v => !v)}
+              style={{ width: 44, height: 24, borderRadius: 12, background: enabledInput ? "var(--avatar-theme-color)" : "#d1d5db", position: "relative", cursor: "pointer", transition: "background 0.15s" }}
+            >
+              <span style={{ position: "absolute", top: 3, left: enabledInput ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.15s" }} />
             </div>
           </div>
-          <button onClick={() => toast.success("Backup schedule updated")} style={{ padding: "9px 16px", borderRadius: 6, border: "none", background: "#111827", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", marginBottom: 20 }}>
-            Update Schedule
+          <button onClick={handleUpdateSchedule} disabled={updateScheduleMutation.isPending} style={{ padding: "9px 16px", borderRadius: 6, border: "none", background: "#111827", fontSize: 13, fontWeight: 600, color: "#fff", cursor: updateScheduleMutation.isPending ? "not-allowed" : "pointer", marginBottom: 20, opacity: updateScheduleMutation.isPending ? 0.7 : 1 }}>
+            {updateScheduleMutation.isPending ? "Updating…" : "Update Schedule"}
           </button>
         </div>
       </div>
@@ -1167,29 +1232,80 @@ function BackupsTab() {
             <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
           ))}
         </div>
-        {MOCK_BACKUPS.map((b, i) => (
-          <div key={b.backup_id} style={{
-            display: "grid", gridTemplateColumns: "3fr 1fr 1.5fr 1fr 1fr",
-            gap: 12, alignItems: "center", padding: "14px 20px",
-            borderBottom: i < MOCK_BACKUPS.length - 1 ? "1px solid #f3f4f6" : "none",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Database size={14} color="#9ca3af" />
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#374151", fontFamily: "monospace" }}>{b.filename}</p>
+        {isLoading && (
+          <div style={{ padding: 20 }}><Skeleton className="h-[60px] w-full" /></div>
+        )}
+        {!isLoading && backups.length === 0 && (
+          <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+            No backups yet — click "Generate Backup Now" to create one.
+          </div>
+        )}
+        {backups.map((b, i) => {
+          const style = BACKUP_STATUS_STYLE[b.status] ?? { bg: "#f3f4f6", color: "#6b7280" };
+          return (
+            <div key={b.backup_id} style={{
+              display: "grid", gridTemplateColumns: "3fr 1fr 1.5fr 1fr 1fr",
+              gap: 12, alignItems: "center", padding: "14px 20px",
+              borderBottom: i < backups.length - 1 ? "1px solid #f3f4f6" : "none",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Database size={14} color="#9ca3af" />
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#374151", fontFamily: "monospace" }}>{b.filename}</p>
+                </div>
+                {b.status === "failed" && b.error_message && (
+                  <p style={{ margin: "3px 0 0 22px", fontSize: 11, color: "#c81e1e" }}>{b.error_message}</p>
+                )}
+              </div>
+              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{formatBytes(b.size_bytes)}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{new Date(b.created_at).toLocaleString()}</p>
+              <Pill label={b.status} bg={style.bg} color={style.color} />
+              <div style={{ display: "flex", gap: 4 }}>
+                <ActionBtn icon={Download} label="Download" bg="#f0f9ff" color="#0369a1"
+                  onClick={() => b.status === "completed" ? handleDownload(b.backup_id) : toast.error("Backup is not available for download")}
+                />
+                <ActionBtn icon={RotateCcw} label="Restore" bg="#fef3c7" color="#92400e"
+                  onClick={() => b.status === "completed" ? setRestoreTarget(b) : toast.error("Backup is not available for restore")}
+                />
+              </div>
             </div>
-            <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{formatBytes(b.size_bytes)}</p>
-            <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{new Date(b.created_at).toLocaleString()}</p>
-            <Pill label={b.status} bg="#d1fae5" color="#065f46" />
-            <div style={{ display: "flex", gap: 4 }}>
-              <ActionBtn icon={Download} label="Download" bg="#f0f9ff" color="#0369a1" onClick={() => toast.success("Downloading backup…")} />
-              <ActionBtn icon={RotateCcw} label="Restore" bg="#fef3c7" color="#92400e" onClick={() => toast.success("Restore initiated")} />
+          );
+        })}
+      </div>
+
+      {/* Restore confirmation modal */}
+      {restoreTarget && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: 460, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 8 }}>
+              <AlertCircle size={16} color="#c81e1e" /> Restore Database
+            </h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 12px", lineHeight: 1.5 }}>
+              This will overwrite the live database with the contents of <strong>{restoreTarget.filename}</strong>. A fresh safety backup will be taken first, but this action cannot be undone quickly. Type the filename below to confirm.
+            </p>
+            <input
+              type="text"
+              value={confirmFilename}
+              onChange={e => setConfirmFilename(e.target.value)}
+              placeholder={restoreTarget.filename}
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 16, fontFamily: "monospace" }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button onClick={() => { setRestoreTarget(null); setConfirmFilename(""); }} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
+              <button
+                onClick={handleConfirmRestore}
+                disabled={confirmFilename !== restoreTarget.filename || restoreMutation.isPending}
+                style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "#c81e1e", fontSize: 13, fontWeight: 700, color: "#fff", cursor: (confirmFilename !== restoreTarget.filename || restoreMutation.isPending) ? "not-allowed" : "pointer", opacity: (confirmFilename !== restoreTarget.filename || restoreMutation.isPending) ? 0.5 : 1 }}
+              >
+                {restoreMutation.isPending ? "Restoring…" : "Restore Database"}
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
