@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useComments";
 import { useReactionsData, useToggleReaction } from "@/hooks/useReactions";
 import { MessageSquare, Trash2, CornerDownRight, ThumbsUp, Heart, Lightbulb, Sparkles, Send } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/Modal";
 import toast from "react-hot-toast";
 
 interface DiscussionSectionProps {
@@ -24,13 +25,14 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
   const { data: reactions, isLoading: reactionsLoading } = useReactionsData(entityType, entityId);
 
   const { mutateAsync: postComment } = usePostComment();
-  const { mutateAsync: deleteComment } = useDeleteComment();
+  const { mutateAsync: deleteComment, isPending: isDeletingComment } = useDeleteComment();
   const { mutateAsync: moderateComment } = useModerateComment();
   const { mutateAsync: toggleReaction } = useToggleReaction();
 
   const [commentText, setCommentText] = useState("");
   const [replyTarget, setReplyTarget] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const handlePostMainComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,12 +78,13 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!window.confirm("Are you sure you want to delete this comment?")) return;
     try {
       await deleteComment({ commentId, entityType, entityId });
       toast.success("Comment deleted");
     } catch {
       toast.error("Failed to delete comment");
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -311,7 +314,7 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
                     )}
                     {canDelete && (
                       <button
-                        onClick={() => handleDelete(comment.comment_id)}
+                        onClick={() => setDeleteTargetId(comment.comment_id)}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -410,7 +413,7 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
 
                             {canDeleteReply && (
                               <button
-                                onClick={() => handleDelete(reply.comment_id)}
+                                onClick={() => setDeleteTargetId(reply.comment_id)}
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -532,6 +535,16 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
         </div>
       )}
 
+      <ConfirmDialog
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={() => deleteTargetId && handleDelete(deleteTargetId)}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmLabel="Delete"
+        loading={isDeletingComment}
+        variant="danger"
+      />
     </div>
   );
 }

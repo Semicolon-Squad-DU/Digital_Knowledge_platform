@@ -6,6 +6,7 @@ import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle } from
 import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUploadArchiveVersion, useDeleteArchiveItem } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Modal";
 import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth.store";
@@ -29,19 +30,19 @@ export default function ArchiveItemPage() {
   const { mutateAsync: uploadVersion, isPending: isUploadingVersion } = useUploadArchiveVersion();
   const { mutateAsync: deleteItem, isPending: isDeleting } = useDeleteArchiveItem();
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to permanently delete this archive item? This action is irreversible.")) {
-      return;
-    }
     try {
       await deleteItem(itemId);
       toast.success("Archive item deleted successfully!");
       router.push("/archive");
     } catch {
       toast.error("Failed to delete archive item");
+      setShowDeleteConfirm(false);
     }
   };
-  
+
   const [reason, setReason] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -346,8 +347,8 @@ export default function ArchiveItemPage() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
-            <div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
+            <div style={{ minWidth: 0, flex: "1 1 240px" }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: 0, lineHeight: 1.3 }}>
                 {item.title_en}
               </h1>
@@ -357,7 +358,7 @@ export default function ArchiveItemPage() {
                 </p>
               )}
             </div>
-            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${tier.color}`}
               >
@@ -621,7 +622,7 @@ export default function ArchiveItemPage() {
                   </p>
                 </div>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeleting}
                   style={{
                     padding: "8px 16px",
@@ -690,6 +691,17 @@ export default function ArchiveItemPage() {
 
         <DiscussionSection entityType="archive" entityId={item.item_id} />
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Archive Item"
+        description="Are you sure you want to permanently delete this archive item? This deletes all version history and is irreversible."
+        confirmLabel="Delete"
+        loading={isDeleting}
+        variant="danger"
+      />
     </AppLayout>
   );
 }
