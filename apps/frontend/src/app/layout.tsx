@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Noto_Sans_Bengali, Playfair_Display } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "react-hot-toast";
@@ -14,14 +14,6 @@ const notoSansBengali = Noto_Sans_Bengali({
   weight: ["400", "500", "600"],
   display: "swap",
 });
-// Editorial serif for institutional/heritage headlines (homepage only, applied via CSS var)
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  style: ["normal", "italic"],
-  display: "swap",
-  variable: "--font-serif",
-});
 
 export const metadata: Metadata = {
   title: "DKP — Digital Knowledge Platform",
@@ -31,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${plusJakartaSans.className} ${notoSansBengali.className} ${playfairDisplay.variable} min-h-screen`}>
+      <body className={`${plusJakartaSans.className} ${notoSansBengali.className} min-h-screen`}>
         <Providers>
           <div className="flex flex-col min-h-screen">
             <main className="flex-1">
