@@ -7,7 +7,7 @@ import {
   FileText, Download, Share2, FileJson, ArrowLeft
 } from "lucide-react";
 import {
-  useCatalogItem, useAddToWishlist, usePlaceHold,
+  useCatalogItem, useAddToWishlist, useWishlist, useRemoveFromWishlist, usePlaceHold, useCancelHold, useMemberHolds,
   useUpdateCatalogItem, useDeleteCatalogItem,
 } from "@/features/library/hooks/useLibrary";
 import { useAuthStore } from "@/store/auth.store";
@@ -75,8 +75,18 @@ export default function LibraryItemPage() {
 
   const { user, isAuthenticated } = useAuthStore();
   const { data: item, isLoading, refetch } = useCatalogItem(itemId);
-  const { mutateAsync: addToWishlist } = useAddToWishlist();
-  const { mutateAsync: placeHold } = usePlaceHold();
+  const { mutateAsync: addToWishlist, isPending: isAddingToWishlist } = useAddToWishlist();
+  const { mutateAsync: removeFromWishlist, isPending: isRemovingFromWishlist } = useRemoveFromWishlist();
+  const { data: wishlist } = useWishlist(isAuthenticated);
+  const isWishlisted = !!wishlist?.some((w: { catalog_id: string }) => w.catalog_id === itemId);
+
+  const { mutateAsync: placeHold, isPending: isPlacingHold } = usePlaceHold();
+  const { mutateAsync: cancelHold, isPending: isCancellingHold } = useCancelHold();
+  const { data: memberHolds } = useMemberHolds(isAuthenticated ? (user?.user_id ?? "") : "");
+  const activeHold: { hold_id: string; catalog_id: string; status: string } | undefined = memberHolds?.find(
+    (h: { catalog_id: string; status: string }) => h.catalog_id === itemId && ["pending", "available"].includes(h.status)
+  );
+  const [showCancelHoldConfirm, setShowCancelHoldConfirm] = useState(false);
   const { mutateAsync: updateBook, isPending: isUpdating } = useUpdateCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
 
@@ -115,10 +125,15 @@ export default function LibraryItemPage() {
       return;
     }
     try {
-      await addToWishlist(itemId);
-      toast.success("Added to wishlist");
+      if (isWishlisted) {
+        await removeFromWishlist(itemId);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(itemId);
+        toast.success("Added to wishlist");
+      }
     } catch {
-      toast.error("Already in wishlist");
+      toast.error(isWishlisted ? "Failed to remove from wishlist" : "Failed to add to wishlist");
     }
   };
 
@@ -128,12 +143,28 @@ export default function LibraryItemPage() {
       router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
+    if (activeHold) {
+      setShowCancelHoldConfirm(true);
+      return;
+    }
     try {
       await placeHold(itemId);
       toast.success("Hold placed — you'll be notified when available");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || "Could not place hold");
+    }
+  };
+
+  const handleCancelHold = async () => {
+    if (!activeHold) return;
+    try {
+      await cancelHold(activeHold.hold_id);
+      toast.success("Hold cancelled");
+    } catch {
+      toast.error("Failed to cancel hold");
+    } finally {
+      setShowCancelHoldConfirm(false);
     }
   };
 
@@ -345,6 +376,7 @@ export default function LibraryItemPage() {
 
                   <button
                     onClick={handleWishlist}
+                    disabled={isAddingToWishlist || isRemovingFromWishlist}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -354,28 +386,43 @@ export default function LibraryItemPage() {
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                      color: "#374151",
-                      cursor: "pointer",
+                      border: isWishlisted
+                        ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)"
+                        : "1px solid #e5e7eb",
+                      background: isWishlisted
+                        ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)"
+                        : "#fff",
+                      color: isWishlisted ? "var(--avatar-theme-color, #4f46e5)" : "#374151",
+                      cursor: (isAddingToWishlist || isRemovingFromWishlist) ? "not-allowed" : "pointer",
+                      opacity: (isAddingToWishlist || isRemovingFromWishlist) ? 0.7 : 1,
                       transition: "all 0.2s",
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = "#f9fafb";
-                      e.currentTarget.style.borderColor = "#d1d5db";
+                      if (isWishlisted) {
+                        e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 16%, #fff)";
+                      } else {
+                        e.currentTarget.style.background = "#f9fafb";
+                        e.currentTarget.style.borderColor = "#d1d5db";
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = "#fff";
-                      e.currentTarget.style.borderColor = "#e5e7eb";
+                      if (isWishlisted) {
+                        e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)";
+                      } else {
+                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.borderColor = "#e5e7eb";
+                      }
                     }}
                   >
-                    <Heart size={14} />
-                    Add to Wishlist
+                    <Heart size={14} fill={isWishlisted ? "var(--avatar-theme-color, #6366f1)" : "none"} />
+                    {isWishlisted ? "Added to Wishlist" : "Add to Wishlist"}
                   </button>
 
-                  {item.available_copies > 0 && !isLibrarian && (
+                  {!isLibrarian && (
                     <button
                       onClick={handleHold}
+                      disabled={isPlacingHold || isCancellingHold}
+                      title={activeHold ? "Click to cancel your hold" : undefined}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -385,55 +432,38 @@ export default function LibraryItemPage() {
                         borderRadius: 8,
                         fontSize: 13,
                         fontWeight: 600,
-                        border: "1px solid #e5e7eb",
-                        background: "#fff",
-                        color: "#374151",
-                        cursor: "pointer",
+                        border: activeHold
+                          ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)"
+                          : "1px solid #e5e7eb",
+                        background: activeHold
+                          ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)"
+                          : "#fff",
+                        color: activeHold ? "var(--avatar-theme-color, #4f46e5)" : "#374151",
+                        cursor: (isPlacingHold || isCancellingHold) ? "not-allowed" : "pointer",
+                        opacity: (isPlacingHold || isCancellingHold) ? 0.7 : 1,
                         transition: "all 0.2s",
                       }}
                       onMouseOver={(e) => {
-                        e.currentTarget.style.background = "#f9fafb";
-                        e.currentTarget.style.borderColor = "#d1d5db";
+                        if (activeHold) {
+                          e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 16%, #fff)";
+                        } else {
+                          e.currentTarget.style.background = "#f9fafb";
+                          e.currentTarget.style.borderColor = "#d1d5db";
+                        }
                       }}
                       onMouseOut={(e) => {
-                        e.currentTarget.style.background = "#fff";
-                        e.currentTarget.style.borderColor = "#e5e7eb";
+                        if (activeHold) {
+                          e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)";
+                        } else {
+                          e.currentTarget.style.background = "#fff";
+                          e.currentTarget.style.borderColor = "#e5e7eb";
+                        }
                       }}
                     >
-                      <BookMarked size={14} />
-                      Reserve Book
-                    </button>
-                  )}
-
-                  {item.available_copies === 0 && (
-                    <button
-                      onClick={handleHold}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: "10px 16px",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        border: "1px solid #e5e7eb",
-                        background: "#fff",
-                        color: "#374151",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = "#f9fafb";
-                        e.currentTarget.style.borderColor = "#d1d5db";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = "#fff";
-                        e.currentTarget.style.borderColor = "#e5e7eb";
-                      }}
-                    >
-                      <BookMarked size={14} />
-                      Place Hold
+                      <BookMarked size={14} fill={activeHold ? "var(--avatar-theme-color, #6366f1)" : "none"} />
+                      {activeHold
+                        ? (activeHold.status === "available" ? "Ready for Pickup" : "Hold Requested")
+                        : item.available_copies > 0 ? "Reserve Book" : "Place Hold"}
                     </button>
                   )}
                 </div>
@@ -702,6 +732,18 @@ export default function LibraryItemPage() {
         description={`Are you sure you want to remove "${item?.title}" from the catalog?`}
         confirmLabel="Remove"
         loading={isDeleting}
+        variant="danger"
+      />
+
+      {/* Cancel Hold Confirm */}
+      <ConfirmDialog
+        isOpen={showCancelHoldConfirm}
+        onClose={() => setShowCancelHoldConfirm(false)}
+        onConfirm={handleCancelHold}
+        title="Cancel Hold"
+        description={`Cancel your ${activeHold?.status ?? ""} hold on "${item?.title}"? You'll lose your place in the queue.`}
+        confirmLabel="Cancel Hold"
+        loading={isCancellingHold}
         variant="danger"
       />
     </AppLayout>

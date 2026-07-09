@@ -85,13 +85,14 @@ export function useMemberHolds(memberId: string) {
   });
 }
 
-export function useWishlist() {
+export function useWishlist(enabled: boolean = true) {
   return useQuery({
     queryKey: ["library", "wishlist"],
     queryFn: async () => {
       const { data } = await api.get("/library/wishlist");
       return data.data;
     },
+    enabled,
   });
 }
 
@@ -122,6 +123,17 @@ export function usePlaceHold() {
     mutationFn: async (catalog_id: string) => {
       const { data } = await api.post("/library/holds", { catalog_id });
       return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["library"] }),
+  });
+}
+
+export function useCancelHold() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (holdId: string) => {
+      const { data } = await api.delete(`/library/holds/${holdId}`);
+      return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["library"] }),
   });
