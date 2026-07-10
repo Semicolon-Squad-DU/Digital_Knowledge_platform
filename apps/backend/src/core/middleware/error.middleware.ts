@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { logger } from "../config/logger";
+import { MalwareDetectedError, ScannerUnavailableError } from "../../infrastructure/antivirus.service";
 
 export class AppError extends Error {
   constructor(
@@ -29,6 +30,16 @@ export function errorHandler(
   // Multer errors
   if (err.message?.includes("Unsupported file type") || err.message?.includes("File too large")) {
     res.status(400).json({ success: false, message: err.message });
+    return;
+  }
+
+  if (err instanceof MalwareDetectedError) {
+    res.status(422).json({ success: false, message: err.message });
+    return;
+  }
+
+  if (err instanceof ScannerUnavailableError) {
+    res.status(503).json({ success: false, message: err.message });
     return;
   }
 
