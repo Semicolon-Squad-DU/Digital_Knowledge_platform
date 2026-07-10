@@ -64,6 +64,25 @@ router.patch("/:id/read", authenticate, asyncHandler(async (req: AuthRequest, re
   res.json({ success: true });
 }));
 
+// DELETE /api/notifications — delete all of the current user's notifications
+router.delete("/", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const result = await query(
+    "DELETE FROM notifications WHERE user_id = $1 RETURNING notification_id",
+    [req.user!.user_id]
+  );
+  res.json({ success: true, data: { deleted: result.length } });
+}));
+
+// DELETE /api/notifications/:id — delete a single notification
+router.delete("/:id", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const deleted = await queryOne(
+    "DELETE FROM notifications WHERE notification_id = $1 AND user_id = $2 RETURNING notification_id",
+    [req.params.id, req.user!.user_id]
+  );
+  if (!deleted) throw new AppError(404, "Notification not found");
+  res.json({ success: true });
+}));
+
 // GET /api/notifications/announcements — history, for the admin "edit & resend" list
 router.get(
   "/announcements",

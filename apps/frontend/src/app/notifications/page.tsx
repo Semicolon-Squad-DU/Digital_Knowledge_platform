@@ -1,11 +1,13 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, ArrowRight } from "lucide-react";
+import { Bell, CheckCheck, ArrowRight, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth.store";
-import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/features/notifications/hooks/useNotifications";
+import { useNotifications, useMarkNotificationRead, useMarkAllRead, useDeleteNotification, useDeleteAllNotifications } from "@/features/notifications/hooks/useNotifications";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ConfirmDialog } from "@/components/ui/Modal";
 import { timeAgo } from "@/lib/utils";
 
 interface NotificationItem {
@@ -17,10 +19,12 @@ interface NotificationItem {
   action_url?: string;
 }
 
-function NotificationCard({ notif, onMarkRead, onNavigate }: {
+function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, deleting }: {
   notif: NotificationItem;
   onMarkRead: (id: string) => void;
   onNavigate: (url: string) => void;
+  onDelete: (id: string) => void;
+  deleting: boolean;
 }) {
   const isUnread = !notif.read;
   return (
@@ -87,9 +91,9 @@ function NotificationCard({ notif, onMarkRead, onNavigate }: {
         </div>
       </div>
 
-      {/* Action Button */}
-      {notif.action_url && (
-        <div style={{ flexShrink: 0 }}>
+      {/* Action Buttons */}
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+        {notif.action_url && (
           <button style={{
             display: "inline-flex",
             alignItems: "center",
@@ -111,8 +115,35 @@ function NotificationCard({ notif, onMarkRead, onNavigate }: {
             <span>View</span>
             <ArrowRight size={13} />
           </button>
-        </div>
-      )}
+        )}
+        <button
+          disabled={deleting}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(notif.notification_id);
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "7px 14px",
+            borderRadius: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#6b7280",
+            cursor: deleting ? "not-allowed" : "pointer",
+            opacity: deleting ? 0.5 : 1,
+            transition: "all 0.2s ease",
+          }}
+          onMouseOver={(e) => { if (!deleting) { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; } }}
+          onMouseOut={(e) => { e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
+        >
+          <Trash2 size={13} />
+          <span>{deleting ? "Deleting…" : "Delete"}</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -125,63 +156,123 @@ export default function NotificationsPage() {
     if (_hasHydrated && !isAuthenticated) router.push("/login?redirect=/notifications");
   }, [isAuthenticated, _hasHydrated, router]);
 
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+
   const { data, isLoading } = useNotifications(1, false, isAuthenticated);
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead, isPending } = useMarkAllRead();
+  const { mutate: deleteOne, isPending: isDeletingOne, variables: deletingId } = useDeleteNotification();
+  const { mutate: deleteAll, isPending: isDeletingAll } = useDeleteAllNotifications();
+
+  const handleDeleteOne = (id: string) => {
+    deleteOne(id, {
+      onError: () => toast.error("Failed to delete notification"),
+    });
+  };
+
+  const handleDeleteAll = () => {
+    deleteAll(undefined, {
+      onSuccess: () => {
+        toast.success("All notifications deleted");
+        setConfirmDeleteAll(false);
+      },
+      onError: () => toast.error("Failed to delete notifications"),
+    });
+  };
 
   return (
     <AppLayout>
-      <div style={{ padding: "28px 32px", maxWidth: 800, margin: "0 auto" }}>
-        
-        {/* Heading */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
-          <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, lineHeight: 1.2 }}>
-              Notifications
-            </h1>
-            {(data?.unread_count ?? 0) > 0 && (
-              <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-                {data.unread_count} unread
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Bell size={19} color="var(--avatar-theme-color, #1a1a2e)" />
+                </div>
+                <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                  Notifications
+                </h1>
+              </div>
+              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+                {(data?.unread_count ?? 0) > 0
+                  ? `You have ${data.unread_count} unread notification${data.unread_count === 1 ? "" : "s"}.`
+                  : "Stay up to date with your activity and platform announcements."}
               </p>
-            )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              {(data?.unread_count ?? 0) > 0 && (
+                <button
+                  onClick={() => markAllRead()}
+                  disabled={isPending}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: "10px 18px",
+                    borderRadius: 9,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border: "1px solid transparent",
+                    background: "var(--avatar-theme-color, #111827)",
+                    color: "#fff",
+                    cursor: isPending ? "not-allowed" : "pointer",
+                    opacity: isPending ? 0.6 : 1,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseOver={(e) => { if (!isPending) e.currentTarget.style.opacity = "0.88"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.opacity = isPending ? "0.6" : "1"; }}
+                >
+                  <CheckCheck size={14} /> Mark all read
+                </button>
+              )}
+              {(data?.notifications?.length ?? 0) > 0 && (
+                <button
+                  onClick={() => setConfirmDeleteAll(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: "10px 18px",
+                    borderRadius: 9,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border: "1px solid #d1d5db",
+                    background: "#fff",
+                    color: "#374151",
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = "#374151"; e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#fff"; }}
+                >
+                  <Trash2 size={14} /> Delete all
+                </button>
+              )}
+            </div>
           </div>
-          {(data?.unread_count ?? 0) > 0 && (
-            <button
-              onClick={() => markAllRead()}
-              disabled={isPending}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "10px 20px",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                border: "none",
-                background: "var(--avatar-theme-color, #111827)",
-                color: "#fff",
-                cursor: isPending ? "not-allowed" : "pointer",
-                opacity: isPending ? 0.6 : 1,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                if (!isPending) {
-                  e.currentTarget.style.filter = "brightness(1.1)";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isPending) {
-                  e.currentTarget.style.filter = "none";
-                  e.currentTarget.style.transform = "none";
-                }
-              }}
-            >
-              <CheckCheck size={14} /> Mark all read
-            </button>
-          )}
         </div>
+
+        <div style={{ padding: "28px 32px", maxWidth: 800, margin: "0 auto" }}>
+
+        <ConfirmDialog
+          isOpen={confirmDeleteAll}
+          onClose={() => setConfirmDeleteAll(false)}
+          onConfirm={handleDeleteAll}
+          title="Delete all notifications?"
+          description="This permanently deletes every notification in your list. This can't be undone."
+          confirmLabel="Delete All"
+          variant="danger"
+          loading={isDeletingAll}
+        />
 
         {/* Loading */}
         {isLoading && (
@@ -222,10 +313,13 @@ export default function NotificationsPage() {
                 notif={notif}
                 onMarkRead={markRead}
                 onNavigate={(url) => router.push(url)}
+                onDelete={handleDeleteOne}
+                deleting={isDeletingOne && deletingId === notif.notification_id}
               />
             ))}
           </div>
         )}
+        </div>
       </div>
     </AppLayout>
   );

@@ -149,16 +149,17 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
           onClick={() => onRemove(item.catalog_id, item.title)}
           disabled={isRemoving}
           style={{
-            padding: 9, borderRadius: 8, border: "1px solid var(--color-border-muted)", background: "var(--color-canvas-default)",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "8px 15px", borderRadius: 8, border: "1px solid var(--color-border-muted)", background: "var(--color-canvas-default)",
             cursor: isRemoving ? "not-allowed" : "pointer",
-            color: "var(--color-fg-subtle)", display: "flex", alignItems: "center",
+            color: "var(--color-fg-subtle)", fontSize: 13, fontWeight: 600,
             opacity: isRemoving ? 0.6 : 1, transition: "all 0.15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--color-danger-fg)"; e.currentTarget.style.background = "var(--color-danger-subtle)"; e.currentTarget.style.borderColor = "var(--color-danger-fg)"; }}
+          onMouseEnter={e => { if (!isRemoving) { e.currentTarget.style.color = "var(--color-danger-fg)"; e.currentTarget.style.background = "var(--color-danger-subtle)"; e.currentTarget.style.borderColor = "var(--color-danger-fg)"; } }}
           onMouseLeave={e => { e.currentTarget.style.color = "var(--color-fg-subtle)"; e.currentTarget.style.background = "var(--color-canvas-default)"; e.currentTarget.style.borderColor = "var(--color-border-muted)"; }}
-          aria-label="Remove from wishlist"
         >
-          <Trash2 size={16} />
+          <Trash2 size={13} />
+          <span>{isRemoving ? "Removing…" : "Remove"}</span>
         </button>
       </div>
     </div>
@@ -199,25 +200,43 @@ export default function WishlistPage() {
 
   return (
     <AppLayout>
-      <div style={{ padding: "28px 32px" }}>
-        {/* Heading */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
-          <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--color-fg-default)", margin: 0, lineHeight: 1.2 }}>
-              My Wishlist
-            </h1>
-            <p style={{ fontSize: 13, color: "var(--color-fg-muted)", marginTop: 4 }}>
-              {wishlist?.length ?? 0} book{wishlist?.length !== 1 ? "s" : ""} saved
-            </p>
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid var(--color-border-default)",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Heart size={19} color="var(--avatar-theme-color, #6366f1)" />
+                </div>
+                <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                  My Wishlist
+                </h1>
+              </div>
+              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+                {wishlist?.length ?? 0} book{wishlist?.length !== 1 ? "s" : ""} saved for later
+              </p>
+            </div>
+            <Link href="/library" style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              padding: "10px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+              color: "#fff", background: "var(--avatar-theme-color, #111827)", textDecoration: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)", transition: "opacity 0.15s",
+            }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            >
+              <Plus size={14} /> Browse Catalog
+            </Link>
           </div>
-          <Link href="/library" style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-            color: "#fff", background: "var(--theme-gradient-160)", textDecoration: "none",
-          }}>
-            <Plus size={14} /> Browse Catalog
-          </Link>
         </div>
+
+        <div style={{ padding: "28px 32px" }}>
 
         {/* Loading */}
         {isLoading && (
@@ -261,6 +280,7 @@ export default function WishlistPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </AppLayout>
   );
