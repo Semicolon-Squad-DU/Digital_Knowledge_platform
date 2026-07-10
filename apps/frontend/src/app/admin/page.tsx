@@ -78,34 +78,6 @@ const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
   STATUS_CHANGE: { bg: "#fce7f3", color: "#9d174d" },
 };
 
-// ── Mock data for UI preview ──────────────────────────────────────────────────
-const MOCK_USERS = [
-  { user_id: "u1", name: "Arif Rahman", email: "arif@dkp.edu", role: "admin", department: "CSE", membership_status: "active", created_at: "2024-01-15" },
-  { user_id: "u2", name: "Nadia Islam", email: "nadia@dkp.edu", role: "researcher", department: "EEE", membership_status: "active", created_at: "2024-02-20" },
-  { user_id: "u3", name: "Karim Hossain", email: "karim@dkp.edu", role: "student_author", department: "IIT", membership_status: "suspended", created_at: "2024-03-10" },
-  { user_id: "u4", name: "Fatema Begum", email: "fatema@dkp.edu", role: "librarian", department: "GEB", membership_status: "active", created_at: "2024-01-28" },
-  { user_id: "u5", name: "Rahim Uddin", email: "rahim@dkp.edu", role: "member", department: "PHR", membership_status: "inactive", created_at: "2024-04-05" },
-  { user_id: "u6", name: "Sumaiya Khan", email: "sumaiya@dkp.edu", role: "archivist", department: "NE", membership_status: "active", created_at: "2024-02-14" },
-];
-
-const MOCK_AUDIT = [
-  { log_id: "l1", user_id: "u1", user_name: "Arif Rahman", action: "LOGIN", entity_type: "session", entity_id: "s1", details: { ip: "192.168.1.1" }, timestamp: "2026-05-28T09:12:00Z" },
-  { log_id: "l2", user_id: "u2", user_name: "Nadia Islam", action: "CREATE", entity_type: "research_output", entity_id: "r1", details: { title: "ML in Healthcare" }, timestamp: "2026-05-28T08:45:00Z" },
-  { log_id: "l3", user_id: "u1", user_name: "Arif Rahman", action: "UPDATE", entity_type: "user", entity_id: "u3", details: { field: "role", from: "member", to: "student_author" }, timestamp: "2026-05-27T16:30:00Z" },
-  { log_id: "l4", user_id: "u4", user_name: "Fatema Begum", action: "STATUS_CHANGE", entity_type: "catalog_item", entity_id: "c1", details: { from: "draft", to: "published" }, timestamp: "2026-05-27T14:20:00Z" },
-  { log_id: "l5", user_id: "u3", user_name: "Karim Hossain", action: "ACCESS", entity_type: "archive_item", entity_id: "a1", details: { access_tier: "restricted" }, timestamp: "2026-05-27T11:05:00Z" },
-  { log_id: "l6", user_id: "u1", user_name: "Arif Rahman", action: "DELETE", entity_type: "user", entity_id: "u7", details: { mode: "anonymize" }, timestamp: "2026-05-26T17:00:00Z" },
-];
-
-const MOCK_CONFIG = [
-  { key: "session_timeout_minutes", value: "15", description: "JWT access token expiry in minutes" },
-  { key: "password_min_length", value: "8", description: "Minimum password character length" },
-  { key: "password_require_special_char", value: "true", description: "Require at least one special character" },
-  { key: "max_login_attempts", value: "5", description: "Max failed login attempts before lockout" },
-  { key: "maintenance_mode", value: "false", description: "Put platform in read-only maintenance mode" },
-  { key: "backup_cron_expression", value: "0 9 * * *", description: "Cron schedule for automated backups" },
-];
-
 // ── Shared sub-components ─────────────────────────────────────────────────────
 function Pill({ label, bg, color }: { label: string; bg: string; color: string }) {
   return (
