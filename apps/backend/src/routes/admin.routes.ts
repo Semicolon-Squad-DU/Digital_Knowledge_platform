@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import bcrypt from "bcryptjs";
 import cron from "node-cron";
 import { query, queryOne } from "../core/db/pool";
+import { config } from "../core/config";
 import { authenticate, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
 import { sendEmail, accountApprovalEmail } from "../infrastructure/email.service";
@@ -87,8 +88,14 @@ router.get(
       role === "researcher" ? [userId] : []
     );
 
-    // Storage calculation
-    const storagePercentage = Math.min(100, Math.max(1, Math.round(((catalogCount + archiveCount + showcaseCount) / 1000) * 100)));
+    // Storage calculation — based on actual bytes stored (archive_items.file_size is the
+    // only table that tracks real upload size) against the configured bucket capacity.
+    const [storageResult] = await query<{ total_bytes: string | null }>(
+      "SELECT SUM(file_size) as total_bytes FROM archive_items"
+    );
+    const storageUsedBytes = parseInt(storageResult.total_bytes ?? "0") || 0;
+    const storageCapacityBytes = config.s3.capacityGB * 1024 * 1024 * 1024;
+    const storagePercentage = Math.min(100, Math.max(1, Math.round((storageUsedBytes / storageCapacityBytes) * 100)));
 
     const [pendingApprovalResult] = await query<{ count: string }>(
       "SELECT COUNT(*) as count FROM users WHERE membership_status = 'pending_approval' AND deleted_at IS NULL"
@@ -141,6 +148,8 @@ router.get(
         pendingApproval: parseInt(pendingApprovalResult.count),
         activeUsers: parseInt(activeUsers.count),
         storagePercentage,
+        storageUsedBytes,
+        storageCapacityBytes,
         monthlyTrends,
       },
     });

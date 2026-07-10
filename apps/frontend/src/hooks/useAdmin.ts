@@ -10,6 +10,8 @@ export interface AdminStats {
   pendingReview: number;
   activeUsers: number;
   storagePercentage: number;
+  storageUsedBytes: number;
+  storageCapacityBytes: number;
   monthlyTrends: Array<{
     month: string;
     uploads: number;

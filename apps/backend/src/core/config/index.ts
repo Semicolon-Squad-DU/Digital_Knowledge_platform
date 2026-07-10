@@ -49,6 +49,7 @@ export const config = {
     bucket: process.env.S3_BUCKET_NAME || "dkp-files",
     region: process.env.S3_REGION || "us-east-1",
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+    capacityGB: parseInt(process.env.S3_CAPACITY_GB || "50", 10),
   },
 
   email: {

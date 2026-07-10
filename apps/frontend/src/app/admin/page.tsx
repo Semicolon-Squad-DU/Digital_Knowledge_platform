@@ -24,6 +24,7 @@ import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { formatFileSize } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -225,7 +226,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
         <StatCard label="Total Users" value={statsLoading ? "—" : (adminStats?.totalUsers ?? 0).toLocaleString()} sub="registered accounts" icon={Users} />
         <StatCard label="Total Documents" value={statsLoading ? "—" : (adminStats?.totalDocuments ?? 0).toLocaleString()} sub="archive & library" icon={FileText} />
         <StatCard label="Active This Month" value={statsLoading ? "—" : (adminStats?.activeUsers ?? 0).toLocaleString()} sub="unique logins" icon={Activity} />
-        <StatCard label="Storage Used" value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 1}%`} sub="of total capacity" icon={HardDrive} accent="#dc2626" />
+        <StatCard label="Storage Used" value={statsLoading ? "—" : `${adminStats?.storagePercentage ?? 1}%`} sub={statsLoading ? "of total capacity" : `${formatFileSize(adminStats?.storageUsedBytes ?? 0)} of ${formatFileSize(adminStats?.storageCapacityBytes ?? 0)}`} icon={HardDrive} accent="#dc2626" />
       </div>
 
       {/* Analytics Dashboards & Trends - responsive */}
