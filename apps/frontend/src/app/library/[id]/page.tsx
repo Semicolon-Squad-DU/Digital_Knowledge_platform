@@ -15,6 +15,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { BarcodeLabel } from "@/components/library/BarcodeLabel";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 
@@ -96,7 +97,7 @@ export default function LibraryItemPage() {
   const [editForm, setEditForm] = useState({
     title: "", isbn: "", authors: "", publisher: "",
     edition: "", year: "", category: "General",
-    total_copies: "1", shelf_location: "", description: "",
+    total_copies: "1", shelf_location: "", description: "", barcode: "",
   });
 
   useEffect(() => {
@@ -112,6 +113,7 @@ export default function LibraryItemPage() {
         total_copies: item.total_copies?.toString() ?? "1",
         shelf_location: item.shelf_location ?? "",
         description: item.description ?? "",
+        barcode: item.barcode ?? "",
       });
     }
   }, [item]);
@@ -190,6 +192,7 @@ export default function LibraryItemPage() {
         total_copies: editForm.total_copies ? parseInt(editForm.total_copies) : undefined,
         shelf_location: editForm.shelf_location.trim() || undefined,
         description: editForm.description.trim() || undefined,
+        barcode: editForm.barcode.trim() || undefined,
       });
       toast.success("Book updated successfully");
       setEditModal(false);
@@ -592,6 +595,22 @@ export default function LibraryItemPage() {
                   </div>
                 </div>
 
+                {/* Barcode / QR — librarian scan & print */}
+                {canManageCatalog && (
+                  <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>
+                      Barcode / QR Label
+                    </h3>
+                    <BarcodeLabel item={{
+                      catalog_id: item.catalog_id,
+                      barcode: item.barcode,
+                      title: item.title,
+                      isbn: item.isbn,
+                      shelf_location: item.shelf_location,
+                    }} />
+                  </div>
+                )}
+
                 {/* Librarian Actions */}
                 {canManageCatalog && (
                   <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16, display: "flex", gap: 10 }}>
@@ -716,7 +735,10 @@ export default function LibraryItemPage() {
             </div>
             <Input label="Total Copies" type="number" min="1" value={editForm.total_copies} onChange={e => setEditForm(f => ({ ...f, total_copies: e.target.value }))} />
           </div>
-          <Input label="Shelf Location" value={editForm.shelf_location} onChange={e => setEditForm(f => ({ ...f, shelf_location: e.target.value }))} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <Input label="Shelf Location" value={editForm.shelf_location} onChange={e => setEditForm(f => ({ ...f, shelf_location: e.target.value }))} />
+            <Input label="Barcode" value={editForm.barcode} onChange={e => setEditForm(f => ({ ...f, barcode: e.target.value }))} hint="Scannable code printed on the label" />
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Description</label>
             <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none" }} />

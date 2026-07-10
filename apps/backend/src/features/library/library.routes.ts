@@ -208,16 +208,54 @@ router.delete("/holds/:id", authenticate, asyncHandler(async (req: AuthRequest, 
   res.json({ success: true, message: "Hold cancelled" });
 }));
 
+// GET /api/library/catalog/lookup/:barcode — resolve a scanned/typed barcode to a catalog item
+router.get(
+  "/catalog/lookup/:barcode",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const item = await queryOne(
+      "SELECT catalog_id, title, authors, isbn, barcode, available_copies, total_copies, cover_url FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL",
+      [req.params.barcode]
+    );
+    if (!item) throw new AppError(404, "No catalog item found for that barcode");
+    res.json({ success: true, data: item });
+  })
+);
+
 // POST /api/library/issue
 router.post(
   "/issue",
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { catalog_id, member_id } = req.body as { catalog_id: string; member_id: string };
-    if (!catalog_id || !member_id) throw new AppError(400, "catalog_id and member_id required");
+    const { member_id } = req.body as { member_id: string };
+    let { catalog_id } = req.body as { catalog_id?: string };
+    const { barcode } = req.body as { barcode?: string };
+    if (!member_id) throw new AppError(400, "member_id required");
+    if (!catalog_id && !barcode) throw new AppError(400, "catalog_id or barcode required");
 
-    const result = await BorrowService.issueResource(catalog_id, member_id, req.user!.user_id, req.ip || '');
+    if (!catalog_id && barcode) {
+      const catalogItem = await queryOne<{ catalog_id: string }>(
+        "SELECT catalog_id FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL",
+        [barcode]
+      );
+      if (!catalogItem) throw new AppError(404, "No catalog item found for that barcode");
+      catalog_id = catalogItem.catalog_id;
+    }
+
+    // member_id may be a UUID or an email — BorrowService.issueResource expects the UUID.
+    let resolvedMemberId = member_id;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(member_id)) {
+      const member = await queryOne<{ user_id: string }>(
+        "SELECT user_id FROM users WHERE email = $1",
+        [member_id]
+      );
+      if (!member) throw new AppError(404, "No member found for that ID or email");
+      resolvedMemberId = member.user_id;
+    }
+
+    const result = await BorrowService.issueResource(catalog_id!, resolvedMemberId, req.user!.user_id, req.ip || '');
 
     // Map borrow to transaction for frontend compatibility
     const transaction = {
@@ -433,7 +471,7 @@ router.post(
   requireRole("librarian", "admin"),
   uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title, isbn, publisher, edition, year, category, total_copies, shelf_location, description } =
+    const { title, isbn, publisher, edition, year, category, total_copies, shelf_location, description, barcode } =
       req.body as Record<string, string>;
     const rawAuthors = req.body.authors;
     const authors = Array.isArray(rawAuthors) ? rawAuthors : rawAuthors ? JSON.parse(rawAuthors) : [];
@@ -449,14 +487,24 @@ router.post(
       documentUrl = key;
     }
 
-    const item = await queryOne<{ catalog_id: string }>(
+    let item = await queryOne<{ catalog_id: string }>(
       `INSERT INTO catalog_items
-         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
+         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url, barcode)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11,$12)
        RETURNING *`,
       [title, isbn || null, authors, publisher || null, edition || null, year ? parseInt(year, 10) : null,
-       category || "General", totalCopies, shelf_location || null, description || null, documentUrl]
+       category || "General", totalCopies, shelf_location || null, description || null, documentUrl, barcode?.trim() || null]
     );
+
+    // No printed barcode supplied — default the scannable code to the item's own catalog_id
+    // so a QR/barcode label can be generated and scanned immediately.
+    if (item && !item.catalog_id) throw new AppError(500, "Failed to create catalog item");
+    if (!barcode?.trim()) {
+      item = await queryOne(
+        "UPDATE catalog_items SET barcode = catalog_id::text WHERE catalog_id = $1 RETURNING *",
+        [item!.catalog_id]
+      );
+    }
 
     // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
     void notifyAllUsersExcept(req.user!.user_id, {
@@ -494,7 +542,7 @@ router.put(
     );
     if (!existing) throw new AppError(404, "Catalog item not found");
 
-    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description } =
+    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode } =
       req.body as Record<string, unknown>;
 
     const item = await queryOne(
@@ -502,9 +550,10 @@ router.put(
          title = COALESCE($1, title), isbn = COALESCE($2, isbn), authors = COALESCE($3, authors),
          publisher = COALESCE($4, publisher), edition = COALESCE($5, edition), year = COALESCE($6, year),
          category = COALESCE($7, category), total_copies = COALESCE($8, total_copies),
-         shelf_location = COALESCE($9, shelf_location), description = COALESCE($10, description)
-       WHERE catalog_id = $11 RETURNING *`,
-      [title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, req.params.id]
+         shelf_location = COALESCE($9, shelf_location), description = COALESCE($10, description),
+         barcode = COALESCE($11, barcode)
+       WHERE catalog_id = $12 RETURNING *`,
+      [title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode, req.params.id]
     );
 
     res.json({ success: true, data: item });

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useCreateCatalogItem } from "@/features/library/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useCreateCatalogItem, useCatalogLookupByBarcode } from "@/features/library/hooks/useLibrary";
+import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -41,6 +42,16 @@ function IssueBookForm({
   // Manual Mode state
   const [barcode, setBarcode] = useState("");
   const [memberId, setMemberId] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const { mutate: lookupBarcode, data: scannedBook, isPending: isLookingUp, reset: resetLookup } = useCatalogLookupByBarcode();
+
+  const handleScanned = (code: string) => {
+    setBarcode(code);
+    resetLookup();
+    lookupBarcode(code, {
+      onError: () => toast.error("No catalog item matches that barcode — check manually or search."),
+    });
+  };
 
   const loanDays = 14;
   const dueDate  = new Date();
@@ -106,13 +117,39 @@ function IssueBookForm({
 
       {mode === "manual" ? (
         <div className="space-y-4">
-          <Input
-            label="Book Barcode"
-            value={barcode}
-            onChange={e => setBarcode(e.target.value)}
-            placeholder="Scan or type book barcode..."
-            required
-          />
+          <div>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Input
+                  label="Book Barcode"
+                  value={barcode}
+                  onChange={e => { setBarcode(e.target.value); resetLookup(); }}
+                  placeholder="Scan or type book barcode..."
+                  required
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                icon={<ScanLine size={14} />}
+                onClick={() => setScannerOpen(true)}
+                aria-label="Scan barcode with camera"
+                style={{
+                  borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                  color: "var(--avatar-theme-color, #1a1a2e)",
+                }}
+              >
+                Scan
+              </Button>
+            </div>
+            {isLookingUp && <p className="text-xs text-slate-500 mt-1.5">Looking up…</p>}
+            {scannedBook && (
+              <div className="flex items-center gap-2 mt-1.5 text-xs text-[var(--color-success-fg)]">
+                <CheckCircle size={13} />
+                <span>{scannedBook.title} — {scannedBook.available_copies} available</span>
+              </div>
+            )}
+          </div>
           <Input
             label="Member ID / Email"
             value={memberId}
@@ -120,6 +157,12 @@ function IssueBookForm({
             placeholder="Enter member's email or user UUID..."
             required
             hint="Can scan a member's barcode containing their UUID or type email"
+          />
+          <BarcodeScannerModal
+            isOpen={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            onDetected={handleScanned}
+            title="Scan Book Barcode"
           />
         </div>
       ) : (
@@ -271,6 +314,7 @@ function ReturnBookForm({
   const [transactionId, setTransactionId] = useState("");
   const [barcode, setBarcode] = useState("");
   const [memberId, setMemberId] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (mode === "txn") {
@@ -319,19 +363,38 @@ function ReturnBookForm({
         />
       ) : (
         <div className="space-y-4">
-          <Input
-            label="Book Barcode"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            placeholder="Scan or enter book barcode..."
-            required
-          />
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Input
+                label="Book Barcode"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                placeholder="Scan or enter book barcode..."
+                required
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              icon={<ScanLine size={14} />}
+              onClick={() => setScannerOpen(true)}
+              aria-label="Scan barcode with camera"
+            >
+              Scan
+            </Button>
+          </div>
           <Input
             label="Member ID / Email (Optional)"
             value={memberId}
             onChange={(e) => setMemberId(e.target.value)}
             placeholder="Enter member's email or UUID..."
             hint="Optional: helps find the correct transaction if multiple copies exist"
+          />
+          <BarcodeScannerModal
+            isOpen={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            onDetected={(code) => setBarcode(code)}
+            title="Scan Book Barcode"
           />
         </div>
       )}

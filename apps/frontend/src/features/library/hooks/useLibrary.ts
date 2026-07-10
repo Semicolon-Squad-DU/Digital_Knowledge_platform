@@ -38,13 +38,23 @@ export function useLibrarianDashboard() {
 export function useIssueBook() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { catalog_id: string; member_id: string }) => {
+    mutationFn: async (payload: { catalog_id?: string; barcode?: string; member_id: string }) => {
       const { data } = await api.post("/library/issue", payload);
       return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library", "dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
+}
+
+/** Resolves a scanned/typed barcode to a catalog item — used for scan-confirmation UX. */
+export function useCatalogLookupByBarcode() {
+  return useMutation({
+    mutationFn: async (barcode: string) => {
+      const { data } = await api.get(`/library/catalog/lookup/${encodeURIComponent(barcode)}`);
+      return data.data as { catalog_id: string; title: string; authors: string[]; available_copies: number; barcode: string };
     },
   });
 }
@@ -205,6 +215,7 @@ export function useCreateCatalogItem() {
       total_copies: number;
       shelf_location?: string;
       description?: string;
+      barcode?: string;
     }) => {
       const isFormData = payload instanceof FormData;
       const { data } = await api.post("/library/catalog", payload, {
@@ -234,6 +245,7 @@ export function useUpdateCatalogItem() {
       total_copies?: number;
       shelf_location?: string;
       description?: string;
+      barcode?: string;
     }) => {
       const { catalog_id, ...data } = payload;
       const response = await api.put(`/library/catalog/${catalog_id}`, data);
