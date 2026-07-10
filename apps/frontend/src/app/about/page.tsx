@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useLayoutEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Archive, BookOpen, FlaskConical, Star, Users, Target, Lightbulb, ArrowRight, GraduationCap, X, Menu } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { Archive, BookOpen, FlaskConical, Star, Users, Target, Lightbulb, ArrowRight, GraduationCap, X, Menu, UserRound } from "lucide-react";
 
 const ABOUT_NAV = [
   { label: "Archive",  href: "/archive"  },
@@ -13,43 +14,39 @@ const ABOUT_NAV = [
 ];
 
 export default function AboutPage() {
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [isMobile, setIsMobile]   = useState(false);
-
-  useLayoutEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
         .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-weight:normal; font-style:normal; font-size:24px; line-height:1; letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap; direction:ltr; -webkit-font-smoothing:antialiased; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
       `}} />
 
       <div style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", background: "var(--color-canvas-default)", color: "var(--color-fg-default)", minHeight: "100vh" }}>
 
         {/* ── NAVBAR ── */}
-        <header style={{ background: "var(--color-canvas-subtle)", borderBottom: "1px solid var(--color-border-default)", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px"            {/* Brand / mobile group */}
+        <header style={{ background: isMobile ? "#ffffff" : "rgba(255,255,255,0.1)", backdropFilter: isMobile ? "none" : "blur(10px)", borderBottom: "1px solid " + (isMobile ? "#e5e7eb" : "rgba(255,255,255,0.2)"), boxShadow: isMobile ? "0 1px 3px rgba(0,0,0,0.05)" : "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50, padding: isMobile ? "12px 16px" : "10px 0" }}>
+          <div style={{ maxWidth: isMobile ? "100%" : "80%", margin: "0 auto", padding: isMobile ? "0" : "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? "48px" : "48px" }}>
+            {/* Brand / mobile group */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {isMobile && (
                 <button
                   onClick={() => setMenuOpen(true)}
                   aria-label="Open menu"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "var(--color-fg-default)", marginLeft: "-8px" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: isMobile ? "#111827" : "var(--color-fg-default)", marginLeft: "-6px" }}
                 >
-                  <Menu size={22} />
+                  <Menu size={20} />
                 </button>
               )}
-              <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <GraduationCap size={16} color="#ffffff" />
+              <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: isMobile ? "#111827" : "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <GraduationCap size={14} color="#ffffff" />
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-fg-default)", letterSpacing: "-0.02em" }}>DKP</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: isMobile ? "#111827" : "var(--color-fg-default)", letterSpacing: "-0.02em" }}>DKP</span>
               </Link>
             </div>
 
@@ -75,45 +72,147 @@ export default function AboutPage() {
             )}
           </div>
         </header>
+
  
         {/* Full-screen mobile menu */}
         {menuOpen && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)", zIndex: 200, display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "56px", background: "rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
-              <Link href="/" onClick={() => setMenuOpen(false)} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <GraduationCap size={16} color="#ffffff" />
+          <>
+            {/* Backdrop / Overlay */}
+            <div
+              onClick={() => setMenuOpen(false)}
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background: "rgba(0, 0, 0, 0.4)",
+                backdropFilter: "blur(4px)",
+                zIndex: 199,
+                animation: "fadeIn 0.25s ease-out",
+              }}
+            />
+            {/* Sidebar content */}
+            <div style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "80%",
+              height: "100%",
+              backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)",
+              color: "#ffffff",
+              zIndex: 200,
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "4px 0 24px rgba(0,0,0,0.25)",
+              animation: "slideInLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) both",
+            }}>
+              {/* Top bar */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "56px", background: "rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+                <Link href="/" onClick={() => setMenuOpen(false)} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <GraduationCap size={16} color="#ffffff" />
+                  </div>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>DKP</span>
+                </Link>
+                <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center" }}>
+                  <X size={24} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Guest User Info */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                  <UserRound size={32} />
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>DKP</span>
-              </Link>
-              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center" }}>
-                <X size={24} strokeWidth={2} />
-              </button>
+                <div>
+                  <p style={{ margin: "0 0 6px 0", fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>Guest User</p>
+                  <span style={{ fontSize: "11px", color: "#f87171", background: "rgba(239, 68, 68, 0.2)", padding: "3px 10px", borderRadius: "10px", fontWeight: 600 }}>Guest Mode</span>
+                </div>
+              </div>
+
+              {/* Nav links */}
+              <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px", flex: 1, overflowY: "auto" }}>
+                {ABOUT_NAV.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "rgba(255,255,255,0.75)",
+                      textDecoration: "none",
+                      borderRadius: "8px",
+                      letterSpacing: "0.01em",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; e.currentTarget.style.color = "#ffffff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
+                  >{item.label}</Link>
+                ))}
+              </div>
+
+              {/* Auth Buttons */}
+              <div style={{ padding: "12px 16px 20px 16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(0,0,0,0.15)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      width: "100%",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "10.5px",
+                      fontSize: "13.5px",
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.85)",
+                      background: "rgba(255,255,255,0.12)",
+                      border: "1.5px solid rgba(255,255,255,0.25)",
+                      borderRadius: "8px",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      letterSpacing: "0.01em"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#ffffff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; }}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      width: "100%",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "10.5px",
+                      fontSize: "13.5px",
+                      fontWeight: 600,
+                      color: "var(--avatar-theme-color, #111827)",
+                      background: "#ffffff",
+                      border: "none",
+                      borderRadius: "8px",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      letterSpacing: "0.01em"
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+                    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                  >
+                    Register
+                  </Link>
+                </div>
+              </div>
             </div>
-            <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
-              {ABOUT_NAV.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    display: "block",
-                    padding: "12px 16px",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "rgba(255,255,255,0.75)",
-                    textDecoration: "none",
-                    borderRadius: "8px",
-                    letterSpacing: "0.01em",
-                    background: item.href === "/about" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; e.currentTarget.style.color = "#ffffff"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = item.href === "/about" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
-                >{item.label}</Link>
-              ))}
-            </div>
-          </div>
+          </>
         )}
 
         {/* ── HERO SECTION ── */}

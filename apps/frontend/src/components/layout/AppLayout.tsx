@@ -262,30 +262,135 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
 
       {/* Full-screen mobile menu */}
       {menuOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#eaecef", zIndex: 200, display: "flex", flexDirection: "column" }}>
-          {/* Menu top bar */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", borderBottom: "1px solid #d1d5db", flexShrink: 0 }}>
-            <GuestBrand />
-            <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ display: "flex", alignItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "#111827" }}>
-              <X size={24} strokeWidth={2} />
-            </button>
-          </div>
+        <>
+          {/* Backdrop / Overlay */}
+          <div
+            onClick={() => setMenuOpen(false)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              background: "rgba(0, 0, 0, 0.4)",
+              backdropFilter: "blur(4px)",
+              zIndex: 199,
+              animation: "fadeIn 0.25s ease-out",
+            }}
+          />
+          {/* Sidebar content */}
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "80%",
+            height: "100%",
+            backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)",
+            color: "#ffffff",
+            zIndex: 200,
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "4px 0 24px rgba(0,0,0,0.25)",
+            animation: "slideInLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) both",
+          }}>
+            {/* Menu top bar */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "56px", background: "rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+              <GuestBrand />
+              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ display: "flex", alignItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "rgba(255,255,255,0.75)" }}>
+                <X size={24} strokeWidth={2} />
+              </button>
+            </div>
 
-          {/* Nav links — same style as desktop navbar */}
-          <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "4px" }}>
-            {GUEST_NAV.map(({ label, href }) => {
-              const active = pathname === href || pathname.startsWith(href + "/");
-              return (
+            {/* User Info Header (Guest Mode) */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+              <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                <GraduationCap size={32} />
+              </div>
+              <div>
+                <p style={{ margin: "0 0 6px 0", fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>Guest User</p>
+                <span style={{ fontSize: "11px", color: "#f87171", background: "rgba(239, 68, 68, 0.2)", padding: "3px 10px", borderRadius: "10px", fontWeight: 600 }}>Guest Mode</span>
+              </div>
+            </div>
+
+            {/* Nav links */}
+            <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px", flex: 1, overflowY: "auto" }}>
+              {GUEST_NAV.map(({ label, href }) => {
+                const active = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "rgba(255,255,255,0.75)",
+                      textDecoration: "none",
+                      borderRadius: "8px",
+                      letterSpacing: "0.01em",
+                      background: active ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                      transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; e.currentTarget.style.color = "#ffffff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = active ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
+                  >{label}</Link>
+                );
+              })}
+            </div>
+
+            {/* Drawer Auth Actions Footer */}
+            <div style={{ padding: "12px 16px 20px 16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(0,0,0,0.15)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <Link
-                  key={href}
-                  href={href}
+                  href="/login"
                   onClick={() => setMenuOpen(false)}
-                  style={{ display: "block", padding: "10px 14px", fontSize: "13.5px", fontWeight: 500, color: "#111827", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", background: active ? "#d1d5db" : "transparent" }}
-                >{label}</Link>
-              );
-            })}
+                  style={{
+                    width: "100%",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "10.5px",
+                    fontSize: "13.5px",
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "1.5px solid rgba(255, 255, 255, 0.15)",
+                    borderRadius: "8px",
+                    textDecoration: "none",
+                    textAlign: "center",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    width: "100%",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "10.5px",
+                    fontSize: "13.5px",
+                    fontWeight: 700,
+                    color: "#111827",
+                    background: "#ffffff",
+                    borderRadius: "8px",
+                    textDecoration: "none",
+                    textAlign: "center",
+                    transition: "all 0.2s",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                  }}
+                >
+                  Register
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
