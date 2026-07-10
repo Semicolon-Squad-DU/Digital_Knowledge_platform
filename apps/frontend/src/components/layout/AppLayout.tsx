@@ -190,8 +190,7 @@ const SIDEBAR_STYLE: React.CSSProperties = {
   borderRadius: "0",
   boxShadow: "4px 0 28px rgba(0,0,0,0.18)",
   display: "flex", flexDirection: "column",
-  position: "sticky", top: 0, height: "100vh", overflowY: "auto",
-  overflow: "hidden",
+  height: "100%", overflowY: "auto", overflowX: "hidden",
 };
 
 // ── Guest top navbar (replaces sidebar for unauthenticated users) ─────────────
@@ -320,7 +319,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
 
   /* ── AUTHENTICATED LAYOUT: sidebar + topbar ── */
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f0f2f5" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#f0f2f5" }}>
 
       {/* DESKTOP SIDEBAR */}
       {!isMobile && (
@@ -388,11 +387,11 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       )}
 
       {/* MAIN CONTENT AREA */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100%", overflow: "hidden" }}>
         <header style={{
           height: 64, background: "#fff", borderBottom: "1px solid #e5e7eb",
           display: "flex", alignItems: "center", padding: "0 20px", gap: 10,
-          flexShrink: 0, position: "sticky", top: 0, zIndex: 30,
+          flexShrink: 0, zIndex: 30,
         }}>
           {isMobile && (
             <button
