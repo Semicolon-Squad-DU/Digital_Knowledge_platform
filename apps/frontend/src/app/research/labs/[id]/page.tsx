@@ -98,7 +98,7 @@ export default function LabDetailPage() {
               <div className="flex flex-wrap justify-center sm:justify-start items-center gap-x-4 gap-y-1 text-xs text-white/70">
                 <span className="flex items-center gap-1">
                   <User size={13} />
-                  Head: <Link href={`/profile/${lab.head_researcher_id}`} className="text-white font-semibold hover:underline">{lab.head_name}</Link>
+                  Head: <Link href={`/research/authors/${lab.head_researcher_id}`} className="text-white font-semibold hover:underline">{lab.head_name}</Link>
                 </span>
                 <span>·</span>
                 <span className="flex items-center gap-1">
@@ -190,7 +190,7 @@ export default function LabDetailPage() {
                     {members.map((member) => (
                       <div key={member.user_id} className="p-3 bg-[var(--color-canvas-subtle)] rounded-lg border border-[var(--color-border-default)]">
                         <Link
-                          href={`/profile/${member.user_id}`}
+                          href={`/research/authors/${member.user_id}`}
                           className="text-sm font-bold text-[var(--color-fg-default)] hover:underline hover:text-[var(--color-accent-fg)] block"
                         >
                           {member.name}

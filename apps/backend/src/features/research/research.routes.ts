@@ -68,6 +68,66 @@ router.post(
   })
 );
 
+// GET /api/research/authors — directory of researchers who have at least one published output
+router.get("/authors", asyncHandler(async (_req: Request, res: Response) => {
+  const authors = await query(
+    `SELECT u.user_id, u.name, u.department, u.avatar_url,
+            COUNT(ro.output_id) as output_count,
+            MAX(ro.published_date) as latest_publication
+     FROM users u
+     JOIN research_outputs ro ON ro.uploaded_by = u.user_id
+     WHERE u.deleted_at IS NULL AND ro.access_tier = 'public'
+     GROUP BY u.user_id, u.name, u.department, u.avatar_url
+     ORDER BY output_count DESC, u.name ASC`
+  );
+  res.json({ success: true, data: authors });
+}));
+
+// GET /api/research/authors/:id — dedicated author profile: bio + lab affiliations + publications.
+// Distinct from the generic /auth/profile/:id — this is scoped to the Research
+// Repository module and aggregates everything a visitor needs to evaluate an
+// author's academic output in one call.
+router.get("/authors/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const author = await queryOne<{ user_id: string; role: string }>(
+    `SELECT user_id, name, email, role, department, bio, avatar_url, created_at
+     FROM users WHERE user_id = $1 AND deleted_at IS NULL`,
+    [req.params.id]
+  );
+  if (!author) throw new AppError(404, "Author not found");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+
+  const publications = await query(
+    `SELECT ro.output_id, ro.title, ro.abstract, ro.authors, ro.output_type, ro.dkp_identifier,
+            ro.published_date, ro.journal_name, ro.access_tier, l.name as lab_name
+     FROM research_outputs ro
+     LEFT JOIN labs l ON ro.lab_id = l.lab_id
+     WHERE ro.uploaded_by = $1 AND ro.access_tier = ANY($2)
+     ORDER BY ro.published_date DESC NULLS LAST, ro.created_at DESC`,
+    [req.params.id, allowedTiers]
+  );
+
+  const labs = await query(
+    `SELECT l.lab_id, l.name, lm.role
+     FROM lab_members lm
+     JOIN labs l ON lm.lab_id = l.lab_id
+     WHERE lm.user_id = $1
+     ORDER BY l.name`,
+    [req.params.id]
+  );
+
+  const headOfLabs = await query(
+    `SELECT lab_id, name FROM labs WHERE head_researcher_id = $1`,
+    [req.params.id]
+  );
+
+  res.json({
+    success: true,
+    data: { ...author, publications, labs, head_of_labs: headOfLabs },
+  });
+}));
+
 // GET /api/research
 router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
   const { q, author, keyword, year, output_type, lab_id, uploaded_by, page = "1", limit = "20" } =

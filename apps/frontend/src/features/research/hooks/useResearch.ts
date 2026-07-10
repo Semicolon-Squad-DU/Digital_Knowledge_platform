@@ -47,6 +47,51 @@ export function useResearchCitation(id: string) {
   });
 }
 
+export interface AuthorSummary {
+  user_id: string;
+  name: string;
+  department?: string;
+  avatar_url?: string;
+  output_count: string;
+  latest_publication: string | null;
+}
+
+export interface AuthorProfile {
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+  bio?: string;
+  avatar_url?: string;
+  created_at: string;
+  publications: ResearchOutput[];
+  labs: { lab_id: string; name: string; role: string }[];
+  head_of_labs: { lab_id: string; name: string }[];
+}
+
+export function useResearchAuthors() {
+  return useQuery({
+    queryKey: ["research", "authors"],
+    queryFn: async () => {
+      const { data } = await api.get("/research/authors");
+      return data.data as AuthorSummary[];
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useResearchAuthor(id: string) {
+  return useQuery({
+    queryKey: ["research", "authors", id],
+    queryFn: async () => {
+      const { data } = await api.get(`/research/authors/${id}`);
+      return data.data as AuthorProfile;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useLabs() {
   return useQuery({
     queryKey: ["research", "labs"],

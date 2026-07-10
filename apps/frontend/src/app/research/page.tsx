@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, FlaskConical, ExternalLink, Calendar, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, FlaskConical, ExternalLink, Calendar, FileText, X, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -38,6 +38,7 @@ function ResearchCard({ item, onView }: {
     authors?: Array<{ name: string }>; output_type: string;
     published_date: string; journal_name?: string; doi?: string;
     dkp_identifier: string; access_tier?: string;
+    uploaded_by?: string; uploader_name?: string;
   };
   onView: (id: string) => void;
 }) {
@@ -85,6 +86,18 @@ function ResearchCard({ item, onView }: {
         {item.authors && (
           <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 6px" }}>
             {item.authors.map(a => a.name).join(", ")}
+            {item.uploaded_by && item.uploader_name && (
+              <>
+                {" "}·{" "}
+                <Link
+                  href={`/research/authors/${item.uploaded_by}`}
+                  onClick={e => e.stopPropagation()}
+                  style={{ color: "#1a56db", fontWeight: 600, textDecoration: "none" }}
+                >
+                  View author profile
+                </Link>
+              </>
+            )}
           </p>
         )}
         {item.abstract && (
@@ -182,22 +195,52 @@ export default function ResearchPage() {
               </p>
             </div>
 
-            {canUpload && (
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
               <Link
-                href="/research/upload"
+                href="/research/authors"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 7,
                   padding: "9px 16px", borderRadius: 9,
-                  background: "var(--avatar-theme-color, #1a1a2e)", border: "none",
-                  fontSize: 13, fontWeight: 600, color: "#fff", textDecoration: "none",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0,
+                  background: "#fff", border: "1.5px solid #dde2ff",
+                  fontSize: 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
+                  transition: "opacity 0.2s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}
               >
-                <Plus size={14} /> Upload
+                <Users size={14} /> Researchers
               </Link>
-            )}
+              <Link
+                href="/research/labs"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  padding: "9px 16px", borderRadius: 9,
+                  background: "#fff", border: "1.5px solid #dde2ff",
+                  fontSize: 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
+                  transition: "opacity 0.2s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+              >
+                <FlaskConical size={14} /> Labs
+              </Link>
+              {canUpload && (
+                <Link
+                  href="/research/upload"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    padding: "9px 16px", borderRadius: 9,
+                    background: "var(--avatar-theme-color, #1a1a2e)", border: "none",
+                    fontSize: 13, fontWeight: 600, color: "#fff", textDecoration: "none",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  <Plus size={14} /> Upload
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Integrated search */}
