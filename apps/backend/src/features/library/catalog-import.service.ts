@@ -1,3 +1,4 @@
+import ExcelJS from "exceljs";
 import { isValidIsbn } from "../../core/utils/isbn";
 import { parseCsv } from "../../core/utils/csv";
 import { query } from "../../core/db/pool";
@@ -48,8 +49,52 @@ function normalizeHeader(h: string): string {
   return h.toLowerCase().replace(/[\s_-]/g, "");
 }
 
-/** Parses a CSV buffer into an array of raw header→value row objects. */
-export function parseCatalogFile(buffer: Buffer): Record<string, string>[] {
+/** XLSX files are ZIP archives — the first two bytes are always "PK" (0x50 0x4B). */
+function looksLikeXlsx(buffer: Buffer): boolean {
+  return buffer.length > 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+}
+
+/** Parses an Excel worksheet's first sheet into header→value row objects
+ *  (same shape parseCsv produces, so validateImportRows works unchanged). */
+async function parseXlsx(buffer: Buffer): Promise<Record<string, string>[]> {
+  const workbook = new ExcelJS.Workbook();
+  // exceljs's bundled type defs predate the newer strict Buffer<ArrayBufferLike>
+  // generic in recent @types/node — a plain Buffer is valid at runtime either way.
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const headers: string[] = [];
+  sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    headers[colNumber - 1] = String(cell.value ?? "").trim();
+  });
+
+  const rows: Record<string, string>[] = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return; // header row
+    const obj: Record<string, string> = {};
+    headers.forEach((header, i) => {
+      if (!header) return;
+      const cell = row.getCell(i + 1);
+      const value = cell.value;
+      // Cells can hold dates, formula results, or rich text objects — flatten to a plain string.
+      obj[header] =
+        value == null ? "" :
+        value instanceof Date ? value.toISOString().slice(0, 10) :
+        typeof value === "object" && "result" in value ? String((value as { result: unknown }).result ?? "") :
+        typeof value === "object" && "text" in value ? String((value as { text: unknown }).text ?? "") :
+        String(value);
+    });
+    rows.push(obj);
+  });
+
+  return rows;
+}
+
+/** Parses a CSV or XLSX buffer into an array of raw header→value row objects. */
+export async function parseCatalogFile(buffer: Buffer): Promise<Record<string, string>[]> {
+  if (looksLikeXlsx(buffer)) return parseXlsx(buffer);
+
   let text = buffer.toString("utf8");
   // Strip a leading byte-order mark (common from Excel "Save as CSV") — checked by
   // char code rather than a regex literal to avoid an invisible-character source line.

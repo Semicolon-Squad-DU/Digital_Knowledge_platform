@@ -46,8 +46,8 @@ export function ImportCatalogModal({ isOpen, onClose }: ImportCatalogModalProps)
   };
 
   const handleFileSelect = (f: File) => {
-    if (!f.name.toLowerCase().endsWith(".csv")) {
-      toast.error("Please select a .csv file");
+    if (!/\.(csv|xlsx)$/i.test(f.name)) {
+      toast.error("Please select a .csv or .xlsx file");
       return;
     }
     setFile(f);
@@ -84,7 +84,7 @@ export function ImportCatalogModal({ isOpen, onClose }: ImportCatalogModalProps)
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Bulk Import Catalog (CSV)" size="xl">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Bulk Import Catalog (CSV / Excel)" size="xl">
       <div className="space-y-4">
         {!commitResult && (
           <>
@@ -96,13 +96,13 @@ export function ImportCatalogModal({ isOpen, onClose }: ImportCatalogModalProps)
               >
                 <Upload size={20} className="text-slate-400 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">{file ? file.name : "Choose a CSV file"}</p>
+                  <p className="text-sm font-semibold text-slate-700">{file ? file.name : "Choose a CSV or Excel file"}</p>
                   <p className="text-xs text-slate-400">Headers: title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode</p>
                 </div>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv,text/csv"
+                  accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
                 />

@@ -624,7 +624,7 @@ router.post(
 
     let rawRows: Record<string, string>[];
     try {
-      rawRows = parseCatalogFile(req.file.buffer);
+      rawRows = await parseCatalogFile(req.file.buffer);
     } catch {
       throw new AppError(400, "Could not parse file — ensure it is a valid CSV or Excel spreadsheet");
     }
