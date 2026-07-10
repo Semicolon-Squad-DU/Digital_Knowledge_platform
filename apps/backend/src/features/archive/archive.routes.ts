@@ -148,7 +148,13 @@ router.get("/:id/download", optionalAuth, asyncHandler(async (req: AuthRequest, 
     [req.params.id]
   );
 
-  if (!item || item.status !== "published") throw new AppError(404, "Item not found");
+  if (!item) throw new AppError(404, "Item not found");
+
+  // Draft/review/archived items are only downloadable/previewable by staff who can
+  // already see them via GET /:id — the same visibility rule as that route.
+  if (item.status !== "published" && !["archivist", "librarian", "admin"].includes(role)) {
+    throw new AppError(404, "Item not found");
+  }
 
   if (!allowedTiers.includes(item.access_tier)) {
     throw new AppError(403, "Access denied");

@@ -11,6 +11,7 @@ import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth.store";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
+import { ArchiveMediaViewer } from "@/components/archive/ArchiveMediaViewer";
 
 export default function ArchiveItemPage() {
   const params = useParams<{ id: string }>();
@@ -374,6 +375,14 @@ export default function ArchiveItemPage() {
             </div>
           </div>
 
+          <div style={{ marginBottom: 20 }}>
+            <ArchiveMediaViewer
+              itemId={item.item_id}
+              fileType={item.file_type}
+              canView={item.status === "published" || isArchivist}
+            />
+          </div>
+
           {item.description && (
             <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 20px" }}>
               {item.description}
@@ -432,7 +441,7 @@ export default function ArchiveItemPage() {
           {!isGuest && (
             <button
               onClick={handleDownload}
-              disabled={item.status !== "published" || isDownloading}
+              disabled={(item.status !== "published" && !isArchivist) || isDownloading}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -446,7 +455,7 @@ export default function ArchiveItemPage() {
                 color: "#fff",
                 cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                opacity: (item.status !== "published" || isDownloading) ? 0.6 : 1,
+                opacity: ((item.status !== "published" && !isArchivist) || isDownloading) ? 0.6 : 1,
               }}
             >
               <Download size={14} />
