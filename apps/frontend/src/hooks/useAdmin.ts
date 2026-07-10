@@ -308,3 +308,36 @@ export function useAdminHealth() {
   });
 }
 
+export interface Announcement {
+  announcement_id: string;
+  title: string;
+  body: string;
+  target_role: string | null;
+  created_at: string;
+  created_by_name: string | null;
+}
+
+export function useAnnouncements() {
+  return useQuery({
+    queryKey: ["admin", "announcements"],
+    queryFn: async () => {
+      const { data } = await api.get("/notifications/announcements");
+      return data.data as Announcement[];
+    },
+    staleTime: 15_000,
+  });
+}
+
+export function useBroadcastAnnouncement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { title: string; body: string; target_role?: string }) => {
+      const { data } = await api.post("/notifications/announcements", payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "announcements"] });
+    },
+  });
+}
+

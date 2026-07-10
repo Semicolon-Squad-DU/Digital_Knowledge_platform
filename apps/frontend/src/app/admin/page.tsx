@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   FileText, RefreshCw, Pencil, Trash2, Filter, ChevronLeft, ChevronRight,
@@ -18,6 +18,7 @@ import {
   useAdminConfigs, useUpdateAdminConfigs, useAdminAuditLogs, useAdminHealth,
   useApproveUser, useBackups, useGenerateBackup, useDownloadBackup, useRestoreBackup,
   useBackupSchedule, useUpdateBackupSchedule, type BackupRecord,
+  useAnnouncements, useBroadcastAnnouncement, type Announcement,
 } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/library/hooks/useLibrary";
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/features/archive/hooks/useArchive";
@@ -93,12 +94,6 @@ const MOCK_AUDIT = [
   { log_id: "l4", user_id: "u4", user_name: "Fatema Begum", action: "STATUS_CHANGE", entity_type: "catalog_item", entity_id: "c1", details: { from: "draft", to: "published" }, timestamp: "2026-05-27T14:20:00Z" },
   { log_id: "l5", user_id: "u3", user_name: "Karim Hossain", action: "ACCESS", entity_type: "archive_item", entity_id: "a1", details: { access_tier: "restricted" }, timestamp: "2026-05-27T11:05:00Z" },
   { log_id: "l6", user_id: "u1", user_name: "Arif Rahman", action: "DELETE", entity_type: "user", entity_id: "u7", details: { mode: "anonymize" }, timestamp: "2026-05-26T17:00:00Z" },
-];
-
-const MOCK_ALERTS = [
-  { id: "a1", type: "error_spike", title: "Error Rate Spike Detected", message: "5xx error rate exceeded 10/min threshold. Peak: 23 errors/min at 08:42 UTC.", timestamp: "2026-05-28T08:42:00Z", read: false },
-  { id: "a2", type: "downtime", title: "Service Downtime Detected", message: "Health endpoint returned 503 for 3 consecutive polls (180s downtime).", timestamp: "2026-05-27T22:15:00Z", read: false },
-  { id: "a3", type: "info", title: "Backup Completed Successfully", message: "Scheduled backup dkp_backup_2026-05-28_09-00.sql.gz uploaded to S3.", timestamp: "2026-05-28T09:01:00Z", read: true },
 ];
 
 const MOCK_CONFIG = [
@@ -1546,13 +1541,18 @@ function AlertsTab() {
 }
 
 // ── Tab: Broadcast Announcements ──────────────────────────────────────────────
+const ANNOUNCEMENT_ROLES = ["guest","member","student_author","researcher","archivist","librarian","admin"];
+
 function AnnouncementsTab() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [targetRole, setTargetRole] = useState("all");
-  const [sending, setSending] = useState(false);
-  const router = useRouter();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const { data: announcements = [], isLoading: historyLoading } = useAnnouncements();
+  const broadcast = useBroadcastAnnouncement();
 
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1560,63 +1560,115 @@ function AnnouncementsTab() {
       toast.error("Title and message body are required");
       return;
     }
-
-    setSending(true);
     try {
-      // Import dynamic api client
-      const api = (await import("@/lib/api")).default;
-      await api.post("/notifications/announcements", {
-        title,
-        body,
+      await broadcast.mutateAsync({
+        title, body,
         target_role: targetRole === "all" ? undefined : targetRole,
       });
-      toast.success("Announcement broadcasted successfully to all target users!");
+      toast.success(editingId ? "Announcement resent successfully!" : "Announcement broadcasted successfully to all target users!");
       setTitle("");
       setBody("");
+      setTargetRole("all");
+      setEditingId(null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to broadcast announcement");
-    } finally {
-      setSending(false);
     }
   };
 
+  const handleEdit = (a: Announcement) => {
+    setTitle(a.title);
+    setBody(a.body);
+    setTargetRole(a.target_role ?? "all");
+    setEditingId(a.announcement_id);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleCancelEdit = () => {
+    setTitle(""); setBody(""); setTargetRole("all"); setEditingId(null);
+  };
+
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px" }}>
-      <SectionHeader title="Broadcast Announcement" desc="Send a platform-wide alert or targeted notification via email and in-app message." />
-      <form onSubmit={handleBroadcast} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
-        <div>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
-          <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
-            <option value="all">All Registered Users</option>
-            {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
-              <option key={r} value={r}>{r.replace("_"," ")}</option>
-            ))}
-          </select>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div ref={formRef} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px" }}>
+        <SectionHeader
+          title={editingId ? "Edit & Resend Announcement" : "Broadcast Announcement"}
+          desc="Send a platform-wide alert or targeted notification via email and in-app message."
+        />
+        <form onSubmit={handleBroadcast} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
+            <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+              <option value="all">All Registered Users</option>
+              {ANNOUNCEMENT_ROLES.map(r => (
+                <option key={r} value={r}>{r.replace("_"," ")}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
+            <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            {editingId && (
+              <button type="button" onClick={handleCancelEdit} style={{ padding: "10px 20px", borderRadius: 7, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>
+                Cancel
+              </button>
+            )}
+            <button type="submit" disabled={broadcast.isPending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              <Zap size={14} /> {broadcast.isPending ? "Sending..." : editingId ? "Resend Notice" : "Broadcast Notice"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Sent announcement history */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "18px 24px", borderBottom: "1px solid #f3f4f6" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>Sent Announcements</h3>
         </div>
-        <div>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
-          <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
-        </div>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button type="submit" disabled={sending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            <Zap size={14} /> {sending ? "Broadcasting..." : "Broadcast Notice"}
-          </button>
-        </div>
-      </form>
+        {historyLoading ? (
+          <div style={{ padding: 20 }}><Skeleton className="h-[80px] w-full" /></div>
+        ) : announcements.length === 0 ? (
+          <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+            No announcements sent yet.
+          </div>
+        ) : (
+          announcements.map((a, i) => (
+            <div key={a.announcement_id} style={{ padding: "16px 24px", borderBottom: i < announcements.length - 1 ? "1px solid #f9fafb" : "none", display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: "#111827", margin: 0 }}>{a.title}</p>
+                  <Pill label={a.target_role ?? "all"} bg="#f0f9ff" color="#0369a1" />
+                </div>
+                <p style={{ fontSize: 12.5, color: "#6b7280", margin: "0 0 6px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{a.body}</p>
+                <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>
+                  Sent {new Date(a.created_at).toLocaleString()}{a.created_by_name ? ` by ${a.created_by_name}` : ""}
+                </p>
+              </div>
+              <ActionBtn icon={Pencil} label="Edit & Resend" bg="#f3f4f6" color="#374151" onClick={() => handleEdit(a)} />
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
-export default function AdminPage() {
+const ADMIN_TABS: AdminTab[] = ["overview", "users", "audit", "config", "backups", "alerts", "announcements"];
+
+function AdminPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const requestedTab = searchParams.get("tab");
+  const initialTab: AdminTab = ADMIN_TABS.includes(requestedTab as AdminTab) ? (requestedTab as AdminTab) : "overview";
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
   // Non-admin state
   const [searchQuery, setSearchQuery] = useState("");
@@ -1628,6 +1680,10 @@ export default function AdminPage() {
   const memberId = user?.user_id ?? "";
 
   const { data: adminStats, isLoading: statsLoading } = useAdminStats();
+  // Shares the same query cache/interval as AlertsTab's own useAdminHealth() call —
+  // drives the real unread count on the "Alerts" tab badge instead of MOCK_ALERTS.
+  const { data: healthDataForBadge } = useAdminHealth();
+  const unreadAlertCount = (healthDataForBadge?.alerts ?? []).filter((a: any) => !a.read).length;
   const docParams = { page: currentPage, limit: 10, search: searchQuery, status: filterStatus !== "all" ? filterStatus : undefined };
   // Each documents endpoint is role-scoped on the backend — only fetch the one this role may call
   const { data: catalogDocsData, isLoading: catalogDocsLoading } = useCatalogDocuments(docParams, ["librarian", "admin"].includes(user?.role ?? ""));
@@ -1721,9 +1777,9 @@ export default function AdminPage() {
                 >
                   <tab.icon size={isMobile ? 12 : 14} />
                   {!isMobile && tab.label}
-                  {tab.id === "alerts" && MOCK_ALERTS.filter(a => !a.read).length > 0 && (
+                  {tab.id === "alerts" && unreadAlertCount > 0 && (
                     <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {MOCK_ALERTS.filter(a => !a.read).length}
+                      {unreadAlertCount}
                     </span>
                   )}
                 </button>
@@ -2086,5 +2142,13 @@ export default function AdminPage() {
         </div>{/* closes padding div */}
       </div>{/* closes background div */}
     </AppLayout>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminPageInner />
+    </Suspense>
   );
 }

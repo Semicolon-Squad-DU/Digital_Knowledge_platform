@@ -64,6 +64,23 @@ router.patch("/:id/read", authenticate, asyncHandler(async (req: AuthRequest, re
   res.json({ success: true });
 }));
 
+// GET /api/notifications/announcements — history, for the admin "edit & resend" list
+router.get(
+  "/announcements",
+  authenticate,
+  requireRole("admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const announcements = await query(
+      `SELECT a.announcement_id, a.title, a.body, a.target_role, a.created_at, u.name as created_by_name
+       FROM announcements a
+       LEFT JOIN users u ON a.created_by = u.user_id
+       ORDER BY a.created_at DESC
+       LIMIT 50`
+    );
+    res.json({ success: true, data: announcements });
+  })
+);
+
 // POST /api/notifications/announcements
 router.post(
   "/announcements",

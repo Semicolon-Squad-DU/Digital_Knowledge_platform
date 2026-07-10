@@ -32,7 +32,8 @@ CREATE TYPE notification_type AS ENUM (
   'due_date_reminder', 'overdue_alert', 'hold_available',
   'project_approved', 'project_changes_requested',
   'access_request_approved', 'access_request_denied',
-  'announcement', 'new_upload', 'system'
+  'announcement', 'new_upload', 'system',
+  'new_event', 'pending_approval'
 );
 
 CREATE TYPE audit_action AS ENUM (

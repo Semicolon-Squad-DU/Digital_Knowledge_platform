@@ -9,6 +9,7 @@ import { config } from "../../core/config";
 import { BorrowService } from "./borrow.service";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
+import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 
 const router = Router();
 
@@ -448,7 +449,7 @@ router.post(
       documentUrl = key;
     }
 
-    const item = await queryOne(
+    const item = await queryOne<{ catalog_id: string }>(
       `INSERT INTO catalog_items
          (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
@@ -456,6 +457,14 @@ router.post(
       [title, isbn || null, authors, publisher || null, edition || null, year ? parseInt(year, 10) : null,
        category || "General", totalCopies, shelf_location || null, description || null, documentUrl]
     );
+
+    // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
+    void notifyAllUsersExcept(req.user!.user_id, {
+      type: "new_upload",
+      title: "New Book Added",
+      message: `"${title}" has been added to the library catalog.`,
+      action_url: `/library/${item!.catalog_id}`,
+    });
 
     res.status(201).json({ success: true, data: item });
   })

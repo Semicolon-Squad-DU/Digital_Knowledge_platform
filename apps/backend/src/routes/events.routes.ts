@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../core/db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
+import { notifyAllUsersExcept } from "../infrastructure/notification.service";
 
 const router = Router();
 
@@ -48,6 +49,14 @@ router.post(
        RETURNING *`,
       [title, description, speaker, scheduledAt, location, parseInt(totalSeats), materialsUrl || null, userId]
     );
+
+    // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
+    void notifyAllUsersExcept(userId, {
+      type: "new_event",
+      title: "New Event Scheduled",
+      message: `"${title}" has been scheduled for ${new Date(scheduledAt).toLocaleDateString()}.`,
+      action_url: "/events",
+    });
 
     res.status(201).json({
       success: true,

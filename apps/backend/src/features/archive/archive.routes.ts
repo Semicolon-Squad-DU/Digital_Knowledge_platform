@@ -8,6 +8,7 @@ import { indexArchiveItem, searchArchive } from "../../infrastructure/elasticsea
 import { logger } from "../../core/config/logger";
 import { AccessTier } from "@dkp/shared";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
+import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 
 const router = Router();
 
@@ -248,6 +249,14 @@ router.post(
       language: item.language, access_tier: item.access_tier, status: item.status,
       file_type: item.file_type, created_at: item.created_at,
     }).catch((err) => logger.error("ES indexing failed", { error: err.message }));
+
+    // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
+    void notifyAllUsersExcept(req.user!.user_id, {
+      type: "new_upload",
+      title: "New Document Uploaded",
+      message: `"${item.title_en}" has been added to the archive.`,
+      action_url: `/archive/${item.item_id}`,
+    });
 
     res.status(201).json({ success: true, data: item });
   })

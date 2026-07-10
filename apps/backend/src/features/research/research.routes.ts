@@ -7,6 +7,7 @@ import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure
 import { logger } from "../../core/config/logger";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 import { AccessTier } from "@dkp/shared";
+import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 
 const router = Router();
 
@@ -304,6 +305,14 @@ router.post(
         // Continue despite archive failure
       }
     }
+
+    // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
+    void notifyAllUsersExcept(req.user!.user_id, {
+      type: "new_upload",
+      title: "New Research Published",
+      message: `"${title}" has been published.`,
+      action_url: `/research/${(output as Record<string, string>).output_id}`,
+    });
 
     res.status(201).json({ success: true, data: output });
   })
