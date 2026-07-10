@@ -93,7 +93,7 @@ export default function LibraryPage() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const router = useRouter();
-  const isLibrarian = isAuthenticated && ["librarian", "admin"].includes(user?.role ?? "");
+  const isLibrarian = isAuthenticated && user?.role === "librarian";
 
   const [searchInput, setSearchInput]   = useState("");
   const [activeSearch, setActiveSearch] = useState("");

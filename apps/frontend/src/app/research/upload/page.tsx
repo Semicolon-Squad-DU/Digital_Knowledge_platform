@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSubmitResearchOutput } from "@/features/research/hooks/useResearch";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { cn, formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -89,7 +89,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function UploadResearchPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, ready } = useAuthGuard();
   const submit = useSubmitResearchOutput();
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -165,8 +165,10 @@ export default function UploadResearchPage() {
     }
   };
 
-  // Guard
-  if (user && !["researcher", "admin"].includes(user.role)) {
+  // Guard — wait for auth rehydration first so the form never flashes on
+  // screen for a non-researcher user during the initial render.
+  if (!ready) return null;
+  if (user && user.role !== "researcher") {
     return (
       <AppLayout>
         <div className="page-container py-16 text-center">

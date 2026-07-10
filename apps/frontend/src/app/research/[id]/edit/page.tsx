@@ -122,9 +122,10 @@ export default function EditResearchPage() {
     );
   }
 
-  // Guard access to uploader or admin
-  const isOwnerOrAdmin = user && (output?.uploaded_by === user.user_id || user.role === "admin");
-  if (!isOwnerOrAdmin) {
+  // Guard access to the owning researcher only — admin manages the platform,
+  // not individual researchers' own output.
+  const isOwner = user && output?.uploaded_by === user.user_id;
+  if (!isOwner) {
     return (
       <AppLayout>
         <div className="page-container py-16 text-center">

@@ -98,7 +98,7 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
     setDropdownOpen(false);
   }, [pathname]);
 
-  const isLibrarianOrAdmin = ["librarian", "admin"].includes(user?.role ?? "");
+  const isLibrarian = user?.role === "librarian";
 
   // Hide navbar on pages that have their own navigation
   const hiddenExact    = ["/", "/login", "/register", "/forgot-password"];
@@ -269,7 +269,7 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
                             {[
                               { href: "/dashboard", icon: LayoutDashboard, label: "Your dashboard" },
                               { href: "/profile",   icon: User,            label: "Your profile" },
-                              ...(isLibrarianOrAdmin ? [{ href: "/librarian", icon: Library, label: "Librarian dashboard" }] : []),
+                              ...(isLibrarian ? [{ href: "/librarian", icon: Library, label: "Librarian dashboard" }] : []),
                             ].map((item) => (
                               <Link
                                 key={item.href}

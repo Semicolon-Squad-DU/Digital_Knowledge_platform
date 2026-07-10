@@ -132,7 +132,7 @@ export default function ShowcasePage() {
   });
 
   const isMobile  = useMediaQuery("(max-width: 767px)");
-  const canSubmit = isAuthenticated && (user?.role === "student_author" || user?.role === "admin");
+  const canSubmit = isAuthenticated && user?.role === "student_author";
 
   const handleSearch = () => setParams(p => ({ ...p, q: searchInput, page: 1 }));
   const clearSearch  = () => { setSearchInput(""); setParams(p => ({ ...p, q: "", page: 1 })); };

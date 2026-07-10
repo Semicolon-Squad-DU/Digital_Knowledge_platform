@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useUploadArchiveItem, useTags } from "@/features/archive/hooks/useArchive";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { cn, formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -69,7 +69,7 @@ function LocalPdfPreview({ file }: { file: File }) {
 
 export default function UploadArchivePage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, ready } = useAuthGuard();
   const { mutateAsync: upload } = useUploadArchiveItem();
   const { data: availableTags } = useTags();
 
@@ -183,14 +183,16 @@ export default function UploadArchivePage() {
     }
   };
 
-  // Guard
-  if (user && !["archivist", "admin"].includes(user.role)) {
+  // Guard — wait for auth rehydration before deciding, so the form never
+  // flashes on screen for a non-archivist user during the initial render.
+  if (!ready) return null;
+  if (user && user.role !== "archivist") {
     return (
       <AppLayout>
         <div className="page-container py-16 text-center">
           <Archive size={40} className="mx-auto mb-4 text-[var(--color-fg-muted)]" />
           <p className="font-semibold text-lg text-[var(--color-fg-default)]">Access Restricted</p>
-          <p className="text-sm text-[var(--color-fg-muted)] mt-1">Only archivists and admins can upload archive documents.</p>
+          <p className="text-sm text-[var(--color-fg-muted)] mt-1">Only archivists can upload archive documents.</p>
         </div>
       </AppLayout>
     );

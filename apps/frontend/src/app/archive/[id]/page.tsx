@@ -23,7 +23,9 @@ export default function ArchiveItemPage() {
   const { mutateAsync: requestAccess, isPending: isSubmitting } = useRequestAccess();
 
   const { user, isAuthenticated } = useAuthStore();
-  const isArchivistOrAdmin = isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
+  // Admin manages the platform, not individual archive documents directly —
+  // catalog lifecycle controls are archivist-only here.
+  const isArchivist = isAuthenticated && user?.role === "archivist";
   const isGuest = !isAuthenticated || user?.role === "guest";
 
   const { mutateAsync: updateStatus, isPending: isUpdatingStatus } = useUpdateArchiveStatus();
@@ -453,8 +455,8 @@ export default function ArchiveItemPage() {
           )}
         </div>
 
-        {/* ── ARCHIVIST & ADMIN MANAGEMENT PANEL ── */}
-        {isArchivistOrAdmin && (
+        {/* ── ARCHIVIST MANAGEMENT PANEL ── */}
+        {isArchivist && (
           <div
             style={{
               background: "#ffffff",

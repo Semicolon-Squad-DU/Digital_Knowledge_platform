@@ -259,7 +259,9 @@ export default function ResearchDetailPage() {
     { key: "bibtex", label: "BibTeX" },
   ];
 
-  const isOwnerOrAdmin = user && (output.uploaded_by === user.user_id || user.role === "admin");
+  // Admin manages the platform, not individual researchers' own output — only the
+  // researcher who owns this piece can edit it here.
+  const isOwner = user && output.uploaded_by === user.user_id;
 
   return (
     <AppLayout>
@@ -273,7 +275,7 @@ export default function ResearchDetailPage() {
             { label: "Detail" },
           ]}
         />
-        {isOwnerOrAdmin && (
+        {isOwner && (
           <Link
             href={`/research/${outputId}/edit`}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm shrink-0 self-start sm:self-center hover:opacity-90"

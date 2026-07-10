@@ -116,7 +116,11 @@ export default function LibraryItemPage() {
     }
   }, [item]);
 
+  // Staff (admin+librarian) don't see patron actions (wishlist/hold/cite/share).
   const isLibrarian = ["librarian", "admin"].includes(user?.role ?? "");
+  // But only librarian actually edits/deletes catalog entries directly here —
+  // admin manages the catalog through the Admin panel, not this patron page.
+  const canManageCatalog = user?.role === "librarian";
 
   const handleWishlist = async () => {
     if (!isAuthenticated) {
@@ -374,49 +378,52 @@ export default function LibraryItemPage() {
                     </button>
                   )}
 
-                  <button
-                    onClick={handleWishlist}
-                    disabled={isAddingToWishlist || isRemovingFromWishlist}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      padding: "10px 16px",
-                      borderRadius: 8,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: isWishlisted
-                        ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)"
-                        : "1px solid #e5e7eb",
-                      background: isWishlisted
-                        ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)"
-                        : "#fff",
-                      color: isWishlisted ? "var(--avatar-theme-color, #4f46e5)" : "#374151",
-                      cursor: (isAddingToWishlist || isRemovingFromWishlist) ? "not-allowed" : "pointer",
-                      opacity: (isAddingToWishlist || isRemovingFromWishlist) ? 0.7 : 1,
-                      transition: "all 0.2s",
-                    }}
-                    onMouseOver={(e) => {
-                      if (isWishlisted) {
-                        e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 16%, #fff)";
-                      } else {
-                        e.currentTarget.style.background = "#f9fafb";
-                        e.currentTarget.style.borderColor = "#d1d5db";
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (isWishlisted) {
-                        e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)";
-                      } else {
-                        e.currentTarget.style.background = "#fff";
-                        e.currentTarget.style.borderColor = "#e5e7eb";
-                      }
-                    }}
-                  >
-                    <Heart size={14} fill={isWishlisted ? "var(--avatar-theme-color, #6366f1)" : "none"} />
-                    {isWishlisted ? "Added to Wishlist" : "Add to Wishlist"}
-                  </button>
+                  {/* Wishlist is a patron intent signal — not applicable to staff (admin/librarian) managing the catalog. */}
+                  {!isLibrarian && (
+                    <button
+                      onClick={handleWishlist}
+                      disabled={isAddingToWishlist || isRemovingFromWishlist}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: isWishlisted
+                          ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)"
+                          : "1px solid #e5e7eb",
+                        background: isWishlisted
+                          ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)"
+                          : "#fff",
+                        color: isWishlisted ? "var(--avatar-theme-color, #4f46e5)" : "#374151",
+                        cursor: (isAddingToWishlist || isRemovingFromWishlist) ? "not-allowed" : "pointer",
+                        opacity: (isAddingToWishlist || isRemovingFromWishlist) ? 0.7 : 1,
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => {
+                        if (isWishlisted) {
+                          e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 16%, #fff)";
+                        } else {
+                          e.currentTarget.style.background = "#f9fafb";
+                          e.currentTarget.style.borderColor = "#d1d5db";
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (isWishlisted) {
+                          e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)";
+                        } else {
+                          e.currentTarget.style.background = "#fff";
+                          e.currentTarget.style.borderColor = "#e5e7eb";
+                        }
+                      }}
+                    >
+                      <Heart size={14} fill={isWishlisted ? "var(--avatar-theme-color, #6366f1)" : "none"} />
+                      {isWishlisted ? "Added to Wishlist" : "Add to Wishlist"}
+                    </button>
+                  )}
 
                   {!isLibrarian && (
                     <button
@@ -468,7 +475,8 @@ export default function LibraryItemPage() {
                   )}
                 </div>
 
-                {/* Secondary Actions */}
+                {/* Secondary Actions — citation/share are for patrons referencing the book in their own work, not staff managing the catalog. */}
+                {!isLibrarian && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <button
                     onClick={handleCopyCitation}
@@ -532,6 +540,7 @@ export default function LibraryItemPage() {
                     Share
                   </button>
                 </div>
+                )}
 
                 {/* About Book / Description */}
                 {item.description && (
@@ -583,8 +592,8 @@ export default function LibraryItemPage() {
                   </div>
                 </div>
 
-                {/* Librarian / Admin Actions */}
-                {isLibrarian && (
+                {/* Librarian Actions */}
+                {canManageCatalog && (
                   <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16, display: "flex", gap: 10 }}>
                     <button
                       onClick={() => setEditModal(true)}

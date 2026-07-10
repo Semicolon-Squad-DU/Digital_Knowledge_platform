@@ -130,7 +130,7 @@ export default function ResearchPage() {
   });
 
   const isMobile  = useMediaQuery("(max-width: 767px)");
-  const canUpload = isAuthenticated && ["researcher", "admin"].includes(user?.role ?? "");
+  const canUpload = isAuthenticated && user?.role === "researcher";
 
   const handleSearch = () => setParams(p => ({ ...p, q: searchInput, page: 1 }));
   const clearSearch  = () => { setSearchInput(""); setParams(p => ({ ...p, q: "", page: 1 })); };

@@ -41,8 +41,7 @@ const ROLE_ACTIONS: Record<string, Array<{ label: string; href: string; icon: Re
                    { label: "Browse Archive", href: "/archive", icon: Archive }],
   librarian:      [{ label: "Librarian Desk", href: "/librarian", icon: BookOpen, primary: true },
                    { label: "Add Book", href: "/librarian/book/add", icon: Plus }],
-  admin:          [{ label: "Admin Console", href: "/admin", icon: Lock, primary: true },
-                   { label: "Upload Document", href: "/archive/upload", icon: Plus }],
+  admin:          [{ label: "Admin Console", href: "/admin", icon: Lock, primary: true }],
 };
 
 function todayLabel() {
@@ -249,8 +248,8 @@ export default function DashboardPage() {
         {/* ── Main content ─────────────────────────────────────────────────────── */}
         <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
 
-          {/* Fine warning */}
-          {fineData?.total_pending > 0 && (
+          {/* Fine warning — admin manages the platform, not a personal library account */}
+          {user?.role !== "admin" && fineData?.total_pending > 0 && (
             <div style={{
               background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10,
               padding: "12px 16px", color: "#991b1b", fontSize: 13, fontWeight: 600,
@@ -335,7 +334,7 @@ export default function DashboardPage() {
                   <h2 style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", margin: 0 }}>Recent Activity</h2>
                 </div>
                 <Link
-                  href="/notifications"
+                  href="/dashboard/activity"
                   style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
                   onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
                   onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}

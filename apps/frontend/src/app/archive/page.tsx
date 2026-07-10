@@ -43,7 +43,7 @@ export default function ArchivePage() {
   const { data, isLoading, isError } = useArchiveSearch(params);
   const { mutateAsync: download }    = useDownloadArchiveItem();
   const isMobile  = useMediaQuery("(max-width: 767px)");
-  const canUpload = _hasHydrated && isAuthenticated && ["archivist", "admin"].includes(user?.role ?? "");
+  const canUpload = _hasHydrated && isAuthenticated && user?.role === "archivist";
 
   const handleSearch = () => {
     setParams((p) => ({ ...p, query: searchInput, page: 1 }));

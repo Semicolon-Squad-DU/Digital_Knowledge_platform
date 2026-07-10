@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { useSubmitProject } from "@/features/showcase/hooks/useShowcase";
 import api from "@/lib/api";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -60,7 +60,7 @@ const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024;
 
 export default function SubmitProjectPage() {
   const router   = useRouter();
-  const { user } = useAuthStore();
+  const { user, ready } = useAuthGuard();
   const submitProject = useSubmitProject();
 
   const [pdfFile, setPdfFile]   = useState<File | null>(null);
@@ -159,8 +159,10 @@ export default function SubmitProjectPage() {
     }
   };
 
-  // Guard — only student_author or admin
-  if (user && user.role !== "student_author" && user.role !== "admin") {
+  // Guard — wait for auth rehydration first so the form never flashes on
+  // screen for a non-student_author user during the initial render.
+  if (!ready) return null;
+  if (user && user.role !== "student_author") {
     return (
       <AppLayout>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
