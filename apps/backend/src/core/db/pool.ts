@@ -2,9 +2,15 @@ import { Pool } from "pg";
 import { config } from "../config";
 import { logger } from "../config/logger";
 
+// Supabase's session-mode pooler (port 5432) caps concurrent connections at 15
+// for this project — capping our own pool below that leaves headroom for other
+// connections (migrations, one-off scripts) instead of exhausting the limit
+// ourselves and causing "max clients reached" errors under normal load.
+const isSupabaseSessionPooler = config.db.url.includes("supabase.com") && config.db.url.includes(":5432");
+
 export const pool = new Pool({
   connectionString: config.db.url,
-  max: 20,
+  max: isSupabaseSessionPooler ? 10 : 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
   ssl: config.db.url.includes("supabase.com") ? { rejectUnauthorized: false } : false,
