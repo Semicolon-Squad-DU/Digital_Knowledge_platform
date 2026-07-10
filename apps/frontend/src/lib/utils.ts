@@ -6,6 +6,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Mirrors the backend's registration password rule (auth.routes.ts) so
+// change-password and reset-password can't be used to set a weaker password.
+export const PASSWORD_STRENGTH_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+export const PASSWORD_STRENGTH_MESSAGE = "Password must be 8+ characters with uppercase, lowercase, digit, and special character (@$!%*?&)";
+
+export function isPasswordStrong(password: string): boolean {
+  return PASSWORD_STRENGTH_REGEX.test(password);
+}
+
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return "n/a";
   const d = new Date(date);

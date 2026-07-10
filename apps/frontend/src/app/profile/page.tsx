@@ -13,6 +13,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useBorrowingHistory, useMemberHolds, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
+import { isPasswordStrong, PASSWORD_STRENGTH_MESSAGE } from "@/lib/utils";
 
 
 const AVATAR_COLORS = [
@@ -154,8 +155,8 @@ export default function ProfilePage() {
       toast.error("New passwords do not match.");
       return;
     }
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters.");
+    if (!isPasswordStrong(newPassword)) {
+      toast.error(PASSWORD_STRENGTH_MESSAGE);
       return;
     }
     setChangingPassword(true);
@@ -769,6 +770,9 @@ export default function ProfilePage() {
                     outline: "none"
                   }}
                 />
+                <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0 }}>
+                  8+ characters with uppercase, lowercase, digit, and special character (@$!%*?&)
+                </p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

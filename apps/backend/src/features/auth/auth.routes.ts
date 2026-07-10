@@ -33,13 +33,23 @@ function roleLabel(role: string): string {
 
 const router = Router();
 
+// Single source of truth for password strength — reused wherever a user sets or
+// changes their password (registration, change-password, reset-password) so the
+// rule can't be weakened by going through a different endpoint.
+const PASSWORD_STRENGTH_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/;
+const PASSWORD_STRENGTH_MESSAGE = "Password must be 8+ chars with uppercase, lowercase, digit, and special char";
+
+function passwordStrengthValidation(field: string) {
+  return body(field)
+    .isLength({ min: 8 })
+    .matches(PASSWORD_STRENGTH_REGEX)
+    .withMessage(PASSWORD_STRENGTH_MESSAGE);
+}
+
 export const registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
   body("email").isEmail().toLowerCase().withMessage("Valid email required"),
-  body("password")
-    .isLength({ min: 8 })
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
-    .withMessage("Password must be 8+ chars with uppercase, lowercase, digit, and special char"),
+  passwordStrengthValidation("password"),
   body("department").optional().trim(),
   body("role").optional().isIn(SELF_SERVICE_ROLES)
     .withMessage("Invalid role selected"),
@@ -537,7 +547,7 @@ router.post(
   authenticate,
   [
     body("old_password").notEmpty().withMessage("Current password is required"),
-    body("new_password").isLength({ min: 8 }).withMessage("New password must be at least 8 characters"),
+    passwordStrengthValidation("new_password"),
   ],
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const errors = validationResult(req);
@@ -607,7 +617,7 @@ router.post(
   [
     body("email").isEmail().toLowerCase(),
     body("otp").isLength({ min: 6, max: 6 }).isNumeric().withMessage("Reset code must be a 6-digit number"),
-    body("new_password").isLength({ min: 8 }).withMessage("New password must be at least 8 characters"),
+    passwordStrengthValidation("new_password"),
   ],
   asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req);

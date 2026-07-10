@@ -7,6 +7,7 @@ import { Mail, CheckCircle, GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input } from "@/components/ui/Input";
 import api from "@/lib/api";
+import { isPasswordStrong, PASSWORD_STRENGTH_MESSAGE } from "@/lib/utils";
 
 function ForgotPasswordForm() {
   const router = useRouter();
@@ -43,8 +44,8 @@ function ForgotPasswordForm() {
       toast.error("Enter the 6-digit code from your email");
       return;
     }
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
+    if (!isPasswordStrong(newPassword)) {
+      toast.error(PASSWORD_STRENGTH_MESSAGE);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -219,6 +220,9 @@ function ForgotPasswordForm() {
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full"
                   />
+                  <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "5px" }}>
+                    8+ characters with uppercase, lowercase, digit, and special character (@$!%*?&)
+                  </p>
                 </div>
 
                 {/* Confirm Password */}
