@@ -663,10 +663,10 @@ router.patch(
       // Add audit logs
       await client.query(
         `INSERT INTO audit_logs (user_id, action, entity_type, details, ip_address)
-         VALUES ($1, 'BULK_UPDATE', 'archive_item', $2, $3)`,
+         VALUES ($1, 'UPDATE', 'archive_item', $2, $3)`,
         [
           req.user!.user_id,
-          JSON.stringify({ ids, category, access_tier, tags_updated: tags !== undefined }),
+          JSON.stringify({ action: "BULK_UPDATE", ids, category, access_tier, tags_updated: tags !== undefined }),
           req.ip,
         ]
       );
