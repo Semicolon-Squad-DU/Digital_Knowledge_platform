@@ -4,7 +4,7 @@ import { authenticate, optionalAuth, requireRole, AuthRequest } from "../../core
 import { uploadSingle, uploadMultiple, checkUploadQuota } from "../../core/middleware/upload.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { uploadToS3, getPresignedUrl, generateS3Key, deleteFromS3, fileExistsInS3 } from "../../infrastructure/s3.service";
-import { indexArchiveItem, searchArchive } from "../../infrastructure/elasticsearch.service";
+import { indexArchiveItem, searchArchive, removeArchiveItemFromIndex } from "../../infrastructure/elasticsearch.service";
 import { logger } from "../../core/config/logger";
 import { AccessTier } from "@dkp/shared";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
@@ -365,6 +365,8 @@ router.delete(
       );
     });
 
+    void removeArchiveItemFromIndex(req.params.id);
+
     for (const v of versions) {
       if (v.file_url) {
         deleteFromS3(v.file_url).catch((err) => logger.warn("S3 delete failed during item purge", { error: err.message }));
@@ -409,6 +411,8 @@ router.patch(
 
     if (status === "published") {
       indexArchiveItem({ ...(updated as object), status }).catch(() => {});
+    } else {
+      void removeArchiveItemFromIndex(req.params.id);
     }
 
     await query(

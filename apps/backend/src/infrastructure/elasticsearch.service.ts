@@ -177,6 +177,16 @@ export async function removeCatalogItemFromIndex(catalog_id: string): Promise<vo
   }
 }
 
+export async function removeArchiveItemFromIndex(item_id: string): Promise<void> {
+  if (!isElasticsearchAvailable) return;
+  try {
+    await esClient.delete({ index: ARCHIVE_INDEX, id: item_id });
+  } catch (err) {
+    // 404 just means it was never indexed (e.g. created before ES was available) — not an error.
+    logger.warn("Archive index removal failed", { item_id, error: (err as Error).message });
+  }
+}
+
 export async function searchArchive(params: {
   query?: string;
   category?: string;
