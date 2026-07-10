@@ -518,10 +518,9 @@ export default function LibrarianDashboardPage() {
     <AppLayout>
       <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
         {/* ── Hero banner ─────────────────────────────────────────────────────── */}
-        <div style={{
+        <div className="px-4 py-8 md:px-10 md:py-9" style={{
           background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
           borderBottom: "1px solid #e5e7eb",
-          padding: "36px 40px 34px",
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div>
@@ -537,7 +536,7 @@ export default function LibrarianDashboardPage() {
                 Manage lending, returns, and catalog operations
               </p>
             </div>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <Button
                 variant="outline"
                 size="sm"
@@ -589,7 +588,7 @@ export default function LibrarianDashboardPage() {
         </div>
 
         {/* ── Content ─────────────────────────────────────────────────────────── */}
-        <div style={{ padding: "24px 40px" }}>
+        <div className="px-4 md:px-10 py-6">
         <div className="page-container">
 
       {/* Tab Navigation */}
@@ -623,8 +622,8 @@ export default function LibrarianDashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => <SkeletonStatCard key={i} />)
-              : statCards.map((stat) => (
-                  <div key={stat.label} className="stat-card">
+              : statCards.map((stat, idx) => (
+                  <div key={stat.label} className={`stat-card ${idx === 4 ? "col-span-2 sm:col-span-1" : ""}`}>
                     <div className={`stat-icon ${stat.iconClass}`}>
                       <stat.icon size={20} aria-hidden="true" />
                     </div>

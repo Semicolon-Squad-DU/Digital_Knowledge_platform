@@ -131,6 +131,16 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
         <div className="page-container">
           <div className={cn("flex items-center gap-4", isScrolled ? "h-12" : "h-14")}>
 
+            {/* Mobile toggle (on the left) */}
+            <button
+              className="md:hidden p-2 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-100"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-expanded={mobileOpen}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+
             {/* Back Button if showBack is true */}
             {showBack && (
               <button
@@ -142,7 +152,7 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
               </button>
             )}
 
-            {/* Logo */}
+            {/* Logo (always visible on left) */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="DKP Home">
               <BookOpen size={20} className="text-white" />
               <span className="text-white font-semibold text-sm hidden sm:block">DKP</span>
@@ -185,6 +195,8 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
 
             {/* Right side */}
             <div className="flex items-center gap-1 ml-auto">
+
+
 
               {/* Dark mode */}
               <button
@@ -322,15 +334,7 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
                 </div>
               )}
 
-              {/* Mobile toggle */}
-              <button
-                className="md:hidden p-2 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-100"
-                onClick={() => setMobileOpen((v) => !v)}
-                aria-expanded={mobileOpen}
-                aria-label="Toggle menu"
-              >
-                {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-              </button>
+              {/* Mobile toggle moved to left */}
             </div>
           </div>
         </div>

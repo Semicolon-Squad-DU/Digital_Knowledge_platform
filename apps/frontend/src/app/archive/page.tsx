@@ -195,50 +195,62 @@ export default function ArchivePage() {
             padding: "14px 16px", marginBottom: 20,
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
           }}>
-            {/* Category */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: 42 }}>
+             {/* Category */}
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, marginBottom: isMobile ? 12 : 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : 42, marginBottom: isMobile ? 2 : 0 }}>
                 Type
               </span>
-              <Pill label="All" active={filterCategory === ""} onClick={() => applyCategory("")} />
-              {CATEGORY_OPTIONS.map(c => (
-                <Pill key={c} label={c} active={filterCategory === c} onClick={() => applyCategory(c)} />
-              ))}
+              <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
+                <Pill label="All" active={filterCategory === ""} onClick={() => applyCategory("")} />
+                {CATEGORY_OPTIONS.map(c => (
+                  <Pill key={c} label={c} active={filterCategory === c} onClick={() => applyCategory(c)} />
+                ))}
+              </div>
             </div>
 
             {/* Language + Format */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: 42 }}>
-                Lang
-              </span>
-              <Pill label="All" active={filterLanguage === ""} onClick={() => applyLanguage("")} />
-              {LANGUAGE_OPTIONS.map(l => (
-                <Pill key={l.value} label={l.label} active={filterLanguage === l.value} onClick={() => applyLanguage(l.value)} />
-              ))}
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
+              {/* Lang */}
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : 42, marginBottom: isMobile ? 2 : 0 }}>
+                  Lang
+                </span>
+                <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
+                  <Pill label="All" active={filterLanguage === ""} onClick={() => applyLanguage("")} />
+                  {LANGUAGE_OPTIONS.map(l => (
+                    <Pill key={l.value} label={l.label} active={filterLanguage === l.value} onClick={() => applyLanguage(l.value)} />
+                  ))}
+                </div>
+              </div>
 
-              <span style={{ width: 1, height: 20, background: "#e5e7eb", flexShrink: 0, margin: "0 4px" }} />
+              {!isMobile && <span style={{ width: 1, height: 20, background: "#e5e7eb", flexShrink: 0, margin: "0 4px" }} />}
 
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
-                Format
-              </span>
-              <Pill label="All" active={filterFileType === ""} onClick={() => applyFileType("")} />
-              {FILE_TYPE_OPTIONS.map(t => (
-                <Pill key={t.value} label={t.label} active={filterFileType === t.value} onClick={() => applyFileType(t.value)} />
-              ))}
+              {/* Format */}
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto", marginTop: isMobile ? 12 : 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : "auto", marginBottom: isMobile ? 2 : 0 }}>
+                  Format
+                </span>
+                <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
+                  <Pill label="All" active={filterFileType === ""} onClick={() => applyFileType("")} />
+                  {FILE_TYPE_OPTIONS.map(t => (
+                    <Pill key={t.value} label={t.label} active={filterFileType === t.value} onClick={() => applyFileType(t.value)} />
+                  ))}
+                </div>
+              </div>
 
               {hasFilters && (
                 <button
                   type="button"
                   onClick={handleClear}
                   style={{
-                    marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
+                    marginLeft: isMobile ? "0" : "auto", marginTop: isMobile ? 12 : 0, display: "flex", alignItems: "center", gap: 5,
                     padding: "5px 12px", borderRadius: 20,
                     border: "1px solid #fecaca", background: "#fef2f2",
                     color: "#dc2626", fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", flexShrink: 0,
+                    cursor: "pointer", flexShrink: 0, width: isMobile ? "100%" : "auto", justifyContent: "center"
                   }}
                 >
-                  <X size={11} /> Clear
+                  <X size={11} /> Clear Filters
                 </button>
               )}
             </div>

@@ -34,26 +34,26 @@ export default function AboutPage() {
 
         {/* ── NAVBAR ── */}
         <header style={{ background: "var(--color-canvas-subtle)", borderBottom: "1px solid var(--color-border-default)", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px"            {/* Brand / mobile group */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {isMobile && (
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  aria-label="Open menu"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "var(--color-fg-default)", marginLeft: "-8px" }}
+                >
+                  <Menu size={22} />
+                </button>
+              )}
+              <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <GraduationCap size={16} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-fg-default)", letterSpacing: "-0.02em" }}>DKP</span>
+              </Link>
+            </div>
 
-            {/* Brand */}
-            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-              <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <GraduationCap size={16} color="#ffffff" />
-              </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-fg-default)", letterSpacing: "-0.02em" }}>DKP</span>
-            </Link>
-
-            {isMobile ? (
-              /* Mobile: hamburger */
-              <button
-                onClick={() => setMenuOpen(true)}
-                aria-label="Open menu"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "var(--color-fg-default)" }}
-              >
-                <Menu size={22} />
-              </button>
-            ) : (
+            {!isMobile && (
               /* Desktop: nav + auth */
               <>
                 <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -75,28 +75,41 @@ export default function AboutPage() {
             )}
           </div>
         </header>
-
+ 
         {/* Full-screen mobile menu */}
         {menuOpen && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "var(--color-canvas-default)", zIndex: 200, display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", borderBottom: "1px solid var(--color-border-default)", flexShrink: 0 }}>
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)", zIndex: 200, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "56px", background: "rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
               <Link href="/" onClick={() => setMenuOpen(false)} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <GraduationCap size={16} color="#ffffff" />
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-fg-default)", letterSpacing: "-0.02em" }}>DKP</span>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>DKP</span>
               </Link>
-              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "var(--color-fg-default)", display: "flex", alignItems: "center" }}>
+              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center" }}>
                 <X size={24} strokeWidth={2} />
               </button>
             </div>
-            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
               {ABOUT_NAV.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  style={{ display: "block", padding: "10px 14px", fontSize: "13.5px", fontWeight: 500, color: "var(--color-fg-default)", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", background: item.href === "/about" ? "var(--color-border-default)" : "transparent" }}
+                  style={{
+                    display: "block",
+                    padding: "12px 16px",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "rgba(255,255,255,0.75)",
+                    textDecoration: "none",
+                    borderRadius: "8px",
+                    letterSpacing: "0.01em",
+                    background: item.href === "/about" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; e.currentTarget.style.color = "#ffffff"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = item.href === "/about" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
                 >{item.label}</Link>
               ))}
             </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import api from "@/lib/api";
-import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X, ShieldCheck, UserRound, Landmark, MailCheck, Rocket, FileText, Calendar } from "lucide-react";
+import { Archive, BookOpen, FlaskConical, Star, LogOut, LayoutDashboard, ArrowRight, GraduationCap, Menu, X, ShieldCheck, UserRound, Landmark, MailCheck, Rocket, FileText, Calendar, Camera } from "lucide-react";
 
 const PARTNERS = [
   { id: 1, name: "CSE",  full: "Computer Science & Engineering" },
@@ -259,6 +259,7 @@ export default function HomePage() {
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
         @keyframes homeFloat { from { transform: translateY(0); } to { transform: translateY(-6px); } }
 
         /* Scroll-reveal: transform/opacity only, GPU-composited */
@@ -316,57 +317,59 @@ export default function HomePage() {
         <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: isMobile ? "relative" : "sticky", top: 0, zIndex: 50, transform: !isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
-            {/* Logo — always visible */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-              <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <GraduationCap size={16} color="#ffffff" />
-              </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
-            </div>
-
-            {isMobile ? (
-              /* ── MOBILE: hamburger only ── */
+            {/* ── MOBILE & DESKTOP: Left brand/group layout ── */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* Hamburger Button (shown only on mobile) */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827", borderRadius: "6px" }}
+                className="flex md:hidden"
+                style={{ alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827", borderRadius: "6px", marginLeft: "-8px" }}
                 aria-label="Open menu"
               >
                 <Menu size={24} />
               </button>
-            ) : (
-              /* ── DESKTOP: nav links + auth ── */
-              <>
-                <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  {[
-                    { label: "Archive",  href: "/archive"  },
-                    { label: "Library",  href: "/library"  },
-                    { label: "Research", href: "/research" },
-                    { label: "Showcase", href: "/showcase" },
-                    { label: "About",    href: "/about"    },
-                  ].map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
-                    >{item.label}</Link>
-                  ))}
-                </nav>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: "170px" }}>
-                  {isAuthenticated && (
-                    <button
-                      onClick={handleLogout}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-                    >
-                      <LogOut size={13} /> Sign Out
-                    </button>
-                  )}
+
+              {/* Logo (always on left) */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <GraduationCap size={16} color="#ffffff" />
                 </div>
-              </>
-            )}
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+              </div>
+            </div>
+
+            {/* ── DESKTOP NAVIGATION: Hidden on mobile, flex on desktop ── */}
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: "20px", flex: 1, justifyContent: "space-between", marginLeft: "20px" }}>
+              <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                {[
+                  { label: "Archive",  href: "/archive"  },
+                  { label: "Library",  href: "/library"  },
+                  { label: "Research", href: "/research" },
+                  { label: "Showcase", href: "/showcase" },
+                  { label: "About",    href: "/about"    },
+                ].map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                  >{item.label}</Link>
+                ))}
+              </nav>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: "170px" }}>
+                {isAuthenticated && (
+                  <button
+                    onClick={handleLogout}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                  >
+                    <LogOut size={13} /> Sign Out
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </header>
 
@@ -392,32 +395,60 @@ export default function HomePage() {
             <div style={{
               position: "fixed",
               top: 0,
-              right: 0,
-              width: "70%",
+              left: 0,
+              width: "80%",
               height: "100%",
-              background: "var(--theme-gradient-135)",
+              backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)",
               color: "#ffffff",
               zIndex: 200,
               display: "flex",
               flexDirection: "column",
-              boxShadow: "-4px 0 24px rgba(0,0,0,0.25)",
-              animation: "slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both",
+              boxShadow: "4px 0 24px rgba(0,0,0,0.25)",
+              animation: "slideInLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) both",
             }}>
               {/* Top bar */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", background: "#eaecef", borderBottom: "1px solid #d1d5db", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "56px", background: "rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
                 <Link href="/" onClick={handleCloseSidebar} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <GraduationCap size={16} color="#ffffff" />
                   </div>
-                  <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>DKP</span>
                 </Link>
-                <button onClick={handleCloseSidebar} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "#111827", display: "flex", alignItems: "center" }}>
+                <button onClick={handleCloseSidebar} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center" }}>
                   <X size={24} strokeWidth={2} />
                 </button>
               </div>
 
+               {/* User Info Header */}
+              {isAuthenticated ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                  <Link href="/profile" onClick={handleCloseSidebar} style={{ position: "relative", textDecoration: "none", display: "block", cursor: "pointer" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                      {user?.name?.[0]?.toUpperCase() ?? "U"}
+                    </div>
+                    <div style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderRadius: "50%", background: "var(--avatar-theme-color, #111827)", border: "2px solid #111116", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
+                      <Camera size={11} color="#ffffff" strokeWidth={2.5} />
+                    </div>
+                  </Link>
+                  <div>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>{user?.name}</p>
+                    <span style={{ fontSize: "11px", color: "#16a34a", background: "#dcfce7", padding: "3px 10px", borderRadius: "10px", fontWeight: 600 }}>Sign In Mode</span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                    <UserRound size={32} />
+                  </div>
+                  <div>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>Guest User</p>
+                    <span style={{ fontSize: "11px", color: "#f87171", background: "rgba(239, 68, 68, 0.2)", padding: "3px 10px", borderRadius: "10px", fontWeight: 600 }}>Guest Mode</span>
+                  </div>
+                </div>
+              )}
+
               {/* Nav links */}
-              <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px", flex: 1, overflowY: "auto" }}>
                 {[
                   { label: "Archive",  href: "/archive"  },
                   { label: "Library",  href: "/library"  },
@@ -434,17 +465,80 @@ export default function HomePage() {
                       padding: "12px 16px",
                       fontSize: "14px",
                       fontWeight: 500,
-                      color: "#ffffff",
+                      color: "rgba(255,255,255,0.75)",
                       textDecoration: "none",
                       borderRadius: "8px",
                       letterSpacing: "0.01em",
                       background: "rgba(255, 255, 255, 0.05)",
-                      transition: "background 0.2s ease"
+                      transition: "all 0.2s ease"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; e.currentTarget.style.color = "#ffffff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
                   >{item.label}</Link>
                 ))}
+              </div>
+
+              {/* Drawer Auth Actions Footer */}
+              <div style={{ padding: "12px 16px 20px 16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(0,0,0,0.15)" }}>
+                {isAuthenticated ? (
+                  <button
+                    onClick={() => { handleLogout(); handleCloseSidebar(); }}
+                    style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px", fontSize: "13.5px", fontWeight: 600, color: "#fca5a5", background: "rgba(239, 68, 68, 0.15)", border: "1.5px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", cursor: "pointer", transition: "all 0.2s" }}
+                  >
+                    <LogOut size={14} /> Sign Out
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <Link
+                      href="/login"
+                      onClick={handleCloseSidebar}
+                      style={{
+                        width: "100%",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "10.5px",
+                        fontSize: "13.5px",
+                        fontWeight: 600,
+                        color: "#ffffff",
+                        background: "rgba(255, 255, 255, 0.08)",
+                        border: "1.5px solid rgba(255, 255, 255, 0.15)",
+                        borderRadius: "8px",
+                        textDecoration: "none",
+                        textAlign: "center",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.15)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)"; }}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={handleCloseSidebar}
+                      style={{
+                        width: "100%",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "10.5px",
+                        fontSize: "13.5px",
+                        fontWeight: 700,
+                        color: "#111827",
+                        background: "#ffffff",
+                        borderRadius: "8px",
+                        textDecoration: "none",
+                        textAlign: "center",
+                        transition: "all 0.2s",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; }}
+                    >
+                      Register
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </>

@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Archive, FlaskConical, Send,
   BookOpen, ShieldCheck, Bell, Heart, LogOut,
-  Calendar, Menu, X, GraduationCap,
+  Calendar, Menu, X, GraduationCap, Camera,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
@@ -222,21 +222,22 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
       {/* Top bar */}
       <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
-
-          <GuestBrand />
-
           {isMobile ? (
-            /* Hamburger */
-            <button
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827" }}
-            >
-              <Menu size={22} />
-            </button>
+            /* MOBILE: Hamburger and Logo both on left */
+            <div style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "flex-start", gap: "8px" }}>
+              <button
+                onClick={() => setMenuOpen(true)}
+                aria-label="Open menu"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827", marginLeft: "-8px" }}
+              >
+                <Menu size={22} />
+              </button>
+              <GuestBrand />
+            </div>
           ) : (
-            /* Desktop: center nav + right auth */
+            /* DESKTOP: Logo on left, center nav + right auth */
             <>
+              <GuestBrand />
               <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                 {GUEST_NAV.map(({ label, href }) => {
                   const active = pathname === href || pathname.startsWith(href + "/");
@@ -336,11 +337,11 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       {isMobile && (
         <>
           {open && (
-            <div onClick={closeDrawer} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 39 }} />
+            <div onClick={closeDrawer} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", zIndex: 39 }} />
           )}
           <div style={{
-            position: "fixed", left: 0, top: 0, width: 270, height: "100dvh",
-            background: "var(--theme-sidebar-gradient)",
+            position: "fixed", left: 0, top: 0, width: "80%", height: "100dvh",
+            backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)",
             borderRight: "none", borderRadius: "0",
             boxShadow: "4px 0 32px rgba(0,0,0,0.22)", overflow: "hidden",
             display: "flex", flexDirection: "column", zIndex: 40,
@@ -348,10 +349,40 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
           }}>
             <SidebarBrand onClose={closeDrawer} />
+
+            {/* Centered User Info Header (similar to landing page) */}
+            {user && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                <Link href="/profile" onClick={closeDrawer} style={{ position: "relative", textDecoration: "none", display: "block", cursor: "pointer" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                    {user?.name?.[0]?.toUpperCase() ?? "U"}
+                  </div>
+                  <div style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderRadius: "50%", background: "var(--avatar-theme-color, #111827)", border: "2px solid #111116", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
+                    <Camera size={11} color="#ffffff" strokeWidth={2.5} />
+                  </div>
+                </Link>
+                <div>
+                  <p style={{ margin: "0 0 6px 0", fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>{user?.name}</p>
+                  <span style={{ fontSize: "11px", color: "#16a34a", background: "#dcfce7", padding: "3px 10px", borderRadius: "10px", fontWeight: 600, textTransform: "capitalize" }}>
+                    {user?.role?.replace("_", " ")}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div style={{ flex: 1, overflowY: "auto" }}>
               <NavList pathname={pathname} isAuthenticated={isAuthenticated} role={user?.role} onNav={closeDrawer} />
             </div>
-            <UserFooter user={user} onLogout={() => { handleLogout(); closeDrawer(); }} />
+
+            {/* Mobile Drawer Auth Footer */}
+            <div style={{ padding: "12px 16px 20px 16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(0,0,0,0.15)", flexShrink: 0 }}>
+              <button
+                onClick={() => { handleLogout(); closeDrawer(); }}
+                style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px", fontSize: "13.5px", fontWeight: 600, color: "#fca5a5", background: "rgba(239, 68, 68, 0.15)", border: "1.5px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", cursor: "pointer", transition: "all 0.2s" }}
+              >
+                <LogOut size={14} /> Sign Out
+              </button>
+            </div>
           </div>
         </>
       )}

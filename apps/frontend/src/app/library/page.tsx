@@ -260,56 +260,61 @@ export default function LibraryPage() {
 
           {/* Category pills + year filter */}
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "14px 16px", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>Category</span>
-              {CATEGORIES.map(cat => (
-                <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page: 1 }))}
-                  style={{
-                    padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: params.category === cat.value ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap",
-                    border: params.category === cat.value ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-                    background: params.category === cat.value ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-                    color: params.category === cat.value ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
-                  }}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:12, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.08em" }}>Years:</span>
-              {yearFilter ? (
-                <span style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, color:"#374151", background:"#fff" }}>
-                  {yearFilter}
-                  <button onClick={clearYear} style={{ background:"none", border:"none", cursor:"pointer", padding:0, color:"#9ca3af", display:"flex" }}><X size={12} /></button>
-                </span>
-              ) : (
-                <input
-                  type="number"
-                  placeholder="e.g. 2024"
-                  min="1900" max="2099"
-                  value={yearInput}
-                  onChange={e => setYearInput(e.target.value)}
-                  onBlur={e => applyYear(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); applyYear(yearInput); } }}
-                  style={{ width:90, padding:"5px 10px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, outline:"none" }}
-                />
-              )}
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginBottom: isMobile ? 4 : 0 }}>Category</span>
+              <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
+                {CATEGORIES.map(cat => (
+                  <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page: 1 }))}
+                    style={{
+                      padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: params.category === cat.value ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+                      border: params.category === cat.value ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
+                      background: params.category === cat.value ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
+                      color: params.category === cat.value ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
+                    }}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Advanced Search Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              style={{
-                padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: showAdvanced ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                border: showAdvanced ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-                background: showAdvanced ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-                color: showAdvanced ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
-              }}
-            >
-              <Filter size={12} />
-              {showAdvanced ? "Hide" : "Advanced"}
-            </button>
-            </div>{/* closes inner flex row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginTop: isMobile ? 12 : 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>Years:</span>
+                {yearFilter ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, color: "#374151", background: "#fff" }}>
+                    {yearFilter}
+                    <button onClick={clearYear} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af", display: "flex" }}><X size={12} /></button>
+                  </span>
+                ) : (
+                  <input
+                    type="number"
+                    placeholder="e.g. 2024"
+                    min="1900" max="2099"
+                    value={yearInput}
+                    onChange={e => setYearInput(e.target.value)}
+                    onBlur={e => applyYear(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); applyYear(yearInput); } }}
+                    style={{ width: 90, padding: "5px 10px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, outline: "none" }}
+                  />
+                )}
+              </div>
+
+              {/* Advanced Search Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                style={{
+                  padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: showAdvanced ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                  border: showAdvanced ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
+                  background: showAdvanced ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
+                  color: showAdvanced ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
+                }}
+              >
+                <Filter size={12} />
+                {showAdvanced ? "Hide" : "Advanced"}
+              </button>
+            </div>
           </div>{/* closes outer pill card */}
 
           {/* Advanced Search Expandable Panel */}

@@ -244,30 +244,33 @@ export default function ResearchPage() {
             padding: "14px 16px", marginBottom: 20,
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginBottom: isMobile ? 4 : 0 }}>
                 Type
               </span>
-              {TYPE_FILTERS.map(t => (
-                <Pill
-                  key={t.value}
-                  label={t.label}
-                  active={params.output_type === t.value}
-                  onClick={() => setParams(p => ({ ...p, output_type: t.value, page: 1 }))}
-                />
-              ))}
+              <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
+                {TYPE_FILTERS.map(t => (
+                  <Pill
+                    key={t.value}
+                    label={t.label}
+                    active={params.output_type === t.value}
+                    onClick={() => setParams(p => ({ ...p, output_type: t.value, page: 1 }))}
+                  />
+                ))}
+              </div>
               {(params.output_type || params.q) && (
                 <button
                   type="button"
                   onClick={() => { setSearchInput(""); setParams({ q: "", output_type: "", page: 1, limit: 20 }); }}
                   style={{
-                    marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
+                    marginLeft: isMobile ? "0" : "auto", marginTop: isMobile ? 12 : 0, display: "flex", alignItems: "center", gap: 5,
                     padding: "5px 12px", borderRadius: 20,
                     border: "1px solid #fecaca", background: "#fef2f2",
                     color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
+                    width: isMobile ? "100%" : "auto", justifyContent: "center"
                   }}
                 >
-                  <X size={11} /> Clear
+                  <X size={11} /> Clear Filters
                 </button>
               )}
             </div>
