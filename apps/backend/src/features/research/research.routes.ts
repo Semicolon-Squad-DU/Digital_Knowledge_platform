@@ -178,12 +178,18 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
 }));
 
 // GET /api/research/:id/cite
-router.get("/:id/cite", asyncHandler(async (req, res: Response) => {
-  const output = await queryOne<Record<string, unknown>>(
+router.get("/:id/cite", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const output = await queryOne<Record<string, unknown> & { access_tier: AccessTier }>(
     "SELECT * FROM research_outputs WHERE output_id = $1",
     [req.params.id]
   );
   if (!output) throw new AppError(404, "Research output not found");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  if (!allowedTiers.includes(output.access_tier)) {
+    throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
+  }
 
   res.json({
     success: true,
