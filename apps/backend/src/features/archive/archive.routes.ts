@@ -8,6 +8,7 @@ import { indexArchiveItem, searchArchive } from "../../infrastructure/elasticsea
 import { logger } from "../../core/config/logger";
 import { AccessTier } from "@dkp/shared";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
+import { getArchiveTransitionRule } from "../../core/archive-lifecycle";
 import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 
 const router = Router();
@@ -433,6 +434,14 @@ router.patch(
       [req.params.id]
     );
     if (!item) throw new AppError(404, "Item not found");
+
+    const rule = getArchiveTransitionRule(item.status, status);
+    if (rule === "invalid") {
+      throw new AppError(409, `Cannot move from "${item.status}" to "${status}" — the lifecycle is Draft → Review → Published → Archived`);
+    }
+    if (rule === "regression" && !["archivist", "admin"].includes(req.user!.role)) {
+      throw new AppError(403, "Only an Archivist or Admin can move a document backward in its lifecycle");
+    }
 
     const updated = await queryOne(
       "UPDATE archive_items SET status = $1 WHERE item_id = $2 RETURNING *",
