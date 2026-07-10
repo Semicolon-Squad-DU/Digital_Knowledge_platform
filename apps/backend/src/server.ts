@@ -10,6 +10,7 @@ import { config } from "./core/config";
 import { logger } from "./core/config/logger";
 import { pool } from "./core/db/pool";
 import { initializeElasticsearch } from "./infrastructure/elasticsearch.service";
+import { tusServer, TUS_PATH } from "./infrastructure/tus.service";
 import { startScheduler } from "./jobs/scheduler";
 import { errorHandler, notFound } from "./core/middleware/error.middleware";
 
@@ -48,7 +49,15 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type", "Authorization",
+      // tus resumable-upload protocol headers (large-file archive uploads)
+      "Tus-Resumable", "Upload-Length", "Upload-Metadata", "Upload-Offset", "Upload-Defer-Length",
+    ],
+    exposedHeaders: [
+      "Location", "Upload-Offset", "Upload-Length",
+      "Tus-Version", "Tus-Resumable", "Tus-Max-Size", "Tus-Extension",
+    ],
   })
 );
 
@@ -102,6 +111,18 @@ app.get("/ready", (_req, res) => {
   } else {
     res.status(503).json({ status: "starting" });
   }
+});
+
+// ── Resumable uploads (tus protocol) ────────────────────────────
+// Mounted with Express's raw req/res via .handle() — tus's own body handling
+// reads the request stream directly, so this must not sit behind a body-parser
+// that would consume it (express.json()/urlencoded() above safely skip this,
+// since they only act on matching Content-Types).
+app.all(`${TUS_PATH}*`, (req, res) => {
+  tusServer.handle(req, res).catch((err) => {
+    logger.error("tus handler error", { error: (err as Error).message });
+    if (!res.headersSent) res.status(500).end();
+  });
 });
 
 // ── API Routes ────────────────────────────────────────────────

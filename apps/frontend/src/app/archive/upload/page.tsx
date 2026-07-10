@@ -14,10 +14,11 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useUploadArchiveItem, useTags } from "@/features/archive/hooks/useArchive";
+import { useUploadArchiveItem, useFinalizeArchiveUpload, useTags } from "@/features/archive/hooks/useArchive";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { cn, formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { uploadViaTus, TUS_SIZE_THRESHOLD } from "@/lib/tusUpload";
 
 const CATEGORIES = [
   "General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other",
@@ -71,6 +72,7 @@ export default function UploadArchivePage() {
   const router = useRouter();
   const { user, ready } = useAuthGuard();
   const { mutateAsync: upload } = useUploadArchiveItem();
+  const { mutateAsync: finalizeUpload } = useFinalizeArchiveUpload();
   const { data: availableTags } = useTags();
 
   const [file, setFile] = useState<File | null>(null);
@@ -83,6 +85,7 @@ export default function UploadArchivePage() {
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const tusAbortRef = useRef<(() => void) | null>(null);
 
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -138,6 +141,45 @@ export default function UploadArchivePage() {
     setProgress(0);
     abortRef.current = new AbortController();
 
+    const authorsJson = JSON.stringify(
+      data.authors ? data.authors.split(",").map((a) => a.trim()).filter(Boolean) : []
+    );
+    const tagsJson = selectedTags.length > 0 ? JSON.stringify(selectedTags) : undefined;
+    const metaObj: Record<string, string> = {};
+    customFields.forEach((f) => {
+      if (f.key.trim() && f.value.trim()) {
+        metaObj[f.key.trim()] = f.value.trim();
+      }
+    });
+
+    // Large files go over the resumable tus protocol so a dropped connection
+    // doesn't mean starting a 500 MB upload over again; small files use the
+    // simpler direct multipart route.
+    if (file.size > TUS_SIZE_THRESHOLD) {
+      const { promise, abort } = uploadViaTus(file, setProgress);
+      tusAbortRef.current = abort;
+
+      try {
+        const fileKey = await promise;
+        await finalizeUpload({
+          file_key: fileKey, file_type: file.type, file_size: file.size,
+          title_en: data.title_en, title_bn: data.title_bn || undefined,
+          description: data.description || undefined, category: data.category,
+          language: data.language, access_tier: data.access_tier, status: data.status,
+          authors: authorsJson, tags: tagsJson, custom_metadata: JSON.stringify(metaObj),
+        });
+        setProgress(100);
+        toast.success("Document uploaded to digital archive successfully!");
+        setTimeout(() => router.push("/archive"), 800);
+      } catch (err: unknown) {
+        setProgress(0);
+        setUploading(false);
+        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        toast.error(msg || "Upload failed. Please try again.");
+      }
+      return;
+    }
+
     const fd = new FormData();
     fd.append("file", file);
     fd.append("title_en",    data.title_en);
@@ -147,19 +189,8 @@ export default function UploadArchivePage() {
     fd.append("language",    data.language);
     fd.append("access_tier", data.access_tier);
     fd.append("status",      data.status);
-    fd.append("authors",     JSON.stringify(
-      data.authors ? data.authors.split(",").map((a) => a.trim()).filter(Boolean) : []
-    ));
-    if (selectedTags.length > 0) {
-      fd.append("tags", JSON.stringify(selectedTags));
-    }
-
-    const metaObj: Record<string, string> = {};
-    customFields.forEach((f) => {
-      if (f.key.trim() && f.value.trim()) {
-        metaObj[f.key.trim()] = f.value.trim();
-      }
-    });
+    fd.append("authors",     authorsJson);
+    if (tagsJson) fd.append("tags", tagsJson);
     fd.append("custom_metadata", JSON.stringify(metaObj));
 
     const progressInterval = setInterval(() => {

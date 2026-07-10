@@ -50,6 +50,37 @@ export function useUploadArchiveItem() {
   });
 }
 
+export interface FinalizeArchiveUploadPayload {
+  file_key: string;
+  file_type: string;
+  file_size: number;
+  title_en: string;
+  title_bn?: string;
+  description?: string;
+  authors?: string; // JSON-encoded string[]
+  category?: string;
+  language?: string;
+  access_tier?: string;
+  status?: string;
+  tags?: string; // JSON-encoded string[]
+  custom_metadata?: string; // JSON-encoded object
+}
+
+/** Completes an archive upload after the file was already streamed to S3 via
+ * the tus resumable-upload endpoint — used for large files (see lib/tusUpload.ts). */
+export function useFinalizeArchiveUpload() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: FinalizeArchiveUploadPayload) => {
+      const { data } = await api.post("/archive/upload/finalize", payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["archive"] });
+    },
+  });
+}
+
 export function useUpdateArchiveItem() {
   const queryClient = useQueryClient();
   return useMutation({
