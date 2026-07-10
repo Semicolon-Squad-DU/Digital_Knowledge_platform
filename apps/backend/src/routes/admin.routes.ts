@@ -652,8 +652,8 @@ router.post(
     const { id } = req.params;
     const { approved, reason } = req.body as { approved: boolean; reason?: string };
 
-    const user = await queryOne<{ name: string; email: string; role: string; membership_status: string }>(
-      "SELECT name, email, role, membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
+    const user = await queryOne<{ name: string; email: string; role: string; membership_status: string; requested_role: string | null }>(
+      "SELECT name, email, role, membership_status, requested_role FROM users WHERE user_id = $1 AND deleted_at IS NULL",
       [id]
     );
     if (!user) throw new AppError(404, "User not found");
@@ -661,26 +661,55 @@ router.post(
       throw new AppError(400, "User is not in pending_approval state");
     }
 
-    const newStatus = approved ? "active" : "suspended";
-    await query(
-      "UPDATE users SET membership_status = $1, updated_at = NOW() WHERE user_id = $2",
-      [newStatus, id]
-    );
+    let newStatus = approved ? "active" : "suspended";
+    let finalRole = user.role;
+
+    if (user.requested_role) {
+      if (approved) {
+        finalRole = user.requested_role;
+        newStatus = "active";
+        await query(
+          "UPDATE users SET role = $1, requested_role = NULL, membership_status = $2, updated_at = NOW() WHERE user_id = $3",
+          [finalRole, newStatus, id]
+        );
+      } else {
+        newStatus = "active";
+        await query(
+          "UPDATE users SET requested_role = NULL, membership_status = $1, updated_at = NOW() WHERE user_id = $2",
+          [newStatus, id]
+        );
+      }
+    } else {
+      await query(
+        "UPDATE users SET membership_status = $1, updated_at = NOW() WHERE user_id = $2",
+        [newStatus, id]
+      );
+    }
 
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
        VALUES ($1, $2, 'user', $3, $4)`,
-      [req.user!.user_id, approved ? "APPROVE_USER" : "REJECT_USER", id, JSON.stringify({ reason, role: user.role })]
+      [
+        req.user!.user_id,
+        approved ? "APPROVE_USER" : "REJECT_USER",
+        id,
+        JSON.stringify({
+          reason,
+          role: user.role,
+          requested_role: user.requested_role,
+          action: user.requested_role ? "ROLE_SWITCH" : "SIGNUP"
+        })
+      ]
     );
 
-    const roleLabel = user.role.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    const roleLabel = finalRole.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
     await sendEmail({
       to: user.email,
       subject: approved ? `Your DKP ${roleLabel.toLowerCase()} account has been approved` : "Your DKP account request update",
       html: accountApprovalEmail(user.name, approved, reason, roleLabel),
     });
 
-    res.json({ success: true, data: { approved, membership_status: newStatus } });
+    res.json({ success: true, data: { approved, membership_status: newStatus, role: finalRole } });
   })
 );
 

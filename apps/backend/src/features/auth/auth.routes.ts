@@ -72,15 +72,40 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
     throw new AppError(400, `Registration is restricted to institutional email addresses (e.g. @du.ac.bd). Please use your university email.`);
   }
 
-  const existing = await queryOne<{ email_verified: boolean; membership_status: string }>(
-    "SELECT email_verified, membership_status FROM users WHERE email = $1 AND deleted_at IS NULL",
+  const existing = await queryOne<{ user_id: string; role: string; email_verified: boolean; membership_status: string }>(
+    "SELECT user_id, role, email_verified, membership_status FROM users WHERE email = $1 AND deleted_at IS NULL",
     [email]
   );
   if (existing) {
     if (!existing.email_verified) {
       throw new AppError(409, "Email already registered but not verified. Use resend-verification to get a new code.");
     }
-    throw new AppError(409, "Email already registered.");
+    const assignedRole = role && SELF_SERVICE_ROLES.includes(role) ? role : "member";
+    if (assignedRole === existing.role) {
+      throw new AppError(409, "Email already registered.");
+    }
+
+    // Request role change with admin approval
+    await query(
+      "UPDATE users SET requested_role = $1, membership_status = 'pending_approval', updated_at = NOW() WHERE user_id = $2",
+      [assignedRole, existing.user_id]
+    );
+
+    void notifyAdmins({
+      type: "pending_approval",
+      title: "Role Switch Requested",
+      message: `${name} (${email}) requested to switch their role from ${roleLabel(existing.role)} to ${roleLabel(assignedRole)} and is awaiting approval.`,
+      action_url: "/admin?tab=users",
+    });
+
+    res.json({
+      success: true,
+      data: {
+        pendingApproval: true,
+        message: `Your request to switch your role to ${roleLabel(assignedRole)} is pending admin approval.`,
+      },
+    });
+    return;
   }
 
   const password_hash = await bcrypt.hash(password, 12);
@@ -273,7 +298,19 @@ router.post(
     }
 
     if (user.membership_status === "pending_approval") {
-      throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
+      const dbUser = await queryOne<{ requested_role: string | null }>(
+        "SELECT requested_role FROM users WHERE user_id = $1",
+        [user.user_id]
+      );
+      if (dbUser?.requested_role) {
+        await query(
+          "UPDATE users SET requested_role = NULL, membership_status = 'active', updated_at = NOW() WHERE user_id = $1",
+          [user.user_id]
+        );
+        user.membership_status = "active";
+      } else {
+        throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
+      }
     }
 
     const { password_hash: _, ...safeUser } = user;
@@ -441,6 +478,21 @@ router.post(
         throw new AppError(403, "Account suspended. Contact administrator.");
       }
 
+      const requestedRole = role && SELF_SERVICE_ROLES.includes(role) ? role : null;
+      if (requestedRole && requestedRole === user.role) {
+        const dbUser = await queryOne<{ requested_role: string | null }>(
+          "SELECT requested_role FROM users WHERE user_id = $1",
+          [user.user_id]
+        );
+        if (user.membership_status === "pending_approval" && dbUser?.requested_role) {
+          await query(
+            "UPDATE users SET requested_role = NULL, membership_status = 'active', updated_at = NOW() WHERE user_id = $1",
+            [user.user_id]
+          );
+          user.membership_status = "active";
+        }
+      }
+
       if (user.membership_status === "pending_approval") {
         throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
       }
@@ -466,9 +518,20 @@ router.post(
         user.membership_status = promotedStatus;
       }
 
-      // Existing user: always use the DB-stored role, never the body role.
-      // This allows admin/librarian/archivist accounts (created via /api/admin/users) to
-      // authenticate via OAuth without needing to send privileged roles in the request body.
+      if (requestedRole && requestedRole !== user.role) {
+        await query(
+          "UPDATE users SET requested_role = $1, membership_status = 'pending_approval', oauth_provider = $2, oauth_id = $3, name = $4 WHERE user_id = $5",
+          [requestedRole, provider, providerId, name, user.user_id]
+        );
+        void notifyAdmins({
+          type: "pending_approval",
+          title: "Role Switch Requested via OAuth",
+          message: `${name} (${email}) requested to switch their role from ${roleLabel(user.role)} to ${roleLabel(requestedRole)} and is awaiting approval.`,
+          action_url: "/admin?tab=users",
+        });
+        throw new AppError(403, `Your request to switch your role to ${roleLabel(requestedRole)} is pending admin approval.`);
+      }
+
       await query(
         "UPDATE users SET oauth_provider = $1, oauth_id = $2, name = $3 WHERE user_id = $4",
         [provider, providerId, name, user.user_id]
