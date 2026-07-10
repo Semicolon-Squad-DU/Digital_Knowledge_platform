@@ -8,6 +8,8 @@ import { authenticate, AuthRequest } from "../../core/middleware/auth.middleware
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { logger } from "../../core/config/logger";
 import { sendEmail, verificationOtpEmail, accountApprovalEmail } from "../../infrastructure/email.service";
+import { verifyGoogleAccessToken } from "../../infrastructure/google-auth.service";
+import { notifyAdmins } from "../../infrastructure/notification.service";
 
 function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -154,6 +156,14 @@ router.post(
     logger.info("Email verified", { user_id: user.user_id, role: user.role, newStatus });
 
     if (newStatus === "pending_approval") {
+      // Fire-and-forget — notifyAdmins never rejects, it logs internally.
+      void notifyAdmins({
+        type: "pending_approval",
+        title: "New Registration Pending Approval",
+        message: `${user.name} (${user.email}) registered as ${roleLabel(user.role)} and is awaiting approval.`,
+        action_url: "/admin?tab=users",
+      });
+
       return res.json({
         success: true,
         data: {
@@ -370,11 +380,12 @@ router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Respo
 router.post(
   "/oauth-login",
   [
-    body("email").isEmail().toLowerCase().withMessage("Valid email required"),
-    body("name").trim().notEmpty().withMessage("Name is required"),
+    // provider is intentionally restricted to "google" — there is no real
+    // institutional SSO integration yet, so accepting a provider we can't
+    // independently verify would defeat the point of this endpoint.
+    body("provider").equals("google").withMessage("Unsupported OAuth provider"),
+    body("accessToken").trim().notEmpty().withMessage("Google access token is required"),
     body("role").isIn(SELF_SERVICE_ROLES).withMessage("Invalid role selected").optional({ values: "falsy" }),
-    body("provider").isIn(["google", "sso"]),
-    body("providerId").trim().notEmpty(),
   ],
   asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -383,14 +394,22 @@ router.post(
       return;
     }
 
-    const { email, name, role, provider, providerId, department } = req.body as {
-      email: string;
-      name: string;
+    const { accessToken, role, department } = req.body as {
+      accessToken: string;
       role: string;
-      provider: string;
-      providerId: string;
       department?: string;
     };
+    const provider = "google";
+
+    // Never trust client-submitted email/name/providerId for OAuth — verify
+    // the access token with Google and use ITS claims as the source of truth.
+    let verified: { email: string; name: string; googleId: string };
+    try {
+      verified = await verifyGoogleAccessToken(accessToken);
+    } catch (err) {
+      throw new AppError(401, (err as Error).message || "Google sign-in verification failed");
+    }
+    const { email, name, googleId: providerId } = verified;
 
     // Check if user already exists
     let user = await queryOne<{
@@ -426,6 +445,12 @@ router.post(
           [promotedStatus, user.user_id]
         );
         if (promotedStatus === "pending_approval") {
+          void notifyAdmins({
+            type: "pending_approval",
+            title: "New Registration Pending Approval",
+            message: `${user.name} (${user.email}) registered as ${roleLabel(user.role)} and is awaiting approval.`,
+            action_url: "/admin?tab=users",
+          });
           throw new AppError(403, `Your email is verified. Your ${roleLabel(user.role)} account is now pending admin approval.`);
         }
         user.membership_status = promotedStatus;
@@ -464,6 +489,12 @@ router.post(
       );
 
       if (newUserStatus === "pending_approval") {
+        void notifyAdmins({
+          type: "pending_approval",
+          title: "New Registration Pending Approval",
+          message: `${name} (${email}) registered as ${roleLabel(newUserRole)} and is awaiting approval.`,
+          action_url: "/admin?tab=users",
+        });
         throw new AppError(403, `Your ${roleLabel(newUserRole)} account has been created and is pending admin approval. You will receive an email once approved.`);
       }
     }

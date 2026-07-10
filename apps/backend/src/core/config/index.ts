@@ -56,9 +56,17 @@ export const config = {
 
   auth: {
     // Comma-separated list of allowed email domains for self-service registration.
-    // Empty string means all domains are allowed (useful for local dev without real emails).
-    allowedDomains: (process.env.ALLOWED_EMAIL_DOMAINS || "du.ac.bd,cs.du.ac.bd,math.du.ac.bd,phy.du.ac.bd,chem.du.ac.bd").split(",").map(d => d.trim()).filter(Boolean),
+    // Empty (the default) means all domains are allowed — any email, personal
+    // or institutional, can register. Set ALLOWED_EMAIL_DOMAINS to restrict
+    // registration to specific domains again.
+    allowedDomains: (process.env.ALLOWED_EMAIL_DOMAINS || "").split(",").map(d => d.trim()).filter(Boolean),
     otpExpiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10),
+    // Must match NEXT_PUBLIC_GOOGLE_CLIENT_ID on the frontend. Used to verify
+    // that a Google access token was actually issued to this app (rejects
+    // tokens replayed from a different OAuth client). If unset, that specific
+    // check is skipped with a loud warning — set this in any environment
+    // that's reachable outside localhost.
+    googleClientId: process.env.GOOGLE_CLIENT_ID || "",
   },
 
   library: {

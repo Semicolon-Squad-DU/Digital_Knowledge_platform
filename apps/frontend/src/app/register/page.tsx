@@ -184,8 +184,7 @@ export default function RegisterPage() {
   };
 
   const handleOAuthAuthorize = async (oauthData: {
-    email: string; name: string; role: string;
-    provider: "google" | "sso"; providerId: string; department?: string;
+    accessToken: string; role: string; provider: "google"; department?: string;
   }) => {
     try {
       const res = await api.post("/auth/oauth-login", oauthData);
@@ -213,20 +212,12 @@ export default function RegisterPage() {
           scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
           callback: async (tokenResponse: any) => {
             if (tokenResponse?.access_token) {
-              const t = toast.loading("Fetching Google profile…");
-              try {
-                const profileRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`);
-                const profile = await profileRes.json();
-                toast.dismiss(t);
-                await handleOAuthAuthorize({
-                  email: profile.email, name: profile.name,
-                  role: selectedRole, provider: "google",
-                  providerId: `google_${profile.sub}`, department: "",
-                });
-              } catch {
-                toast.dismiss(t);
-                toast.error("Failed to fetch Google profile");
-              }
+              // The backend independently verifies this token with Google and
+              // derives email/name from it — we don't send profile fields.
+              await handleOAuthAuthorize({
+                accessToken: tokenResponse.access_token,
+                role: selectedRole, provider: "google", department: "",
+              });
             }
           },
         });

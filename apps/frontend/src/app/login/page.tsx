@@ -53,7 +53,12 @@ function LoginForm() {
   const { login, setUser } = useAuthStore();
 
   const [error,             setError]             = useState("");
+  // googleProfile is fetched client-side purely to show "Continue as X" in the
+  // role picker below — it is NOT trusted for the actual sign-in. The raw
+  // access token (googleAccessToken) is what gets sent to the backend, which
+  // independently re-verifies it with Google before creating any session.
   const [googleProfile,     setGoogleProfile]     = useState<{ email: string; name: string; sub: string } | null>(null);
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   const [selectedRole,      setSelectedRole]      = useState<RoleValue>("member");
   const [showRoleModal,     setShowRoleModal]     = useState(false);
   const [roleError,         setRoleError]         = useState("");
@@ -76,8 +81,7 @@ function LoginForm() {
   };
 
   const handleOAuthAuthorize = async (oauthData: {
-    email: string; name: string; role: string;
-    provider: "google" | "sso"; providerId: string; department?: string;
+    accessToken: string; role: string; provider: "google"; department?: string;
   }) => {
     try {
       const res = await api.post("/auth/oauth-login", oauthData);
@@ -106,12 +110,17 @@ function LoginForm() {
           scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
           callback: async (tokenResponse: any) => {
             if (tokenResponse?.access_token) {
+              // This client-side profile fetch is only for display in the role
+              // picker below ("Continue as X") — the backend independently
+              // re-verifies the access token with Google before trusting
+              // anything, so a tampered display value here can't grant access.
               const t = toast.loading("Fetching Google profile…");
               try {
                 const profileRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`);
                 const profile = await profileRes.json();
                 toast.dismiss(t);
                 setGoogleProfile(profile);
+                setGoogleAccessToken(tokenResponse.access_token);
                 setSelectedRole("member");
                 setShowRoleModal(true);
               } catch {
@@ -131,17 +140,17 @@ function LoginForm() {
   };
 
   const handleRoleConfirm = async () => {
-    if (!googleProfile) return;
+    if (!googleAccessToken) return;
     setRoleError("");
     setIsSubmittingRole(true);
     try {
       await handleOAuthAuthorize({
-        email: googleProfile.email, name: googleProfile.name,
-        role: selectedRole, provider: "google",
-        providerId: `google_${googleProfile.sub}`, department: "",
+        accessToken: googleAccessToken,
+        role: selectedRole, provider: "google", department: "",
       });
       setShowRoleModal(false);
       setGoogleProfile(null);
+      setGoogleAccessToken(null);
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Failed to complete sign-in";
       setRoleError(msg);
@@ -343,7 +352,7 @@ function LoginForm() {
                 <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#111827", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>Select Your Role</h2>
                 <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Choose how you&apos;ll use the platform</p>
               </div>
-              <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setRoleError(""); }}
+              <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setGoogleAccessToken(null); setRoleError(""); }}
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px", color: "#9ca3af" }}>
                 <X size={20} />
               </button>
@@ -398,7 +407,7 @@ function LoginForm() {
             )}
 
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setRoleError(""); }} disabled={isSubmittingRole}
+              <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setGoogleAccessToken(null); setRoleError(""); }} disabled={isSubmittingRole}
                 style={{ flex: 1, padding: "10px 16px", fontSize: "13px", fontWeight: 600, background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", cursor: isSubmittingRole ? "not-allowed" : "pointer" }}>
                 Cancel
               </button>

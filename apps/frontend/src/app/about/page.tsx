@@ -74,7 +74,7 @@ export default function AboutPage() {
               </>
             )}
           </div>
-        </header>/header>
+        </header>
 
         {/* Full-screen mobile menu */}
         {menuOpen && (
