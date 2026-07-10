@@ -906,15 +906,15 @@ function AuditTab() {
         <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Actions</option>
-          {["CREATE","UPDATE","DELETE","ACCESS","LOGIN","LOGOUT","DOWNLOAD","STATUS_CHANGE"].map(a => (
+          {["CREATE","UPDATE","DELETE","ACCESS","LOGIN","LOGOUT","DOWNLOAD","STATUS_CHANGE","BACKUP","RESTORE","APPROVE_USER","REJECT_USER"].map(a => (
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
         <select value={entityFilter} onChange={e => { setEntityFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Entity Types</option>
-          {["user","session","research_output","catalog_item","archive_item","backup","system_config"].map(t => (
-            <option key={t} value={t}>{t.replace("_"," ")}</option>
+          {["user","archive_item","backup","backup_schedule","system_config","borrow","fine","catalog_import"].map(t => (
+            <option key={t} value={t}>{t.replace(/_/g," ")}</option>
           ))}
         </select>
       </div>
