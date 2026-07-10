@@ -37,6 +37,11 @@ export const config = {
     url: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
   },
 
+  clamav: {
+    host: process.env.CLAMAV_HOST || "localhost",
+    port: parseInt(process.env.CLAMAV_PORT || "3310", 10),
+  },
+
   s3: {
     endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
     accessKey: process.env.S3_ACCESS_KEY || "dkp_minio_user",

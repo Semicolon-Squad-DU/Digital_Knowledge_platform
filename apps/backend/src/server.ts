@@ -11,6 +11,7 @@ import { logger } from "./core/config/logger";
 import { pool } from "./core/db/pool";
 import { initializeElasticsearch } from "./infrastructure/elasticsearch.service";
 import { tusServer, TUS_PATH } from "./infrastructure/tus.service";
+import { initializeAntivirus } from "./infrastructure/antivirus.service";
 import { startScheduler } from "./jobs/scheduler";
 import { errorHandler, notFound } from "./core/middleware/error.middleware";
 
@@ -149,6 +150,7 @@ async function bootstrap(): Promise<void> {
     logger.info("PostgreSQL connected");
 
     await initializeElasticsearch();
+    await initializeAntivirus();
 
     if (config.env !== "test") {
       await startScheduler();

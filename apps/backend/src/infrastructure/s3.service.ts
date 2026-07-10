@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
+import { scanBuffer } from "./antivirus.service";
 
 export const s3Client = new S3Client({
   endpoint: config.s3.endpoint,
@@ -89,8 +90,15 @@ function ensureQueueDir() {
 export async function uploadToS3(
   key: string,
   body: Buffer,
-  contentType: string
+  contentType: string,
+  // Only for trusted, system-generated content (e.g. DB backup dumps) that
+  // never came from a user upload — everything else must be scanned.
+  options: { skipScan?: boolean } = {}
 ): Promise<string> {
+  if (!options.skipScan) {
+    await scanBuffer(body);
+  }
+
   try {
     await s3Client.send(
       new PutObjectCommand({

@@ -95,7 +95,8 @@ export async function performBackup(
   try {
     const dumpBuffer = await dumpDatabase();
     const s3Key = `backups/${filename}`;
-    await uploadToS3(s3Key, dumpBuffer, "application/gzip");
+    // System-generated DB dump, not user-uploaded content — skip the malware scan.
+    await uploadToS3(s3Key, dumpBuffer, "application/gzip", { skipScan: true });
 
     const [updated] = await query<BackupRecord>(
       `UPDATE backups SET status = 'completed', s3_key = $1, size_bytes = $2, completed_at = NOW()
