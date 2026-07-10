@@ -3,13 +3,13 @@ import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../../core/middleware/auth.middleware";
 import { uploadSingle, uploadMultiple, checkUploadQuota } from "../../core/middleware/upload.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
-import { uploadToS3, getPresignedUrl, generateS3Key, deleteFromS3 } from "../../infrastructure/s3.service";
+import { uploadToS3, getPresignedUrl, generateS3Key, deleteFromS3, fileExistsInS3 } from "../../infrastructure/s3.service";
 import { indexArchiveItem, searchArchive } from "../../infrastructure/elasticsearch.service";
 import { logger } from "../../core/config/logger";
 import { AccessTier } from "@dkp/shared";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 import { getArchiveTransitionRule } from "../../core/archive-lifecycle";
-import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
+import { createArchiveItemRecord } from "./archive-create.service";
 
 const router = Router();
 
@@ -192,83 +192,42 @@ router.post(
     const key = generateS3Key("archive", req.file.originalname, req.file.mimetype);
     await uploadToS3(key, req.file.buffer, req.file.mimetype);
 
-    const initialStatus = status && ["draft","review","published","archived"].includes(status)
-      ? status : "published";
-
-    const item = await withTransaction(async (client) => {
-      const result = await client.query(
-        `INSERT INTO archive_items
-           (title_en, title_bn, description, authors, category, language, access_tier, status, file_url, file_type, file_size, uploaded_by, custom_metadata)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-         RETURNING *`,
-        [
-          title_en, title_bn || null, description || null,
-          authors ? JSON.parse(authors) : [],
-          category || "General", language || "en",
-          access_tier || "public", initialStatus,
-          key, req.file!.mimetype, req.file!.size, req.user!.user_id,
-          custom_metadata ? JSON.parse(custom_metadata) : {},
-        ]
-      );
-
-      await client.query(
-        `INSERT INTO archive_versions (item_id, version_number, file_url, metadata_snapshot, changed_by)
-         VALUES ($1, 1, $2, $3, $4)`,
-        [result.rows[0].item_id, key, JSON.stringify(result.rows[0]), req.user!.user_id]
-      );
-
-      // Handle tags — batched into 2 round trips instead of 2-per-tag
-      if (tags) {
-        const tagNames: string[] = typeof tags === "string" ? JSON.parse(tags) : tags;
-        const uniqueNames = [...new Set(tagNames.map((t) => t.trim()).filter(Boolean))];
-
-        if (uniqueNames.length > 0) {
-          const tagPlaceholders = uniqueNames.map((_, i) => `($${i + 1})`).join(", ");
-          const tagResult = await client.query(
-            `INSERT INTO tags (name_en) VALUES ${tagPlaceholders}
-             ON CONFLICT (name_en) DO UPDATE SET name_en = EXCLUDED.name_en
-             RETURNING tag_id`,
-            uniqueNames
-          );
-
-          const linkValues = tagResult.rows
-            .map((_, i) => `($1, $${i + 2})`)
-            .join(", ");
-          await client.query(
-            `INSERT INTO archive_item_tags (item_id, tag_id) VALUES ${linkValues} ON CONFLICT DO NOTHING`,
-            [result.rows[0].item_id, ...tagResult.rows.map((r) => r.tag_id)]
-          );
-        }
-      }
-
-      await client.query(
-        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
-         VALUES ($1, 'CREATE', 'archive_item', $2, $3, $4)`,
-        [req.user!.user_id, result.rows[0].item_id, JSON.stringify({ title_en }), req.ip]
-      );
-
-      return result.rows[0];
+    const item = await createArchiveItemRecord({
+      key, fileType: req.file.mimetype, fileSize: req.file.size,
+      uploadedBy: req.user!.user_id, ip: req.ip || "",
+      title_en, title_bn, description, authors, category, language, access_tier, status, tags, custom_metadata,
     });
 
-    indexArchiveItem({
-      item_id: item.item_id, title_en: item.title_en, title_bn: item.title_bn,
-      description: item.description, authors: item.authors, category: item.category,
-      language: item.language, access_tier: item.access_tier, status: item.status,
-      file_type: item.file_type, created_at: item.created_at,
-    }).catch((err) => logger.error("ES indexing failed", { error: err.message }));
+    res.status(201).json({ success: true, data: item });
+  })
+);
 
-    // Only broadcast if the item is actually visible to non-staff — draft/review
-    // items 404 for everyone except archivist/librarian/admin (see GET /:id below),
-    // so notifying about them would send most users to a dead link.
-    if (item.status === "published") {
-      // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
-      void notifyAllUsersExcept(req.user!.user_id, {
-        type: "new_upload",
-        title: "New Document Uploaded",
-        message: `"${item.title_en}" has been added to the archive.`,
-        action_url: `/archive/${item.item_id}`,
-      });
+// POST /api/archive/upload/finalize — completes an archive upload after the file
+// was already streamed to S3 via the tus resumable-upload endpoint (mounted at
+// /api/uploads/tus). Same metadata contract as POST /upload, minus the file itself.
+router.post(
+  "/upload/finalize",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const {
+      file_key, file_type, file_size,
+      title_en, title_bn, description, authors, category, language, access_tier, status, tags, custom_metadata,
+    } = req.body as Record<string, string>;
+
+    if (!title_en) throw new AppError(400, "English title is required");
+    if (!file_key || !file_type || !file_size) {
+      throw new AppError(400, "file_key, file_type, and file_size are required");
     }
+
+    const exists = await fileExistsInS3(file_key);
+    if (!exists) throw new AppError(404, "Uploaded file not found in storage — the tus upload may not have finished");
+
+    const item = await createArchiveItemRecord({
+      key: file_key, fileType: file_type, fileSize: parseInt(file_size, 10),
+      uploadedBy: req.user!.user_id, ip: req.ip || "",
+      title_en, title_bn, description, authors, category, language, access_tier, status, tags, custom_metadata,
+    });
 
     res.status(201).json({ success: true, data: item });
   })
