@@ -258,6 +258,7 @@ export default function HomePage() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes homeFloat { from { transform: translateY(0); } to { transform: translateY(-6px); } }
 
         /* Scroll-reveal: transform/opacity only, GPU-composited */
@@ -275,6 +276,7 @@ export default function HomePage() {
         .home-latest-row { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
         .home-latest-row:hover { transform: translateX(5px); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 20px rgba(0,0,0,.07); }
         .home-step-icon { animation: homeFloat 3.2s ease-in-out infinite alternate; }
+        .home-scroll-float { animation: homeFloat 1.8s ease-in-out infinite alternate; }
 
         /* Stats: hairline dividers between borderless columns */
         .home-stats-grid > div { border-left: 1px solid #e4e4e7; }
@@ -311,7 +313,7 @@ export default function HomePage() {
 
       <div style={{ background: "#f8f9fa", minHeight: "100vh" }}>
 
-        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50, transform: isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
+        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: isMobile ? "relative" : "sticky", top: 0, zIndex: 50, transform: !isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
             {/* Logo — always visible */}
@@ -370,38 +372,82 @@ export default function HomePage() {
 
         {/* Full-screen mobile menu */}
         {sidebarOpen && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#eaecef", zIndex: 200, display: "flex", flexDirection: "column" }}>
-            {/* Top bar — same bg as navbar */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", borderBottom: "1px solid #d1d5db", flexShrink: 0 }}>
-              <Link href="/" onClick={handleCloseSidebar} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <GraduationCap size={16} color="#ffffff" />
-                </div>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>DKP</span>
-              </Link>
-              <button onClick={handleCloseSidebar} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "#111827", display: "flex", alignItems: "center" }}>
-                <X size={24} strokeWidth={2} />
-              </button>
-            </div>
+          <>
+            {/* Backdrop / Overlay */}
+            <div
+              onClick={handleCloseSidebar}
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background: "rgba(0, 0, 0, 0.4)",
+                backdropFilter: "blur(4px)",
+                zIndex: 199,
+                animation: "fadeIn 0.25s ease-out",
+              }}
+            />
+            {/* Sidebar content */}
+            <div style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              width: "70%",
+              height: "100%",
+              background: "var(--theme-gradient-135)",
+              color: "#ffffff",
+              zIndex: 200,
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "-4px 0 24px rgba(0,0,0,0.25)",
+              animation: "slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both",
+            }}>
+              {/* Top bar */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "48px", background: "#eaecef", borderBottom: "1px solid #d1d5db", flexShrink: 0 }}>
+                <Link href="/" onClick={handleCloseSidebar} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <GraduationCap size={16} color="#ffffff" />
+                  </div>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+                </Link>
+                <button onClick={handleCloseSidebar} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", color: "#111827", display: "flex", alignItems: "center" }}>
+                  <X size={24} strokeWidth={2} />
+                </button>
+              </div>
 
-            {/* Nav links */}
-            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "4px" }}>
-              {[
-                { label: "Archive",  href: "/archive"  },
-                { label: "Library",  href: "/library"  },
-                { label: "Research", href: "/research" },
-                { label: "Showcase", href: "/showcase" },
-                { label: "About",    href: "/about"    },
-              ].map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={handleCloseSidebar}
-                  style={{ display: "block", padding: "10px 14px", fontSize: "13.5px", fontWeight: 500, color: "#111827", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", background: "transparent" }}
-                >{item.label}</Link>
-              ))}
+              {/* Nav links */}
+              <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                {[
+                  { label: "Archive",  href: "/archive"  },
+                  { label: "Library",  href: "/library"  },
+                  { label: "Research", href: "/research" },
+                  { label: "Showcase", href: "/showcase" },
+                  { label: "About",    href: "/about"    },
+                ].map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={handleCloseSidebar}
+                    style={{
+                      display: "block",
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#ffffff",
+                      textDecoration: "none",
+                      borderRadius: "8px",
+                      letterSpacing: "0.01em",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      transition: "background 0.2s ease"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
+                  >{item.label}</Link>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
 
@@ -410,7 +456,60 @@ export default function HomePage() {
         <section style={{ background: "#ffffff", padding: "20px 32px 0", display: "flex", flexDirection: "column" }}>
           <div style={{ maxWidth: "1400px", width: "100%", margin: "0 auto", textAlign: "left", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%", flexWrap: "wrap", gap: "20px", position: "relative", zIndex: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: "4px", position: "relative", zIndex: 10 }}>
+                {/* First line and scroll down button on the same line */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "10px" }}>
+                  <h1 style={{
+                    fontSize: "clamp(1.5rem, 4vw, 3.5rem)",
+                    fontWeight: 800,
+                    background: "linear-gradient(135deg, var(--avatar-theme-color) 0%, rgba(255,255,255,0.45) 100%), var(--avatar-theme-color)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    display: "inline-block",
+                    lineHeight: 1.1,
+                    letterSpacing: "-0.05em",
+                    wordSpacing: "0.3em",
+                    margin: 0,
+                    textTransform: "uppercase",
+                  }}>
+                    The  Digital
+                  </h1>
+                  <button
+                    className="home-scroll-float"
+                    onClick={() => {
+                      const nextSection = document.getElementById('network-section');
+                      if (nextSection) {
+                        nextSection.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+                      }
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      color: "var(--avatar-theme-color, #000)",
+                      flexShrink: 0,
+                      background: "rgba(255,255,255,0.75)",
+                      border: "1.5px solid rgba(0,0,0,0.12)",
+                      borderRadius: "100px",
+                      cursor: "pointer",
+                      padding: isMobile ? "8px" : "8px 16px",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      backdropFilter: "blur(4px)",
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                      width: isMobile ? "34px" : "auto",
+                      height: isMobile ? "34px" : "auto"
+                    }}
+                  >
+                    {!isMobile && <span>Scroll down</span>}
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_downward</span>
+                  </button>
+                </div>
+                {/* Second line */}
                 <h1 style={{
                   fontSize: "clamp(1.5rem, 4vw, 3.5rem)",
                   fontWeight: 800,
@@ -425,44 +524,13 @@ export default function HomePage() {
                   textTransform: "uppercase",
                   wordBreak: "break-word",
                 }}>
-                  The  Digital<br />Knowledge  Platform
+                  Knowledge  Platform
                 </h1>
-                <button
-                  onClick={() => {
-                    const nextSection = document.getElementById('network-section');
-                    if (nextSection) {
-                      nextSection.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                      window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-                    }
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    marginTop: "12px",
-                    color: "var(--avatar-theme-color, #000)",
-                    flexShrink: 0,
-                    background: "rgba(255,255,255,0.75)",
-                    border: "1.5px solid rgba(0,0,0,0.12)",
-                    borderRadius: "100px",
-                    cursor: "pointer",
-                    padding: "8px 16px",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    backdropFilter: "blur(4px)",
-                    transition: "all 0.2s ease",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
-                  }}
-                >
-                  <span>Scroll down</span>
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_downward</span>
-                </button>
               </div>
 
-              <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "-15%", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
+              <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "24px", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
                 <div style={{ position: "relative", width: "100%", maxWidth: "1000px", zIndex: 1 }}>
-                  <img src="/hero-graphic.png" alt="Platform Graphic" style={{ width: "100%", objectFit: "contain", display: "block", mixBlendMode: "normal", opacity: 1 }} />
+                  <img src="/hero-graphics.png" alt="Platform Graphic" style={{ width: "100%", objectFit: "contain", display: "block", mixBlendMode: "normal", opacity: 1 }} />
                   <div style={{
                     position: "absolute",
                     top: 0,
@@ -495,8 +563,8 @@ export default function HomePage() {
                   color: "var(--avatar-theme-color)",
                   lineHeight: 1.25,
                   letterSpacing: "-0.03em",
-                  margin: "0 0 18px",
-                  minHeight: "2.3em",
+                  margin: "0 0 8px",
+                  minHeight: "1.25em",
                 }}>
                   {headingText}
                   {phase === "heading" && (
@@ -786,8 +854,8 @@ export default function HomePage() {
                   { heading: "Latest Research", href: "/research", items: latestResearch.map(r => ({ key: r.output_id, href: `/research/${r.output_id}`, title: r.title, meta: r.output_type?.replace(/_/g, " "), date: r.published_date, icon: FlaskConical })) },
                   { heading: "New in the Archive", href: "/archive", items: latestArchive.map(a => ({ key: a.item_id, href: `/archive/${a.item_id}`, title: a.title_en, meta: a.category, date: a.created_at, icon: FileText })) },
                 ].map(({ heading, href, items }, col) => (
-                  <Reveal key={heading} delay={col * 120}>
-                    <div>
+                  <Reveal key={heading} delay={col * 120} style={{ minWidth: 0, width: "100%" }}>
+                    <div style={{ minWidth: 0, width: "100%" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                         <p style={{ fontSize: "15px", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.015em" }}>{heading}</p>
                         <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 600, color: "#0d0d12", textDecoration: "none", borderBottom: "1px solid #0d0d12", paddingBottom: "1px" }}>
@@ -932,7 +1000,7 @@ export default function HomePage() {
         </section>
 
         {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
-        <footer style={{ background: "#f0f2f5", borderTop: "1px solid #dde0e6" }}>
+        <footer style={{ background: "#f0f2f5", borderTop: "1px solid #dde0e6", position: "relative" }}>
 
           {/* Footer body — 4 columns */}
           <div style={{
@@ -958,7 +1026,11 @@ export default function HomePage() {
                 A unified academic knowledge system for archives, research, and library resources at the University of Dhaka.
               </p>
               <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>
-                Built by <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong>
+                {isMobile ? (
+                  <strong style={{ color: "#374151" }}>Semicolon Squad DU</strong>
+                ) : (
+                  <>Built by <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong></>
+                )}
               </p>
             </div>
 
@@ -996,41 +1068,44 @@ export default function HomePage() {
             <div style={{
               maxWidth: "1100px",
               margin: "0 auto",
-              padding: "16px 32px",
+              padding: isMobile ? "16px 12px" : "16px 32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               flexWrap: "wrap",
-              gap: "8px",
+              gap: "16px",
             }}>
               <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
                 © 2026 Digital Knowledge Platform. All rights reserved.
               </p>
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--avatar-theme-color, #374151)",
-                  background: "transparent",
-                  border: "1.5px solid #d1d5db",
-                  borderRadius: "8px",
-                  padding: "5px 12px",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; e.currentTarget.style.background = "#ffffff"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "transparent"; }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>arrow_upward</span>
-                Back to top
-              </button>
             </div>
           </div>
 
+
+          {/* Back to top button positioned absolutely on the far right of the grey footer band */}
+          <div style={{ position: "absolute", right: isMobile ? "16px" : "32px", bottom: isMobile ? "64px" : "60px", zIndex: 10 }}>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              aria-label="Back to top"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "42px",
+                height: "42px",
+                color: "var(--avatar-theme-color, #374151)",
+                background: "transparent",
+                border: "1.5px solid #d1d5db",
+                borderRadius: "50%",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; e.currentTarget.style.background = "#ffffff"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "transparent"; }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "20px", fontWeight: "bold" }}>arrow_upward</span>
+            </button>
+          </div>
         </footer>
 
       </div>
