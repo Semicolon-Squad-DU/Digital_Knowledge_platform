@@ -31,8 +31,7 @@ function getGreeting() {
 
 // Primary quick actions per role — each role sees the thing they actually do here
 const ROLE_ACTIONS: Record<string, Array<{ label: string; href: string; icon: React.ElementType; primary?: boolean }>> = {
-  member:         [{ label: "Browse Library", href: "/library", icon: BookOpen, primary: true },
-                   { label: "My Wishlist", href: "/library/wishlist", icon: Heart }],
+  member:         [{ label: "Browse Library", href: "/library", icon: BookOpen, primary: true }],
   student_author: [{ label: "Submit Project", href: "/showcase/submit", icon: Plus, primary: true },
                    { label: "My Showcase", href: "/showcase", icon: FolderOpen }],
   researcher:     [{ label: "Submit Research", href: "/research/upload", icon: Plus, primary: true },
