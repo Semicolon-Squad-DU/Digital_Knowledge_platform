@@ -73,5 +73,6 @@ export const config = {
     fineRatePerDay: parseFloat(process.env.FINE_RATE_PER_DAY || "5"),
     loanPeriodDays: parseInt(process.env.LOAN_PERIOD_DAYS || "14", 10),
     maxBorrowLimit: parseInt(process.env.MAX_BORROW_LIMIT || "5", 10),
+    maxRenewals: parseInt(process.env.MAX_RENEWALS || "2", 10),
   },
 } as const;

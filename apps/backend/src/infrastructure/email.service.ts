@@ -99,6 +99,29 @@ export function dueDateReminderEmail(
   `;
 }
 
+export function renewalConfirmationEmail(
+  memberName: string,
+  bookTitle: string,
+  newDueDate: string,
+  renewalsLeft: number
+): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1a56db;">Digital Knowledge Platform</h2>
+      <p>Dear ${memberName},</p>
+      <p>Your loan has been renewed successfully:</p>
+      <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+        <strong>${bookTitle}</strong><br/>
+        <span style="color: #6b7280;">New Due Date: ${newDueDate}</span>
+      </div>
+      <p>${renewalsLeft > 0 ? `You can renew this loan ${renewalsLeft} more time(s).` : "This loan has reached its renewal limit and cannot be renewed again."}</p>
+      <p>Visit the <a href="${config.frontendUrl}/dashboard">Member Dashboard</a> to view your borrowing history.</p>
+      <hr/>
+      <p style="color: #9ca3af; font-size: 12px;">Digital Knowledge Platform — University of Dhaka, CSE Department</p>
+    </div>
+  `;
+}
+
 export function projectApprovalEmail(
   studentName: string,
   projectTitle: string,

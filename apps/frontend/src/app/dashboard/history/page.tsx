@@ -1,12 +1,26 @@
 "use client";
 
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { useBorrowingHistory } from "@/features/library/hooks/useLibrary";
+import { useBorrowingHistory, useRenewBook } from "@/features/library/hooks/useLibrary";
 import { getStatusBadge, formatDate } from "@/lib/utils";
+import { RotateCw } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function DashboardHistoryPage() {
   const { user, ready } = useAuthGuard();
-  const { data, isLoading } = useBorrowingHistory(user?.user_id ?? "");
+  const { data, isLoading, refetch } = useBorrowingHistory(user?.user_id ?? "");
+  const { mutateAsync: renewBook, isPending: isRenewing, variables: renewingId } = useRenewBook();
+
+  const handleRenew = async (transactionId: string) => {
+    try {
+      const result = await renewBook(transactionId);
+      toast.success(`Renewed! ${result.renewals_left} renewal(s) left.`);
+      refetch();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Could not renew this loan");
+    }
+  };
 
   if (!ready) return null;
 
@@ -31,8 +45,10 @@ export default function DashboardHistoryPage() {
             due_date: string;
             return_date?: string;
             status: string;
+            renewal_count?: number;
           }) => {
             const status = getStatusBadge(item.status);
+            const canRenew = item.status === "active";
             return (
               <div
                 key={item.transaction_id}
@@ -49,11 +65,24 @@ export default function DashboardHistoryPage() {
                   <p className="text-xs mt-0.5" style={{ color: "var(--color-fg-muted)" }}>
                     Issued: {formatDate(item.issue_date)} · Due: {formatDate(item.due_date)}
                     {item.return_date ? ` · Returned: ${formatDate(item.return_date)}` : ""}
+                    {typeof item.renewal_count === "number" && item.renewal_count > 0 ? ` · Renewed ${item.renewal_count}x` : ""}
                   </p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${status.color}`}>
-                  {status.label}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {canRenew && (
+                    <button
+                      onClick={() => handleRenew(item.transaction_id)}
+                      disabled={isRenewing && renewingId === item.transaction_id}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-[var(--color-accent-fg)] text-[var(--color-accent-fg)] hover:bg-[var(--color-accent-subtle)] disabled:opacity-50 transition-colors"
+                    >
+                      <RotateCw size={11} className={isRenewing && renewingId === item.transaction_id ? "animate-spin" : ""} />
+                      Renew
+                    </button>
+                  )}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>
+                    {status.label}
+                  </span>
+                </div>
               </div>
             );
           })}

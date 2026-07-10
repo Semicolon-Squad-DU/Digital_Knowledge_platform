@@ -86,3 +86,26 @@ export const checkUploadQuota = async (req: AuthRequest, res: Response, next: Ne
 
 export const uploadSingle = upload.single("file");
 export const uploadMultiple = upload.array("files", 50); // max 50 for bulk
+
+// Separate small-size, CSV-only instance for catalog bulk import — distinct from the
+// media ALLOWED_MIME_TYPES set used for archive/document uploads. CSV only (no xlsx
+// library dependency): the two actively-maintained npm CSV parsers ship unpatched
+// high-severity CVEs, so we use a small hand-rolled parser instead (core/utils/csv.ts).
+const CATALOG_IMPORT_MIME_TYPES = new Set([
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel", // Excel labels CSV exports this way on some locales
+  "application/octet-stream", // some browsers send this for .csv
+]);
+
+export const uploadCatalogImport = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB — data-only, not media
+  fileFilter: (_req, file, cb) => {
+    if (CATALOG_IMPORT_MIME_TYPES.has(file.mimetype) || /\.csv$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported file type for catalog import: ${file.mimetype}. Please upload a .csv file.`));
+    }
+  },
+}).single("file");

@@ -73,6 +73,57 @@ export function useReturnBook() {
   });
 }
 
+export function useRenewBook() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (transaction_id: string) => {
+      const { data } = await api.post("/library/renew", { transaction_id });
+      return data.data as { transaction: unknown; renewals_left: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
+}
+
+export interface CirculationReportRow {
+  transaction_id: string;
+  title: string;
+  isbn: string | null;
+  member_name: string;
+  member_email: string;
+  issue_date: string;
+  due_date: string;
+  return_date: string | null;
+  status: string;
+  fine_amount: string | number;
+  renewal_count: number;
+}
+
+export interface CirculationReport {
+  summary: {
+    total_issued: number;
+    total_returned: number;
+    total_overdue: number;
+    total_fines: number;
+    fines_collected: number;
+    fines_pending: number;
+  };
+  transactions: CirculationReportRow[];
+}
+
+export function useCirculationReport(params: { from?: string; to?: string; status?: string }, enabled: boolean) {
+  return useQuery({
+    queryKey: ["library", "reports", "circulation", params],
+    queryFn: async () => {
+      const { data } = await api.get("/library/reports/circulation", { params });
+      return data.data as CirculationReport;
+    },
+    enabled,
+  });
+}
+
 export function useBorrowingHistory(memberId: string) {
   return useQuery({
     queryKey: ["library", "history", memberId],
@@ -250,6 +301,57 @@ export function useUpdateCatalogItem() {
       const { catalog_id, ...data } = payload;
       const response = await api.put(`/library/catalog/${catalog_id}`, data);
       return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export interface CatalogImportRow {
+  title: string;
+  isbn?: string;
+  authors: string[];
+  publisher?: string;
+  edition?: string;
+  year?: number;
+  category?: string;
+  total_copies: number;
+  shelf_location?: string;
+  description?: string;
+  barcode?: string;
+}
+
+export interface CatalogImportRowResult {
+  row_number: number;
+  data: CatalogImportRow | null;
+  status: "valid" | "invalid" | "duplicate";
+  errors: string[];
+}
+
+export function useImportCatalogPreview() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/library/catalog/import/preview", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return data.data as {
+        summary: { total: number; valid: number; duplicate: number; invalid: number };
+        rows: CatalogImportRowResult[];
+      };
+    },
+  });
+}
+
+export function useImportCatalogCommit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows: CatalogImportRow[]) => {
+      const { data } = await api.post("/library/catalog/import/commit", { rows });
+      return data.data as { imported: number; failed: number; failures: { title: string; error: string }[] };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["catalog"] });

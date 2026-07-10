@@ -1,7 +1,7 @@
 import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { AppError } from "../../core/middleware/error.middleware";
 import { config } from "../../core/config";
-import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
+import { sendEmail, dueDateReminderEmail, holdAvailableEmail, renewalConfirmationEmail } from "../../infrastructure/email.service";
 import { calculateOverdueFine } from "./fine-calculator";
 
 export class BorrowService {
@@ -172,6 +172,74 @@ export class BorrowService {
       }
 
       return { borrow: updatedBorrow, fine_amount: fineAmount };
+    });
+  }
+
+  /**
+   * Renew a borrowed resource — extends the due date by another loan period.
+   * Blocked when: not an active/overdue-but-unfined loan the caller is entitled to renew,
+   * the per-loan renewal cap is hit, or another member is waiting on a hold for the item.
+   */
+  static async renewResource(borrow_id: string, requesting_user_id: string, is_staff: boolean, executor_id: string, ip_address: string) {
+    return await withTransaction(async (client) => {
+      const [borrow] = (await client.query(
+        `SELECT b.*, ci.title as book_title
+         FROM borrows b
+         JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+         WHERE b.id = $1
+         FOR UPDATE`,
+        [borrow_id]
+      )).rows;
+
+      if (!borrow) throw new AppError(404, "Borrow record not found");
+      if (!is_staff && borrow.user_id !== requesting_user_id) throw new AppError(403, "You can only renew your own loans");
+      if (borrow.borrow_status !== "active") {
+        throw new AppError(409, `Cannot renew a loan with status "${borrow.borrow_status}"`);
+      }
+      if (new Date(borrow.due_date) < new Date(new Date().toDateString())) {
+        throw new AppError(409, "Cannot renew an overdue item — please return it or contact a librarian.");
+      }
+      if (borrow.renewal_count >= config.library.maxRenewals) {
+        throw new AppError(409, `Renewal limit reached (max ${config.library.maxRenewals} renewals per loan)`);
+      }
+
+      const [pendingHold] = (await client.query(
+        "SELECT hold_id FROM hold_requests WHERE catalog_id = $1 AND status = 'pending' LIMIT 1",
+        [borrow.resource_id]
+      )).rows;
+      if (pendingHold) {
+        throw new AppError(409, "Cannot renew — another member has a hold on this item");
+      }
+
+      const newDueDate = new Date(borrow.due_date);
+      newDueDate.setDate(newDueDate.getDate() + config.library.loanPeriodDays);
+
+      const [updatedBorrow] = (await client.query(
+        `UPDATE borrows SET due_date = $1, renewal_count = renewal_count + 1 WHERE id = $2 RETURNING *`,
+        [newDueDate.toISOString().split("T")[0], borrow_id]
+      )).rows;
+
+      const [member] = (await client.query(
+        "SELECT name, email FROM users WHERE user_id = $1",
+        [borrow.user_id]
+      )).rows;
+
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+         VALUES ($1, 'UPDATE', 'borrow', $2, $3, $4)`,
+        [executor_id, borrow_id, JSON.stringify({ renewed: true, new_due_date: newDueDate.toISOString().split("T")[0] }), ip_address]
+      );
+
+      const renewalsLeft = config.library.maxRenewals - updatedBorrow.renewal_count;
+      if (member) {
+        sendEmail({
+          to: member.email,
+          subject: "Book Loan Renewed",
+          html: renewalConfirmationEmail(member.name, borrow.book_title, newDueDate.toDateString(), renewalsLeft),
+        }).catch(() => {});
+      }
+
+      return { borrow: updatedBorrow, renewals_left: renewalsLeft };
     });
   }
 

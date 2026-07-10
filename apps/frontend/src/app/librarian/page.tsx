@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useCreateCatalogItem, useCatalogLookupByBarcode } from "@/features/library/hooks/useLibrary";
 import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
+import { ImportCatalogModal } from "@/components/library/ImportCatalogModal";
+import { CirculationReportPanel } from "@/components/library/CirculationReportPanel";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -423,7 +425,7 @@ function ReturnBookForm({
   );
 }
 
-type Tab = "overview" | "overdue";
+type Tab = "overview" | "overdue" | "reports";
 
 export default function LibrarianDashboardPage() {
   const router = useRouter();
@@ -441,6 +443,7 @@ export default function LibrarianDashboardPage() {
   const [returnModal, setReturnModal] = useState(false);
   const [adjustModal, setAdjustModal] = useState(false);
   const [addBookModal, setAddBookModal] = useState(false);
+  const [importModal, setImportModal] = useState(false);
   const [catalogId, setCatalogId] = useState("");
   const [memberId, setMemberId] = useState("");
   const [transactionId, setTransactionId] = useState("");
@@ -636,6 +639,17 @@ export default function LibrarianDashboardPage() {
                 Add Book
               </Button>
               <Button
+                variant="outline"
+                onClick={() => setImportModal(true)}
+                icon={<FileSpreadsheet size={15} />}
+                style={{
+                  borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                  color: "var(--avatar-theme-color, #1a1a2e)",
+                }}
+              >
+                Import CSV
+              </Button>
+              <Button
                 onClick={() => setIssueModal(true)}
                 icon={<Plus size={15} />}
                 style={{
@@ -675,6 +689,16 @@ export default function LibrarianDashboardPage() {
           }`}
         >
           Overdue & Fines
+        </button>
+        <button
+          onClick={() => setActiveTab("reports")}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === "reports"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Reports
         </button>
       </div>
 
@@ -877,8 +901,14 @@ export default function LibrarianDashboardPage() {
         </Card>
       )}
 
+      {/* Reports Tab */}
+      {activeTab === "reports" && <CirculationReportPanel />}
 
 
+
+
+      {/* Import Catalog Modal */}
+      <ImportCatalogModal isOpen={importModal} onClose={() => setImportModal(false)} />
 
       {/* Issue Modal */}
       <Modal

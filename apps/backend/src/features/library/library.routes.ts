@@ -2,7 +2,8 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
-import { uploadSingle } from "../../core/middleware/upload.middleware";
+import { uploadSingle, uploadCatalogImport } from "../../core/middleware/upload.middleware";
+import { parseCatalogFile, validateImportRows, CatalogImportRow } from "./catalog-import.service";
 import { searchCatalog } from "../../infrastructure/elasticsearch.service";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
 import { config } from "../../core/config";
@@ -73,6 +74,66 @@ router.get(
         fines_pending: parseInt(fineStats.pending_count),
         total_fines_amount: parseFloat(fineStats.total_fines),
         recent_transactions: recentTransactions,
+      },
+    });
+  })
+);
+
+// GET /api/library/reports/circulation — date-ranged transaction report for librarians/admins.
+// Returns JSON; the frontend renders CSV/PDF exports client-side from this data.
+router.get(
+  "/reports/circulation",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { from, to, status } = req.query as Record<string, string>;
+    const fromDate = from || "1900-01-01";
+    const toDate = to || "9999-12-31";
+    const statusFilter = status && status !== "all" ? status : null;
+
+    const transactions = await query(
+      `SELECT b.id as transaction_id, ci.title, ci.isbn, u.name as member_name, u.email as member_email,
+              b.issue_date, b.due_date, b.return_date, b.borrow_status as status,
+              b.fine_amount, b.renewal_count
+       FROM borrows b
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       JOIN users u ON b.user_id = u.user_id
+       WHERE b.issue_date BETWEEN $1 AND $2
+         AND ($3::text IS NULL OR b.borrow_status = $3)
+       ORDER BY b.issue_date DESC
+       LIMIT 5000`,
+      [fromDate, toDate, statusFilter]
+    );
+
+    const [summary] = await query<{
+      total_issued: string; total_returned: string; total_overdue: string;
+      total_fines: string; fines_collected: string; fines_pending: string;
+    }>(
+      `SELECT
+         COUNT(*) as total_issued,
+         COUNT(*) FILTER (WHERE borrow_status = 'returned') as total_returned,
+         COUNT(*) FILTER (WHERE borrow_status = 'overdue') as total_overdue,
+         COALESCE(SUM(fine_amount), 0) as total_fines,
+         COALESCE(SUM(fine_amount) FILTER (WHERE borrow_status = 'returned'), 0) as fines_collected,
+         COALESCE((SELECT SUM(amount) FROM fines WHERE status = 'pending'), 0) as fines_pending
+       FROM borrows
+       WHERE issue_date BETWEEN $1 AND $2
+         AND ($3::text IS NULL OR borrow_status = $3)`,
+      [fromDate, toDate, statusFilter]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          total_issued: parseInt(summary.total_issued),
+          total_returned: parseInt(summary.total_returned),
+          total_overdue: parseInt(summary.total_overdue),
+          total_fines: parseFloat(summary.total_fines),
+          fines_collected: parseFloat(summary.fines_collected),
+          fines_pending: parseFloat(summary.fines_pending),
+        },
+        transactions,
       },
     });
   })
@@ -328,6 +389,29 @@ router.post(
   })
 );
 
+// POST /api/library/renew — member self-service or librarian/admin on a member's behalf
+router.post(
+  "/renew",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { transaction_id } = req.body as { transaction_id: string };
+    if (!transaction_id) throw new AppError(400, "transaction_id required");
+
+    const isStaff = ["librarian", "admin"].includes(req.user!.role);
+    const result = await BorrowService.renewResource(transaction_id, req.user!.user_id, isStaff, req.user!.user_id, req.ip || "");
+
+    const updated = {
+      ...result.borrow,
+      transaction_id: result.borrow.id,
+      member_id: result.borrow.user_id,
+      catalog_id: result.borrow.resource_id,
+      status: result.borrow.borrow_status,
+    };
+
+    res.json({ success: true, data: { transaction: updated, renewals_left: result.renewals_left } });
+  })
+);
+
 // GET /api/library/member/:id/history
 router.get(
   "/member/:id/history",
@@ -338,7 +422,7 @@ router.get(
     }
 
     const transactions = await query(
-      `SELECT b.id as transaction_id, b.user_id as member_id, b.resource_id as catalog_id, b.due_date, b.return_date, b.borrow_status as status, b.created_at, ci.title, ci.authors, ci.isbn
+      `SELECT b.id as transaction_id, b.user_id as member_id, b.resource_id as catalog_id, b.issue_date, b.due_date, b.return_date, b.borrow_status as status, b.renewal_count, b.created_at, ci.title, ci.authors, ci.isbn
        FROM borrows b
        JOIN catalog_items ci ON b.resource_id = ci.catalog_id
        WHERE b.user_id = $1
@@ -451,6 +535,88 @@ router.patch(
     );
 
     res.json({ success: true, data: fine });
+  })
+);
+
+// POST /api/library/catalog/import/preview — parse a CSV/Excel file, validate every
+// row, and flag duplicates, without writing anything to the database.
+router.post(
+  "/catalog/import/preview",
+  authenticate,
+  requireRole("librarian", "admin"),
+  uploadCatalogImport,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (!req.file) throw new AppError(400, "A CSV or Excel file is required");
+
+    let rawRows: Record<string, string>[];
+    try {
+      rawRows = parseCatalogFile(req.file.buffer);
+    } catch {
+      throw new AppError(400, "Could not parse file — ensure it is a valid CSV or Excel spreadsheet");
+    }
+    if (rawRows.length === 0) throw new AppError(400, "File has no data rows");
+    if (rawRows.length > 2000) throw new AppError(400, "Import is limited to 2000 rows per file");
+
+    const results = await validateImportRows(rawRows);
+    const summary = {
+      total: results.length,
+      valid: results.filter((r) => r.status === "valid").length,
+      duplicate: results.filter((r) => r.status === "duplicate").length,
+      invalid: results.filter((r) => r.status === "invalid").length,
+    };
+
+    res.json({ success: true, data: { summary, rows: results } });
+  })
+);
+
+// POST /api/library/catalog/import/commit — bulk-insert previously previewed rows.
+// Each row is inserted independently so one bad row doesn't roll back the batch;
+// per-row failures (e.g. a DB-level unique violation) are reported, not thrown.
+router.post(
+  "/catalog/import/commit",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { rows } = req.body as { rows: CatalogImportRow[] };
+    if (!Array.isArray(rows) || rows.length === 0) throw new AppError(400, "rows array is required");
+    if (rows.length > 2000) throw new AppError(400, "Import is limited to 2000 rows per commit");
+
+    let imported = 0;
+    const failures: { title: string; error: string }[] = [];
+
+    for (const row of rows) {
+      if (!row.title || !row.total_copies || row.total_copies < 1) {
+        failures.push({ title: row.title || "(untitled)", error: "Missing required fields" });
+        continue;
+      }
+      try {
+        const item = await queryOne<{ catalog_id: string }>(
+          `INSERT INTO catalog_items
+             (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, barcode)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11)
+           RETURNING catalog_id`,
+          [
+            row.title.trim(), row.isbn || null, row.authors || [], row.publisher || null,
+            row.edition || null, row.year || null, row.category || "General", row.total_copies,
+            row.shelf_location || null, row.description || null, row.barcode?.trim() || null,
+          ]
+        );
+        if (!row.barcode?.trim()) {
+          await query("UPDATE catalog_items SET barcode = catalog_id::text WHERE catalog_id = $1", [item!.catalog_id]);
+        }
+        imported++;
+      } catch (err) {
+        failures.push({ title: row.title, error: (err as Error).message });
+      }
+    }
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+       VALUES ($1, 'CREATE', 'catalog_import', NULL, $2, $3)`,
+      [req.user!.user_id, JSON.stringify({ imported, failed: failures.length }), req.ip]
+    );
+
+    res.status(201).json({ success: true, data: { imported, failed: failures.length, failures } });
   })
 );
 
