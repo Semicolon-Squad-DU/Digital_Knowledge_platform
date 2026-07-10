@@ -211,6 +211,16 @@ export function useMemberFines(memberId: string) {
   });
 }
 
+export function useHoldsPending() {
+  return useQuery({
+    queryKey: ["library", "holds", "pending"],
+    queryFn: async () => {
+      const { data } = await api.get("/library/holds/pending");
+      return data.data;
+    },
+  });
+}
+
 export function useOverdueTransactions() {
   return useQuery({
     queryKey: ["library", "overdue"],
@@ -248,6 +258,29 @@ export function useWaiveFine() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library", "overdue"] });
       queryClient.invalidateQueries({ queryKey: ["library", "fines"] });
+    },
+  });
+}
+
+export function useMarkFinePaid() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (fine_id: string) => {
+      const { data } = await api.patch(`/library/fines/${fine_id}/pay`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", "overdue"] });
+      queryClient.invalidateQueries({ queryKey: ["library", "fines"] });
+    },
+  });
+}
+
+export function useNotifyOverdue() {
+  return useMutation({
+    mutationFn: async (transaction_id: string) => {
+      const { data } = await api.post(`/library/overdue/${transaction_id}/notify`);
+      return data;
     },
   });
 }

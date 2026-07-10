@@ -4,11 +4,11 @@ import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { uploadSingle, uploadCatalogImport } from "../../core/middleware/upload.middleware";
 import { parseCatalogFile, validateImportRows, CatalogImportRow } from "./catalog-import.service";
-import { searchCatalog } from "../../infrastructure/elasticsearch.service";
+import { searchCatalog, indexCatalogItem, removeCatalogItemFromIndex } from "../../infrastructure/elasticsearch.service";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
 import { config } from "../../core/config";
 import { BorrowService } from "./borrow.service";
-import { sendEmail, dueDateReminderEmail, holdAvailableEmail } from "../../infrastructure/email.service";
+import { sendEmail, dueDateReminderEmail, holdAvailableEmail, overdueFineReminderEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
 import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 
@@ -191,6 +191,26 @@ router.get(
       logger.error("Error fetching overdue transactions", { error: err });
       throw err;
     }
+  })
+);
+
+// GET /api/library/holds/pending — all pending holds, for librarian fulfillment
+router.get(
+  "/holds/pending",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const holds = await query(
+      `SELECT h.hold_id, h.catalog_id, h.member_id, h.request_date, h.status,
+              ci.title, ci.authors, ci.available_copies,
+              u.name as member_name, u.email as member_email
+       FROM hold_requests h
+       JOIN catalog_items ci ON h.catalog_id = ci.catalog_id
+       JOIN users u ON h.member_id = u.user_id
+       WHERE h.status IN ('pending', 'available')
+       ORDER BY h.request_date ASC`
+    );
+    res.json({ success: true, data: holds });
   })
 );
 
@@ -497,6 +517,60 @@ router.patch(
   })
 );
 
+// PATCH /api/library/fines/:fine_id/pay — record that the member has paid the fine
+router.patch(
+  "/fines/:fine_id/pay",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const fine = await queryOne(
+      "UPDATE fines SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE fine_id = $1 RETURNING *",
+      [req.params.fine_id]
+    );
+    if (!fine) throw new AppError(404, "Fine not found");
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address)
+       VALUES ($1, 'UPDATE', 'fine', $2, $3, $4)`,
+      [req.user!.user_id, req.params.fine_id, JSON.stringify({ status: "paid" }), req.ip]
+    );
+
+    res.json({ success: true, data: fine });
+  })
+);
+
+// POST /api/library/overdue/:transaction_id/notify — send an overdue reminder email to the member
+router.post(
+  "/overdue/:transaction_id/notify",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const row = await queryOne<{
+      member_name: string; member_email: string; title: string;
+      days_overdue: number; fine_amount: string;
+    }>(
+      `SELECT u.name as member_name, u.email as member_email, ci.title,
+              CAST(CURRENT_DATE - b.due_date AS INTEGER) as days_overdue,
+              COALESCE(b.fine_amount, 0) as fine_amount
+       FROM borrows b
+       JOIN users u ON b.user_id = u.user_id
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       WHERE b.id = $1`,
+      [req.params.transaction_id]
+    );
+    if (!row) throw new AppError(404, "Transaction not found");
+    if (!row.member_email) throw new AppError(400, "Member has no email on file");
+
+    await sendEmail({
+      to: row.member_email,
+      subject: `[DKP] Overdue Reminder — ${row.title}`,
+      html: overdueFineReminderEmail(row.member_name, row.title, row.days_overdue, parseFloat(row.fine_amount)),
+    });
+
+    res.json({ success: true, message: "Reminder sent" });
+  })
+);
+
 // PATCH /api/library/fines/:fine_id/adjust
 router.patch(
   "/fines/:fine_id/adjust",
@@ -653,7 +727,7 @@ router.post(
       documentUrl = key;
     }
 
-    let item = await queryOne<{ catalog_id: string }>(
+    const item = await queryOne<{ catalog_id: string }>(
       `INSERT INTO catalog_items
          (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url, barcode)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11,$12)
@@ -662,15 +736,11 @@ router.post(
        category || "General", totalCopies, shelf_location || null, description || null, documentUrl, barcode?.trim() || null]
     );
 
-    // No printed barcode supplied — default the scannable code to the item's own catalog_id
-    // so a QR/barcode label can be generated and scanned immediately.
-    if (item && !item.catalog_id) throw new AppError(500, "Failed to create catalog item");
-    if (!barcode?.trim()) {
-      item = await queryOne(
-        "UPDATE catalog_items SET barcode = catalog_id::text WHERE catalog_id = $1 RETURNING *",
-        [item!.catalog_id]
-      );
-    }
+    // No barcode supplied — a DB trigger (see migration 018) auto-assigns a
+    // unique DKP-XXXXXX code on insert, so `item` already has one here.
+    indexCatalogItem(item as Record<string, unknown>).catch((err) =>
+      logger.error("ES indexing failed for new catalog item", { error: err.message })
+    );
 
     // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
     void notifyAllUsersExcept(req.user!.user_id, {
@@ -722,6 +792,10 @@ router.put(
       [title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode, req.params.id]
     );
 
+    indexCatalogItem(item as Record<string, unknown>).catch((err) =>
+      logger.error("ES indexing failed for updated catalog item", { error: err.message })
+    );
+
     res.json({ success: true, data: item });
   })
 );
@@ -733,6 +807,7 @@ router.delete(
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     await query("UPDATE catalog_items SET deleted_at = NOW() WHERE catalog_id = $1", [req.params.id]);
+    void removeCatalogItemFromIndex(req.params.id);
     res.json({ success: true, message: "Catalog item deleted" });
   })
 );

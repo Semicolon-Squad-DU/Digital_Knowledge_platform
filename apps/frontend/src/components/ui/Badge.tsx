@@ -63,6 +63,8 @@ export function StatusBadge({ status }: { status: string }) {
     available:         { label: "Available",         variant: "success" },
     suspended:         { label: "Suspended",         variant: "danger" },
     inactive:          { label: "Inactive",          variant: "default" },
+    paid:              { label: "Paid",              variant: "success" },
+    waived:            { label: "Waived",            variant: "done" },
   };
   const { label, variant } = map[status] ?? { label: status, variant: "default" };
   return <Badge variant={variant}>{label}</Badge>;

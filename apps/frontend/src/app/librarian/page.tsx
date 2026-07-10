@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useCreateCatalogItem, useCatalogLookupByBarcode } from "@/features/library/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold } from "@/features/library/hooks/useLibrary";
 import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
 import { ImportCatalogModal } from "@/components/library/ImportCatalogModal";
 import { CirculationReportPanel } from "@/components/library/CirculationReportPanel";
@@ -425,7 +425,7 @@ function ReturnBookForm({
   );
 }
 
-type Tab = "overview" | "overdue" | "reports";
+type Tab = "overview" | "overdue" | "holds" | "reports";
 
 export default function LibrarianDashboardPage() {
   const router = useRouter();
@@ -433,10 +433,16 @@ export default function LibrarianDashboardPage() {
 
   const { data: stats, isLoading, refetch } = useLibrarianDashboard();
   const { data: overdueData, isLoading: overdueLoading, refetch: refetchOverdue } = useOverdueTransactions();
+  const { data: holdsData, isLoading: holdsLoading, refetch: refetchHolds } = useHoldsPending();
   const { mutateAsync: issueBook, isPending: isIssuing } = useIssueBook();
   const { mutateAsync: returnBook, isPending: isReturning } = useReturnBook();
   const { mutateAsync: adjustFine, isPending: isAdjusting } = useAdjustFine();
   const { mutateAsync: waiveFine, isPending: isWaiving } = useWaiveFine();
+  const { mutateAsync: markFinePaid, isPending: isMarkingPaid } = useMarkFinePaid();
+  const { mutateAsync: notifyOverdue, isPending: isNotifying } = useNotifyOverdue();
+  const { mutateAsync: cancelHold, isPending: isCancellingHold } = useCancelHold();
+  const [notifyingId, setNotifyingId] = useState<string | null>(null);
+  const [fulfillingHoldId, setFulfillingHoldId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [issueModal, setIssueModal] = useState(false);
@@ -566,6 +572,62 @@ export default function LibrarianDashboardPage() {
     }
   };
 
+  const handleMarkFinePaid = async (fineId: string) => {
+    try {
+      await markFinePaid(fineId);
+      toast.success("Fine marked as paid");
+      refetchOverdue();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to mark fine as paid");
+    }
+  };
+
+  const handleNotify = async (transactionId: string) => {
+    setNotifyingId(transactionId);
+    try {
+      await notifyOverdue(transactionId);
+      toast.success("Reminder email sent to member");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to send reminder");
+    } finally {
+      setNotifyingId(null);
+    }
+  };
+
+  const handleFulfillHold = async (hold: { hold_id: string; catalog_id: string; member_id: string; available_copies: number }) => {
+    if (hold.available_copies < 1) {
+      toast.error("No copies available to issue right now");
+      return;
+    }
+    setFulfillingHoldId(hold.hold_id);
+    try {
+      await issueBook({ catalog_id: hold.catalog_id, member_id: hold.member_id });
+      await cancelHold(hold.hold_id);
+      toast.success("Hold fulfilled — book issued to member");
+      refetch();
+      refetchHolds();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to fulfill hold");
+    } finally {
+      setFulfillingHoldId(null);
+    }
+  };
+
+  const handleCancelHold = async (holdId: string) => {
+    try {
+      await cancelHold(holdId);
+      toast.success("Hold cancelled");
+      refetch();
+      refetchHolds();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to cancel hold");
+    }
+  };
+
 
   const statCards = [
     { label: "On Loan",       value: stats?.on_loan ?? 0,           icon: BookOpen,      iconClass: "bg-blue-50 text-blue-600" },
@@ -595,7 +657,7 @@ export default function LibrarianDashboardPage() {
                   <BookOpen size={19} color="var(--avatar-theme-color, #1a1a2e)" />
                 </div>
                 <h1 style={{ fontSize: 30, fontWeight: 700, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
-                  Librarian Dashboard
+                  Librarian Desk
                 </h1>
               </div>
               <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
@@ -691,6 +753,16 @@ export default function LibrarianDashboardPage() {
           Overdue & Fines
         </button>
         <button
+          onClick={() => setActiveTab("holds")}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === "holds"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Holds{holdsData?.length ? ` (${holdsData.length})` : ""}
+        </button>
+        <button
           onClick={() => setActiveTab("reports")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "reports"
@@ -709,17 +781,25 @@ export default function LibrarianDashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => <SkeletonStatCard key={i} />)
-              : statCards.map((stat, idx) => (
-                  <div key={stat.label} className={`stat-card ${idx === 4 ? "col-span-2 sm:col-span-1" : ""}`}>
-                    <div className={`stat-icon ${stat.iconClass}`}>
-                      <stat.icon size={20} aria-hidden="true" />
+              : statCards.map((stat, idx) => {
+                  const clickTab: Tab | null = stat.label === "Overdue" ? "overdue" : stat.label === "Holds Pending" ? "holds" : null;
+                  return (
+                    <div
+                      key={stat.label}
+                      onClick={clickTab ? () => setActiveTab(clickTab) : undefined}
+                      className={`stat-card ${idx === 4 ? "col-span-2 sm:col-span-1" : ""}`}
+                      style={clickTab ? { cursor: "pointer" } : undefined}
+                    >
+                      <div className={`stat-icon ${stat.iconClass}`}>
+                        <stat.icon size={20} aria-hidden="true" />
+                      </div>
+                      <div>
+                        <div className="stat-value">{stat.value}</div>
+                        <div className="stat-label">{stat.label}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="stat-value">{stat.value}</div>
-                      <div className="stat-label">{stat.label}</div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
           </div>
 
           {/* Recent transactions */}
@@ -837,8 +917,22 @@ export default function LibrarianDashboardPage() {
                         <td className="text-red-600 font-medium">{item.days_overdue} days</td>
                         <td className="text-orange-600 font-medium">{fineAmount.toFixed(2)}</td>
                         <td><StatusBadge status={fineStatus} /></td>
-                        <td className="text-sm flex gap-2">
-                          {fineStatus !== "waived" && item.fine_id && (
+                        <td className="text-sm flex gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleNotify(item.transaction_id)}
+                            loading={notifyingId === item.transaction_id}
+                            icon={<Bell size={13} />}
+                            aria-label="Notify member"
+                            style={{
+                              borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                              color: "var(--avatar-theme-color, #1a1a2e)",
+                            }}
+                          >
+                            Notify
+                          </Button>
+                          {!["waived", "paid"].includes(fineStatus) && item.fine_id && (
                             <>
                               <button
                                 onClick={() => {
@@ -876,6 +970,20 @@ export default function LibrarianDashboardPage() {
                                 Adjust
                               </button>
                               <Button
+                                size="sm"
+                                onClick={() => handleMarkFinePaid(item.fine_id!)}
+                                loading={isMarkingPaid}
+                                icon={<DollarSign size={13} />}
+                                aria-label="Mark fine as paid"
+                                style={{
+                                  background: "var(--color-success-emphasis, #1f883d)",
+                                  color: "#ffffff",
+                                  border: "none",
+                                }}
+                              >
+                                Mark Paid
+                              </Button>
+                              <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleWaiveFine(item.fine_id!)}
@@ -901,11 +1009,100 @@ export default function LibrarianDashboardPage() {
         </Card>
       )}
 
+      {/* Holds Tab */}
+      {activeTab === "holds" && (
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <CardTitle>Pending Holds</CardTitle>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table" aria-label="Pending holds">
+              <thead>
+                <tr>
+                  <th>Requested</th>
+                  <th>Member</th>
+                  <th>Book</th>
+                  <th>Copies Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {holdsLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={5} />)
+                ) : !holdsData?.length ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={<Clock size={22} />}
+                        title="No pending holds"
+                        description="Members haven't placed any holds right now."
+                        className="py-8"
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  holdsData.map((hold: {
+                    hold_id: string;
+                    catalog_id: string;
+                    member_id: string;
+                    request_date: string;
+                    title: string;
+                    authors?: string[];
+                    available_copies: number;
+                    member_name: string;
+                    member_email: string;
+                  }) => (
+                    <tr key={hold.hold_id}>
+                      <td className="text-slate-500 text-xs">{formatDate(hold.request_date)}</td>
+                      <td>
+                        <p className="font-medium text-slate-900">{hold.member_name}</p>
+                        <p className="text-xs text-slate-500">{hold.member_email}</p>
+                      </td>
+                      <td className="max-w-xs">
+                        <span className="line-clamp-1 text-slate-700">{hold.title}</span>
+                      </td>
+                      <td className={hold.available_copies > 0 ? "text-green-600 font-medium" : "text-slate-400 font-medium"}>
+                        {hold.available_copies}
+                      </td>
+                      <td className="text-sm flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleFulfillHold(hold)}
+                          loading={fulfillingHoldId === hold.hold_id}
+                          disabled={hold.available_copies < 1}
+                          icon={<BookOpen size={13} />}
+                          style={{
+                            background: "var(--theme-sidebar-gradient)",
+                            color: "#ffffff",
+                            border: "none",
+                          }}
+                        >
+                          Fulfill
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelHold(hold.hold_id)}
+                          loading={isCancellingHold}
+                          style={{
+                            borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                            color: "var(--avatar-theme-color, #1a1a2e)",
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
       {/* Reports Tab */}
       {activeTab === "reports" && <CirculationReportPanel />}
-
-
-
 
       {/* Import Catalog Modal */}
       <ImportCatalogModal isOpen={importModal} onClose={() => setImportModal(false)} />

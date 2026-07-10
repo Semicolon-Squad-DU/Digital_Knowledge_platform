@@ -122,6 +122,29 @@ export function renewalConfirmationEmail(
   `;
 }
 
+export function overdueFineReminderEmail(
+  memberName: string,
+  bookTitle: string,
+  daysOverdue: number,
+  fineAmount: number
+): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1a56db;">Digital Knowledge Platform</h2>
+      <p>Dear ${memberName},</p>
+      <p>The following book is now <strong style="color: #dc2626;">${daysOverdue} day(s) overdue</strong>:</p>
+      <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+        <strong>${bookTitle}</strong><br/>
+        <span style="color: #6b7280;">Fine accrued so far: Tk ${fineAmount.toFixed(2)}</span>
+      </div>
+      <p>Please return the book as soon as possible to stop further fines from accruing.</p>
+      <p>Visit the <a href="${config.frontendUrl}/dashboard">Member Dashboard</a> to view your borrowing history and fines.</p>
+      <hr/>
+      <p style="color: #9ca3af; font-size: 12px;">Digital Knowledge Platform — University of Dhaka, CSE Department</p>
+    </div>
+  `;
+}
+
 export function projectApprovalEmail(
   studentName: string,
   projectTitle: string,
