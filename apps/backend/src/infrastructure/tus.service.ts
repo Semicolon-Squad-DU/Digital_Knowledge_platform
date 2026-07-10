@@ -1,10 +1,13 @@
 import { Server } from "@tus/server";
 import { S3Store } from "@tus/s3-store";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
+import { Readable } from "node:stream";
 import { config } from "../core/config";
 import { logger } from "../core/config/logger";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from "./s3.service";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, s3Client } from "./s3.service";
+import { scanReadable, MalwareDetectedError, ScannerUnavailableError } from "./antivirus.service";
 
 export const TUS_PATH = "/api/uploads/tus";
 
@@ -77,6 +80,27 @@ export const tusServer = new Server({
       await s3Store.remove(upload.id).catch(() => {});
       throw { status_code: 415, body: `Unsupported file type: ${mimetype}` };
     }
+
+    // tus streams chunks straight to S3 (never passing through uploadToS3's
+    // scan), so the completed object has to be scanned here instead — before
+    // anything else can reference it. Same reject-and-clean-up pattern as the
+    // MIME check above.
+    try {
+      const object = await s3Client.send(
+        new GetObjectCommand({ Bucket: config.s3.bucket, Key: upload.id })
+      );
+      await scanReadable(object.Body as Readable);
+    } catch (err) {
+      await s3Store.remove(upload.id).catch(() => {});
+      if (err instanceof MalwareDetectedError) {
+        throw { status_code: 422, body: err.message };
+      }
+      if (err instanceof ScannerUnavailableError) {
+        throw { status_code: 503, body: err.message };
+      }
+      throw err;
+    }
+
     logger.info("tus upload finished", { id: upload.id, size: upload.size });
     return {};
   },

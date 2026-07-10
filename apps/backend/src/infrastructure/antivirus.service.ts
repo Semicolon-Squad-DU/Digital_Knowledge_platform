@@ -50,19 +50,24 @@ export class ScannerUnavailableError extends Error {
 }
 
 /**
- * Scans a buffer for malware before it's allowed anywhere near S3. Fails
- * closed: if the scanner isn't reachable, the upload is rejected rather than
- * silently skipped.
+ * Scans a readable stream for malware before it's allowed anywhere near S3.
+ * Fails closed: if the scanner isn't reachable, the upload is rejected rather
+ * than silently skipped. Streams instead of buffering so large (tus, up to
+ * 500 MB) uploads don't have to be held fully in memory to be scanned.
  */
-export async function scanBuffer(buffer: Buffer): Promise<void> {
+export async function scanReadable(stream: Readable): Promise<void> {
   if (!isAntivirusAvailable || !clamscan) {
     throw new ScannerUnavailableError();
   }
 
-  const { isInfected, viruses } = await clamscan.scanStream(Readable.from(buffer));
+  const { isInfected, viruses } = await clamscan.scanStream(stream);
 
   if (isInfected) {
     logger.warn("Malware detected in upload — rejected", { viruses });
     throw new MalwareDetectedError(viruses);
   }
+}
+
+export async function scanBuffer(buffer: Buffer): Promise<void> {
+  return scanReadable(Readable.from(buffer));
 }
