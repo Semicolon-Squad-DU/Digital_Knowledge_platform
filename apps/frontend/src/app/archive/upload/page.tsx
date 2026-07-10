@@ -8,13 +8,13 @@ import { z } from "zod";
 import { useDropzone } from "react-dropzone";
 import {
   Upload, X, FileText, Plus, Trash2, ArrowLeft, Archive, AlertCircle,
-  Tag, Clock, Loader2, CheckCircle2,
+  Tag, Clock, Loader2, CheckCircle2, Files, XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useUploadArchiveItem, useFinalizeArchiveUpload, useTags } from "@/features/archive/hooks/useArchive";
+import { useUploadArchiveItem, useFinalizeArchiveUpload, useTags, useBulkUploadArchiveItems, BulkUploadResult } from "@/features/archive/hooks/useArchive";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { cn, formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -23,6 +23,17 @@ import { uploadViaTus, TUS_SIZE_THRESHOLD } from "@/lib/tusUpload";
 const CATEGORIES = [
   "General", "Research", "Thesis", "Report", "Lecture Notes", "Lab Manual", "Policy", "Other",
 ];
+
+const ACCEPTED_TYPES = {
+  "application/pdf": [".pdf"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+  "audio/mpeg": [".mp3"],
+  "video/mp4": [".mp4"],
+};
+const MAX_UPLOAD_SIZE = 500 * 1024 * 1024;
 
 const STATUS_FLOW = ["draft", "review", "published", "archived"] as const;
 type ArchiveStatus = typeof STATUS_FLOW[number];
@@ -73,7 +84,12 @@ export default function UploadArchivePage() {
   const { user, ready } = useAuthGuard();
   const { mutateAsync: upload } = useUploadArchiveItem();
   const { mutateAsync: finalizeUpload } = useFinalizeArchiveUpload();
+  const { mutateAsync: bulkUpload, isPending: isBulkUploading } = useBulkUploadArchiveItems();
   const { data: availableTags } = useTags();
+
+  const [mode, setMode] = useState<"single" | "bulk">("single");
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkResults, setBulkResults] = useState<BulkUploadResult[] | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
@@ -111,18 +127,46 @@ export default function UploadArchivePage() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      "application/pdf": [".pdf"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
-      "image/jpeg": [".jpg", ".jpeg"],
-      "image/png": [".png"],
-      "audio/mpeg": [".mp3"],
-      "video/mp4": [".mp4"],
-    },
-    maxSize: 500 * 1024 * 1024,
+    accept: ACCEPTED_TYPES,
+    maxSize: MAX_UPLOAD_SIZE,
     multiple: false,
   });
+
+  const onDropBulk = useCallback((accepted: File[], rejected: any[]) => {
+    setFileError("");
+    setBulkResults(null);
+    if (rejected.length > 0) {
+      const msg = rejected[0].errors[0]?.message ?? "Invalid file";
+      setFileError(msg.includes("size") ? "One or more files exceed the 500 MB limit" : msg);
+    }
+    if (accepted.length > 0) setBulkFiles((prev) => [...prev, ...accepted]);
+  }, []);
+
+  const { getRootProps: getBulkRootProps, getInputProps: getBulkInputProps, isDragActive: isBulkDragActive } = useDropzone({
+    onDrop: onDropBulk,
+    accept: ACCEPTED_TYPES,
+    maxSize: MAX_UPLOAD_SIZE,
+    multiple: true,
+  });
+
+  const removeBulkFile = (index: number) => setBulkFiles((prev) => prev.filter((_, i) => i !== index));
+
+  const handleBulkUpload = async () => {
+    if (bulkFiles.length === 0) { toast.error("Please select at least one file"); return; }
+    try {
+      const { results, succeeded, failed } = await bulkUpload(bulkFiles);
+      setBulkResults(results);
+      setBulkFiles([]);
+      if (failed === 0) {
+        toast.success(`${succeeded} file${succeeded === 1 ? "" : "s"} uploaded successfully!`);
+      } else {
+        toast.error(`${succeeded} uploaded, ${failed} failed — see details below`);
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Bulk upload failed. Please try again.");
+    }
+  };
 
   const addTag = (name: string) => {
     const trimmed = name.trim();
@@ -242,6 +286,159 @@ export default function UploadArchivePage() {
           ]}
         />
 
+        {/* ── Single / Bulk mode toggle ─────────────────── */}
+        <div className="flex gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => setMode("single")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+              mode === "single"
+                ? "border-[var(--avatar-theme-color,#1a1a2e)] text-white"
+                : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
+            )}
+            style={mode === "single" ? { background: "var(--theme-gradient-160, #1a1a2e)" } : undefined}
+          >
+            <FileText size={14} /> Single Document
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("bulk")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+              mode === "bulk"
+                ? "border-[var(--avatar-theme-color,#1a1a2e)] text-white"
+                : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
+            )}
+            style={mode === "bulk" ? { background: "var(--theme-gradient-160, #1a1a2e)" } : undefined}
+          >
+            <Files size={14} /> Bulk Upload
+          </button>
+        </div>
+
+        {mode === "bulk" ? (
+          <section className="gh-box">
+            <div className="gh-box-header">
+              <h3 className="font-semibold text-[var(--color-fg-default)] text-sm flex items-center gap-2">
+                <Files size={16} /> Bulk File Upload
+              </h3>
+            </div>
+            <div className="gh-box-body space-y-4">
+              <p className="text-xs text-slate-500 -mt-1">
+                Each file is added as its own archive item, titled from its filename, in the <strong>General</strong> category
+                with <strong>Members Only</strong> access. Edit titles, categories and access tiers afterwards from the archive list.
+              </p>
+
+              <div
+                {...getBulkRootProps()}
+                className={cn(
+                  "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all",
+                  isBulkDragActive
+                    ? "border-[var(--avatar-theme-color,#3b82f6)] bg-blue-50/20"
+                    : "border-slate-300 bg-slate-50 hover:bg-slate-100"
+                )}
+              >
+                <input {...getBulkInputProps()} aria-label="Upload files" />
+                <div className="py-4">
+                  <Upload size={32} className="mx-auto mb-2 text-slate-400" />
+                  <p className="text-sm font-semibold text-slate-700">
+                    {isBulkDragActive ? "Drop files here to add them" : "Drag & drop multiple files or click to browse"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Supports PDF, DOCX, PPTX, Images, MP3, MP4 — Max 500 MB per file, up to 50 files
+                  </p>
+                </div>
+              </div>
+
+              {fileError && (
+                <p className="text-xs text-red-500 flex items-center gap-1 font-semibold">
+                  <AlertCircle size={13} /> {fileError}
+                </p>
+              )}
+
+              {bulkFiles.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    {bulkFiles.length} file{bulkFiles.length === 1 ? "" : "s"} selected
+                  </p>
+                  <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                    {bulkFiles.map((f, i) => (
+                      <div key={`${f.name}-${i}`} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200/70">
+                        <FileText size={16} className="text-slate-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{f.name}</p>
+                          <p className="text-[11px] text-slate-400">{formatFileSize(f.size)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeBulkFile(i)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                          aria-label={`Remove ${f.name}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {bulkResults && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Upload Results</p>
+                  {bulkResults.map((r, i) => (
+                    <div key={`${r.filename}-${i}`} className={cn(
+                      "flex items-center gap-2.5 p-2.5 rounded-lg border text-xs font-semibold",
+                      r.status === "success" ? "bg-emerald-50/50 border-emerald-200 text-emerald-700" : "bg-red-50/50 border-red-200 text-red-700"
+                    )}>
+                      {r.status === "success" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                      <span className="truncate flex-1">{r.filename}</span>
+                      {r.status === "error" && <span className="font-normal text-red-500">{r.error}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-3 pt-2">
+                <Button type="button" variant="default" onClick={() => router.push("/archive")} disabled={isBulkUploading}>
+                  Cancel
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleBulkUpload}
+                  disabled={bulkFiles.length === 0 || isBulkUploading}
+                  style={{
+                    background: (bulkFiles.length === 0 || isBulkUploading)
+                      ? "linear-gradient(135deg, #cbd5e1 0%, #e2e8f0 100%)"
+                      : "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
+                    color: (bulkFiles.length === 0 || isBulkUploading) ? "#94a3b8" : "#ffffff",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "10px 24px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    cursor: (bulkFiles.length === 0 || isBulkUploading) ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isBulkUploading ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Uploading {bulkFiles.length} File{bulkFiles.length === 1 ? "" : "s"}…
+                    </>
+                  ) : (
+                    <>
+                      <Files size={14} />
+                      Upload {bulkFiles.length || ""} File{bulkFiles.length === 1 ? "" : "s"}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
 
           {/* ── File Selection & Preview ─────────────────── */}
@@ -621,6 +818,7 @@ export default function UploadArchivePage() {
           </div>
 
         </form>
+        )}
       </div>
     </AppLayout>
   );

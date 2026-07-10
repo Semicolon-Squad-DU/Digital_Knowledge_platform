@@ -50,6 +50,30 @@ export function useUploadArchiveItem() {
   });
 }
 
+export interface BulkUploadResult {
+  filename: string;
+  status: "success" | "error";
+  item_id?: string;
+  error?: string;
+}
+
+export function useBulkUploadArchiveItems() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (files: File[]) => {
+      const formData = new FormData();
+      files.forEach((file) => formData.append("files", file));
+      const { data } = await api.post("/archive/bulk-upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return data.data as { results: BulkUploadResult[]; succeeded: number; failed: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["archive"] });
+    },
+  });
+}
+
 export interface FinalizeArchiveUploadPayload {
   file_key: string;
   file_type: string;
