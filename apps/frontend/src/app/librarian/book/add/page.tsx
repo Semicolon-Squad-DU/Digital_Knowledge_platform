@@ -17,7 +17,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { cn, formatFileSize } from "@/lib/utils";
 
 const CATEGORIES = [
-  "General", "Textbook", "Reference", "Fiction", "Non-Fiction", "Science", "Technology", "Mathematics", "History", "Other",
+  "General", "Textbook", "Reference", "Novel", "Non-Fiction", "Science", "Technology",
+  "Mathematics", "History", "Social Sciences", "Humanities", "Journal", "Magazine", "Other",
 ];
 
 const schema = z.object({

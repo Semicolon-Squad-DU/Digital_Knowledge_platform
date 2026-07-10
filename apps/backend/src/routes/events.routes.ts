@@ -34,7 +34,7 @@ router.get(
 router.post(
   "/",
   authenticate,
-  requireRole("admin", "archivist", "librarian"),
+  requireRole("admin", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { title, description, speaker, scheduledAt, location, totalSeats, materialsUrl } = req.body;
     const userId = req.user!.user_id;
@@ -159,7 +159,7 @@ router.delete(
 router.get(
   "/:id/rsvps",
   authenticate,
-  requireRole("admin", "archivist", "librarian"),
+  requireRole("admin", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const participants = await query(
@@ -181,7 +181,7 @@ router.get(
 router.delete(
   "/:id",
   authenticate,
-  requireRole("admin", "archivist", "librarian"),
+  requireRole("admin", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     await withTransaction(async (client) => {

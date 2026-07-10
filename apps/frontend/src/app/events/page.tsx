@@ -69,7 +69,7 @@ export default function EventsPage() {
     }
   };
 
-  const canCreate = user && ["admin", "archivist", "librarian"].includes(user.role);
+  const canCreate = user && ["admin", "archivist"].includes(user.role);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -301,7 +301,7 @@ export default function EventsPage() {
                           </a>
                         ) : (
                           <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
-                            Materials pending event scheduled
+                            No materials uploaded yet
                           </span>
                         )}
                       </div>
