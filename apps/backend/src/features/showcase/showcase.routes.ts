@@ -210,8 +210,10 @@ router.patch(
       [newStatus, comments || null, req.params.id]
     );
 
-    // Auto-archive: Create archive item when project is published
-    if (action === "approve") {
+    // Auto-archive: Create archive item when project is published — only when a
+    // report file exists, since archive_items.file_url is NOT NULL (skip silently
+    // for projects approved without an uploaded report rather than erroring).
+    if (action === "approve" && project.report_url) {
       try {
         const archiveTitle = `${project.title} - Student Project`;
         const teamMemberNames = Array.isArray(project.team_members as unknown[])

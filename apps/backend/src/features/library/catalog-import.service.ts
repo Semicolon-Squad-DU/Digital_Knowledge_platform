@@ -50,7 +50,10 @@ function normalizeHeader(h: string): string {
 
 /** Parses a CSV buffer into an array of raw header→value row objects. */
 export function parseCatalogFile(buffer: Buffer): Record<string, string>[] {
-  const text = buffer.toString("utf8").replace(/^﻿/, ""); // strip BOM (common from Excel "Save as CSV")
+  let text = buffer.toString("utf8");
+  // Strip a leading byte-order mark (common from Excel "Save as CSV") — checked by
+  // char code rather than a regex literal to avoid an invisible-character source line.
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
   return parseCsv(text);
 }
 

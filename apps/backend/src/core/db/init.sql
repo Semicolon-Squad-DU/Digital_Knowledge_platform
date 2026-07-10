@@ -93,15 +93,21 @@ CREATE TABLE archive_items (
   file_size    BIGINT NOT NULL CHECK (file_size > 0 AND file_size <= 524288000),
   version      INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   uploaded_by  UUID NOT NULL REFERENCES users(user_id),
+  source_type  VARCHAR(50),
+  source_id    UUID,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at   TIMESTAMPTZ
 );
 
+COMMENT ON COLUMN archive_items.source_type IS 'Source of auto-archived item: library, research, showcase, or null for direct archive uploads';
+COMMENT ON COLUMN archive_items.source_id IS 'ID of the source item (catalog_id, output_id, or project_id)';
+
 CREATE INDEX idx_archive_status ON archive_items(status);
 CREATE INDEX idx_archive_access_tier ON archive_items(access_tier);
 CREATE INDEX idx_archive_uploaded_by ON archive_items(uploaded_by);
 CREATE INDEX idx_archive_title_en_trgm ON archive_items USING gin(title_en gin_trgm_ops);
+CREATE INDEX idx_archive_source ON archive_items(source_type, source_id);
 
 -- Archive item tags (M:N)
 CREATE TABLE archive_item_tags (
@@ -247,6 +253,7 @@ CREATE TABLE borrows (
   fine_amount    DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (fine_amount >= 0),
   borrow_status  lending_status NOT NULL DEFAULT 'active',
   approval_status TEXT NOT NULL DEFAULT 'approved',
+  renewal_count  INTEGER NOT NULL DEFAULT 0,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
