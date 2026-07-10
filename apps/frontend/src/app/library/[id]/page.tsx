@@ -593,6 +593,12 @@ export default function LibraryItemPage() {
                     <span style={{ color: "#9ca3af", fontWeight: 500 }}>Total Copies</span>
                     <span style={{ color: "#111827", fontWeight: 600 }}>{item.total_copies}</span>
                   </div>
+                  {canManageCatalog && item.barcode && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ca3af", fontWeight: 500 }}>Book ID / Barcode</span>
+                      <span style={{ color: "#2563eb", fontWeight: 700, fontFamily: "monospace" }}>{item.barcode}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Barcode / QR — librarian scan & print */}

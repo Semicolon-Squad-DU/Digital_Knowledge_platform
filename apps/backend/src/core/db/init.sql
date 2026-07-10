@@ -242,6 +242,27 @@ CREATE INDEX idx_catalog_title_trgm ON catalog_items USING gin(title gin_trgm_op
 CREATE INDEX idx_catalog_category ON catalog_items(category);
 CREATE INDEX idx_catalog_deleted ON catalog_items(deleted_at) WHERE deleted_at IS NULL;
 
+-- Auto-generate a unique barcode/book-ID for every catalog item on insert.
+-- One barcode per row — since all copies of a title share a single row
+-- (total_copies/available_copies are just counters), every physical copy
+-- naturally shares the same barcode, which is what identifies "the book".
+CREATE SEQUENCE catalog_barcode_seq START 1;
+
+CREATE OR REPLACE FUNCTION set_catalog_barcode()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.barcode IS NULL OR NEW.barcode = '' THEN
+    NEW.barcode := 'DKP-' || LPAD(nextval('catalog_barcode_seq')::TEXT, 6, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_catalog_barcode
+  BEFORE INSERT ON catalog_items
+  FOR EACH ROW
+  EXECUTE FUNCTION set_catalog_barcode();
+
 -- Lending transactions
 CREATE TABLE borrows (
   id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
