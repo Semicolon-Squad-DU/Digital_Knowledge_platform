@@ -21,19 +21,8 @@ const RESEARCH_INDEX = "dkp_research";
 let isElasticsearchAvailable = false;
 
 export async function initializeElasticsearch(): Promise<void> {
-  try {
-    await esClient.ping();
-    isElasticsearchAvailable = true;
-    logger.info("Elasticsearch connected");
-    await createArchiveIndex();
-    await createCatalogIndex();
-    await createResearchIndex();
-  } catch (err) {
-    isElasticsearchAvailable = false;
-    logger.warn("Elasticsearch not available, search features degraded", {
-      error: (err as Error).message,
-    });
-  }
+  isElasticsearchAvailable = false;
+  logger.info("Elasticsearch is disabled. Falling back to PostgreSQL (Supabase) search directly.");
 }
 
 async function createArchiveIndex(): Promise<void> {
