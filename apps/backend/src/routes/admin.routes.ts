@@ -94,6 +94,41 @@ router.get(
       "SELECT COUNT(*) as count FROM users WHERE membership_status = 'pending_approval' AND deleted_at IS NULL"
     );
 
+    // Monthly upload/download trends for the last 5 months (real counts, not mocked)
+    const monthlyTrendsResult = await query<{ month: string; uploads: string; downloads: string }>(
+      `WITH months AS (
+         SELECT date_trunc('month', CURRENT_DATE) - (n || ' months')::interval AS month_start
+         FROM generate_series(4, 0, -1) AS n
+       ),
+       uploads AS (
+         SELECT date_trunc('month', created_at) AS month_start, COUNT(*) AS count
+         FROM (
+           SELECT created_at FROM archive_items
+           UNION ALL
+           SELECT created_at FROM catalog_items WHERE deleted_at IS NULL
+         ) u
+         GROUP BY 1
+       ),
+       downloads AS (
+         SELECT date_trunc('month', "timestamp") AS month_start, COUNT(*) AS count
+         FROM audit_logs
+         WHERE action = 'DOWNLOAD'
+         GROUP BY 1
+       )
+       SELECT to_char(m.month_start, 'Mon') AS month,
+              COALESCE(u.count, 0) AS uploads,
+              COALESCE(d.count, 0) AS downloads
+       FROM months m
+       LEFT JOIN uploads u ON u.month_start = m.month_start
+       LEFT JOIN downloads d ON d.month_start = m.month_start
+       ORDER BY m.month_start`
+    );
+    const monthlyTrends = monthlyTrendsResult.map((row) => ({
+      month: row.month,
+      uploads: parseInt(row.uploads),
+      downloads: parseInt(row.downloads),
+    }));
+
     res.json({
       success: true,
       data: {
@@ -106,6 +141,7 @@ router.get(
         pendingApproval: parseInt(pendingApprovalResult.count),
         activeUsers: parseInt(activeUsers.count),
         storagePercentage,
+        monthlyTrends,
       },
     });
   })

@@ -242,21 +242,19 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
             <div style={{ position: "absolute", left: 0, right: 0, top: 120, borderTop: "1px dashed #f3f4f6" }} />
             
             {/* Columns */}
-            {[
-              { month: "Jan", uploads: 12, downloads: 22 },
-              { month: "Feb", uploads: 15, downloads: 25 },
-              { month: "Mar", uploads: 18, downloads: 30 },
-              { month: "Apr", uploads: 20, downloads: 35 },
-              { month: "May", uploads: (adminStats?.totalDocuments ?? 0), downloads: (adminStats?.totalDocuments ?? 0) * 3 },
-            ].map(item => (
-              <div key={item.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1 }}>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
-                  <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${Math.min(100, (item.uploads / Math.max(1, (adminStats?.totalDocuments ?? 0) * 3)) * 100)}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
-                  <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${Math.min(100, (item.downloads / Math.max(1, (adminStats?.totalDocuments ?? 0) * 3)) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+            {(() => {
+              const trends = adminStats?.monthlyTrends ?? [];
+              const maxValue = Math.max(1, ...trends.flatMap(t => [t.uploads, t.downloads]));
+              return trends.map(item => (
+                <div key={item.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
+                    <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${Math.min(100, (item.uploads / maxValue) * 100)}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                    <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${Math.min(100, (item.downloads / maxValue) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{item.month}</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{item.month}</span>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
 
           <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "flex-end" }}>

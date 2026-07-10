@@ -10,6 +10,11 @@ export interface AdminStats {
   pendingReview: number;
   activeUsers: number;
   storagePercentage: number;
+  monthlyTrends: Array<{
+    month: string;
+    uploads: number;
+    downloads: number;
+  }>;
   recentDocuments: Array<{
     id: string;
     title: string;
