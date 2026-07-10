@@ -128,6 +128,72 @@ function mapRow(raw: Record<string, string>): Partial<CatalogImportRow> & { auth
   };
 }
 
+const EXPORT_COLUMNS = [
+  "title", "isbn", "authors", "publisher", "edition", "year", "category",
+  "total_copies", "available_copies", "shelf_location", "barcode", "description",
+] as const;
+
+interface CatalogExportRow {
+  title: string;
+  isbn: string | null;
+  authors: string[];
+  publisher: string | null;
+  edition: string | null;
+  year: number | null;
+  category: string;
+  total_copies: number;
+  available_copies: number;
+  shelf_location: string | null;
+  barcode: string | null;
+  description: string | null;
+}
+
+async function fetchCatalogForExport(): Promise<CatalogExportRow[]> {
+  return query<CatalogExportRow>(
+    `SELECT title, isbn, authors, publisher, edition, year, category,
+            total_copies, available_copies, shelf_location, barcode, description
+     FROM catalog_items
+     WHERE deleted_at IS NULL
+     ORDER BY title`
+  );
+}
+
+/** Exports the full active catalog as a CSV file — same column set the
+ *  importer accepts, so an exported file can be re-imported unchanged. */
+export async function exportCatalogToCsv(): Promise<string> {
+  const rows = await fetchCatalogForExport();
+  const escape = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [EXPORT_COLUMNS.join(",")];
+  for (const row of rows) {
+    lines.push(EXPORT_COLUMNS.map((col) => {
+      const value = row[col];
+      return escape(Array.isArray(value) ? value.join("; ") : value ?? "");
+    }).join(","));
+  }
+  return lines.join("\n");
+}
+
+/** Exports the full active catalog as an XLSX workbook. */
+export async function exportCatalogToXlsx(): Promise<Buffer> {
+  const rows = await fetchCatalogForExport();
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Catalog");
+  sheet.columns = EXPORT_COLUMNS.map((col) => ({ header: col, key: col, width: col === "description" ? 40 : 18 }));
+  for (const row of rows) {
+    sheet.addRow(EXPORT_COLUMNS.reduce((acc, col) => {
+      const value = row[col];
+      acc[col] = Array.isArray(value) ? value.join("; ") : value ?? "";
+      return acc;
+    }, {} as Record<string, string | number>));
+  }
+  sheet.getRow(1).font = { bold: true };
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}
+
 /**
  * Validates parsed rows against per-row rules, in-file duplicates, and
  * duplicates already present in the catalog — mirrors the SDD's "per-row

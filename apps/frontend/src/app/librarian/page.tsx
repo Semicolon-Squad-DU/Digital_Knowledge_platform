@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign, Download, ChevronDown } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold } from "@/features/library/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useExportCatalog } from "@/features/library/hooks/useLibrary";
 import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
 import { ImportCatalogModal } from "@/components/library/ImportCatalogModal";
 import { CirculationReportPanel } from "@/components/library/CirculationReportPanel";
@@ -450,6 +450,8 @@ export default function LibrarianDashboardPage() {
   const [adjustModal, setAdjustModal] = useState(false);
   const [addBookModal, setAddBookModal] = useState(false);
   const [importModal, setImportModal] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const { mutate: exportCatalog, isPending: isExporting } = useExportCatalog();
   const [catalogId, setCatalogId] = useState("");
   const [memberId, setMemberId] = useState("");
   const [transactionId, setTransactionId] = useState("");
@@ -711,6 +713,51 @@ export default function LibrarianDashboardPage() {
               >
                 Import CSV
               </Button>
+              <div style={{ position: "relative" }}>
+                <Button
+                  variant="outline"
+                  onClick={() => setExportMenuOpen((v) => !v)}
+                  disabled={isExporting}
+                  icon={<Download size={15} />}
+                  style={{
+                    borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                    color: "var(--avatar-theme-color, #1a1a2e)",
+                  }}
+                >
+                  {isExporting ? "Exporting…" : "Export"} <ChevronDown size={13} style={{ marginLeft: 2 }} />
+                </Button>
+                {exportMenuOpen && (
+                  <>
+                    <div
+                      onClick={() => setExportMenuOpen(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 10 }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20,
+                        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 160, overflow: "hidden",
+                      }}
+                    >
+                      {(["csv", "xlsx"] as const).map((format) => (
+                        <button
+                          key={format}
+                          type="button"
+                          onClick={() => { exportCatalog(format); setExportMenuOpen(false); }}
+                          style={{
+                            display: "block", width: "100%", textAlign: "left", padding: "9px 14px",
+                            fontSize: 13, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                        >
+                          {format === "csv" ? "Export as CSV" : "Export as Excel (.xlsx)"}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
               <Button
                 onClick={() => setIssueModal(true)}
                 icon={<Plus size={15} />}

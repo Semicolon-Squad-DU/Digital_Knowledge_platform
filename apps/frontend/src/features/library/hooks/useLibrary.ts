@@ -393,6 +393,25 @@ export function useImportCatalogCommit() {
   });
 }
 
+/** Downloads the full catalog as a CSV or XLSX file, streamed directly from the backend. */
+export function useExportCatalog() {
+  return useMutation({
+    mutationFn: async (format: "csv" | "xlsx") => {
+      const { data } = await api.get("/library/catalog/export", {
+        params: { format },
+        responseType: "blob",
+      });
+      const blob = new Blob([data]);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dkp-catalog-${new Date().toISOString().slice(0, 10)}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
+}
+
 export function useDeleteCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({

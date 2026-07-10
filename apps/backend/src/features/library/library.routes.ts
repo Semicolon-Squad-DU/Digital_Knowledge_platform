@@ -3,7 +3,7 @@ import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { uploadSingle, uploadCatalogImport } from "../../core/middleware/upload.middleware";
-import { parseCatalogFile, validateImportRows, CatalogImportRow } from "./catalog-import.service";
+import { parseCatalogFile, validateImportRows, CatalogImportRow, exportCatalogToCsv, exportCatalogToXlsx } from "./catalog-import.service";
 import { searchCatalog, indexCatalogItem, removeCatalogItemFromIndex } from "../../infrastructure/elasticsearch.service";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
 import { config } from "../../core/config";
@@ -609,6 +609,30 @@ router.patch(
     );
 
     res.json({ success: true, data: fine });
+  })
+);
+
+// GET /api/library/catalog/export — download the full active catalog as CSV or XLSX,
+// using the same column layout the importer accepts (round-trippable).
+router.get(
+  "/catalog/export",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const format = (req.query.format as string) === "xlsx" ? "xlsx" : "csv";
+    const filename = `dkp-catalog-${new Date().toISOString().slice(0, 10)}.${format}`;
+
+    if (format === "xlsx") {
+      const buffer = await exportCatalogToXlsx();
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } else {
+      const csv = await exportCatalogToCsv();
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(csv);
+    }
   })
 );
 
