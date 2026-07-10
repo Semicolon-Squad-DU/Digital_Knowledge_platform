@@ -250,13 +250,18 @@ router.post(
       file_type: item.file_type, created_at: item.created_at,
     }).catch((err) => logger.error("ES indexing failed", { error: err.message }));
 
-    // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
-    void notifyAllUsersExcept(req.user!.user_id, {
-      type: "new_upload",
-      title: "New Document Uploaded",
-      message: `"${item.title_en}" has been added to the archive.`,
-      action_url: `/archive/${item.item_id}`,
-    });
+    // Only broadcast if the item is actually visible to non-staff — draft/review
+    // items 404 for everyone except archivist/librarian/admin (see GET /:id below),
+    // so notifying about them would send most users to a dead link.
+    if (item.status === "published") {
+      // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
+      void notifyAllUsersExcept(req.user!.user_id, {
+        type: "new_upload",
+        title: "New Document Uploaded",
+        message: `"${item.title_en}" has been added to the archive.`,
+        action_url: `/archive/${item.item_id}`,
+      });
+    }
 
     res.status(201).json({ success: true, data: item });
   })

@@ -13,7 +13,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useBorrowingHistory, useMemberFines, useWishlist } from "@/features/library/hooks/useLibrary";
 import { useArchiveSearch } from "@/features/archive/hooks/useArchive";
 import { useResearchList } from "@/features/research/hooks/useResearch";
-import { useShowcaseGallery } from "@/features/showcase/hooks/useShowcase";
+import { useShowcaseGallery, usePendingReviewQueue } from "@/features/showcase/hooks/useShowcase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { timeAgo } from "@/lib/utils";
 
@@ -145,6 +145,11 @@ export default function DashboardPage() {
   const { data: archiveData,  isLoading: archLoading } = useArchiveSearch({ query: "", page: 1, limit: 5 });
   const { data: researchData, isLoading: resLoading  } = useResearchList({ page: 1, limit: 5 });
   const { data: showcaseData, isLoading: showLoading } = useShowcaseGallery({ page: 1, limit: 5 });
+  // The public gallery only ever returns status='published' items, so filtering
+  // it for pending statuses always yielded 0. The real advisor review queue
+  // (scoped to this researcher's own advisees) lives at a dedicated endpoint.
+  const isAdvisorRole = ["researcher", "admin"].includes(user?.role ?? "");
+  const { data: pendingReviewQueue, isLoading: pendingLoading } = usePendingReviewQueue(isAdvisorRole);
 
   if (!ready) return null;
 
@@ -152,8 +157,7 @@ export default function DashboardPage() {
   const returnedLoans  = (history ?? []).filter((t: Loan) => t.status === "returned");
   const totalDocs      = archiveData?.total ?? 0;
   const publishedItems = researchData?.total ?? 0;
-  const pendingReviews = (showcaseData?.items ?? []).filter((p: Showcase) =>
-    ["pending_review", "review", "pending"].includes(p.status)).length;
+  const pendingReviews = isAdvisorRole ? (pendingReviewQueue?.length ?? 0) : 0;
   const archivedItems  = returnedLoans.length;
 
   type Entry = { id: string; type: string; actor: string; action: string; subject: string; status: string; time: string; };
@@ -307,7 +311,7 @@ export default function DashboardPage() {
                   accent={pendingReviews > 0 ? "#f97316" : "#e5e7eb"}
                   value={pendingReviews}
                   sub={pendingReviews > 0 ? `${pendingReviews} need attention` : "No pending reviews"}
-                  subColor={pendingReviews > 0 ? "#f97316" : "#6b7280"} loading={showLoading}
+                  subColor={pendingReviews > 0 ? "#f97316" : "#6b7280"} loading={isAdvisorRole && pendingLoading}
                 />
                 <StatCard
                   label="Archived Items" icon={Archive} iconBg="#f5f3ff" iconColor="#8b5cf6" accent="#8b5cf6"

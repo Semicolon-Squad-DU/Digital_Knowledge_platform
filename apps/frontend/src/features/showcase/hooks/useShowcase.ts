@@ -24,13 +24,14 @@ export function useShowcaseItem(id: string) {
   });
 }
 
-export function usePendingReviewQueue() {
+export function usePendingReviewQueue(enabled: boolean = true) {
   return useQuery({
     queryKey: ["showcase", "queue", "pending"],
     queryFn: async () => {
       const { data } = await api.get("/showcase/queue/pending");
       return data.data as StudentProject[];
     },
+    enabled,
   });
 }
 

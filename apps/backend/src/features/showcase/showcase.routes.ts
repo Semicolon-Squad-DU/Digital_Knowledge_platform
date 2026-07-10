@@ -153,8 +153,8 @@ router.post(
 
     const project = await queryOne(
       `INSERT INTO student_projects
-         (title, abstract, team_members, advisor_id, semester, department, technologies, report_url, source_code_url, submitted_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         (title, abstract, team_members, advisor_id, semester, department, technologies, report_url, source_code_url, submitted_by, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending_review')
        RETURNING *`,
       [
         title, abstract,
