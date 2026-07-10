@@ -45,6 +45,14 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
       total_pages: Math.ceil(result.total / (limit ? parseInt(limit) : 20)),
     },
   });
+
+  if (q && q.trim()) {
+    query(
+      `INSERT INTO search_queries (query_text, module, user_id, results_count)
+       VALUES ($1, 'archive', $2, $3)`,
+      [q.trim(), req.user?.user_id || null, result.total]
+    ).catch((err) => logger.warn("Failed to log search query", { error: err.message }));
+  }
 }));
 
 // GET /api/archive/download-url?key=... — generate presigned URL, scoped to the caller's access tier

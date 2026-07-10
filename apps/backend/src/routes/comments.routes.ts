@@ -140,4 +140,64 @@ router.delete(
   })
 );
 
+// PATCH /api/comments/:id/accept — Mark comment as accepted answer
+router.patch(
+  "/:id/accept",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { isAnswer } = req.body;
+    const userId = req.user!.user_id;
+    const userRole = req.user!.role;
+
+    if (isAnswer === undefined) {
+      throw new AppError(400, "isAnswer is required");
+    }
+
+    const comment = await queryOne<any>(
+      `SELECT * FROM comments WHERE comment_id = $1`,
+      [id]
+    );
+    if (!comment) throw new AppError(404, "Comment not found");
+
+    let isOwner = false;
+    if (comment.entity_type === "archive") {
+      const archive = await queryOne<any>(
+        "SELECT uploaded_by FROM archive_items WHERE item_id = $1",
+        [comment.entity_id]
+      );
+      isOwner = archive?.uploaded_by === userId;
+    } else if (comment.entity_type === "research") {
+      const research = await queryOne<any>(
+        "SELECT uploaded_by FROM research_outputs WHERE output_id = $1",
+        [comment.entity_id]
+      );
+      isOwner = research?.uploaded_by === userId;
+    } else if (comment.entity_type === "project") {
+      const project = await queryOne<any>(
+        "SELECT submitted_by FROM student_projects WHERE project_id = $1",
+        [comment.entity_id]
+      );
+      isOwner = project?.submitted_by === userId;
+    }
+
+    if (!isOwner && userRole !== "admin") {
+      throw new AppError(403, "Only the resource owner or an administrator can accept answers");
+    }
+
+    const updated = await queryOne<any>(
+      `UPDATE comments
+       SET is_answer = $1, updated_at = NOW()
+       WHERE comment_id = $2
+       RETURNING *`,
+      [!!isAnswer, id]
+    );
+
+    res.json({
+      success: true,
+      data: updated,
+    });
+  })
+);
+
 export default router;

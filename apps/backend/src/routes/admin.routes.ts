@@ -1080,5 +1080,38 @@ router.put(
   })
 );
 
+// GET /api/admin/analytics/search — Top search terms and zero-result queries
+router.get(
+  "/analytics/search",
+  authenticate,
+  requireRole("admin", "librarian", "archivist"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const topQueries = await query(
+      `SELECT query_text, COUNT(*)::int as search_count
+       FROM search_queries
+       GROUP BY query_text
+       ORDER BY search_count DESC
+       LIMIT 20`
+    );
+
+    const zeroResultQueries = await query(
+      `SELECT query_text, COUNT(*)::int as search_count
+       FROM search_queries
+       WHERE results_count = 0
+       GROUP BY query_text
+       ORDER BY search_count DESC
+       LIMIT 20`
+    );
+
+    res.json({
+      success: true,
+      data: {
+        top_queries: topQueries,
+        zero_result_queries: zeroResultQueries,
+      },
+    });
+  })
+);
+
 export default router;
 

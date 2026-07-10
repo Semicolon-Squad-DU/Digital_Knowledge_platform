@@ -36,6 +36,14 @@ router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest
       total_pages: Math.ceil(result.total / (limit ? parseInt(limit) : 20)),
     },
   });
+
+  if (q && q.trim()) {
+    query(
+      `INSERT INTO search_queries (query_text, module, user_id, results_count)
+       VALUES ($1, 'library', $2, $3)`,
+      [q.trim(), req.user?.user_id || null, result.total]
+    ).catch((err) => logger.warn("Failed to log search query", { error: err.message }));
+  }
 }));
 
 // GET /api/library/dashboard

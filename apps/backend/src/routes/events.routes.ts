@@ -3,8 +3,42 @@ import { query, queryOne, withTransaction } from "../core/db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
 import { notifyAllUsersExcept } from "../infrastructure/notification.service";
+import { uploadSingle } from "../core/middleware/upload.middleware";
+import { uploadToS3, generateS3Key } from "../infrastructure/s3.service";
 
 const router = Router();
+
+// GET /api/events/calendar
+router.get(
+  "/calendar",
+  optionalAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { year, month } = req.query as { year?: string; month?: string };
+    if (!year || !month) {
+      throw new AppError(400, "year and month are required (e.g. ?year=2026&month=7)");
+    }
+
+    const userId = req.user?.user_id;
+    const startDate = `${year}-${month.padStart(2, '0')}-01`;
+    const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
+
+    const eventsList = await query<any>(
+      `SELECT e.*,
+       CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL THEN TRUE ELSE FALSE END as has_rsvped,
+       CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL AND r.waitlisted = TRUE THEN TRUE ELSE FALSE END as waitlisted
+       FROM events e
+       LEFT JOIN event_rsvps r ON e.event_id = r.event_id AND r.user_id = $1
+       WHERE e.scheduled_at BETWEEN $2 AND $3
+       ORDER BY e.scheduled_at ASC`,
+      [userId || null, startDate, endDate]
+    );
+
+    res.json({
+      success: true,
+      data: eventsList,
+    });
+  })
+);
 
 // GET /api/events
 router.get(
@@ -12,13 +46,22 @@ router.get(
   optionalAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.user_id;
+    const { time_filter } = req.query;
 
-    // Fetch all events, sorted by scheduled date ASC
+    let timeClause = "";
+    if (time_filter === "past") {
+      timeClause = "WHERE e.scheduled_at < NOW()";
+    } else if (time_filter === "upcoming") {
+      timeClause = "WHERE e.scheduled_at >= NOW()";
+    }
+
     const eventsList = await query<any>(
       `SELECT e.*, 
-       CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL THEN TRUE ELSE FALSE END as has_rsvped
+       CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL THEN TRUE ELSE FALSE END as has_rsvped,
+       CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL AND r.waitlisted = TRUE THEN TRUE ELSE FALSE END as waitlisted
        FROM events e
        LEFT JOIN event_rsvps r ON e.event_id = r.event_id AND r.user_id = $1
+       ${timeClause}
        ORDER BY e.scheduled_at ASC`,
       [userId || null]
     );
@@ -35,12 +78,20 @@ router.post(
   "/",
   authenticate,
   requireRole("admin", "archivist"),
+  uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { title, description, speaker, scheduledAt, location, totalSeats, materialsUrl } = req.body;
+    const { title, description, speaker, scheduledAt, location, totalSeats } = req.body;
+    let { materialsUrl } = req.body;
     const userId = req.user!.user_id;
 
     if (!title || !description || !speaker || !scheduledAt || !location || totalSeats === undefined) {
       throw new AppError(400, "All event details are required");
+    }
+
+    if (req.file) {
+      const key = generateS3Key("events", req.file.originalname, req.file.mimetype);
+      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+      materialsUrl = key;
     }
 
     const newEvent = await queryOne<any>(
@@ -72,6 +123,7 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const eventId = req.params.id;
     const userId = req.user!.user_id;
+    let isWaitlisted = false;
 
     await withTransaction(async (client) => {
       // 1. Lock and retrieve the event
@@ -96,24 +148,29 @@ router.post(
 
       // 3. Check seats availability
       if (event.available_seats <= 0) {
-        throw new AppError(400, "Sorry, no seats are available for this seminar");
+        isWaitlisted = true;
       }
 
-      // 4. Record RSVP and decrement seat availability
+      // 4. Record RSVP
       await client.query(
-        `INSERT INTO event_rsvps (event_id, user_id) VALUES ($1, $2)`,
-        [eventId, userId]
+        `INSERT INTO event_rsvps (event_id, user_id, waitlisted) VALUES ($1, $2, $3)`,
+        [eventId, userId, isWaitlisted]
       );
 
-      await client.query(
-        `UPDATE events SET available_seats = available_seats - 1 WHERE event_id = $1`,
-        [eventId]
-      );
+      if (!isWaitlisted) {
+        await client.query(
+          `UPDATE events SET available_seats = available_seats - 1 WHERE event_id = $1`,
+          [eventId]
+        );
+      }
     });
 
     res.json({
       success: true,
-      message: "RSVP registered successfully! Your seat is booked.",
+      message: isWaitlisted
+        ? "Registered on the waitlist successfully! You will be auto-promoted if a seat opens up."
+        : "RSVP registered successfully! Your seat is booked.",
+      data: { waitlisted: isWaitlisted }
     });
   })
 );
@@ -132,25 +189,52 @@ router.delete(
         `SELECT * FROM event_rsvps WHERE event_id = $1 AND user_id = $2`,
         [eventId, userId]
       );
-      if (!rsvpRes.rows[0]) {
+      const rsvp = rsvpRes.rows[0];
+      if (!rsvp) {
         throw new AppError(404, "RSVP registration not found");
       }
 
-      // 2. Delete RSVP and increment seat availability
+      // 2. Delete RSVP
       await client.query(
         `DELETE FROM event_rsvps WHERE event_id = $1 AND user_id = $2`,
         [eventId, userId]
       );
 
-      await client.query(
-        `UPDATE events SET available_seats = available_seats + 1 WHERE event_id = $1`,
-        [eventId]
-      );
+      // 3. If the cancelled RSVP was NOT waitlisted, promote the first waitlist user
+      if (!rsvp.waitlisted) {
+        const waitlistRes = await client.query(
+          `SELECT * FROM event_rsvps WHERE event_id = $1 AND waitlisted = TRUE ORDER BY created_at ASC LIMIT 1 FOR UPDATE`,
+          [eventId]
+        );
+        const waitlistUser = waitlistRes.rows[0];
+
+        if (waitlistUser) {
+          // Promote waitlisted user
+          await client.query(
+            `UPDATE event_rsvps SET waitlisted = FALSE WHERE rsvp_id = $1`,
+            [waitlistUser.rsvp_id]
+          );
+
+          // Notify waitlist user
+          const eventInfo = await client.query("SELECT title FROM events WHERE event_id = $1", [eventId]);
+          await client.query(
+            `INSERT INTO notifications (user_id, type, title, message, action_url)
+             VALUES ($1, 'system', 'RSVP Confirmed', $2, '/events')`,
+            [waitlistUser.user_id, `Your waitlist registration for "${eventInfo.rows[0].title}" has been confirmed!`]
+          );
+        } else {
+          // No waitlisted users, release seat
+          await client.query(
+            `UPDATE events SET available_seats = available_seats + 1 WHERE event_id = $1`,
+            [eventId]
+          );
+        }
+      }
     });
 
     res.json({
       success: true,
-      message: "RSVP cancelled. Your seat is released.",
+      message: "RSVP cancelled successfully.",
     });
   })
 );
