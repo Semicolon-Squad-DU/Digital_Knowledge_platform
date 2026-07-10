@@ -111,12 +111,17 @@ async function createResearchIndex(): Promise<void> {
       mappings: {
         properties: {
           output_id: { type: "keyword" },
-          title: { type: "text", analyzer: "english" },
+          title: { type: "text", analyzer: "english", fields: { keyword: { type: "keyword" } } },
           abstract: { type: "text", analyzer: "english" },
           keywords: { type: "keyword" },
-          authors: { type: "text" },
+          authors_text: { type: "text" },
           output_type: { type: "keyword" },
+          access_tier: { type: "keyword" },
+          lab_id: { type: "keyword" },
+          uploaded_by: { type: "keyword" },
+          journal_name: { type: "keyword" },
           published_date: { type: "date" },
+          created_at: { type: "date" },
         },
       },
     },
@@ -163,6 +168,25 @@ export async function removeCatalogItemFromIndex(catalog_id: string): Promise<vo
   } catch (err) {
     // 404 just means it was never indexed (e.g. created before ES was available) — not an error.
     logger.warn("Catalog index removal failed", { catalog_id, error: (err as Error).message });
+  }
+}
+
+export async function indexResearchOutput(output: Record<string, unknown>): Promise<void> {
+  if (!isElasticsearchAvailable) {
+    logger.warn("Skipping research indexing — Elasticsearch unavailable", { output_id: output.output_id });
+    return;
+  }
+  try {
+    const authors = output.authors as Array<{ name?: string }> | undefined;
+    const authors_text = Array.isArray(authors) ? authors.map((a) => a?.name ?? "").join(", ") : "";
+
+    await esClient.index({
+      index: RESEARCH_INDEX,
+      id: output.output_id as string,
+      document: { ...output, authors_text },
+    });
+  } catch (err) {
+    logger.warn("Research indexing failed", { output_id: output.output_id, error: (err as Error).message });
   }
 }
 
@@ -427,6 +451,135 @@ export async function searchCatalog(params: {
     return {
       hits: dataRows,
       total: parseInt(countRows[0]?.total ?? "0", 10),
+    };
+  }
+}
+
+export async function searchResearch(params: {
+  query?: string;
+  author?: string;
+  keyword?: string;
+  year?: number;
+  output_type?: string;
+  lab_id?: string;
+  uploaded_by?: string;
+  allowed_tiers?: string[];
+  page?: number;
+  limit?: number;
+}): Promise<{ hits: unknown[]; total: number }> {
+  const { query, page = 1, limit = 20, allowed_tiers = ["public"] } = params;
+  const from = (page - 1) * limit;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const must: any[] = [{ terms: { access_tier: allowed_tiers } }];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const filter: any[] = [];
+
+  if (query) {
+    must.push({
+      multi_match: {
+        query,
+        fields: ["title^3", "abstract", "authors_text^2", "keywords"],
+        type: "best_fields",
+        fuzziness: "AUTO",
+      },
+    });
+  }
+
+  if (params.author) must.push({ match: { authors_text: params.author } });
+  if (params.keyword) filter.push({ term: { keywords: params.keyword } });
+  if (params.output_type) filter.push({ term: { output_type: params.output_type } });
+  if (params.lab_id) filter.push({ term: { lab_id: params.lab_id } });
+  if (params.uploaded_by) filter.push({ term: { uploaded_by: params.uploaded_by } });
+  if (params.year) {
+    filter.push({
+      range: {
+        published_date: {
+          gte: `${params.year}-01-01`,
+          lte: `${params.year}-12-31`,
+        },
+      },
+    });
+  }
+
+  try {
+    if (!isElasticsearchAvailable) throw new Error("Elasticsearch unavailable (skipped)");
+    const result = await esClient.search({
+      index: RESEARCH_INDEX,
+      from,
+      size: limit,
+      query: { bool: { must, filter } },
+      sort: query ? ["_score"] : [{ created_at: "desc" }],
+    });
+
+    return {
+      hits: result.hits.hits.map((h) => ({ ...(h._source as object), _score: h._score })),
+      total: typeof result.hits.total === "number" ? result.hits.total : result.hits.total?.value ?? 0,
+    };
+  } catch (err) {
+    logger.warn("Research search falling back to PostgreSQL", { error: (err as Error).message });
+
+    const conditions: string[] = ["ro.access_tier = ANY($1)"];
+    const values: unknown[] = [allowed_tiers];
+    let idx = 2;
+
+    if (params.query) {
+      conditions.push(`(ro.title ILIKE $${idx} OR ro.abstract ILIKE $${idx})`);
+      values.push(`%${params.query}%`);
+      idx += 1;
+    }
+    if (params.author) {
+      conditions.push(`ro.authors::text ILIKE $${idx}`);
+      values.push(`%${params.author}%`);
+      idx += 1;
+    }
+    if (params.keyword) {
+      conditions.push(`$${idx} = ANY(ro.keywords)`);
+      values.push(params.keyword);
+      idx += 1;
+    }
+    if (params.year) {
+      conditions.push(`EXTRACT(YEAR FROM ro.published_date) = $${idx}`);
+      values.push(params.year);
+      idx += 1;
+    }
+    if (params.output_type) {
+      conditions.push(`ro.output_type = $${idx}`);
+      values.push(params.output_type);
+      idx += 1;
+    }
+    if (params.lab_id) {
+      conditions.push(`ro.lab_id = $${idx}`);
+      values.push(params.lab_id);
+      idx += 1;
+    }
+    if (params.uploaded_by) {
+      conditions.push(`ro.uploaded_by = $${idx}`);
+      values.push(params.uploaded_by);
+      idx += 1;
+    }
+
+    const where = `WHERE ${conditions.join(" AND ")}`;
+
+    const countRows = await dbQuery<{ count: string }>(
+      `SELECT COUNT(*) as count FROM research_outputs ro ${where}`,
+      values
+    );
+
+    const dataRows = await dbQuery(
+      `SELECT ro.*, u.name as uploader_name, l.name as lab_name
+       FROM research_outputs ro
+       JOIN users u ON ro.uploaded_by = u.user_id
+       LEFT JOIN labs l ON ro.lab_id = l.lab_id
+       ${where}
+       ORDER BY ro.created_at DESC
+       LIMIT $${idx} OFFSET $${idx + 1}`,
+      [...values, limit, from]
+    );
+
+    return {
+      hits: dataRows,
+      total: parseInt(countRows[0]?.count ?? "0", 10),
     };
   }
 }

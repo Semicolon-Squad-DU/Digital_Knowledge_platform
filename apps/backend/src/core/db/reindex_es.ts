@@ -1,5 +1,5 @@
 import { pool } from "./pool";
-import { esClient, ARCHIVE_INDEX, CATALOG_INDEX, initializeElasticsearch } from "../../infrastructure/elasticsearch.service";
+import { esClient, ARCHIVE_INDEX, CATALOG_INDEX, RESEARCH_INDEX, initializeElasticsearch } from "../../infrastructure/elasticsearch.service";
 import { logger } from "../config/logger";
 
 // Bulk-reindexes all published archive items and catalog items from Postgres
@@ -57,10 +57,39 @@ async function reindexCatalog() {
   if (errors.length) logger.warn("First catalog index error", { error: errors[0].index?.error });
 }
 
+async function reindexResearch() {
+  const { rows } = await pool.query(
+    `SELECT ro.*, u.name as uploader_name, l.name as lab_name
+     FROM research_outputs ro
+     JOIN users u ON ro.uploaded_by = u.user_id
+     LEFT JOIN labs l ON ro.lab_id = l.lab_id`
+  );
+
+  if (rows.length === 0) {
+    logger.info("No research outputs to index");
+    return;
+  }
+
+  const operations = rows.flatMap((doc) => {
+    const authors = doc.authors as Array<{ name?: string }> | undefined;
+    const authors_text = Array.isArray(authors) ? authors.map((a) => a?.name ?? "").join(", ") : "";
+    return [
+      { index: { _index: RESEARCH_INDEX, _id: doc.output_id } },
+      { ...doc, authors_text },
+    ];
+  });
+
+  const result = await esClient.bulk({ operations, refresh: true });
+  const errors = result.items.filter((i) => i.index?.error);
+  logger.info("Research reindex complete", { indexed: rows.length - errors.length, failed: errors.length });
+  if (errors.length) logger.warn("First research index error", { error: errors[0].index?.error });
+}
+
 async function main() {
   await initializeElasticsearch();
   await reindexArchive();
   await reindexCatalog();
+  await reindexResearch();
   await pool.end();
 }
 

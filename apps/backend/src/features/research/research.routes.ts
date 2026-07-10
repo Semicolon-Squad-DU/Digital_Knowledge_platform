@@ -8,8 +8,23 @@ import { logger } from "../../core/config/logger";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 import { AccessTier } from "@dkp/shared";
 import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
+import { indexResearchOutput, searchResearch } from "../../infrastructure/elasticsearch.service";
 
 const router = Router();
+
+/** Fetches a research output joined with its uploader/lab names — the same
+ *  shape GET /:id returns — so Elasticsearch documents carry everything a
+ *  result card needs without a follow-up DB round trip per hit. */
+async function fetchResearchOutputWithJoins(output_id: string) {
+  return queryOne(
+    `SELECT ro.*, u.name as uploader_name, l.name as lab_name
+     FROM research_outputs ro
+     JOIN users u ON ro.uploaded_by = u.user_id
+     LEFT JOIN labs l ON ro.lab_id = l.lab_id
+     WHERE ro.output_id = $1`,
+    [output_id]
+  );
+}
 
 function generateDKPIdentifier(): string {
   const year = new Date().getFullYear();
@@ -136,43 +151,25 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
 
-  const conditions: string[] = ["ro.access_tier = ANY($1)"];
-  const params: unknown[] = [allowedTiers];
-  let idx = 2;
-
-  if (q) { conditions.push(`(ro.title ILIKE $${idx} OR ro.abstract ILIKE $${idx})`); params.push(`%${q}%`); idx++; }
-  if (author) { conditions.push(`ro.authors::text ILIKE $${idx++}`); params.push(`%${author}%`); }
-  if (keyword) { conditions.push(`$${idx++} = ANY(ro.keywords)`); params.push(keyword); }
-  if (year) { conditions.push(`EXTRACT(YEAR FROM ro.published_date) = $${idx++}`); params.push(parseInt(year)); }
-  if (output_type) { conditions.push(`ro.output_type = $${idx++}`); params.push(output_type); }
-  if (lab_id) { conditions.push(`ro.lab_id = $${idx++}`); params.push(lab_id); }
-  if (uploaded_by) { conditions.push(`ro.uploaded_by = $${idx++}`); params.push(uploaded_by); }
-
-  const where = `WHERE ${conditions.join(" AND ")}`;
-  const offset = (parseInt(page) - 1) * parseInt(limit);
-
-  const [{ count }] = await query<{ count: string }>(
-    `SELECT COUNT(*) FROM research_outputs ro ${where}`,
-    params
-  );
-
-  const outputs = await query(
-    `SELECT ro.*, u.name as uploader_name, l.name as lab_name
-     FROM research_outputs ro
-     JOIN users u ON ro.uploaded_by = u.user_id
-     LEFT JOIN labs l ON ro.lab_id = l.lab_id
-     ${where}
-     ORDER BY ro.created_at DESC
-     LIMIT $${idx++} OFFSET $${idx}`,
-    [...params, parseInt(limit), offset]
-  );
+  const { hits, total } = await searchResearch({
+    query: q,
+    author,
+    keyword,
+    year: year ? parseInt(year, 10) : undefined,
+    output_type,
+    lab_id,
+    uploaded_by,
+    allowed_tiers: allowedTiers,
+    page: parseInt(page),
+    limit: parseInt(limit),
+  });
 
   res.json({
     success: true,
     data: {
-      items: outputs, total: parseInt(count),
+      items: hits, total,
       page: parseInt(page), limit: parseInt(limit),
-      total_pages: Math.ceil(parseInt(count) / parseInt(limit)),
+      total_pages: Math.ceil(total / parseInt(limit)),
     },
   });
 }));
@@ -282,14 +279,17 @@ router.patch(
     if (updates.length === 0) throw new AppError(400, "No fields provided to update");
 
     params.push(req.params.id);
-    const updated = await queryOne(
+    await queryOne(
       `UPDATE research_outputs SET ${updates.join(", ")}, updated_at = NOW()
        WHERE output_id = $${idx}
        RETURNING *`,
       params
     );
 
-    res.json({ success: true, data: updated });
+    const joined = await fetchResearchOutputWithJoins(req.params.id);
+    if (joined) void indexResearchOutput(joined as Record<string, unknown>);
+
+    res.json({ success: true, data: joined });
   })
 );
 
@@ -372,12 +372,16 @@ router.post(
       }
     }
 
+    const output_id = (output as Record<string, string>).output_id;
+    const joined = await fetchResearchOutputWithJoins(output_id);
+    if (joined) void indexResearchOutput(joined as Record<string, unknown>);
+
     // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
     void notifyAllUsersExcept(req.user!.user_id, {
       type: "new_upload",
       title: "New Research Published",
       message: `"${title}" has been published.`,
-      action_url: `/research/${(output as Record<string, string>).output_id}`,
+      action_url: `/research/${output_id}`,
     });
 
     res.status(201).json({ success: true, data: output });
