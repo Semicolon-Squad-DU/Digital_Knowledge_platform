@@ -20,7 +20,9 @@ services:
       retries: 5
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    build:
+      context: ./docker/elasticsearch
+    image: dkp-elasticsearch:8.12.0-icu
     container_name: dkp_elasticsearch
     restart: unless-stopped
     environment:

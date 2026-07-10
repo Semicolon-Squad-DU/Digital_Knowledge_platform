@@ -151,6 +151,32 @@ export async function indexArchiveItem(item: Record<string, unknown>): Promise<v
   }
 }
 
+export async function indexCatalogItem(item: Record<string, unknown>): Promise<void> {
+  if (!isElasticsearchAvailable) {
+    logger.warn("Skipping catalog indexing — Elasticsearch unavailable", { catalog_id: item.catalog_id });
+    return;
+  }
+  try {
+    await esClient.index({
+      index: CATALOG_INDEX,
+      id: item.catalog_id as string,
+      document: item,
+    });
+  } catch (err) {
+    logger.warn("Catalog indexing failed", { catalog_id: item.catalog_id, error: (err as Error).message });
+  }
+}
+
+export async function removeCatalogItemFromIndex(catalog_id: string): Promise<void> {
+  if (!isElasticsearchAvailable) return;
+  try {
+    await esClient.delete({ index: CATALOG_INDEX, id: catalog_id });
+  } catch (err) {
+    // 404 just means it was never indexed (e.g. created before ES was available) — not an error.
+    logger.warn("Catalog index removal failed", { catalog_id, error: (err as Error).message });
+  }
+}
+
 export async function searchArchive(params: {
   query?: string;
   category?: string;
@@ -301,8 +327,11 @@ export async function searchCatalog(params: {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const must: any[] = [];
+  // Deleted items are removed from the index (see removeCatalogItemFromIndex),
+  // not flagged — ES never indexes explicit nulls by default, so a
+  // `term: { deleted_at: null }` filter would never match anything.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filter: any[] = [{ term: { deleted_at: null } }];
+  const filter: any[] = [];
 
   if (query) {
     must.push({

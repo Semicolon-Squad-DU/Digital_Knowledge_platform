@@ -1,13 +1,12 @@
 import { pool } from "./pool";
-import { esClient, ARCHIVE_INDEX, initializeElasticsearch } from "../../infrastructure/elasticsearch.service";
+import { esClient, ARCHIVE_INDEX, CATALOG_INDEX, initializeElasticsearch } from "../../infrastructure/elasticsearch.service";
 import { logger } from "../config/logger";
 
-// Bulk-reindexes all published archive items from Postgres into Elasticsearch.
-// Needed whenever ES starts fresh (new environment, wiped volume) since items
-// are otherwise only indexed at upload time.
-async function main() {
-  await initializeElasticsearch();
-
+// Bulk-reindexes all published archive items and catalog items from Postgres
+// into Elasticsearch. Needed whenever ES starts fresh (new environment, wiped
+// volume, or the ICU plugin was just installed and the index had to be
+// recreated) since items are otherwise only indexed at upload/edit time.
+async function reindexArchive() {
   const { rows } = await pool.query(
     `SELECT ai.item_id, ai.title_en, ai.title_bn, ai.description, ai.authors,
             ai.category, ai.language, ai.access_tier, ai.status, ai.file_type, ai.created_at,
@@ -21,7 +20,6 @@ async function main() {
 
   if (rows.length === 0) {
     logger.info("No archive items to index");
-    await pool.end();
     return;
   }
 
@@ -33,8 +31,36 @@ async function main() {
   const result = await esClient.bulk({ operations, refresh: true });
   const errors = result.items.filter((i) => i.index?.error);
   logger.info("Archive reindex complete", { indexed: rows.length - errors.length, failed: errors.length });
-  if (errors.length) logger.warn("First index error", { error: errors[0].index?.error });
+  if (errors.length) logger.warn("First archive index error", { error: errors[0].index?.error });
+}
 
+async function reindexCatalog() {
+  const { rows } = await pool.query(
+    `SELECT catalog_id, title, authors, isbn, category, available_copies, year
+     FROM catalog_items
+     WHERE deleted_at IS NULL`
+  );
+
+  if (rows.length === 0) {
+    logger.info("No catalog items to index");
+    return;
+  }
+
+  const operations = rows.flatMap((doc) => [
+    { index: { _index: CATALOG_INDEX, _id: doc.catalog_id } },
+    doc,
+  ]);
+
+  const result = await esClient.bulk({ operations, refresh: true });
+  const errors = result.items.filter((i) => i.index?.error);
+  logger.info("Catalog reindex complete", { indexed: rows.length - errors.length, failed: errors.length });
+  if (errors.length) logger.warn("First catalog index error", { error: errors[0].index?.error });
+}
+
+async function main() {
+  await initializeElasticsearch();
+  await reindexArchive();
+  await reindexCatalog();
   await pool.end();
 }
 
