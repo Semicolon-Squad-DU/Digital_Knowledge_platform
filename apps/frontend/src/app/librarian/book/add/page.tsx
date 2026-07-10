@@ -88,11 +88,15 @@ export default function AddBookPage() {
     if (pdfFile) fd.append("file", pdfFile);
 
     try {
-      await addCatalogItem(fd);
-      toast.success("Book added to library catalog successfully!");
+      const created = await addCatalogItem(fd);
+      toast.success(
+        created?.barcode
+          ? `Book added! Barcode: ${created.barcode}`
+          : "Book added to library catalog successfully!"
+      );
       setTimeout(() => {
         router.push("/librarian");
-      }, 800);
+      }, 1200);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || "Failed to add book. Please try again.");
