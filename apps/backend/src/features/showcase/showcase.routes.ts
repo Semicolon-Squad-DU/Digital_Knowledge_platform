@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { parsePagination } from "../../core/utils/pagination";
 import { uploadSingle } from "../../core/middleware/upload.middleware";
 import { uploadToS3, generateS3Key, getPresignedUrl } from "../../infrastructure/s3.service";
 import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
@@ -31,7 +32,7 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
   if (advisor_id) { conditions.push(`sp.advisor_id = $${paramIdx++}`); params.push(advisor_id); }
   if (q) { conditions.push(`sp.title ILIKE $${paramIdx++}`); params.push(`%${q}%`); }
 
-  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
   const whereClause = conditions.join(" AND ");
 
   const [{ count }] = await query<{ count: string }>(
@@ -48,15 +49,15 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
      WHERE ${whereClause}
      ORDER BY sp.created_at DESC
      LIMIT $${paramIdx++} OFFSET $${paramIdx}`,
-    [...params, parseInt(limit), offset]
+    [...params, limitNum, offset]
   );
 
   res.json({
     success: true,
     data: {
       items: projects, total: parseInt(count),
-      page: parseInt(page), limit: parseInt(limit),
-      total_pages: Math.ceil(parseInt(count) / parseInt(limit)),
+      page: pageNum, limit: limitNum,
+      total_pages: Math.ceil(parseInt(count) / limitNum),
     },
   });
 }));

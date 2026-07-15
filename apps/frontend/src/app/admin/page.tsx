@@ -404,19 +404,24 @@ function UsersTab() {
     limit: 10,
   });
 
+  // Dedicated query, independent of the table's own search/role/page state — the
+  // "awaiting approval" banner needs the true pending count, not whatever subset
+  // happens to match the current filter/pagination of the users table below.
+  const { data: pendingUsersData } = useAdminUsers({ status: "pending_approval", limit: 100 });
+
   const createMutation  = useCreateAdminUser();
   const updateMutation  = useUpdateAdminUser();
   const deleteMutation  = useDeleteAdminUser();
   const approveMutation = useApproveUser();
 
-  const pendingUsers = (usersData?.users ?? []).filter((u: any) => u.membership_status === "pending_approval");
+  const pendingUsers = pendingUsersData?.items ?? [];
 
   const handleApproveUser = async (u: any, approved: boolean) => {
     try {
       await approveMutation.mutateAsync({ id: u.user_id, approved });
       toast.success(approved ? `${u.name} approved — email sent.` : `${u.name} rejected.`);
-    } catch {
-      toast.error("Failed to process approval");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to process approval");
     }
   };
 
@@ -482,7 +487,7 @@ function UsersTab() {
       });
       toast.success(`User ${newStatus === "active" ? "activated" : "suspended"}`);
     } catch (err: any) {
-      toast.error("Failed to update status");
+      toast.error(err.response?.data?.message || "Failed to update status");
     }
   };
 
@@ -524,14 +529,20 @@ function UsersTab() {
       {pendingUsers.length > 0 && (
         <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: 10, padding: "14px 18px", marginBottom: 16 }}>
           <p style={{ fontWeight: 700, fontSize: 13, color: "#92400e", margin: "0 0 10px" }}>
-            ⏳ {pendingUsers.length} researcher account{pendingUsers.length > 1 ? "s" : ""} awaiting approval
+            ⏳ {pendingUsers.length} account{pendingUsers.length > 1 ? "s" : ""} awaiting approval
           </p>
-          {pendingUsers.map((u: any) => (
+          {pendingUsers.map((u: any) => {
+            const targetRole = u.requested_role || u.role;
+            return (
             <div key={u.user_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
-              <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</span>
-                <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>{u.email}</span>
-                {u.department && <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: 6 }}>· {u.department}</span>}
+                <span style={{ fontSize: 12, color: "#6b7280" }}>{u.email}</span>
+                {u.department && <span style={{ fontSize: 12, color: "#9ca3af" }}>· {u.department}</span>}
+                <Pill label={targetRole} bg={ROLE_COLORS[targetRole]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[targetRole]?.color ?? "#6b7280"} />
+                {u.requested_role && (
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>(switching from {u.role.replace("_", " ")})</span>
+                )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => handleApproveUser(u, true)} style={{ padding: "6px 14px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
@@ -542,7 +553,8 @@ function UsersTab() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -556,7 +568,7 @@ function UsersTab() {
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
           style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Roles</option>
-          {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
+          {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
             <option key={r} value={r}>{r.replace("_"," ")}</option>
           ))}
         </select>
@@ -702,7 +714,7 @@ function UsersTab() {
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
               <select name="role" defaultValue="member" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
-                {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
+                {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
               </select>
@@ -740,7 +752,7 @@ function UsersTab() {
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
               <select name="role" defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
-                {["guest","member","student_author","researcher","archivist","librarian","admin"].map(r => (
+                {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
               </select>

@@ -16,9 +16,14 @@
 }
 
 /* ── Page transition ─────────────────────────────────────── */
+/* opacity-only: a `transform` here (even a no-op translateY(0) left behind by
+   fill-mode "both") turns <main> into a containing block for `position: fixed`
+   descendants, so every full-screen modal overlay rendered inside it gets
+   clipped/mispositioned against <main>'s scrollable box instead of the real
+   viewport — that's why modal backdrops only shaded part of the screen. */
 @keyframes dkp-fade-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0);    }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .dkp-page-enter {
   animation: dkp-fade-in 0.18s ease both;
@@ -162,6 +167,7 @@ input[type="password"]::-moz-reveal {
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     font-feature-settings: "kern" 1;
     overflow-x: hidden;
     max-width: 100%;

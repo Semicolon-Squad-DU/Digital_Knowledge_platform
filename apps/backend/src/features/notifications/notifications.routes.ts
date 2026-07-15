@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { parsePagination } from "../../core/utils/pagination";
 import { sendEmail } from "../../infrastructure/email.service";
 
 const router = Router();
@@ -9,7 +10,7 @@ const router = Router();
 // GET /api/notifications
 router.get("/", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const { page = "1", limit = "20", unread_only } = req.query as Record<string, string>;
-  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
 
   const conditions = ["user_id = $1"];
   const params: unknown[] = [req.user!.user_id];
@@ -28,7 +29,7 @@ router.get("/", authenticate, asyncHandler(async (req: AuthRequest, res: Respons
   const notifications = await query(
     `SELECT * FROM notifications WHERE ${where}
      ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-    [req.user!.user_id, parseInt(limit), offset]
+    [req.user!.user_id, limitNum, offset]
   );
 
   const [{ unread_count }] = await query<{ unread_count: string }>(
@@ -41,7 +42,7 @@ router.get("/", authenticate, asyncHandler(async (req: AuthRequest, res: Respons
     data: {
       notifications, total: parseInt(count),
       unread_count: parseInt(unread_count),
-      page: parseInt(page), limit: parseInt(limit),
+      page: pageNum, limit: limitNum,
     },
   });
 }));

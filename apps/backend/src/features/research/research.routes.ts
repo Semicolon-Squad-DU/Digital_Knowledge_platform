@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { parsePagination } from "../../core/utils/pagination";
 import { uploadSingle } from "../../core/middleware/upload.middleware";
 import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
 import { logger } from "../../core/config/logger";
@@ -150,6 +151,7 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
 
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  const { page: pageNum, limit: limitNum } = parsePagination(page, limit);
 
   const { hits, total } = await searchResearch({
     query: q,
@@ -160,16 +162,16 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
     lab_id,
     uploaded_by,
     allowed_tiers: allowedTiers,
-    page: parseInt(page),
-    limit: parseInt(limit),
+    page: pageNum,
+    limit: limitNum,
   });
 
   res.json({
     success: true,
     data: {
       items: hits, total,
-      page: parseInt(page), limit: parseInt(limit),
-      total_pages: Math.ceil(total / parseInt(limit)),
+      page: pageNum, limit: limitNum,
+      total_pages: Math.ceil(total / limitNum),
     },
   });
 }));

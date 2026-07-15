@@ -1,10 +1,11 @@
 import { Router, Response } from "express";
 import bcrypt from "bcryptjs";
 import cron from "node-cron";
-import { query, queryOne } from "../core/db/pool";
+import { query, queryOne, withTransaction } from "../core/db/pool";
 import { config } from "../core/config";
 import { authenticate, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
+import { parsePagination } from "../core/utils/pagination";
 import { sendEmail, accountApprovalEmail } from "../infrastructure/email.service";
 import { s3Client } from "../infrastructure/s3.service";
 import { esClient } from "../infrastructure/elasticsearch.service";
@@ -161,10 +162,7 @@ router.get(
     }
 
     const { page = "1", limit = "10", status, search } = req.query as Record<string, string>;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
 
     const where: string[] = ["deleted_at IS NULL"];
     const values: unknown[] = [];
@@ -221,10 +219,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.user_id;
     const { page = "1", limit = "10", search } = req.query as Record<string, string>;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
 
     // research_outputs has no status/review workflow — every upload is uploaded_by
     // its author and visible immediately, so there's no status column to filter on.
@@ -278,10 +273,7 @@ router.get(
   requireRole("librarian", "admin", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { page = "1", limit = "10", status, search } = req.query as Record<string, string>;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
 
     const where: string[] = ["deleted_at IS NULL"];
     const values: unknown[] = [];
@@ -330,7 +322,13 @@ router.get(
   })
 );
 
-// PATCH /api/admin/catalog/:id/status — Update catalog item status
+// PATCH /api/admin/catalog/:id/status — Update catalog item availability status
+// catalog_items has no generic `status` column (only availability_status, driven
+// by borrow/return elsewhere) — this previously wrote to a column that doesn't
+// exist and 500'd on every call. Kept dead-code-safe since nothing in the current
+// UI calls this endpoint (useUpdateDocumentStatus is unused), but fixed so it
+// works correctly if it's ever wired up.
+const CATALOG_AVAILABILITY_STATUSES = ["available", "on_loan"];
 router.patch(
   "/catalog/:id/status",
   authenticate,
@@ -340,9 +338,12 @@ router.patch(
     const { status } = req.body;
 
     if (!status) throw new AppError(400, "status is required");
+    if (!CATALOG_AVAILABILITY_STATUSES.includes(status)) {
+      throw new AppError(400, `Invalid status — must be one of: ${CATALOG_AVAILABILITY_STATUSES.join(", ")}`);
+    }
 
     const [document] = await query(
-      "UPDATE catalog_items SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE catalog_id = $2 RETURNING *",
+      "UPDATE catalog_items SET availability_status = $1, updated_at = CURRENT_TIMESTAMP WHERE catalog_id = $2 RETURNING *",
       [status, id]
     );
 
@@ -356,6 +357,7 @@ router.patch(
 );
 
 // PATCH /api/admin/archive/:id/status — Update archive item status
+const ARCHIVE_STATUSES = ["draft", "review", "published", "archived"];
 router.patch(
   "/archive/:id/status",
   authenticate,
@@ -365,6 +367,9 @@ router.patch(
     const { status } = req.body;
 
     if (!status) throw new AppError(400, "status is required");
+    if (!ARCHIVE_STATUSES.includes(status)) {
+      throw new AppError(400, `Invalid status — must be one of: ${ARCHIVE_STATUSES.join(", ")}`);
+    }
 
     const [document] = await query(
       "UPDATE archive_items SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE item_id = $2 RETURNING *",
@@ -490,9 +495,7 @@ router.get(
   requireRole("admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { search, role, status, page = "1", limit = "10" } = req.query as Record<string, string>;
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
 
     const where: string[] = ["deleted_at IS NULL"];
     const values: unknown[] = [];
@@ -524,7 +527,7 @@ router.get(
     );
 
     const usersList = await query(
-      `SELECT user_id, name, email, role, department, membership_status, created_at
+      `SELECT user_id, name, email, role, requested_role, department, membership_status, created_at
        FROM users
        ${whereClause}
        ORDER BY created_at DESC
@@ -595,9 +598,27 @@ router.patch(
     const { id } = req.params;
     const { name, email, role, department, membership_status } = req.body;
 
-    const existingUser = await queryOne("SELECT * FROM users WHERE user_id = $1", [id]);
+    const existingUser = await queryOne<{ role: string; membership_status: string }>(
+      "SELECT * FROM users WHERE user_id = $1", [id]
+    );
     if (!existingUser) {
       throw new AppError(404, "User not found");
+    }
+
+    const demotingFromAdmin = role !== undefined && role !== "admin" && existingUser.role === "admin";
+    const deactivatingAccount = membership_status !== undefined && membership_status !== "active" && existingUser.membership_status === "active";
+
+    if (id === req.user!.user_id && (demotingFromAdmin || deactivatingAccount)) {
+      throw new AppError(400, "You cannot change your own role or account status. Ask another admin to make this change.");
+    }
+
+    if (existingUser.role === "admin" && existingUser.membership_status === "active" && (demotingFromAdmin || deactivatingAccount)) {
+      const [{ count: activeAdminCount }] = await query<{ count: string }>(
+        "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND membership_status = 'active' AND deleted_at IS NULL"
+      );
+      if (parseInt(activeAdminCount) <= 1) {
+        throw new AppError(400, "Cannot modify the last remaining active admin account.");
+      }
     }
 
     const updatedUser = await queryOne(
@@ -637,39 +658,55 @@ router.post(
     const { id } = req.params;
     const { approved, reason } = req.body as { approved: boolean; reason?: string };
 
-    const user = await queryOne<{ name: string; email: string; role: string; membership_status: string; requested_role: string | null }>(
-      "SELECT name, email, role, membership_status, requested_role FROM users WHERE user_id = $1 AND deleted_at IS NULL",
-      [id]
-    );
-    if (!user) throw new AppError(404, "User not found");
-    if (user.membership_status !== "pending_approval") {
-      throw new AppError(400, "User is not in pending_approval state");
+    if (id === req.user!.user_id) {
+      throw new AppError(400, "You cannot approve or reject your own account. Ask another admin to review it.");
     }
 
-    let newStatus = approved ? "active" : "suspended";
-    let finalRole = user.role;
+    // Locks the row for the duration of the transaction so two concurrent approve/reject
+    // calls (double-click, two admin tabs) can't both pass the pending_approval check —
+    // the second one blocks on FOR UPDATE, then re-reads the now-resolved row and 409s
+    // instead of also updating the role/status and firing a duplicate audit log + email.
+    const { user, finalRole, newStatus } = await withTransaction(async (client) => {
+      const [lockedUser] = (
+        await client.query(
+          `SELECT name, email, role, membership_status, requested_role
+           FROM users WHERE user_id = $1 AND deleted_at IS NULL FOR UPDATE`,
+          [id]
+        )
+      ).rows;
 
-    if (user.requested_role) {
-      if (approved) {
-        finalRole = user.requested_role;
-        newStatus = "active";
-        await query(
-          "UPDATE users SET role = $1, requested_role = NULL, membership_status = $2, updated_at = NOW() WHERE user_id = $3",
-          [finalRole, newStatus, id]
-        );
+      if (!lockedUser) throw new AppError(404, "User not found");
+      if (lockedUser.membership_status !== "pending_approval") {
+        throw new AppError(409, "This account has already been reviewed.");
+      }
+
+      let newStatus = approved ? "active" : "suspended";
+      let finalRole: string = lockedUser.role;
+
+      if (lockedUser.requested_role) {
+        if (approved) {
+          finalRole = lockedUser.requested_role;
+          newStatus = "active";
+          await client.query(
+            "UPDATE users SET role = $1, requested_role = NULL, membership_status = $2, updated_at = NOW() WHERE user_id = $3",
+            [finalRole, newStatus, id]
+          );
+        } else {
+          newStatus = "active";
+          await client.query(
+            "UPDATE users SET requested_role = NULL, membership_status = $1, updated_at = NOW() WHERE user_id = $2",
+            [newStatus, id]
+          );
+        }
       } else {
-        newStatus = "active";
-        await query(
-          "UPDATE users SET requested_role = NULL, membership_status = $1, updated_at = NOW() WHERE user_id = $2",
+        await client.query(
+          "UPDATE users SET membership_status = $1, updated_at = NOW() WHERE user_id = $2",
           [newStatus, id]
         );
       }
-    } else {
-      await query(
-        "UPDATE users SET membership_status = $1, updated_at = NOW() WHERE user_id = $2",
-        [newStatus, id]
-      );
-    }
+
+      return { user: lockedUser, finalRole, newStatus };
+    });
 
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
@@ -707,9 +744,24 @@ router.delete(
     const { id } = req.params;
     const { mode } = req.query as { mode?: "hard_delete" | "anonymize" };
 
-    const existingUser = await queryOne("SELECT * FROM users WHERE user_id = $1", [id]);
+    if (id === req.user!.user_id) {
+      throw new AppError(400, "You cannot delete your own account. Ask another admin to do this.");
+    }
+
+    const existingUser = await queryOne<{ role: string; membership_status: string }>(
+      "SELECT * FROM users WHERE user_id = $1", [id]
+    );
     if (!existingUser) {
       throw new AppError(404, "User not found");
+    }
+
+    if (existingUser.role === "admin" && existingUser.membership_status === "active") {
+      const [{ count: activeAdminCount }] = await query<{ count: string }>(
+        "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND membership_status = 'active' AND deleted_at IS NULL"
+      );
+      if (parseInt(activeAdminCount) <= 1) {
+        throw new AppError(400, "Cannot delete the last remaining active admin account.");
+      }
     }
 
     if (mode === "hard_delete") {
@@ -798,9 +850,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { search, action, entityType, entity_type, page = "1", limit = "10" } = req.query as Record<string, string>;
     const resolvedEntityType = entityType || entity_type;
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    const { page: pageNum, limit: limitNum, offset } = parsePagination(page, limit);
 
     const where: string[] = [];
     const values: unknown[] = [];

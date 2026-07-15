@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { parsePagination } from "../../core/utils/pagination";
 import { uploadSingle, uploadCatalogImport } from "../../core/middleware/upload.middleware";
 import { parseCatalogFile, validateImportRows, CatalogImportRow, exportCatalogToCsv, exportCatalogToXlsx } from "./catalog-import.service";
 import { searchCatalog, indexCatalogItem, removeCatalogItemFromIndex } from "../../infrastructure/elasticsearch.service";
@@ -19,21 +20,23 @@ router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest
   const { query: q, author, isbn, category, availability, year_from, year_to, page, limit } =
     req.query as Record<string, string>;
 
+  const { page: pageNum, limit: limitNum } = parsePagination(page ?? "1", limit ?? "20");
+
   const result = await searchCatalog({
     query: q, author, isbn, category,
     availability: availability as "available" | "on_loan" | "all",
     year_from: year_from ? parseInt(year_from) : undefined,
     year_to: year_to ? parseInt(year_to) : undefined,
-    page: page ? parseInt(page) : 1,
-    limit: limit ? parseInt(limit) : 20,
+    page: pageNum,
+    limit: limitNum,
   });
 
   res.json({
     success: true,
     data: {
       items: result.hits, total: result.total,
-      page: page ? parseInt(page) : 1, limit: limit ? parseInt(limit) : 20,
-      total_pages: Math.ceil(result.total / (limit ? parseInt(limit) : 20)),
+      page: pageNum, limit: limitNum,
+      total_pages: Math.ceil(result.total / limitNum),
     },
   });
 

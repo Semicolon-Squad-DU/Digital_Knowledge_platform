@@ -1,17 +1,30 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
+import { queryOne } from "../db/pool";
 import { AuthTokenPayload, UserRole } from "@dkp/shared";
 
 export interface AuthRequest extends Request {
   user?: AuthTokenPayload;
 }
 
-export function authenticate(
+// The JWT signature alone only proves the token was issued while the account was
+// active — it says nothing about right now. Without this, a suspended/deactivated
+// account keeps full access for the rest of its access token's lifetime (up to
+// JWT_ACCESS_EXPIRES_IN) instead of being cut off on its next request.
+async function isAccountActive(user_id: string): Promise<boolean> {
+  const account = await queryOne<{ membership_status: string }>(
+    "SELECT membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
+    [user_id]
+  );
+  return account?.membership_status === "active";
+}
+
+export async function authenticate(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
     res.status(401).json({ success: false, message: "Authentication required" });
@@ -19,27 +32,45 @@ export function authenticate(
   }
 
   const token = authHeader.slice(7);
+  let payload: AuthTokenPayload;
   try {
-    const payload = jwt.verify(token, config.jwt.secret) as AuthTokenPayload;
-    req.user = payload;
-    next();
+    payload = jwt.verify(token, config.jwt.secret) as AuthTokenPayload;
   } catch {
     res.status(401).json({ success: false, message: "Invalid or expired token" });
+    return;
   }
+
+  try {
+    if (!(await isAccountActive(payload.user_id))) {
+      res.status(401).json({ success: false, message: "Account is not active. Contact administrator." });
+      return;
+    }
+  } catch (err) {
+    next(err);
+    return;
+  }
+
+  req.user = payload;
+  next();
 }
 
-export function optionalAuth(
+export async function optionalAuth(
   req: AuthRequest,
   _res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     try {
-      req.user = jwt.verify(token, config.jwt.secret) as AuthTokenPayload;
+      const payload = jwt.verify(token, config.jwt.secret) as AuthTokenPayload;
+      // Best-effort: a suspended account just falls back to anonymous here rather
+      // than blocking the request, matching this middleware's non-blocking intent.
+      if (await isAccountActive(payload.user_id)) {
+        req.user = payload;
+      }
     } catch {
-      // ignore invalid token for optional auth
+      // ignore invalid token or transient DB error for optional auth
     }
   }
   next();

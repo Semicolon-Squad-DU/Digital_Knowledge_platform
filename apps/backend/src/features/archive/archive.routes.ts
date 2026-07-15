@@ -3,6 +3,7 @@ import { query, queryOne, withTransaction } from "../../core/db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../../core/middleware/auth.middleware";
 import { uploadSingle, uploadMultiple, checkUploadQuota } from "../../core/middleware/upload.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
+import { parsePagination } from "../../core/utils/pagination";
 import { uploadToS3, getPresignedUrl, generateS3Key, deleteFromS3, fileExistsInS3 } from "../../infrastructure/s3.service";
 import { indexArchiveItem, searchArchive, removeArchiveItemFromIndex } from "../../infrastructure/elasticsearch.service";
 import { logger } from "../../core/config/logger";
@@ -22,6 +23,8 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
     query: q, category, language, file_type, date_from, date_to, tags, page, limit,
   } = req.query as Record<string, string>;
 
+  const { page: pageNum, limit: limitNum } = parsePagination(page ?? "1", limit ?? "20");
+
   const result = await searchArchive({
     query: q,
     category,
@@ -30,8 +33,8 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
     date_from,
     date_to,
     tags: tags ? tags.split(",") : undefined,
-    page: page ? parseInt(page) : 1,
-    limit: limit ? parseInt(limit) : 20,
+    page: pageNum,
+    limit: limitNum,
     allowed_tiers: allowedTiers,
   });
 
@@ -40,9 +43,9 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
     data: {
       items: result.hits,
       total: result.total,
-      page: page ? parseInt(page) : 1,
-      limit: limit ? parseInt(limit) : 20,
-      total_pages: Math.ceil(result.total / (limit ? parseInt(limit) : 20)),
+      page: pageNum,
+      limit: limitNum,
+      total_pages: Math.ceil(result.total / limitNum),
     },
   });
 

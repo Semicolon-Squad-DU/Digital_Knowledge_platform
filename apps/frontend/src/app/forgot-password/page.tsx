@@ -18,6 +18,21 @@ function ForgotPasswordForm() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  const handleResend = async () => {
+    setIsResending(true);
+    try {
+      await api.post("/auth/forgot-password", { email });
+      setOtp("");
+      toast.success("A new reset code has been sent to your email.");
+    } catch (error) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to resend reset code");
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +45,10 @@ function ForgotPasswordForm() {
     try {
       await api.post("/auth/forgot-password", { email });
       setIsSubmitted(true);
-      toast.success("If that email is registered, a reset code has been sent.");
+      toast.success("A reset code has been sent to your email.");
     } catch (error) {
-      toast.error("Failed to send reset code");
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to send reset code");
     } finally {
       setIsLoading(false);
     }
@@ -271,12 +287,13 @@ function ForgotPasswordForm() {
                 No code?{" "}
                 <button
                   type="button"
-                  onClick={() => { setIsSubmitted(false); setOtp(""); setNewPassword(""); setConfirmPassword(""); }}
-                  style={{ background: "none", border: "none", color: "#111827", fontWeight: 700, cursor: "pointer", textDecoration: "none", transition: "opacity 0.2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.8")}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                  onClick={handleResend}
+                  disabled={isResending}
+                  style={{ background: "none", border: "none", color: "#111827", fontWeight: 700, cursor: isResending ? "not-allowed" : "pointer", textDecoration: "none", opacity: isResending ? 0.6 : 1, transition: "opacity 0.2s" }}
+                  onMouseEnter={e => { if (!isResending) e.currentTarget.style.opacity = "0.8"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = isResending ? "0.6" : "1"; }}
                 >
-                  Send again
+                  {isResending ? "Sending..." : "Send again"}
                 </button>
               </p>
 

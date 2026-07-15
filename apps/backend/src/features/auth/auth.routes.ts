@@ -128,7 +128,7 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
   await sendEmail({
     to: email,
     subject: "Verify your DKP account",
-    html: verificationOtpEmail(name, otp, config.auth.otpExpiryMinutes),
+    html: verificationOtpEmail(name, otp, config.auth.otpExpiryMinutes, "verify"),
   });
 
   logger.info("User registered — awaiting verification", { user_id: user!.user_id, email, role: assignedRole });
@@ -249,7 +249,7 @@ router.post(
     await sendEmail({
       to: email,
       subject: "Your new DKP verification code",
-      html: verificationOtpEmail(user.name, otp, config.auth.otpExpiryMinutes),
+      html: verificationOtpEmail(user.name, otp, config.auth.otpExpiryMinutes, "verify"),
     });
 
     res.json({ success: true, data: { message: "A new verification code has been sent to your email." } });
@@ -293,24 +293,16 @@ router.post(
       throw new AppError(403, "Account suspended. Contact administrator.");
     }
 
+    if (user.membership_status === "inactive") {
+      throw new AppError(403, "Account deactivated. Contact administrator.");
+    }
+
     if (user.membership_status === "pending_verification") {
       throw new AppError(403, "Email not verified. Please verify your email with the code we sent you.");
     }
 
     if (user.membership_status === "pending_approval") {
-      const dbUser = await queryOne<{ requested_role: string | null }>(
-        "SELECT requested_role FROM users WHERE user_id = $1",
-        [user.user_id]
-      );
-      if (dbUser?.requested_role) {
-        await query(
-          "UPDATE users SET requested_role = NULL, membership_status = 'active', updated_at = NOW() WHERE user_id = $1",
-          [user.user_id]
-        );
-        user.membership_status = "active";
-      } else {
-        throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
-      }
+      throw new AppError(403, "Your account is pending admin approval. You will receive an email once approved.");
     }
 
     const { password_hash: _, ...safeUser } = user;
@@ -474,23 +466,20 @@ router.post(
     );
 
     if (user) {
+      // Returning user — this is a plain sign-in. Any `role` the client sends here is
+      // intentionally ignored: this used to be compared against the stored role and,
+      // on a mismatch, silently filed a "role switch request" that emailed admins.
+      // The sign-in role picker defaults to "member" and doesn't show the account's
+      // actual role, so any returning user who forgot which role they picked, or
+      // just clicked the wrong option, would accidentally fire off a real request —
+      // flooding admins with notifications nobody meant to send. A deliberate role
+      // change should go through its own explicit action, not ordinary sign-in.
       if (user.membership_status === "suspended") {
         throw new AppError(403, "Account suspended. Contact administrator.");
       }
 
-      const requestedRole = role && SELF_SERVICE_ROLES.includes(role) ? role : null;
-      if (requestedRole && requestedRole === user.role) {
-        const dbUser = await queryOne<{ requested_role: string | null }>(
-          "SELECT requested_role FROM users WHERE user_id = $1",
-          [user.user_id]
-        );
-        if (user.membership_status === "pending_approval" && dbUser?.requested_role) {
-          await query(
-            "UPDATE users SET requested_role = NULL, membership_status = 'active', updated_at = NOW() WHERE user_id = $1",
-            [user.user_id]
-          );
-          user.membership_status = "active";
-        }
+      if (user.membership_status === "inactive") {
+        throw new AppError(403, "Account deactivated. Contact administrator.");
       }
 
       if (user.membership_status === "pending_approval") {
@@ -518,25 +507,19 @@ router.post(
         user.membership_status = promotedStatus;
       }
 
-      if (requestedRole && requestedRole !== user.role) {
-        await query(
-          "UPDATE users SET requested_role = $1, membership_status = 'pending_approval', oauth_provider = $2, oauth_id = $3, name = $4 WHERE user_id = $5",
-          [requestedRole, provider, providerId, name, user.user_id]
-        );
-        void notifyAdmins({
-          type: "pending_approval",
-          title: "Role Switch Requested via OAuth",
-          message: `${name} (${email}) requested to switch their role from ${roleLabel(user.role)} to ${roleLabel(requestedRole)} and is awaiting approval.`,
-          action_url: "/admin?tab=users",
-        });
-        throw new AppError(403, `Your request to switch your role to ${roleLabel(requestedRole)} is pending admin approval.`);
-      }
-
       await query(
         "UPDATE users SET oauth_provider = $1, oauth_id = $2, name = $3 WHERE user_id = $4",
         [provider, providerId, name, user.user_id]
       );
     } else {
+      // Brand-new account. If the client hasn't told us which role to create it as
+      // yet, don't guess (and don't create anything) — signal back so the frontend
+      // can ask, then retry this same call with `role` set once the person picks one.
+      if (!role) {
+        res.json({ success: true, data: { requiresRole: true, name, email } });
+        return;
+      }
+
       // New OAuth signups follow the same rules as password registration:
       // institutional domain restriction, and privileged roles await admin approval.
       if (!isDomainAllowed(email)) {
@@ -655,22 +638,26 @@ router.post(
       [email]
     );
 
-    // Always return 200 to avoid email enumeration
-    if (user && user.password_hash) {
-      const otp = generateOtp();
-      const otpExpires = new Date(Date.now() + config.auth.otpExpiryMinutes * 60 * 1000);
-      await query(
-        "UPDATE users SET verification_otp = $1, verification_otp_expires = $2 WHERE user_id = $3",
-        [otp, otpExpires, user.user_id]
-      );
-      await sendEmail({
-        to: email,
-        subject: "Your DKP password reset code",
-        html: verificationOtpEmail(user.name, otp, config.auth.otpExpiryMinutes),
-      });
+    if (!user) {
+      throw new AppError(404, "No account found with that email address.");
+    }
+    if (!user.password_hash) {
+      throw new AppError(400, "This account signed up with Google. Sign in with Google instead — there's no password to reset.");
     }
 
-    res.json({ success: true, data: { message: "If that email is registered, a reset code has been sent." } });
+    const otp = generateOtp();
+    const otpExpires = new Date(Date.now() + config.auth.otpExpiryMinutes * 60 * 1000);
+    await query(
+      "UPDATE users SET verification_otp = $1, verification_otp_expires = $2 WHERE user_id = $3",
+      [otp, otpExpires, user.user_id]
+    );
+    await sendEmail({
+      to: email,
+      subject: "Your DKP password reset code",
+      html: verificationOtpEmail(user.name, otp, config.auth.otpExpiryMinutes, "reset"),
+    });
+
+    res.json({ success: true, data: { message: "A reset code has been sent to your email." } });
   })
 );
 

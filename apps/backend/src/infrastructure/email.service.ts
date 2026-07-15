@@ -35,7 +35,17 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
   }
 }
 
-export function verificationOtpEmail(name: string, otp: string, expiryMinutes: number): string {
+export function verificationOtpEmail(
+  name: string,
+  otp: string,
+  expiryMinutes: number,
+  purpose: "verify" | "reset" = "verify"
+): string {
+  const bodyText =
+    purpose === "reset"
+      ? "Use the code below to reset your password."
+      : "Use the code below to verify your email and complete your registration.";
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; padding: 32px; border-radius: 12px;">
       <div style="text-align: center; margin-bottom: 24px;">
@@ -45,13 +55,36 @@ export function verificationOtpEmail(name: string, otp: string, expiryMinutes: n
       <div style="background: #fff; border-radius: 10px; padding: 28px; border: 1px solid #e5e7eb;">
         <p style="color: #374151; font-size: 15px; margin: 0 0 16px;">Hi <strong>${name}</strong>,</p>
         <p style="color: #374151; font-size: 14px; margin: 0 0 24px;">
-          Use the verification code below to complete your registration. It expires in <strong>${expiryMinutes} minutes</strong>.
+          ${bodyText} It expires in <strong>${expiryMinutes} minutes</strong>.
         </p>
-        <div style="text-align: center; margin: 24px 0;">
-          <div style="display: inline-block; background: #1a1a2e; color: #fff; font-size: 36px; font-weight: 800; letter-spacing: 12px; padding: 16px 32px; border-radius: 10px;">
-            ${otp}
-          </div>
-        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%; margin: 24px 0;">
+          <tr>
+            <!-- Equal-width spacer cells push the code box to the middle by table-column
+                 math alone — this works even in renderers that ignore align/text-align/
+                 margin:auto on the box itself (seen in Gmail's Android app). -->
+            <td style="width: 50%;">&nbsp;</td>
+            <td style="white-space: nowrap;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="background: #1a1a2e; border-radius: 10px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        ${otp
+                          .split("")
+                          .map(
+                            (digit) =>
+                              `<td style="color: #fff; font-size: 32px; font-weight: 800; font-family: Arial, sans-serif; padding: 0 7px; text-align: center;">${digit}</td>`
+                          )
+                          .join("")}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <td style="width: 50%;">&nbsp;</td>
+          </tr>
+        </table>
         <p style="color: #9ca3af; font-size: 12px; margin: 24px 0 0; text-align: center;">
           If you did not request this, you can safely ignore this email.
         </p>

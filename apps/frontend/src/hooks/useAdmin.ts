@@ -180,6 +180,11 @@ export function useApproveUser() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
     },
+    // A 409 here means someone else already resolved this account — refetch so the
+    // now-stale row drops out of the pending-approval banner instead of inviting a retry.
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
   });
 }
 

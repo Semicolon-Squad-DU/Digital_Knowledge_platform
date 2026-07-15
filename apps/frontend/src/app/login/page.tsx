@@ -80,21 +80,26 @@ function LoginForm() {
     }
   };
 
-  const handleOAuthAuthorize = async (oauthData: {
-    accessToken: string; role: string; provider: "google"; department?: string;
-  }) => {
-    try {
-      const res = await api.post("/auth/oauth-login", oauthData);
-      const { access_token, refresh_token, user } = res.data.data;
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-      setUser(user);
-      toast.success(`Welcome back, ${user.name}!`);
-      router.push(redirectParam ?? roleHome(user.role));
-    } catch (err: any) {
-      // Error is already handled in handleRoleConfirm
-      throw err;
-    }
+  // Tries a plain sign-in first — no role attached. The backend logs a returning
+  // account straight in with whatever role it already has; it only comes back with
+  // requiresRole when this Google account genuinely has no DKP account yet, at which
+  // point (and only then) we ask which role to create it as. Never send `role` for
+  // an account that might already exist — a returning user picking the wrong option
+  // in the role picker used to silently fire off a "role switch" request to admins.
+  const attemptOAuthLogin = async (accessToken: string, role?: RoleValue) => {
+    const res = await api.post("/auth/oauth-login", {
+      accessToken, provider: "google",
+      ...(role ? { role, department: "" } : {}),
+    });
+    return res.data.data;
+  };
+
+  const completeLogin = (data: { access_token: string; refresh_token: string; user: { name: string; role: string } }) => {
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("refresh_token", data.refresh_token);
+    setUser(data.user as any);
+    toast.success(`Welcome back, ${data.user.name}!`);
+    router.push(redirectParam ?? roleHome(data.user.role));
   };
 
   const handleGoogleSignIn = () => {
@@ -110,22 +115,22 @@ function LoginForm() {
           scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
           callback: async (tokenResponse: any) => {
             if (tokenResponse?.access_token) {
-              // This client-side profile fetch is only for display in the role
-              // picker below ("Continue as X") — the backend independently
-              // re-verifies the access token with Google before trusting
-              // anything, so a tampered display value here can't grant access.
-              const t = toast.loading("Fetching Google profile…");
+              const t = toast.loading("Signing you in…");
               try {
-                const profileRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`);
-                const profile = await profileRes.json();
+                const data = await attemptOAuthLogin(tokenResponse.access_token);
                 toast.dismiss(t);
-                setGoogleProfile(profile);
-                setGoogleAccessToken(tokenResponse.access_token);
-                setSelectedRole("member");
-                setShowRoleModal(true);
-              } catch {
+                if (data.requiresRole) {
+                  // Brand-new Google account — collect a role before creating it.
+                  setGoogleProfile({ email: data.email, name: data.name, sub: "" });
+                  setGoogleAccessToken(tokenResponse.access_token);
+                  setSelectedRole("member");
+                  setShowRoleModal(true);
+                } else {
+                  completeLogin(data);
+                }
+              } catch (err: any) {
                 toast.dismiss(t);
-                toast.error("Failed to fetch Google profile");
+                toast.error(err?.response?.data?.message || "Google sign-in failed");
               }
             }
           },
@@ -144,10 +149,8 @@ function LoginForm() {
     setRoleError("");
     setIsSubmittingRole(true);
     try {
-      await handleOAuthAuthorize({
-        accessToken: googleAccessToken,
-        role: selectedRole, provider: "google", department: "",
-      });
+      const data = await attemptOAuthLogin(googleAccessToken, selectedRole);
+      completeLogin(data);
       setShowRoleModal(false);
       setGoogleProfile(null);
       setGoogleAccessToken(null);
@@ -399,10 +402,7 @@ function LoginForm() {
 
             {roleError && (
               <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "12px 14px", marginBottom: "16px" }}>
-                <p style={{ fontSize: "12px", color: "#dc2626", margin: "0 0 6px 0", lineHeight: 1.5 }}>{roleError}</p>
-                <p style={{ fontSize: "11px", color: "#991b1b", margin: 0 }}>
-                  Your role is tied to your account. Contact an admin to change it.
-                </p>
+                <p style={{ fontSize: "12px", color: "#dc2626", margin: 0, lineHeight: 1.5 }}>{roleError}</p>
               </div>
             )}
 
