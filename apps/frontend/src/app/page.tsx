@@ -338,37 +338,35 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* ── DESKTOP NAVIGATION: Hidden on mobile, flex on desktop ── */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: "20px", flex: 1, justifyContent: "space-between", marginLeft: "20px" }}>
-              <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                {[
-                  { label: "Archive",  href: "/archive"  },
-                  { label: "Library",  href: "/library"  },
-                  { label: "Research", href: "/research" },
-                  { label: "Showcase", href: "/showcase" },
-                  { label: "About",    href: "/about"    },
-                ].map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
-                  >{item.label}</Link>
-                ))}
-              </nav>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: "170px" }}>
-                {isAuthenticated && (
-                  <button
-                    onClick={handleLogout}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-                  >
-                    <LogOut size={13} /> Sign Out
-                  </button>
-                )}
-              </div>
+            {/* ── DESKTOP NAVIGATION: nav links centered between logo and actions ── */}
+            <nav className="hidden md:flex" style={{ alignItems: "center", justifyContent: "center", gap: "4px", flex: 1, marginLeft: "20px" }}>
+              {[
+                { label: "Archive",  href: "/archive"  },
+                { label: "Library",  href: "/library"  },
+                { label: "Research", href: "/research" },
+                { label: "Showcase", href: "/showcase" },
+                { label: "About",    href: "/about"    },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                >{item.label}</Link>
+              ))}
+            </nav>
+            <div className="hidden md:flex" style={{ alignItems: "center", justifyContent: "flex-end", minWidth: "170px", flexShrink: 0 }}>
+              {isAuthenticated && (
+                <button
+                  onClick={handleLogout}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                >
+                  <LogOut size={13} /> Sign Out
+                </button>
+              )}
             </div>
           </div>
         </header>

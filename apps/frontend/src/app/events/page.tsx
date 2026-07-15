@@ -105,14 +105,19 @@ export default function EventsPage() {
       return;
     }
 
+    if (!event.has_rsvped && new Date(event.scheduled_at).getTime() < Date.now()) {
+      toast.error("This event has already taken place. RSVP is closed.");
+      return;
+    }
+
     setRsvpLoading(event.event_id);
     try {
       if (event.has_rsvped) {
         await cancelRSVP(event.event_id);
         toast.success("Your seat RSVP has been cancelled.");
       } else {
-        await rsvpEvent(event.event_id);
-        toast.success("RSVP registered! Seat booked.");
+        const res = await rsvpEvent(event.event_id);
+        toast.success(res?.message || "RSVP registered! Seat booked.");
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to process RSVP request");
@@ -198,6 +203,7 @@ export default function EventsPage() {
                 });
 
                 const isSoldOut = event.available_seats <= 0;
+                const isPastEvent = new Date(event.scheduled_at).getTime() < Date.now();
 
                 return (
                   <div
@@ -223,22 +229,40 @@ export default function EventsPage() {
                           {dateStr}
                         </span>
 
-                        {event.has_rsvped && (
-                          <span style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            color: "#16a34a",
-                            background: "#dcfce7",
-                            padding: "4px 10px",
-                            borderRadius: "100px"
-                          }}>
-                            <CheckCircle size={12} />
-                            Seat Booked
-                          </span>
-                        )}
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          {isPastEvent && (
+                            <span style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              color: "#64748b",
+                              background: "#f1f5f9",
+                              padding: "4px 10px",
+                              borderRadius: "100px"
+                            }}>
+                              <XCircle size={12} />
+                              Event Ended
+                            </span>
+                          )}
+                          {event.has_rsvped && (
+                            <span style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              color: "#16a34a",
+                              background: "#dcfce7",
+                              padding: "4px 10px",
+                              borderRadius: "100px"
+                            }}>
+                              <CheckCircle size={12} />
+                              Seat Booked
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Title & Speaker */}
@@ -362,46 +386,67 @@ export default function EventsPage() {
                         {/* Booking a seat is a patron action — staff roles (admin/archivist/librarian)
                             manage the event via RSVPs/Delete above instead of attending through this button. */}
                         {!canCreate && (
-                          <button
-                            id={`rsvp-toggle-btn-${event.event_id}`}
-                            onClick={() => handleRSVPToggle(event)}
-                            disabled={rsvpLoading === event.event_id || (isSoldOut && !event.has_rsvped)}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              height: "38px",
-                              whiteSpace: "nowrap",
-                              gap: "6px",
-                              padding: "8px 18px",
-                              fontSize: "12.5px",
-                              fontWeight: 700,
-                              borderRadius: "6px",
-                              cursor: (isSoldOut && !event.has_rsvped) ? "not-allowed" : "pointer",
-                              transition: "all 0.2s",
-                              border: event.has_rsvped ? "1px solid #d1d5db" : "none",
-                              background: event.has_rsvped
-                                ? "#ffffff"
-                                : "var(--theme-gradient-160)",
-                              color: event.has_rsvped ? "#475569" : "#ffffff",
-                              opacity: (isSoldOut && !event.has_rsvped) ? 0.5 : 1,
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.03)"
-                            }}
-                          >
-                            {rsvpLoading === event.event_id ? (
-                              <Loader2 size={13} className="animate-spin" />
-                            ) : event.has_rsvped ? (
-                              <>
-                                <XCircle size={13} />
-                                Cancel Registration
-                              </>
-                            ) : (
-                              <>
-                                <Calendar size={13} />
-                                Book My Seat
-                              </>
-                            )}
-                          </button>
+                          !event.has_rsvped && isPastEvent ? (
+                            <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
+                              This event has ended
+                            </span>
+                          ) : (
+                            <button
+                              id={`rsvp-toggle-btn-${event.event_id}`}
+                              onClick={() => handleRSVPToggle(event)}
+                              disabled={rsvpLoading === event.event_id}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                height: "38px",
+                                whiteSpace: "nowrap",
+                                gap: "6px",
+                                padding: "8px 18px",
+                                fontSize: "12.5px",
+                                fontWeight: 700,
+                                borderRadius: "6px",
+                                cursor: rsvpLoading === event.event_id ? "not-allowed" : "pointer",
+                                transition: "all 0.2s",
+                                border: event.has_rsvped
+                                  ? "1px solid #d1d5db"
+                                  : isSoldOut
+                                    ? "1px solid #fde68a"
+                                    : "none",
+                                background: event.has_rsvped
+                                  ? "#ffffff"
+                                  : isSoldOut
+                                    ? "#fffbeb"
+                                    : "var(--theme-gradient-160)",
+                                color: event.has_rsvped
+                                  ? "#475569"
+                                  : isSoldOut
+                                    ? "#b45309"
+                                    : "#ffffff",
+                                opacity: rsvpLoading === event.event_id ? 0.6 : 1,
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.03)"
+                              }}
+                            >
+                              {rsvpLoading === event.event_id ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : event.has_rsvped ? (
+                                <>
+                                  <XCircle size={13} />
+                                  Cancel Registration
+                                </>
+                              ) : isSoldOut ? (
+                                <>
+                                  <Users size={13} />
+                                  Join Waitlist
+                                </>
+                              ) : (
+                                <>
+                                  <Calendar size={13} />
+                                  Book My Seat
+                                </>
+                              )}
+                            </button>
+                          )
                         )}
                       </div>
                     </div>

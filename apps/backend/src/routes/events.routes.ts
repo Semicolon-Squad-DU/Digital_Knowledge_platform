@@ -137,6 +137,10 @@ router.post(
         throw new AppError(404, "Event not found");
       }
 
+      if (new Date(event.scheduled_at).getTime() < Date.now()) {
+        throw new AppError(400, "This event has already taken place. RSVP is closed.");
+      }
+
       // 2. Check if already RSVPed
       const rsvpRes = await client.query(
         `SELECT * FROM event_rsvps WHERE event_id = $1 AND user_id = $2`,
