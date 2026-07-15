@@ -1277,10 +1277,9 @@ function BackupsTab() {
 }
 
 // ── Tab: Alerts ───────────────────────────────────────────────────────────────
-function AlertsTab() {
+function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDismiss: (id: string) => void }) {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: healthData, isLoading } = useAdminHealth();
-  const [readAlertIds, setReadAlertIds] = useState<string[]>([]);
   const [slackOpen, setSlackOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [slackWebhook, setSlackWebhook] = useState("");
@@ -1314,7 +1313,7 @@ function AlertsTab() {
   }));
 
   const dismiss = (id: string) => {
-    setReadAlertIds(prev => [...prev, id]);
+    onDismiss(id);
     toast.success("Alert dismissed");
   };
 
@@ -1512,7 +1511,7 @@ function AlertsTab() {
 }
 
 // ── Tab: Broadcast Announcements ──────────────────────────────────────────────
-const ANNOUNCEMENT_ROLES = ["guest","member","student_author","researcher","archivist","librarian","admin"];
+const ANNOUNCEMENT_ROLES = ["member","student_author","researcher","archivist","librarian","admin"];
 
 function AnnouncementsTab() {
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -1654,7 +1653,25 @@ function AdminPageInner() {
   // Shares the same query cache/interval as AlertsTab's own useAdminHealth() call —
   // drives the real unread count on the "Alerts" tab badge instead of MOCK_ALERTS.
   const { data: healthDataForBadge } = useAdminHealth();
-  const unreadAlertCount = (healthDataForBadge?.alerts ?? []).filter((a: any) => !a.read).length;
+  // Dismissals are persisted here (not inside AlertsTab) so the badge count reflects
+  // them immediately and they survive switching tabs or reloading the page — alert
+  // ids (e.g. "alert-db", "alert-backup-<id>") are stable across health-check polls.
+  const [readAlertIds, setReadAlertIds] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("dismissed_alert_ids") || "[]");
+      if (Array.isArray(stored)) setReadAlertIds(stored);
+    } catch { /* ignore malformed storage */ }
+  }, []);
+  const dismissAlert = (id: string) => {
+    setReadAlertIds(prev => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      localStorage.setItem("dismissed_alert_ids", JSON.stringify(next));
+      return next;
+    });
+  };
+  const unreadAlertCount = (healthDataForBadge?.alerts ?? []).filter((a: any) => !a.read && !readAlertIds.includes(a.id)).length;
   const docParams = { page: currentPage, limit: 10, search: searchQuery, status: filterStatus !== "all" ? filterStatus : undefined };
   // Each documents endpoint is role-scoped on the backend — only fetch the one this role may call
   const { data: catalogDocsData, isLoading: catalogDocsLoading } = useCatalogDocuments(docParams, ["librarian", "admin"].includes(user?.role ?? ""));
@@ -1764,7 +1781,7 @@ function AdminPageInner() {
           {activeTab === "audit"    && <AuditTab />}
           {activeTab === "config"   && <ConfigTab />}
           {activeTab === "backups"  && <BackupsTab />}
-          {activeTab === "alerts"   && <AlertsTab />}
+          {activeTab === "alerts"   && <AlertsTab readAlertIds={readAlertIds} onDismiss={dismissAlert} />}
           {activeTab === "announcements" && <AnnouncementsTab />}
         </div>
         </div>

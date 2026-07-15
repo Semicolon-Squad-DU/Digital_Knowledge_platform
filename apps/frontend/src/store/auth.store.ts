@@ -13,6 +13,9 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
   setUser: (user: User) => void;
+  /** Synchronously drops the store back to guest state — no network call. Used
+   *  when lib/api.ts already knows the session is dead (token refresh failed). */
+  clearSession: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -61,6 +64,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user) => set({ user, isAuthenticated: true }),
+
+      clearSession: () => set({ user: null, isAuthenticated: false }),
     }),
     {
       name: "dkp-auth",
@@ -68,6 +73,13 @@ export const useAuthStore = create<AuthState>()(
       // Called once rehydration from localStorage is complete
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        // The persisted isAuthenticated flag reflects the session as of the last
+        // page close — it says nothing about whether the refresh token is still
+        // valid server-side. Revalidate immediately so an expired/revoked session
+        // drops to guest state instead of rendering as logged-in with dead tokens.
+        if (state?.isAuthenticated) {
+          void state.fetchMe();
+        }
       },
     }
   )

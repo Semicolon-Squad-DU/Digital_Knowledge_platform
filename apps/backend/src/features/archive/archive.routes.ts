@@ -136,7 +136,22 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
         return;
       }
     } else {
-      throw new AppError(403, "Access denied");
+      // Guests have no access_requests row to look up — but they still need the
+      // same restricted-item payload the frontend renders, otherwise it has
+      // nothing to show and falls through to a misleading "not found" screen.
+      res.status(403).json({
+        success: false,
+        message: "Sign in to request access to this document.",
+        data: {
+          item_id: item.item_id,
+          title_en: (item as any).title_en,
+          title_bn: (item as any).title_bn,
+          category: (item as any).category,
+          access_tier: item.access_tier,
+          request_status: null,
+        }
+      });
+      return;
     }
   }
 

@@ -25,7 +25,6 @@ router.get(
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const role = req.user?.role;
-    const userId = req.user?.user_id;
 
     // Only librarians, admins, researchers, and archivists can access stats
     if (!["librarian", "admin", "researcher", "archivist"].includes(role ?? "")) {
@@ -51,13 +50,9 @@ router.get(
     showcaseCount = parseInt(showcaseCount_result.count);
 
     if (role === "researcher") {
-      // For researchers, show only their own pending submissions
-      const [pendingResult] = await query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM research_outputs 
-         WHERE author_id = $1 AND status IN ('pending', 'under_review')`,
-        [userId]
-      );
-      pendingReview = parseInt(pendingResult.count);
+      // Research outputs have no moderation workflow — they publish immediately
+      // on upload (see POST /api/research), so there's never a pending submission.
+      pendingReview = 0;
     } else {
       // For librarians and admins, show all pending documents
       const [catalogCount_result] = await query<{ count: string }>(
@@ -78,14 +73,10 @@ router.get(
       pendingReview = parseInt(pendingArchive_result.count) + parseInt(pendingProjects_result.count);
     }
 
-    // Active users (logged in this month) - only for librarians/admins
+    // Active users (logged in this month) - only shown to librarians/admins in the UI
     const [activeUsers] = await query<{ count: string }>(
-      role === "researcher" 
-        ? `SELECT COUNT(DISTINCT user_id) as count FROM research_outputs 
-           WHERE author_id = $1 AND created_at >= CURRENT_DATE - INTERVAL '30 days'`
-        : `SELECT COUNT(DISTINCT user_id) as count FROM audit_logs 
-           WHERE action = 'LOGIN' AND timestamp >= CURRENT_DATE - INTERVAL '30 days'`,
-      role === "researcher" ? [userId] : []
+      `SELECT COUNT(DISTINCT user_id) as count FROM audit_logs
+       WHERE action = 'LOGIN' AND timestamp >= CURRENT_DATE - INTERVAL '30 days'`
     );
 
     // Storage calculation — based on actual bytes stored (archive_items.file_size is the
@@ -229,25 +220,21 @@ router.get(
   requireRole("researcher"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.user_id;
-    const { page = "1", limit = "10", status, search } = req.query as Record<string, string>;
+    const { page = "1", limit = "10", search } = req.query as Record<string, string>;
 
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
 
-    const where: string[] = ["author_id = $1", "deleted_at IS NULL"];
+    // research_outputs has no status/review workflow — every upload is uploaded_by
+    // its author and visible immediately, so there's no status column to filter on.
+    const where: string[] = ["uploaded_by = $1"];
     const values: unknown[] = [userId];
     let i = 2;
 
     if (search) {
       where.push(`(title ILIKE $${i})`);
       values.push(`%${search}%`);
-      i++;
-    }
-
-    if (status) {
-      where.push(`status = $${i}`);
-      values.push(status);
       i++;
     }
 
@@ -261,12 +248,10 @@ router.get(
 
     // Get paginated results
     const documents = await query(
-      `SELECT output_id as id, title, 
-              COALESCE((SELECT array_agg(name) FROM users WHERE user_id = ANY(
-                SELECT collaborator_id FROM research_collaborators WHERE output_id = research_outputs.output_id
-              )), ARRAY[]::text[]) as authors,
-              output_type as department, 
-              status, updated_at, 'private' as access, 0 as download_count
+      `SELECT output_id as id, title,
+              COALESCE((SELECT array_agg(elem->>'name') FROM jsonb_array_elements(authors) elem), ARRAY[]::text[]) as authors,
+              output_type as department,
+              'published' as status, updated_at, 'private' as access, 0 as download_count
        FROM research_outputs
        ${whereClause}
        ORDER BY updated_at DESC

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle } from "lucide-react";
+import Link from "next/link";
+import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle, LogIn } from "lucide-react";
 import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUploadArchiveVersion, useDeleteArchiveItem } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
@@ -164,7 +165,49 @@ export default function ArchiveItemPage() {
               </p>
 
               {/* Status Logic */}
-              {!statusText ? (
+              {isGuest ? (
+                <div
+                  style={{
+                    maxWidth: 500,
+                    margin: "0 auto",
+                    background: "#f9fafb",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 12,
+                    padding: "20px 24px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    textAlign: "left",
+                  }}
+                >
+                  <LogIn size={36} color="#374151" style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>
+                      Sign in to request access
+                    </h4>
+                    <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 12px", lineHeight: 1.4 }}>
+                      This document requires an account. Sign in and you&apos;ll be able to submit an access request.
+                    </p>
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(`/archive/${itemId}`)}`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "9px 16px",
+                        borderRadius: 8,
+                        background: "var(--theme-gradient-160)",
+                        color: "#fff",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Sign In
+                    </Link>
+                  </div>
+                </div>
+              ) : !statusText ? (
                 <form
                   onSubmit={handleRequestAccess}
                   style={{
@@ -438,30 +481,28 @@ export default function ArchiveItemPage() {
             ))}
           </div>
 
-          {!isGuest && (
-            <button
-              onClick={handleDownload}
-              disabled={(item.status !== "published" && !isArchivist) || isDownloading}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 20px",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                border: "none",
-                background: "var(--theme-gradient-160)",
-                color: "#fff",
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                opacity: ((item.status !== "published" && !isArchivist) || isDownloading) ? 0.6 : 1,
-              }}
-            >
-              <Download size={14} />
-              {isDownloading ? "Preparing File..." : "Download Document"}
-            </button>
-          )}
+          <button
+            onClick={handleDownload}
+            disabled={(item.status !== "published" && !isArchivist) || isDownloading}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              border: "none",
+              background: "var(--theme-gradient-160)",
+              color: "#fff",
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              opacity: ((item.status !== "published" && !isArchivist) || isDownloading) ? 0.6 : 1,
+            }}
+          >
+            <Download size={14} />
+            {isDownloading ? "Preparing File..." : "Download Document"}
+          </button>
         </div>
 
         {/* ── ARCHIVIST MANAGEMENT PANEL ── */}

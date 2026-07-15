@@ -80,8 +80,13 @@ router.get(
 );
 
 // GET /api/showcase/:id
-router.get("/:id", optionalAuth, asyncHandler(async (req, res: Response) => {
-  const project = await queryOne(
+router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const project = await queryOne<{
+    project_id: string;
+    status: string;
+    advisor_id: string;
+    submitted_by: string;
+  }>(
     `SELECT sp.*, u.name as advisor_name, u.email as advisor_email,
             sub.name as submitted_by_name
      FROM student_projects sp
@@ -91,6 +96,19 @@ router.get("/:id", optionalAuth, asyncHandler(async (req, res: Response) => {
     [req.params.id]
   );
   if (!project) throw new AppError(404, "Project not found");
+
+  // Mirrors the list endpoint: unpublished projects (pending_review, changes_requested,
+  // draft) are only visible to the student who submitted it, the assigned advisor, or an
+  // admin — everyone else, including guests, gets the same 404 as a nonexistent project.
+  const isOwnerOrReviewer = !!req.user && (
+    req.user.user_id === project.submitted_by ||
+    req.user.user_id === project.advisor_id ||
+    req.user.role === "admin"
+  );
+  if (project.status !== "published" && !isOwnerOrReviewer) {
+    throw new AppError(404, "Project not found");
+  }
+
   res.json({ success: true, data: project });
 }));
 

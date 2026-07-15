@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { useAuthStore } from "@/store/auth.store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"];
@@ -58,6 +59,7 @@ api.interceptors.response.use(
         isRefreshing = false;
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        useAuthStore.getState().clearSession();
         return Promise.reject(error);
       }
 
@@ -76,6 +78,7 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        useAuthStore.getState().clearSession();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

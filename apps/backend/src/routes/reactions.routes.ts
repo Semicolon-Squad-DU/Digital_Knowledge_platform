@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne } from "../core/db/pool";
 import { authenticate, optionalAuth, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
+import { canViewEntity } from "../core/entity-access";
 
 const router = Router();
 
@@ -12,6 +13,13 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { entityType, entityId } = req.params;
     const userId = req.user?.user_id;
+
+    const allowed = await canViewEntity(
+      entityType,
+      entityId,
+      req.user ? { user_id: req.user.user_id, role: req.user.role } : undefined
+    );
+    if (!allowed) throw new AppError(403, "Access denied");
 
     // Get aggregated counts of each reaction type for this entity
     const countRows = await query<any>(
