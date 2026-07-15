@@ -765,7 +765,45 @@ router.delete(
     }
 
     if (mode === "hard_delete") {
-      await query("DELETE FROM users WHERE user_id = $1", [id]);
+      // Most tables that reference users(user_id) have no ON DELETE clause (default
+      // RESTRICT), so a bare DELETE FROM users throws a raw FK-violation 500 for
+      // anyone who's ever uploaded, reviewed, advised, submitted, borrowed, or
+      // organized anything. Rather than cascading all of that content away as a
+      // side effect of removing an account (a much more dangerous failure mode),
+      // hard delete only proceeds for accounts with no such history — anything
+      // else has to go through "Anonymize", which is built for exactly this case.
+      const [{ has_refs: hasRefs }] = await query<{ has_refs: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM archive_items WHERE uploaded_by = $1
+           UNION ALL SELECT 1 FROM archive_versions WHERE changed_by = $1
+           UNION ALL SELECT 1 FROM access_requests WHERE user_id = $1 OR reviewed_by = $1
+           UNION ALL SELECT 1 FROM labs WHERE head_researcher_id = $1
+           UNION ALL SELECT 1 FROM research_outputs WHERE uploaded_by = $1
+           UNION ALL SELECT 1 FROM student_projects WHERE advisor_id = $1 OR submitted_by = $1
+           UNION ALL SELECT 1 FROM borrows WHERE user_id = $1
+           UNION ALL SELECT 1 FROM hold_requests WHERE member_id = $1
+           UNION ALL SELECT 1 FROM wishlists WHERE member_id = $1
+           UNION ALL SELECT 1 FROM fines WHERE member_id = $1
+           UNION ALL SELECT 1 FROM announcements WHERE created_by = $1
+           UNION ALL SELECT 1 FROM events WHERE created_by = $1
+         ) as has_refs`,
+        [id]
+      );
+
+      if (hasRefs) {
+        throw new AppError(
+          409,
+          "This user has associated content or activity (uploads, submissions, borrows, etc.) and can't be hard-deleted. Use \"Anonymize\" instead to remove their personal data while preserving those records."
+        );
+      }
+
+      // audit_logs is an append-only log (UPDATE/DELETE are blocked by DB rule) and
+      // user_id is nullable there specifically so a log entry can outlive its user —
+      // sever the link instead of leaving it as the one remaining blocker.
+      await withTransaction(async (client) => {
+        await client.query("UPDATE audit_logs SET user_id = NULL WHERE user_id = $1", [id]);
+        await client.query("DELETE FROM users WHERE user_id = $1", [id]);
+      });
     } else {
       const randomHash = Math.random().toString(36).substring(2, 10);
       await query(
