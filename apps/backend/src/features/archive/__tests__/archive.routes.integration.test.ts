@@ -24,6 +24,7 @@ function tokenFor(user_id: string, role: string): string {
 }
 
 let uploaderId: string;
+let memberId: string;
 let restrictedItemId: string;
 const restrictedKey = "archive/integration-test-restricted.pdf";
 
@@ -34,6 +35,13 @@ beforeAll(async () => {
      RETURNING user_id`
   );
   uploaderId = uploader.rows[0].user_id;
+
+  const member = await pool.query(
+    `INSERT INTO users (name, email, password_hash, role, membership_status)
+     VALUES ('Test Member', 'member-archive-it@test.local', 'x', 'member', 'active')
+     RETURNING user_id`
+  );
+  memberId = member.rows[0].user_id;
 
   const item = await pool.query(
     `INSERT INTO archive_items (title_en, category, access_tier, status, file_url, file_type, file_size, uploaded_by)
@@ -48,6 +56,7 @@ afterAll(async () => {
   await pool.query("DELETE FROM archive_items WHERE item_id = $1", [restrictedItemId]).catch(() => {});
   await pool.query("DELETE FROM audit_logs WHERE user_id = $1", [uploaderId]).catch(() => {});
   await pool.query("DELETE FROM users WHERE user_id = $1", [uploaderId]).catch(() => {});
+  await pool.query("DELETE FROM users WHERE user_id = $1", [memberId]).catch(() => {});
   await pool.end();
 });
 
@@ -61,7 +70,7 @@ describe("GET /api/archive/download-url — access-tier enforcement", () => {
     const res = await request(app)
       .get("/api/archive/download-url")
       .query({ key: restrictedKey })
-      .set("Authorization", `Bearer ${tokenFor("11111111-1111-1111-1111-111111111111", "member")}`);
+      .set("Authorization", `Bearer ${tokenFor(memberId, "member")}`);
 
     expect(res.status).toBe(403);
   });
