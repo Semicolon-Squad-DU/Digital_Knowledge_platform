@@ -62,7 +62,8 @@ export interface ArchiveSearchParams {
   file_type?: string;
   date_from?: string;
   date_to?: string;
-  tags?: string[];
+  /** Comma-separated tag names — the backend splits this on "," server-side. */
+  tags?: string;
   page?: number;
   limit?: number;
 }

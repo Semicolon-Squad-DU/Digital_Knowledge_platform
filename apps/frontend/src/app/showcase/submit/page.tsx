@@ -7,7 +7,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDropzone } from "react-dropzone";
-import { Plus, Trash2, Upload, FileText, X, GraduationCap, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, Image as ImageIcon, X, GraduationCap, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { useSubmitProject } from "@/features/showcase/hooks/useShowcase";
@@ -53,6 +53,8 @@ const SEMESTERS   = [
 ];
 const MAX_PDF_MB  = 20;
 const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024;
+const MAX_THUMBNAIL_MB = 5;
+const MAX_THUMBNAIL_BYTES = MAX_THUMBNAIL_MB * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
 // Page
@@ -65,6 +67,9 @@ export default function SubmitProjectPage() {
 
   const [pdfFile, setPdfFile]   = useState<File | null>(null);
   const [pdfError, setPdfError] = useState<string>("");
+  const [thumbnailFile,    setThumbnailFile]    = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [thumbnailError,   setThumbnailError]   = useState<string>("");
 
   const {
     register,
@@ -116,6 +121,21 @@ export default function SubmitProjectPage() {
     multiple: false,
   });
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setThumbnailError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setThumbnailError("Thumbnail must be an image file"); return; }
+    if (file.size > MAX_THUMBNAIL_BYTES) { setThumbnailError(`Thumbnail must be under ${MAX_THUMBNAIL_MB} MB`); return; }
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+  };
+  const removeThumbnail = () => {
+    if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+  };
+
   // Submit
   const onSubmit = async (values: FormValues) => {
     const fd = new FormData();
@@ -132,6 +152,7 @@ export default function SubmitProjectPage() {
     ));
     if (values.source_code_url) fd.append("source_code_url", values.source_code_url);
     if (pdfFile) fd.append("file", pdfFile);
+    if (thumbnailFile) fd.append("thumbnail", thumbnailFile);
 
     try {
       const project = await submitProject.mutateAsync(fd);
@@ -559,6 +580,100 @@ export default function SubmitProjectPage() {
                 </div>
               )}
               {pdfError && <p className="form-error mt-2">{pdfError}</p>}
+            </div>
+          </section>
+
+          {/* ── Gallery Thumbnail ─────────────────────────────── */}
+          <section style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            marginBottom: 24,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              padding: "16px 20px",
+              background: "#f9fafb",
+              borderBottom: "1px solid #e5e7eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+                Gallery Thumbnail
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
+              </h2>
+            </div>
+            <div style={{ padding: 20 }}>
+              <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 12px" }}>
+                Shown on the public showcase gallery card for this project.
+              </p>
+              {thumbnailFile ? (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 16px",
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  background: "#f9fafb",
+                }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    style={{ width: 56, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {thumbnailFile.name}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                      {formatFileSize(thumbnailFile.size)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    style={{
+                      padding: 4, borderRadius: 4, border: "none", background: "transparent",
+                      cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center",
+                      justifyContent: "center", transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = "#fee2e2"; e.currentTarget.style.color = "#dc2626"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; }}
+                    aria-label="Remove thumbnail"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  style={{
+                    display: "block",
+                    border: "2px dashed #d1d5db",
+                    borderRadius: 8,
+                    padding: "24px 20px",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    background: "#fff",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)"; e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#fff"; }}
+                >
+                  <input type="file" accept="image/*" onChange={handleThumbnailChange} style={{ display: "none" }} aria-label="Upload gallery thumbnail" />
+                  <ImageIcon size={22} color="#6b7280" style={{ margin: "0 auto 10px" }} />
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0 }}>
+                    Choose an image
+                  </p>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
+                    JPEG, PNG, or WebP · max {MAX_THUMBNAIL_MB} MB
+                  </p>
+                </label>
+              )}
+              {thumbnailError && <p className="form-error mt-2">{thumbnailError}</p>}
             </div>
           </section>
 

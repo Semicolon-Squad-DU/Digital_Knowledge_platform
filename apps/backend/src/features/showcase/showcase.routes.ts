@@ -3,7 +3,7 @@ import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { parsePagination } from "../../core/utils/pagination";
-import { uploadSingle } from "../../core/middleware/upload.middleware";
+import { uploadWithThumbnail } from "../../core/middleware/upload.middleware";
 import { uploadToS3, generateS3Key, getPresignedUrl } from "../../infrastructure/s3.service";
 import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
@@ -40,7 +40,7 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
     params
   );
 
-  const projects = await query(
+  const projects = await query<{ thumbnail_url: string | null } & Record<string, unknown>>(
     `SELECT sp.project_id, sp.title, sp.abstract, sp.team_members, sp.semester,
             sp.department, sp.technologies, sp.thumbnail_url, sp.created_at,
             sp.status, sp.advisor_comments,
@@ -53,10 +53,19 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
     [...params, limitNum, offset]
   );
 
+  // thumbnail_url is stored as an S3 key, not a public URL — resolve each to a
+  // short-lived presigned URL so gallery cards can render it directly.
+  const items = await Promise.all(
+    projects.map(async (p) => ({
+      ...p,
+      thumbnail_url: p.thumbnail_url ? await getPresignedUrl(p.thumbnail_url) : null,
+    }))
+  );
+
   res.json({
     success: true,
     data: {
-      items: projects, total: parseInt(count),
+      items, total: parseInt(count),
       page: pageNum, limit: limitNum,
       total_pages: Math.ceil(parseInt(count) / limitNum),
     },
@@ -88,6 +97,7 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
     status: string;
     advisor_id: string;
     submitted_by: string;
+    thumbnail_url: string | null;
   }>(
     `SELECT sp.*, u.name as advisor_name, u.email as advisor_email,
             sub.name as submitted_by_name
@@ -111,7 +121,9 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
     throw new AppError(404, "Project not found");
   }
 
-  res.json({ success: true, data: project });
+  const thumbnail_url = project.thumbnail_url ? await getPresignedUrl(project.thumbnail_url) : null;
+
+  res.json({ success: true, data: { ...project, thumbnail_url } });
 }));
 
 // GET /api/showcase/:id/download-url
@@ -131,9 +143,12 @@ router.post(
   "/",
   authenticate,
   requireRole("student_author", "admin"),
-  uploadSingle,
+  uploadWithThumbnail,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const body = req.body as Record<string, unknown>;
+    const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
+    const reportFile = files?.file?.[0];
+    const thumbnailFile = files?.thumbnail?.[0];
 
     const title          = body.title as string;
     const abstract       = body.abstract as string;
@@ -165,23 +180,33 @@ router.post(
     }
 
     let report_url: string | null = null;
-    if (req.file) {
-      const key = generateS3Key("showcase/reports", req.file.originalname, req.file.mimetype);
-      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+    if (reportFile) {
+      const key = generateS3Key("showcase/reports", reportFile.originalname, reportFile.mimetype);
+      await uploadToS3(key, reportFile.buffer, reportFile.mimetype);
       report_url = key;
+    }
+
+    let thumbnail_url: string | null = null;
+    if (thumbnailFile) {
+      if (!thumbnailFile.mimetype.startsWith("image/")) {
+        throw new AppError(400, "Thumbnail must be an image file");
+      }
+      const key = generateS3Key("showcase/thumbnails", thumbnailFile.originalname, thumbnailFile.mimetype);
+      await uploadToS3(key, thumbnailFile.buffer, thumbnailFile.mimetype);
+      thumbnail_url = key;
     }
 
     const project = await queryOne(
       `INSERT INTO student_projects
-         (title, abstract, team_members, advisor_id, semester, department, technologies, report_url, source_code_url, submitted_by, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending_review')
+         (title, abstract, team_members, advisor_id, semester, department, technologies, report_url, source_code_url, thumbnail_url, submitted_by, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending_review')
        RETURNING *`,
       [
         title, abstract,
         JSON.stringify(team_members),   // JSONB column
         advisor_id, semester, department,
         technologies,                   // TEXT[] column — pass array directly
-        report_url, source_code_url || null,
+        report_url, source_code_url || null, thumbnail_url,
         req.user!.user_id,
       ]
     );
@@ -300,10 +325,13 @@ router.patch(
   "/:id",
   authenticate,
   requireRole("student_author", "admin"),
-  uploadSingle,
+  uploadWithThumbnail,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const body = req.body as Record<string, unknown>;
+    const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
+    const reportFile = files?.file?.[0];
+    const thumbnailFile = files?.thumbnail?.[0];
 
     // 1. Fetch current project to verify ownership and review status
     const project = await queryOne<{
@@ -311,7 +339,8 @@ router.patch(
       submitted_by: string;
       status: string;
       report_url: string | null;
-    }>("SELECT project_id, submitted_by, status, report_url FROM student_projects WHERE project_id = $1", [id]);
+      thumbnail_url: string | null;
+    }>("SELECT project_id, submitted_by, status, report_url, thumbnail_url FROM student_projects WHERE project_id = $1", [id]);
 
     if (!project) throw new AppError(404, "Project not found");
     if (project.submitted_by !== req.user!.user_id && req.user!.role !== "admin") {
@@ -351,10 +380,20 @@ router.patch(
     }
 
     let report_url = project.report_url;
-    if (req.file) {
-      const key = generateS3Key("showcase/reports", req.file.originalname, req.file.mimetype);
-      await uploadToS3(key, req.file.buffer, req.file.mimetype);
+    if (reportFile) {
+      const key = generateS3Key("showcase/reports", reportFile.originalname, reportFile.mimetype);
+      await uploadToS3(key, reportFile.buffer, reportFile.mimetype);
       report_url = key;
+    }
+
+    let thumbnail_url = project.thumbnail_url;
+    if (thumbnailFile) {
+      if (!thumbnailFile.mimetype.startsWith("image/")) {
+        throw new AppError(400, "Thumbnail must be an image file");
+      }
+      const key = generateS3Key("showcase/thumbnails", thumbnailFile.originalname, thumbnailFile.mimetype);
+      await uploadToS3(key, thumbnailFile.buffer, thumbnailFile.mimetype);
+      thumbnail_url = key;
     }
 
     // 3. Build dynamic update query
@@ -371,6 +410,7 @@ router.patch(
     if (team_members !== undefined) { updates.push(`team_members = $${idx++}`); params.push(JSON.stringify(team_members)); }
     if (technologies !== undefined) { updates.push(`technologies = $${idx++}`); params.push(technologies); }
     if (report_url !== undefined) { updates.push(`report_url = $${idx++}`); params.push(report_url); }
+    if (thumbnail_url !== undefined) { updates.push(`thumbnail_url = $${idx++}`); params.push(thumbnail_url); }
 
     // Reset status to pending_review when student edits/re-submits
     updates.push(`status = $${idx++}`);

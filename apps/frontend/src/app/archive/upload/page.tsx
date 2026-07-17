@@ -34,6 +34,8 @@ const ACCEPTED_TYPES = {
   "video/mp4": [".mp4"],
 };
 const MAX_UPLOAD_SIZE = 500 * 1024 * 1024;
+// Must match the backend's upload.array("files", 50) cap in upload.middleware.ts.
+const BULK_UPLOAD_MAX_FILES = 50;
 
 const STATUS_FLOW = ["draft", "review", "published", "archived"] as const;
 type ArchiveStatus = typeof STATUS_FLOW[number];
@@ -139,13 +141,23 @@ export default function UploadArchivePage() {
       const msg = rejected[0].errors[0]?.message ?? "Invalid file";
       setFileError(msg.includes("size") ? "One or more files exceed the 500 MB limit" : msg);
     }
-    if (accepted.length > 0) setBulkFiles((prev) => [...prev, ...accepted]);
+    if (accepted.length > 0) {
+      setBulkFiles((prev) => {
+        const combined = [...prev, ...accepted];
+        if (combined.length > BULK_UPLOAD_MAX_FILES) {
+          setFileError(`Bulk upload accepts a maximum of ${BULK_UPLOAD_MAX_FILES} files at a time. Only the first ${BULK_UPLOAD_MAX_FILES} of the ${combined.length} selected were kept.`);
+          return combined.slice(0, BULK_UPLOAD_MAX_FILES);
+        }
+        return combined;
+      });
+    }
   }, []);
 
   const { getRootProps: getBulkRootProps, getInputProps: getBulkInputProps, isDragActive: isBulkDragActive } = useDropzone({
     onDrop: onDropBulk,
     accept: ACCEPTED_TYPES,
     maxSize: MAX_UPLOAD_SIZE,
+    maxFiles: BULK_UPLOAD_MAX_FILES,
     multiple: true,
   });
 

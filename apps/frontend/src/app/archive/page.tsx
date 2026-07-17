@@ -35,9 +35,18 @@ export default function ArchivePage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterLanguage, setFilterLanguage] = useState("");
   const [filterFileType, setFilterFileType] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo,   setFilterDateTo]   = useState("");
+  const [tagsInput,      setTagsInput]      = useState("");
   const [currentPage,    setCurrentPage]    = useState(1);
-  const [params, setParams] = useState({
-    query: "", category: "", language: "", file_type: "", page: 1, limit: 20,
+  // NOTE: tags is a comma-separated string on the wire — the backend does
+  // `tags.split(",")` on a single query param, not a repeated array param.
+  const [params, setParams] = useState<{
+    query: string; category: string; language: string; file_type: string;
+    date_from: string; date_to: string; tags: string; page: number; limit: number;
+  }>({
+    query: "", category: "", language: "", file_type: "",
+    date_from: "", date_to: "", tags: "", page: 1, limit: 20,
   });
 
   const { data, isLoading, isError } = useArchiveSearch(params);
@@ -52,9 +61,17 @@ export default function ArchivePage() {
   const applyCategory = (cat: string) => { setFilterCategory(cat); setParams(p => ({ ...p, category: cat, page: 1 })); setCurrentPage(1); };
   const applyLanguage = (lang: string) => { setFilterLanguage(lang); setParams(p => ({ ...p, language: lang, page: 1 })); setCurrentPage(1); };
   const applyFileType = (type: string) => { setFilterFileType(type); setParams(p => ({ ...p, file_type: type, page: 1 })); setCurrentPage(1); };
+  const applyDateFrom = (date: string) => { setFilterDateFrom(date); setParams(p => ({ ...p, date_from: date, page: 1 })); setCurrentPage(1); };
+  const applyDateTo   = (date: string) => { setFilterDateTo(date); setParams(p => ({ ...p, date_to: date, page: 1 })); setCurrentPage(1); };
+  const applyTags     = () => {
+    const tags = tagsInput.split(",").map(t => t.trim()).filter(Boolean).join(",");
+    setParams(p => ({ ...p, tags, page: 1 })); setCurrentPage(1);
+  };
   const handleClear   = () => {
     setSearchInput(""); setFilterCategory(""); setFilterLanguage(""); setFilterFileType("");
-    setParams({ query: "", category: "", language: "", file_type: "", page: 1, limit: 20 }); setCurrentPage(1);
+    setFilterDateFrom(""); setFilterDateTo(""); setTagsInput("");
+    setParams({ query: "", category: "", language: "", file_type: "", date_from: "", date_to: "", tags: "", page: 1, limit: 20 });
+    setCurrentPage(1);
   };
   const handleDownload = async (id: string) => {
     if (!isAuthenticated) { toast.error("Please sign in to download documents."); return; }
@@ -62,7 +79,7 @@ export default function ArchivePage() {
     catch { toast.error("Download failed or access denied"); }
   };
 
-  const hasFilters = !!(filterCategory || filterLanguage || filterFileType || params.query);
+  const hasFilters = !!(filterCategory || filterLanguage || filterFileType || filterDateFrom || filterDateTo || params.tags || params.query);
   const totalPages = data?.total_pages || 1;
 
   if (!_hasHydrated) return null;
@@ -253,6 +270,51 @@ export default function ArchivePage() {
                   <X size={11} /> Clear Filters
                 </button>
               )}
+            </div>
+
+            {/* Date range + Tags */}
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: "1px solid #f3f4f6" }}>
+              {/* Date range */}
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : 42, marginBottom: isMobile ? 2 : 0 }}>
+                  Date
+                </span>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", width: isMobile ? "100%" : "auto" }}>
+                  <input
+                    type="date"
+                    value={filterDateFrom}
+                    onChange={e => applyDateFrom(e.target.value)}
+                    max={filterDateTo || undefined}
+                    style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12, color: "#374151", background: "#fff", flex: isMobile ? 1 : "none" }}
+                  />
+                  <span style={{ fontSize: 12, color: "#9ca3af" }}>–</span>
+                  <input
+                    type="date"
+                    value={filterDateTo}
+                    onChange={e => applyDateTo(e.target.value)}
+                    min={filterDateFrom || undefined}
+                    style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12, color: "#374151", background: "#fff", flex: isMobile ? 1 : "none" }}
+                  />
+                </div>
+              </div>
+
+              {!isMobile && <span style={{ width: 1, height: 20, background: "#e5e7eb", flexShrink: 0, margin: "0 4px" }} />}
+
+              {/* Tags */}
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto", marginTop: isMobile ? 8 : 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
+                  Tags
+                </span>
+                <input
+                  type="text"
+                  placeholder="e.g. machine-learning, thesis"
+                  value={tagsInput}
+                  onChange={e => setTagsInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && applyTags()}
+                  onBlur={applyTags}
+                  style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12, color: "#374151", background: "#fff", width: isMobile ? "100%" : 220 }}
+                />
+              </div>
             </div>
           </div>
 

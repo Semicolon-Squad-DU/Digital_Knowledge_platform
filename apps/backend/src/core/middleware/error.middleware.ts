@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
+import { MulterError } from "multer";
 import { logger } from "../config/logger";
 import { MalwareDetectedError, ScannerUnavailableError } from "../../infrastructure/antivirus.service";
 
@@ -30,6 +31,16 @@ export function errorHandler(
   // Multer errors
   if (err.message?.includes("Unsupported file type") || err.message?.includes("File too large")) {
     res.status(400).json({ success: false, message: err.message });
+    return;
+  }
+
+  if (err instanceof MulterError) {
+    const message = err.code === "LIMIT_UNEXPECTED_FILE" || err.code === "LIMIT_FILE_COUNT"
+      ? "Too many files in one batch. Bulk upload accepts a maximum of 50 files at a time."
+      : err.code === "LIMIT_FILE_SIZE"
+        ? "One or more files exceed the maximum upload size."
+        : err.message;
+    res.status(400).json({ success: false, message });
     return;
   }
 

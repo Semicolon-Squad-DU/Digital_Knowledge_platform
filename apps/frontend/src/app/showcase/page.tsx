@@ -25,7 +25,7 @@ const TECH_COLORS: Record<string, string> = {
 function ProjectCard({ project, onClick }: {
   project: {
     project_id: string; title: string; abstract: string;
-    department: string; semester: string;
+    department: string; semester: string; thumbnail_url?: string | null;
     technologies: string[]; team_members: Array<{ name: string }>;
   };
   onClick: (id: string) => void;
@@ -42,19 +42,28 @@ function ProjectCard({ project, onClick }: {
       onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
     >
       {/* Thumbnail */}
-      <div style={{
-        height: 110, background: "linear-gradient(135deg, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff) 0%, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 6%, #f8f9ff) 100%)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        borderBottom: "1px solid #f0f0f8",
-      }}>
+      {project.thumbnail_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={project.thumbnail_url}
+          alt=""
+          style={{ height: 110, width: "100%", objectFit: "cover", borderBottom: "1px solid #f0f0f8" }}
+        />
+      ) : (
         <div style={{
-          width: 48, height: 48, borderRadius: 12,
-          background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 15%, #fff)",
+          height: 110, background: "linear-gradient(135deg, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff) 0%, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 6%, #f8f9ff) 100%)",
           display: "flex", alignItems: "center", justifyContent: "center",
+          borderBottom: "1px solid #f0f0f8",
         }}>
-          <GraduationCap size={24} color="var(--avatar-theme-color, #6366f1)" />
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 15%, #fff)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <GraduationCap size={24} color="var(--avatar-theme-color, #6366f1)" />
+          </div>
         </div>
-      </div>
+      )}
 
       <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
         <p style={{
