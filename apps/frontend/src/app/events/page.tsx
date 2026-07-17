@@ -12,6 +12,7 @@ import {
   useCancelRSVP,
   useEventParticipants,
   useDeleteEvent,
+  fetchEventMaterialsUrl,
   AcademicEvent,
 } from "@/hooks/useEvents";
 import {
@@ -29,12 +30,15 @@ import {
   Eye,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { EventCalendar } from "@/components/events/EventCalendar";
+import { List, CalendarDays } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function EventsPage() {
   const { user } = useAuthStore();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: events = [], isLoading: eventsLoading } = useEventsList();
+  const [view, setView] = useState<"list" | "calendar">("list");
 
   const { mutateAsync: createEvent } = useCreateEvent();
   const { mutateAsync: rsvpEvent } = useEventRSVP();
@@ -49,9 +53,25 @@ export default function EventsPage() {
     location: "",
     totalSeats: 30,
     materialsUrl: "",
+    materialsAccessTier: "member" as "public" | "member" | "staff" | "restricted",
   });
 
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
+  const [materialsLoading, setMaterialsLoading] = useState<string | null>(null);
+
+  // FR-060: materials are access-tier gated server-side — fetch a presigned
+  // URL on click rather than rendering a direct link to the raw file key.
+  const handleDownloadMaterials = async (eventId: string) => {
+    setMaterialsLoading(eventId);
+    try {
+      const url = await fetchEventMaterialsUrl(eventId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "You do not have access to this event's materials");
+    } finally {
+      setMaterialsLoading(null);
+    }
+  };
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [participantsModal, setParticipantsModal] = useState(false);
 
@@ -97,6 +117,7 @@ export default function EventsPage() {
         location: "",
         totalSeats: 30,
         materialsUrl: "",
+        materialsAccessTier: "member",
       });
       toast.success("Academic seminar created successfully!");
     } catch {
@@ -173,8 +194,47 @@ export default function EventsPage() {
         <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
 
+          {/* ── VIEW TOGGLE (FR-063) ── */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#f1f5f9", borderRadius: 9, padding: 3, width: "fit-content" }}>
+            <button
+              onClick={() => setView("list")}
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 7, border: "none",
+                background: view === "list" ? "#fff" : "transparent",
+                boxShadow: view === "list" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                fontSize: 12.5, fontWeight: 700, color: view === "list" ? "#0f172a" : "#64748b", cursor: "pointer",
+              }}
+            >
+              <List size={14} /> List
+            </button>
+            <button
+              onClick={() => setView("calendar")}
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 7, border: "none",
+                background: view === "calendar" ? "#fff" : "transparent",
+                boxShadow: view === "calendar" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                fontSize: 12.5, fontWeight: 700, color: view === "calendar" ? "#0f172a" : "#64748b", cursor: "pointer",
+              }}
+            >
+              <CalendarDays size={14} /> Calendar
+            </button>
+          </div>
+
+          {view === "calendar" && (
+            <div style={{ marginBottom: 24 }}>
+              <EventCalendar
+                onSelectEvent={(event) => {
+                  setView("list");
+                  requestAnimationFrame(() => {
+                    document.getElementById(`event-card-${event.event_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  });
+                }}
+              />
+            </div>
+          )}
+
           {/* ── EVENT LISTINGS ── */}
-          {eventsLoading ? (
+          {view === "calendar" ? null : eventsLoading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
               <Loader2 className="animate-spin" size={32} color="var(--avatar-theme-color, #2563eb)" />
             </div>
@@ -307,13 +367,12 @@ export default function EventsPage() {
                       paddingTop: "16px",
                       marginTop: "4px"
                     }}>
-                      {/* Materials download */}
+                      {/* Materials download — access-tier gated (FR-060) */}
                       <div>
-                        {event.materials_url ? (
-                          <a
-                            href={event.materials_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {event.has_materials ? (
+                          <button
+                            onClick={() => handleDownloadMaterials(event.event_id)}
+                            disabled={materialsLoading === event.event_id}
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
@@ -322,12 +381,22 @@ export default function EventsPage() {
                               fontWeight: 600,
                               color: "var(--avatar-theme-color, #2563eb)",
                               textDecoration: "underline",
-                              cursor: "pointer"
+                              cursor: materialsLoading === event.event_id ? "wait" : "pointer",
+                              background: "none",
+                              border: "none",
+                              padding: 0,
                             }}
                           >
-                            <Download size={14} />
+                            {materialsLoading === event.event_id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Download size={14} />
+                            )}
                             Download Event Materials
-                          </a>
+                            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", textDecoration: "none" }}>
+                              ({event.materials_access_tier})
+                            </span>
+                          </button>
                         ) : (
                           <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
                             No materials uploaded yet
@@ -650,6 +719,38 @@ export default function EventsPage() {
                 />
               </div>
             </div>
+
+            {formData.materialsUrl && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>
+                  Materials Access Tier
+                </label>
+                <select
+                  id="event-form-materials-tier"
+                  value={formData.materialsAccessTier}
+                  onChange={(e) => setFormData({ ...formData, materialsAccessTier: e.target.value as typeof formData.materialsAccessTier })}
+                  style={{
+                    padding: "11px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    width: "100%",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="public">Public — anyone, including guests</option>
+                  <option value="member">Member — signed-in members and above</option>
+                  <option value="staff">Staff — archivists, librarians, researchers, admins</option>
+                  <option value="restricted">Restricted — archivists and admins only</option>
+                </select>
+                <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>
+                  Controls who can download the slides/recording. Doesn&apos;t affect who can see or RSVP to the event.
+                </p>
+              </div>
+            )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Event Abstract/Description *</label>

@@ -10,7 +10,11 @@ export interface AcademicEvent {
   location: string;
   total_seats: number;
   available_seats: number;
-  materials_url: string | null;
+  // Raw materials_url (S3 key) is never sent to the client — FR-060: use
+  // has_materials + materials_access_tier and fetch a presigned URL via
+  // useEventMaterialsUrl() only once the access-tier check has passed.
+  has_materials: boolean;
+  materials_access_tier: "public" | "member" | "staff" | "restricted";
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -27,6 +31,18 @@ export function useEventsList() {
   });
 }
 
+// FR-063: month-grid calendar view — fetches events scheduled within the
+// given year/month only, distinct from useEventsList's full/past/upcoming feed.
+export function useEventsCalendar(year: number, month: number) {
+  return useQuery<AcademicEvent[]>({
+    queryKey: ["events", "calendar", year, month],
+    queryFn: async () => {
+      const { data } = await api.get("/events/calendar", { params: { year, month } });
+      return data.data;
+    },
+  });
+}
+
 export function useCreateEvent() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -38,6 +54,7 @@ export function useCreateEvent() {
       location: string;
       totalSeats: number;
       materialsUrl?: string;
+      materialsAccessTier?: "public" | "member" | "staff" | "restricted";
     }) => {
       const { data } = await api.post("/events", payload);
       return data.data as AcademicEvent;
@@ -46,6 +63,14 @@ export function useCreateEvent() {
       queryClient.invalidateQueries({ queryKey: ["events", "list"] });
     },
   });
+}
+
+// FR-060: resolves an event's materials to a short-lived presigned URL,
+// enforcing materials_access_tier server-side — call this on click rather
+// than rendering a direct link, since the raw file key is never exposed.
+export async function fetchEventMaterialsUrl(eventId: string): Promise<string> {
+  const { data } = await api.get(`/events/${eventId}/materials-url`);
+  return data.data.url;
 }
 
 export function useEventRSVP() {

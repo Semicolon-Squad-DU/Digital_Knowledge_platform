@@ -1,10 +1,12 @@
 import { Router, Response } from "express";
+import { AccessTier } from "@dkp/shared";
 import { query, queryOne, withTransaction } from "../core/db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
 import { notifyAllUsersExcept, notifyUsers } from "../infrastructure/notification.service";
 import { uploadSingle } from "../core/middleware/upload.middleware";
-import { uploadToS3, generateS3Key } from "../infrastructure/s3.service";
+import { uploadToS3, generateS3Key, getPresignedUrl } from "../infrastructure/s3.service";
+import { ALLOWED_TIERS_BY_ROLE } from "../core/access-control";
 
 const router = Router();
 
@@ -22,8 +24,14 @@ router.get(
     const startDate = `${year}-${month.padStart(2, '0')}-01`;
     const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
 
+    // materials_url (the raw S3 key) is deliberately excluded — callers who
+    // pass the access-tier check use GET /:id/materials-url for a presigned
+    // link instead, so the key itself is never exposed to unauthorized roles.
     const eventsList = await query<any>(
-      `SELECT e.*,
+      `SELECT e.event_id, e.title, e.description, e.speaker, e.scheduled_at, e.location,
+              e.total_seats, e.available_seats, e.materials_access_tier,
+              (e.materials_url IS NOT NULL) as has_materials,
+              e.created_by, e.created_at, e.updated_at,
        CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL THEN TRUE ELSE FALSE END as has_rsvped,
        CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL AND r.waitlisted = TRUE THEN TRUE ELSE FALSE END as waitlisted
        FROM events e
@@ -56,7 +64,10 @@ router.get(
     }
 
     const eventsList = await query<any>(
-      `SELECT e.*, 
+      `SELECT e.event_id, e.title, e.description, e.speaker, e.scheduled_at, e.location,
+              e.total_seats, e.available_seats, e.materials_access_tier,
+              (e.materials_url IS NOT NULL) as has_materials,
+              e.created_by, e.created_at, e.updated_at,
        CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL THEN TRUE ELSE FALSE END as has_rsvped,
        CASE WHEN $1::UUID IS NOT NULL AND r.rsvp_id IS NOT NULL AND r.waitlisted = TRUE THEN TRUE ELSE FALSE END as waitlisted
        FROM events e
@@ -82,10 +93,15 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { title, description, speaker, scheduledAt, location, totalSeats } = req.body;
     let { materialsUrl } = req.body;
+    const materialsAccessTier = (req.body.materialsAccessTier || "member") as AccessTier;
     const userId = req.user!.user_id;
 
     if (!title || !description || !speaker || !scheduledAt || !location || totalSeats === undefined) {
       throw new AppError(400, "All event details are required");
+    }
+
+    if (!["public", "member", "staff", "restricted"].includes(materialsAccessTier)) {
+      throw new AppError(400, "Invalid materials access tier");
     }
 
     if (Number.isNaN(new Date(scheduledAt).getTime()) || new Date(scheduledAt).getTime() <= Date.now()) {
@@ -99,10 +115,10 @@ router.post(
     }
 
     const newEvent = await queryOne<any>(
-      `INSERT INTO events (title, description, speaker, scheduled_at, location, total_seats, available_seats, materials_url, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8)
+      `INSERT INTO events (title, description, speaker, scheduled_at, location, total_seats, available_seats, materials_url, materials_access_tier, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9)
        RETURNING *`,
-      [title, description, speaker, scheduledAt, location, parseInt(totalSeats), materialsUrl || null, userId]
+      [title, description, speaker, scheduledAt, location, parseInt(totalSeats), materialsUrl || null, materialsAccessTier, userId]
     );
 
     // Fire-and-forget — notifyAllUsersExcept never rejects, it logs internally.
@@ -119,6 +135,26 @@ router.post(
     });
   })
 );
+
+// GET /api/events/:id/materials-url — FR-060: presigned URL for event
+// materials (slides/recordings), gated by the item's materials_access_tier
+// the same way archive items and showcase files are gated elsewhere.
+router.get("/:id/materials-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const event = await queryOne<{ materials_url: string | null; materials_access_tier: AccessTier }>(
+    "SELECT materials_url, materials_access_tier FROM events WHERE event_id = $1",
+    [req.params.id]
+  );
+  if (!event || !event.materials_url) throw new AppError(404, "No materials found for this event");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  if (!allowedTiers.includes(event.materials_access_tier)) {
+    throw new AppError(403, "You do not have access to this event's materials");
+  }
+
+  const url = await getPresignedUrl(event.materials_url);
+  res.json({ success: true, data: { url } });
+}));
 
 // POST /api/events/:id/rsvp
 router.post(
