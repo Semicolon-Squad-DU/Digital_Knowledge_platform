@@ -38,7 +38,7 @@ const roleLabel = (role?: string | null) => role ? role.replace(/_/g, " ").repla
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout, fetchMe, _hasHydrated } = useAuthStore();
+  const { user, isAuthenticated, logout, fetchMe, setUser, _hasHydrated } = useAuthStore();
   const [sessionTime, setSessionTime] = useState("");
 
   const { data: history, isLoading: histLoading } = useBorrowingHistory(user?.user_id ?? "");
@@ -75,39 +75,41 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
-  // Activity Log view state
+  // Activity Log view state — FR-048: real per-user activity feed
+  // (uploads, submissions, borrows, comments), fetched on first expand.
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const [activityLog, setActivityLog] = useState<{ entry_type: string; title: string; happened_at: string }[] | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
 
   // Profile picture
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [avatarColor, setAvatarColor] = useState("#1a1a2e");
+  const [savingAvatar, setSavingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) router.push("/login?redirect=/profile");
   }, [isAuthenticated, _hasHydrated, router]);
 
+  // Bio and avatar are persisted server-side on the users table (FR-046) —
+  // seed local editable state from the authenticated user record, not
+  // localStorage. Theme color stays client-only (cosmetic, per-device).
   useEffect(() => {
-    // Generate active session timestamp
     const now = new Date();
     setSessionTime(now.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }));
-    
-    // Load local storage preferences
-    const savedBio = localStorage.getItem("user_bio");
-    if (savedBio) {
-      setBio(savedBio);
-      setTempBio(savedBio);
-    } else {
-      setTempBio("Academic researcher and student author passionate about digital archives and machine learning.");
-    }
 
-    const savedPic = localStorage.getItem("user_profile_pic");
-    if (savedPic) setProfilePic(savedPic);
+    if (user?.bio) {
+      setBio(user.bio);
+      setTempBio(user.bio);
+    } else {
+      setTempBio("");
+    }
+    if (user?.avatar_url) setProfilePic(user.avatar_url);
 
     const savedColor = localStorage.getItem("user_avatar_color");
     if (savedColor) setAvatarColor(savedColor);
-  }, []);
+  }, [user?.bio, user?.avatar_url]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -130,11 +132,55 @@ export default function ProfilePage() {
     router.push("/");
   };
 
-  const handleSaveBio = () => {
-    setBio(tempBio);
-    localStorage.setItem("user_bio", tempBio);
-    setIsEditingBio(false);
-    toast.success("Bio updated successfully!");
+  const ACTIVITY_LABELS: Record<string, string> = {
+    archive_upload: "Uploaded archive document",
+    research_upload: "Published research output",
+    showcase_submission: "Submitted showcase project",
+    borrow: "Borrowed",
+    comment: "Commented",
+  };
+
+  const toggleActivityLog = async () => {
+    const next = !showActivityLog;
+    setShowActivityLog(next);
+    if (next && activityLog === null) {
+      setActivityLoading(true);
+      try {
+        const { data } = await api.get("/auth/me/activity");
+        setActivityLog(data.data);
+      } catch {
+        setActivityLog([]);
+        toast.error("Failed to load activity history.");
+      } finally {
+        setActivityLoading(false);
+      }
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (!window.confirm("Deactivate your account? You'll be signed out and won't be able to log back in until an admin reactivates it.")) return;
+    try {
+      await api.post("/auth/me/deactivate");
+      toast.success("Your account has been deactivated.");
+      await logout();
+      router.push("/");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to deactivate account.");
+    }
+  };
+
+  const handleSaveBio = async () => {
+    try {
+      const { data } = await api.patch("/auth/me", { bio: tempBio });
+      setBio(tempBio);
+      setUser(data.data);
+      setIsEditingBio(false);
+      toast.success("Bio updated successfully!");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string; errors?: Array<{ msg: string }> } } })?.response?.data;
+      toast.error(msg?.message || msg?.errors?.[0]?.msg || "Failed to update bio.");
+    }
   };
 
   const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,19 +188,33 @@ export default function ProfilePage() {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const dataUrl = reader.result as string;
-      setProfilePic(dataUrl);
-      localStorage.setItem("user_profile_pic", dataUrl);
-      toast.success("Profile picture updated!");
+      setSavingAvatar(true);
+      try {
+        const { data } = await api.patch("/auth/me", { avatar_url: dataUrl });
+        setProfilePic(dataUrl);
+        setUser(data.data);
+        toast.success("Profile picture updated!");
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { message?: string; errors?: Array<{ msg: string }> } } })?.response?.data;
+        toast.error(msg?.message || msg?.errors?.[0]?.msg || "Failed to update profile picture.");
+      } finally {
+        setSavingAvatar(false);
+      }
     };
     reader.readAsDataURL(file);
   };
 
-  const handleRemoveProfilePic = () => {
-    setProfilePic(null);
-    localStorage.removeItem("user_profile_pic");
-    toast.success("Profile picture removed");
+  const handleRemoveProfilePic = async () => {
+    try {
+      const { data } = await api.patch("/auth/me", { avatar_url: null });
+      setProfilePic(null);
+      setUser(data.data);
+      toast.success("Profile picture removed");
+    } catch {
+      toast.error("Failed to remove profile picture.");
+    }
   };
 
   const handleAvatarColorChange = (colorVal: string) => {
@@ -230,6 +290,24 @@ export default function ProfilePage() {
       toast.error(msg?.message || msg?.errors?.[0]?.msg || "Failed to submit role change request.");
     } finally {
       setSubmittingRole(false);
+    }
+  };
+
+  // FR-047: real server-side data export (JSON), distinct from the PDF below
+  // which only formats data already loaded into this page's local state.
+  const handleExportJSON = async () => {
+    try {
+      const { data } = await api.get("/auth/me/export");
+      const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dkp-data-export-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Your data export has been downloaded as JSON!");
+    } catch {
+      toast.error("Failed to export data. Please try again.");
     }
   };
 
@@ -394,14 +472,6 @@ export default function ProfilePage() {
   if (!_hasHydrated) return null;
   if (!user) return null;
 
-  const mockLogs = [
-    { time: "Today, 2:40 PM", action: "Signed in to your account" },
-    { time: "Yesterday, 11:15 AM", action: "Viewed book in library" },
-    { time: "25 May, 4:30 PM", action: "Borrowed a book" },
-    { time: "24 May, 9:12 AM", action: "Placed a hold request" },
-    { time: "23 May, 1:05 PM", action: "Updated notification settings" },
-  ];
-
   // ── helpers ──────────────────────────────────────────────────────────────────
   const Toggle = ({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) => (
     <div
@@ -484,14 +554,15 @@ export default function ProfilePage() {
               {/* Camera badge — always visible, bottom-right */}
               <button
                 onClick={() => fileInputRef.current?.click()}
+                disabled={savingAvatar}
                 title="Change profile picture"
                 style={{
                   position: "absolute", bottom: 2, right: 2,
                   width: 30, height: 30, borderRadius: "50%",
                   background: "#fff", border: "2px solid rgba(255,255,255,0.5)",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#374151",
+                  cursor: savingAvatar ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#374151", opacity: savingAvatar ? 0.6 : 1,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
                 onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
@@ -735,21 +806,30 @@ export default function ProfilePage() {
               </div>
             </button>
 
-            <button
-              onClick={handleExportData}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid #f3f4f6", textAlign: "left" }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f3f4f6" }}>
               <div style={{ width: 36, height: 36, borderRadius: 9, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Download size={15} color="#16a34a" />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Download My Data</p>
-                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Export your account data as PDF</p>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Export your account data</p>
               </div>
-            </button>
+              <button
+                onClick={handleExportJSON}
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+              >
+                JSON
+              </button>
+              <button
+                onClick={handleExportData}
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+              >
+                PDF
+              </button>
+            </div>
 
             <button
-              onClick={() => setShowActivityLog(!showActivityLog)}
+              onClick={toggleActivityLog}
               style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -758,7 +838,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Recent Activity</p>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>View your recent account actions</p>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Uploads, submissions, borrows, and comments</p>
                 </div>
               </div>
               {showActivityLog ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
@@ -766,14 +846,43 @@ export default function ProfilePage() {
 
             {showActivityLog && (
               <div style={{ paddingBottom: 12 }}>
-                {mockLogs.map((log, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #f3f4f6", gap: 12 }}>
-                    <p style={{ fontSize: 13, color: "#374151", margin: 0, flex: 1 }}>{log.action}</p>
-                    <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, flexShrink: 0, fontFamily: "monospace" }}>{log.time}</p>
-                  </div>
-                ))}
+                {activityLoading ? (
+                  <p style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>Loading…</p>
+                ) : !activityLog || activityLog.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>No activity yet.</p>
+                ) : (
+                  activityLog.map((entry, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #f3f4f6", gap: 12 }}>
+                      <p style={{ fontSize: 13, color: "#374151", margin: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {ACTIVITY_LABELS[entry.entry_type] ?? entry.entry_type}: {entry.title}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, flexShrink: 0 }}>
+                        {new Date(entry.happened_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             )}
+          </div>
+        </SectionCard>
+
+        {/* ── DANGER ZONE ───────────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16, borderColor: "#fecaca" }}>
+          <SectionHead title="Danger Zone" />
+          <div style={{ padding: "16px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Deactivate Account</p>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Sign out and disable log-in. Your data is kept; an admin can reactivate it.</p>
+              </div>
+              <button
+                onClick={handleDeactivateAccount}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}
+              >
+                Deactivate
+              </button>
+            </div>
           </div>
         </SectionCard>
 

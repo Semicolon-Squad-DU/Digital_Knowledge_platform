@@ -423,6 +423,185 @@ router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Respo
   res.json({ success: true, data: user });
 }));
 
+// PATCH /api/auth/me — self-service profile edits: bio and avatar (FR-046).
+// avatar_url stores a data: URL directly (no S3 wiring for this yet) — the
+// frontend caps uploads at 2MB client-side; this enforces the same limit
+// server-side so a modified client can't bypass it.
+const MAX_AVATAR_DATA_URL_LENGTH = 3 * 1024 * 1024; // ~2MB image, base64-inflated (~4/3x)
+router.patch(
+  "/me",
+  authenticate,
+  [
+    body("bio").optional({ values: "null" }).isString().isLength({ max: 500 }).withMessage("Bio must be 500 characters or fewer"),
+    body("avatar_url").optional({ values: "null" }).isString().withMessage("Invalid avatar"),
+  ],
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { bio, avatar_url } = req.body as { bio?: string | null; avatar_url?: string | null };
+
+    if (avatar_url && avatar_url.length > MAX_AVATAR_DATA_URL_LENGTH) {
+      throw new AppError(400, "Avatar image is too large");
+    }
+    if (avatar_url && !/^data:image\/(png|jpe?g|webp|gif);base64,/.test(avatar_url)) {
+      throw new AppError(400, "Avatar must be a PNG, JPEG, WebP, or GIF image");
+    }
+
+    const updates: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+    if (bio !== undefined) { updates.push(`bio = $${idx++}`); params.push(bio); }
+    if (avatar_url !== undefined) { updates.push(`avatar_url = $${idx++}`); params.push(avatar_url); }
+
+    if (updates.length === 0) {
+      throw new AppError(400, "No fields to update");
+    }
+
+    params.push(req.user!.user_id);
+    const user = await queryOne(
+      `UPDATE users SET ${updates.join(", ")}, updated_at = NOW()
+       WHERE user_id = $${idx}
+       RETURNING user_id, name, email, role, department, bio, avatar_url, membership_status, created_at`,
+      params
+    );
+
+    res.json({ success: true, data: user });
+  })
+);
+
+// POST /api/auth/me/deactivate — self-service account deactivation (FR-049).
+// Distinct from the admin PUT /admin/users/:id endpoint, which deliberately
+// blocks an admin from deactivating themselves via that route — this route
+// is the intended path for a user closing their own account. Data is
+// retained (soft-deactivate via membership_status, not deleted); an admin
+// can reactivate from the Users panel.
+router.post("/me/deactivate", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.user_id;
+
+  const existingUser = await queryOne<{ role: string }>(
+    "SELECT role FROM users WHERE user_id = $1", [userId]
+  );
+  if (!existingUser) throw new AppError(404, "User not found");
+
+  if (existingUser.role === "admin") {
+    const [{ count: activeAdminCount }] = await query<{ count: string }>(
+      "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND membership_status = 'active' AND deleted_at IS NULL"
+    );
+    if (parseInt(activeAdminCount) <= 1) {
+      throw new AppError(400, "You are the last active admin account and cannot deactivate yourself. Promote another admin first.");
+    }
+  }
+
+  await query(
+    "UPDATE users SET membership_status = 'inactive', updated_at = NOW() WHERE user_id = $1",
+    [userId]
+  );
+  // Revoke all refresh tokens so the account can't be silently kept alive —
+  // the current access token still expires naturally within its own TTL.
+  await query("DELETE FROM refresh_tokens WHERE user_id = $1", [userId]);
+
+  logger.info("User deactivated own account", { user_id: userId });
+
+  res.json({ success: true, message: "Your account has been deactivated." });
+}));
+
+// GET /api/auth/me/activity — unified per-user activity feed (FR-048):
+// downloads/uploads/submissions/comments merged and sorted chronologically,
+// as distinct from the site-wide "recent activity" feed on the dashboard.
+router.get("/me/activity", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.user_id;
+
+  const rows = await query<{
+    entry_type: string; title: string; ref_id: string; happened_at: string;
+  }>(
+    `(SELECT 'archive_upload' as entry_type, title_en as title, item_id::text as ref_id, created_at as happened_at
+      FROM archive_items WHERE uploaded_by = $1)
+     UNION ALL
+     (SELECT 'research_upload', title, output_id::text, created_at
+      FROM research_outputs WHERE uploaded_by = $1)
+     UNION ALL
+     (SELECT 'showcase_submission', title, project_id::text, created_at
+      FROM student_projects WHERE submitted_by = $1)
+     UNION ALL
+     (SELECT 'borrow', ci.title, b.id::text, b.issue_date::timestamptz
+      FROM borrows b JOIN catalog_items ci ON ci.catalog_id = b.resource_id
+      WHERE b.user_id = $1)
+     UNION ALL
+     (SELECT 'comment', LEFT(content, 80), comment_id::text, created_at
+      FROM comments WHERE user_id = $1)
+     ORDER BY happened_at DESC
+     LIMIT 100`,
+    [userId]
+  );
+
+  res.json({ success: true, data: rows });
+}));
+
+// GET /api/auth/me/export — full personal-data export as JSON (FR-047).
+// Distinct from the frontend's client-side PDF, which only formats data
+// already in the page's local state — this endpoint is the actual
+// server-side source of truth for a GDPR-style data export request.
+router.get("/me/export", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.user_id;
+
+  const [profile, archiveUploads, researchUploads, showcaseSubmissions, borrowHistory, comments, notifications] = await Promise.all([
+    queryOne(
+      `SELECT user_id, name, email, role, department, bio, membership_status, created_at
+       FROM users WHERE user_id = $1`,
+      [userId]
+    ),
+    query(
+      `SELECT item_id, title_en, category, access_tier, status, created_at
+       FROM archive_items WHERE uploaded_by = $1 ORDER BY created_at DESC`,
+      [userId]
+    ),
+    query(
+      `SELECT output_id, title, output_type, status, created_at
+       FROM research_outputs WHERE uploaded_by = $1 ORDER BY created_at DESC`,
+      [userId]
+    ),
+    query(
+      `SELECT project_id, title, status, created_at
+       FROM student_projects WHERE submitted_by = $1 ORDER BY created_at DESC`,
+      [userId]
+    ),
+    query(
+      `SELECT b.id, ci.title, b.issue_date, b.due_date, b.return_date, b.borrow_status
+       FROM borrows b JOIN catalog_items ci ON ci.catalog_id = b.resource_id
+       WHERE b.user_id = $1 ORDER BY b.issue_date DESC`,
+      [userId]
+    ),
+    query(
+      `SELECT comment_id, entity_type, entity_id, content, created_at
+       FROM comments WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId]
+    ),
+    query(
+      `SELECT type, title, message, created_at
+       FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 200`,
+      [userId]
+    ),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      exported_at: new Date().toISOString(),
+      profile,
+      archive_uploads: archiveUploads,
+      research_uploads: researchUploads,
+      showcase_submissions: showcaseSubmissions,
+      borrow_history: borrowHistory,
+      comments,
+      notifications,
+    },
+  });
+}));
+
 // POST /api/auth/me/role-request — self-service request to switch roles,
 // requires admin approval (same review flow as a signup role request).
 router.post(
