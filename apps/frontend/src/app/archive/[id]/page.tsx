@@ -28,7 +28,8 @@ export default function ArchiveItemPage() {
   // Admin manages the platform, not individual archive documents directly —
   // catalog lifecycle controls are archivist-only here.
   const isArchivist = isAuthenticated && user?.role === "archivist";
-  const isGuest = !isAuthenticated || user?.role === "guest";
+  const isGuest = !isAuthenticated;
+
 
   const { mutateAsync: updateStatus, isPending: isUpdatingStatus } = useUpdateArchiveStatus();
   const { mutateAsync: uploadVersion, isPending: isUploadingVersion } = useUploadArchiveVersion();

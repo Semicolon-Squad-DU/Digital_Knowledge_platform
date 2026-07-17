@@ -516,6 +516,18 @@ router.post(
       [req.user!.user_id, req.params.id, reason]
     );
 
+    // Notify all archivists about the new access request
+    const archivists = await query<{ user_id: string }>(
+      "SELECT user_id FROM users WHERE role = 'archivist'"
+    );
+    for (const arch of archivists) {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, action_url)
+         VALUES ($1, 'access_request_pending', 'New Access Request', $2, '/admin')`,
+        [arch.user_id, `${req.user!.name} has requested access to "${item.title_en}".`]
+      );
+    }
+
     res.status(201).json({ success: true, data: request });
   })
 );
