@@ -416,12 +416,65 @@ router.get("/members/search", authenticate, asyncHandler(async (req: AuthRequest
 // GET /api/auth/me
 router.get("/me", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = await queryOne(
-    `SELECT user_id, name, email, role, department, bio, avatar_url, membership_status, created_at
+    `SELECT user_id, name, email, role, requested_role, department, bio, avatar_url, membership_status, created_at
      FROM users WHERE user_id = $1`,
     [req.user!.user_id]
   );
   res.json({ success: true, data: user });
 }));
+
+// POST /api/auth/me/role-request — self-service request to switch roles,
+// requires admin approval (same review flow as a signup role request).
+router.post(
+  "/me/role-request",
+  authenticate,
+  [
+    body("role").isIn(SELF_SERVICE_ROLES).withMessage("Invalid role selected"),
+  ],
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+
+    const { role: requestedRole } = req.body as { role: string };
+    const userId = req.user!.user_id;
+
+    const existing = await queryOne<{ name: string; email: string; role: string; membership_status: string }>(
+      "SELECT name, email, role, membership_status FROM users WHERE user_id = $1",
+      [userId]
+    );
+    if (!existing) throw new AppError(404, "User not found");
+
+    if (existing.membership_status === "pending_approval") {
+      throw new AppError(409, "You already have a role change request awaiting admin approval");
+    }
+    if (requestedRole === existing.role) {
+      throw new AppError(400, "You already have this role");
+    }
+
+    await query(
+      "UPDATE users SET requested_role = $1, membership_status = 'pending_approval', updated_at = NOW() WHERE user_id = $2",
+      [requestedRole, userId]
+    );
+
+    void notifyAdmins({
+      type: "pending_approval",
+      title: "Role Switch Requested",
+      message: `${existing.name} (${existing.email}) requested to switch their role from ${roleLabel(existing.role)} to ${roleLabel(requestedRole)} and is awaiting approval.`,
+      action_url: "/admin?tab=users",
+    });
+
+    res.json({
+      success: true,
+      data: {
+        pendingApproval: true,
+        message: `Your request to switch your role to ${roleLabel(requestedRole)} is pending admin approval.`,
+      },
+    });
+  })
+);
 
 // POST /api/auth/oauth-login
 router.post(

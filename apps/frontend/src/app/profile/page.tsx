@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
 import {
   User, Mail, Building2, Shield, LogOut, KeyRound,
-  Activity, Download, CheckCircle2, ChevronDown, ChevronUp, Camera
+  Activity, Download, CheckCircle2, ChevronDown, ChevronUp, Camera, Clock
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -24,9 +24,21 @@ const AVATAR_COLORS = [
   { name: "Warm Burgundy",  value: "#4c0519" },
 ];
 
+// Mirrors SELF_SERVICE_ROLES in apps/backend/src/features/auth/auth.routes.ts
+const ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: "member",         label: "Member" },
+  { value: "student_author", label: "Student Author" },
+  { value: "researcher",     label: "Researcher" },
+  { value: "archivist",      label: "Archivist" },
+  { value: "librarian",      label: "Librarian" },
+  { value: "admin",          label: "Admin" },
+];
+
+const roleLabel = (role?: string | null) => role ? role.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "";
+
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout, _hasHydrated } = useAuthStore();
+  const { user, isAuthenticated, logout, fetchMe, _hasHydrated } = useAuthStore();
   const [sessionTime, setSessionTime] = useState("");
 
   const { data: history, isLoading: histLoading } = useBorrowingHistory(user?.user_id ?? "");
@@ -48,6 +60,11 @@ export default function ProfilePage() {
     weeklyDigests: false,
     appAlerts: true,
   });
+
+  // Role change request states
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [submittingRole, setSubmittingRole] = useState(false);
 
   // Password Change states
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -172,6 +189,27 @@ export default function ProfilePage() {
       toast.error(msg?.message || msg?.errors?.[0]?.msg || "Failed to update password.");
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleRoleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRole) {
+      toast.error("Please select a role");
+      return;
+    }
+    setSubmittingRole(true);
+    try {
+      const { data } = await api.post("/auth/me/role-request", { role: selectedRole });
+      toast.success(data?.data?.message || "Role change request submitted");
+      setShowRoleModal(false);
+      setSelectedRole("");
+      await fetchMe();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string; errors?: Array<{ msg: string }> } } })?.response?.data;
+      toast.error(msg?.message || msg?.errors?.[0]?.msg || "Failed to submit role change request.");
+    } finally {
+      setSubmittingRole(false);
     }
   };
 
@@ -520,6 +558,39 @@ export default function ProfilePage() {
           </div>
         </SectionCard>
 
+        {/* ── ROLE CHANGE ───────────────────────────────────────────────── */}
+        <SectionCard style={{ marginBottom: 16 }}>
+          <SectionHead title="Role" />
+          <div style={{ padding: "16px 20px" }}>
+            {user.requested_role ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 10, padding: "12px 14px" }}>
+                <Clock size={18} color="#92400e" style={{ flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#92400e", margin: 0 }}>
+                    Request to switch to {roleLabel(user.requested_role)} is pending admin approval
+                  </p>
+                  <p style={{ fontSize: 12, color: "#92400e", margin: "2px 0 0" }}>
+                    You&apos;ll keep using the platform as {roleLabel(user.role)} until it&apos;s reviewed.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setSelectedRole(""); setShowRoleModal(true); }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "4px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+              >
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Shield size={15} color="#4f46e5" />
+                </div>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Request Role Change</p>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Ask an admin to switch your account to a different role</p>
+                </div>
+              </button>
+            )}
+          </div>
+        </SectionCard>
+
         {/* ── BIO ───────────────────────────────────────────────────────── */}
         <SectionCard style={{ marginBottom: 16 }}>
           <SectionHead
@@ -825,6 +896,67 @@ export default function ProfilePage() {
                   }}
                 >
                   {changingPassword ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── ROLE CHANGE REQUEST MODAL ── */}
+      {showRoleModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+        }}>
+          <div style={{
+            background: "#ffffff", borderRadius: "12px", border: "1px solid #e5e7eb",
+            padding: "28px 32px", width: "100%", maxWidth: "400px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.15)", boxSizing: "border-box",
+          }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#111827", margin: "0 0 6px", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}>
+              <Shield size={20} color="#1a56db" /> Request Role Change
+            </h3>
+            <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 20px" }}>
+              Your current role is <strong style={{ color: "#374151" }}>{roleLabel(user.role)}</strong>. Choosing a new role sends a request to the admin team — you keep your current access until it&apos;s approved.
+            </p>
+
+            <form onSubmit={handleRoleRequestSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151" }}>New Role</label>
+                <select
+                  value={selectedRole}
+                  onChange={e => setSelectedRole(e.target.value)}
+                  style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "16px", outline: "none", color: "#111827", background: "#fff" }}
+                >
+                  <option value="">-- Select a role --</option>
+                  {ROLE_OPTIONS.filter(r => r.value !== user.role).map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRoleModal(false)}
+                  style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#ffffff", color: "#374151", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRole}
+                  style={{
+                    padding: "8px 16px", borderRadius: "6px", border: "none",
+                    background: "var(--theme-gradient-160)", color: "#ffffff",
+                    fontSize: "12px", fontWeight: 600,
+                    cursor: submittingRole ? "not-allowed" : "pointer",
+                    opacity: submittingRole ? 0.6 : 1,
+                  }}
+                >
+                  {submittingRole ? "Submitting…" : "Submit Request"}
                 </button>
               </div>
             </form>

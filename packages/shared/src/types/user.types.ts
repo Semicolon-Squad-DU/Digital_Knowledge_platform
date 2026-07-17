@@ -9,13 +9,14 @@ export type UserRole =
 
 export type AccessTier = "public" | "member" | "staff" | "restricted";
 
-export type MembershipStatus = "active" | "inactive" | "suspended";
+export type MembershipStatus = "active" | "inactive" | "suspended" | "pending_verification" | "pending_approval";
 
 export interface User {
   user_id: string;
   name: string;
   email: string;
   role: UserRole;
+  requested_role?: UserRole | null;
   department?: string;
   bio?: string;
   avatar_url?: string;

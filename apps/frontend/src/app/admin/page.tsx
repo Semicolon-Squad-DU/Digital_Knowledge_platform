@@ -546,10 +546,10 @@ function UsersTab() {
                 )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => handleApproveUser(u, true)} style={{ padding: "6px 14px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => handleApproveUser(u, true)} style={{ padding: "6px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   Approve
                 </button>
-                <button onClick={() => handleApproveUser(u, false)} style={{ padding: "6px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => handleApproveUser(u, false)} style={{ padding: "6px 14px", background: "#fde8e8", color: "#dc2626", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   Reject
                 </button>
               </div>

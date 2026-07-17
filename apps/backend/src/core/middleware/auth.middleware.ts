@@ -12,12 +12,20 @@ export interface AuthRequest extends Request {
 // active — it says nothing about right now. Without this, a suspended/deactivated
 // account keeps full access for the rest of its access token's lifetime (up to
 // JWT_ACCESS_EXPIRES_IN) instead of being cut off on its next request.
+//
+// "pending_approval" also counts as active here: a *brand-new* signup never gets
+// this far because /login itself refuses to issue tokens while pending (see
+// auth.routes.ts). But an already-active user who self-service requests a role
+// change (POST /auth/me/role-request) is deliberately flipped into
+// "pending_approval" while keeping their existing session — they should keep
+// using the app under their current role until an admin reviews the request,
+// not get logged out by their own request.
 async function isAccountActive(user_id: string): Promise<boolean> {
   const account = await queryOne<{ membership_status: string }>(
     "SELECT membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
     [user_id]
   );
-  return account?.membership_status === "active";
+  return account?.membership_status === "active" || account?.membership_status === "pending_approval";
 }
 
 export async function authenticate(
