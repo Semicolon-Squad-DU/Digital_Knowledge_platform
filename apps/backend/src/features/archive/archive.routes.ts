@@ -523,7 +523,7 @@ router.post(
     for (const arch of archivists) {
       await query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
-         VALUES ($1, 'access_request_pending', 'New Access Request', $2, '/admin')`,
+         VALUES ($1, 'pending_approval', 'New Access Request', $2, '/admin')`,
         [arch.user_id, `${req.user!.name} has requested access to "${item.title_en}".`]
       );
     }
