@@ -7,10 +7,10 @@ import toast from "react-hot-toast";
 import api from "@/lib/api";
 
 const TEAM_MEMBERS = [
-  { name: "Faria Yasmin",    email: "fariayasmin19@gmail.com", github: "fariayasmin" },
-  { name: "Yuki Bhuiyan",   email: "yukibhuiyan@gmail.com",   github: "Yukii9291"   },
-  { name: "Md. Nuruzzaman", email: "nuruzzaman@gamil.com",    github: "prolexcsedu" },
-  { name: "Hasibul Islam",  email: "hasibulislam@gamil.com",  github: "enol5423"    },
+  { name: "Faria Yasmin",    email: "faria-2021611197@cs.du.ac.bd",       github: "fariayasmin" },
+  { name: "Yuki Bhuiyan",   email: "yuki-2021816226@cs.du.ac.bd",         github: "Yukii9291"   },
+  { name: "Md. Nuruzzaman", email: "md-2021611232@cs.du.ac.bd",           github: "prolexcsedu" },
+  { name: "Hasibul Islam",  email: "hasibulislam-2021211218@cs.du.ac.bd", github: "enol5423"    },
 ];
 
 const NAV_LINKS = [

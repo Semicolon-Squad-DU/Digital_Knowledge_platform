@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Archive, FlaskConical, Send,
   BookOpen, ShieldCheck, Bell, Heart, LogOut,
@@ -409,6 +409,17 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
 
   const handleLogout = async () => { await logout(); router.push("/"); };
   const closeDrawer = () => setOpen(false);
+
+  // Lock background scroll while the mobile drawer is open — iOS Safari lets touch
+  // scrolls propagate through a fixed overlay even when an ancestor has
+  // overflow:hidden, so the home page behind the menu could still be dragged.
+  // Only the drawer's own nav list (flex:1, overflowY:auto) should move.
+  useEffect(() => {
+    if (!open) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, [open]);
 
   /* ── GUEST LAYOUT: full-width with top navbar ── */
   if (!isAuthenticated) {

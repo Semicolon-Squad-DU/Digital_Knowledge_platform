@@ -1,0 +1,51 @@
+# Server
+NODE_ENV=development
+PORT=4000
+API_URL=http://localhost:4000
+FRONTEND_URL=http://localhost:3000
+
+# Database — shared team Supabase instance (see SETUP_GUIDE.md).
+# Was pointed at the local docker-compose Postgres, which is why uploads
+# weren't visible to other members — they were landing in an isolated local
+# DB instead of the shared one everyone else reads from.
+DATABASE_URL=postgresql://postgres.dpwieffcwvfolurptyic:k6h5PG3KTYx6%2BS8@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?uselibpqcompat=true&sslmode=require
+
+# JWT
+JWT_SECRET=dkp-local-dev-secret-change-in-production-2026
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Redis — matches docker-compose.yml redis service
+REDIS_URL=redis://localhost:6379
+
+# Elasticsearch — matches docker-compose.yml elasticsearch service
+ELASTICSEARCH_URL=http://localhost:9200
+
+# S3 / MinIO — matches docker-compose.yml minio service
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=dkp_minio_user
+S3_SECRET_KEY=dkp_minio_password
+S3_BUCKET_NAME=dkp-files
+S3_REGION=us-east-1
+
+# ClamAV — matches docker-compose.yml clamav service. Used to scan every
+# uploaded file for malware before it's written to S3 (NFR-TXX-011).
+CLAMAV_HOST=localhost
+CLAMAV_PORT=3310
+S3_FORCE_PATH_STYLE=true
+
+# Email — real Gmail SMTP (verification codes deliver to real inboxes)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=copilotlimit10001@gmail.com
+SMTP_PASS=wkrshbhfatlfyirp
+EMAIL_FROM=copilotlimit10001@gmail.com
+SUPPORT_EMAIL=copilotlimit10001@gmail.com
+
+# Google OAuth — must match the frontend's NEXT_PUBLIC_GOOGLE_CLIENT_ID.
+GOOGLE_CLIENT_ID=1052870581728-1lcq83jkigj34so8toevvnk36h4oios8.apps.googleusercontent.com
+
+# Library settings
+FINE_RATE_PER_DAY=5
+LOAN_PERIOD_DAYS=14
+MAX_BORROW_LIMIT=5

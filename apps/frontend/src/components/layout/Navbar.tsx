@@ -58,6 +58,15 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // Lock page scroll while the mobile menu is open — only the menu's own option
+  // list should scroll, not the home page behind it.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, [mobileOpen]);
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -343,7 +352,13 @@ export function Navbar({ showBack = false }: { showBack?: boolean }) {
         {mobileOpen && (
           <div
             className="md:hidden border-t animate-slide-down"
-            style={{ borderColor: "rgba(255,255,255,0.1)", background: "#24292f", animation: "slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards" }}
+            style={{
+              borderColor: "rgba(255,255,255,0.1)", background: "#24292f",
+              animation: "slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+              maxHeight: "calc(100vh - 56px)",
+              overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
+            }}
           >
             <div className="page-container py-2 space-y-0.5">
               {/* Mobile search */}

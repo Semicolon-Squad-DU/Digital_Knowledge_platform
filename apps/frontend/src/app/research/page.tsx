@@ -176,7 +176,7 @@ export default function ResearchPage() {
           borderBottom: "1px solid #e5e7eb",
           padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
         }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22, flexWrap: isMobile ? "wrap" : "nowrap", gap: isMobile ? 12 : 0 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <div style={{
@@ -195,49 +195,50 @@ export default function ResearchPage() {
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: isMobile ? 6 : 8, flexShrink: 0, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
               <Link
                 href="/research/authors"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 7,
-                  padding: "9px 16px", borderRadius: 9,
+                  display: "inline-flex", alignItems: "center", gap: isMobile ? 5 : 7,
+                  padding: isMobile ? "7px 11px" : "9px 16px", borderRadius: isMobile ? 7 : 9,
                   background: "#fff", border: "1.5px solid #dde2ff",
-                  fontSize: 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
-                  transition: "opacity 0.2s",
+                  fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
+                  transition: "opacity 0.2s", flex: isMobile ? "1 1 auto" : "0 0 auto", justifyContent: "center",
                 }}
                 onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}
               >
-                <Users size={14} /> Researchers
+                <Users size={isMobile ? 12 : 14} /> Researchers
               </Link>
               <Link
                 href="/research/labs"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 7,
-                  padding: "9px 16px", borderRadius: 9,
+                  display: "inline-flex", alignItems: "center", gap: isMobile ? 5 : 7,
+                  padding: isMobile ? "7px 11px" : "9px 16px", borderRadius: isMobile ? 7 : 9,
                   background: "#fff", border: "1.5px solid #dde2ff",
-                  fontSize: 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
-                  transition: "opacity 0.2s",
+                  fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
+                  transition: "opacity 0.2s", flex: isMobile ? "1 1 auto" : "0 0 auto", justifyContent: "center",
                 }}
                 onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}
               >
-                <FlaskConical size={14} /> Labs
+                <FlaskConical size={isMobile ? 12 : 14} /> Labs
               </Link>
               {canUpload && (
                 <Link
                   href="/research/upload"
                   style={{
-                    display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "9px 16px", borderRadius: 9,
+                    display: "inline-flex", alignItems: "center", gap: isMobile ? 5 : 7,
+                    padding: isMobile ? "7px 11px" : "9px 16px", borderRadius: isMobile ? 7 : 9,
                     background: "var(--avatar-theme-color, #1a1a2e)", border: "none",
-                    fontSize: 13, fontWeight: 600, color: "#fff", textDecoration: "none",
+                    fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "#fff", textDecoration: "none",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s",
+                    flex: isMobile ? "1 1 100%" : "0 0 auto", justifyContent: "center",
                   }}
                   onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
                   onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                 >
-                  <Plus size={14} /> Upload
+                  <Plus size={isMobile ? 12 : 14} /> Upload
                 </Link>
               )}
             </div>

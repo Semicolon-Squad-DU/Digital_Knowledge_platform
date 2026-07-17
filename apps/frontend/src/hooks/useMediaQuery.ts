@@ -3,18 +3,17 @@
 import { useState, useEffect } from "react";
 
 export function useMediaQuery(query: string): boolean {
-  // Lazy initialiser: on client-side navigations `window` is already
-  // available, so we get the correct value synchronously — no flash.
-  // On SSR `window` is undefined so we fall back to false.
-  const [matches, setMatches] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia(query).matches;
-  });
+  // Always start false — matching what the server renders (no `window` there) —
+  // so the client's first render is identical to the SSR'd HTML. A lazy
+  // initializer that reads `window.matchMedia` immediately would make the
+  // client's first paint diverge from the server's on a real phone/narrow
+  // viewport (starts true instead of false), which React reports as a
+  // hydration mismatch. useEffect below corrects it right after mount.
+  const [matches, setMatches] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mql = window.matchMedia(query);
-    // Sync in case the lazy value was wrong (e.g. first SSR paint)
     setMatches(mql.matches);
     const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
     mql.addEventListener("change", onChange);
