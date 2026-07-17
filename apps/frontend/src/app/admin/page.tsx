@@ -8,7 +8,7 @@ import {
   Users, HardDrive, AlertCircle, Search, BookOpen, Lock, Check, X,
   ShieldCheck, Settings, Database, Bell, Activity, UserCog, Eye,
   Download, UserCheck, Ban, RotateCcw, LayoutDashboard,
-  ClipboardList, Server, Zap, Mail, Slack, Calendar, FlaskConical, Archive,
+  ClipboardList, Server, Zap, Mail, Slack, Calendar, FlaskConical, Archive, GraduationCap,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
@@ -21,6 +21,7 @@ import {
   useAnnouncements, useBroadcastAnnouncement, type Announcement,
 } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/library/hooks/useLibrary";
+import { useShowcaseGallery } from "@/features/showcase/hooks/useShowcase";
 import { usePendingAccessRequests, useReviewAccessRequest } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -1658,7 +1659,11 @@ function AdminPageInner() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const isStudent = ["student", "student_author"].includes(user?.role ?? "");
+  // "student_author" submits showcase projects, not a library-borrowing role — it
+  // gets its own branch below rather than sharing the borrow/hold library UI.
+  const isLibraryStudent = false;
+  const isStudentAuthor = user?.role === "student_author";
+  const isStudent = isLibraryStudent || isStudentAuthor;
   const memberId = user?.user_id ?? "";
 
   const { data: adminStats, isLoading: statsLoading } = useAdminStats();
@@ -1689,9 +1694,12 @@ function AdminPageInner() {
   const { data: catalogDocsData, isLoading: catalogDocsLoading } = useCatalogDocuments(docParams, ["librarian", "admin"].includes(user?.role ?? ""));
   const { data: researchSubmissionsData, isLoading: researchLoading } = useResearcherSubmissions(docParams, user?.role === "researcher");
   const { data: archiveDocsData, isLoading: archiveLoading } = useArchiveDocuments(docParams, ["librarian", "admin", "archivist"].includes(user?.role ?? ""));
-  const { data: borrowHistory, isLoading: borrowLoading } = useBorrowingHistory(memberId);
-  const { data: memberHolds, isLoading: holdsLoading } = useMemberHolds(memberId);
-  const { data: finesData, isLoading: finesLoading } = useMemberFines(memberId);
+  const { data: borrowHistory, isLoading: borrowLoading } = useBorrowingHistory(isLibraryStudent ? memberId : "");
+  const { data: memberHolds, isLoading: holdsLoading } = useMemberHolds(isLibraryStudent ? memberId : "");
+  const { data: finesData, isLoading: finesLoading } = useMemberFines(isLibraryStudent ? memberId : "");
+  const { data: mySubmissions, isLoading: submissionsLoading } = useShowcaseGallery(
+    { submitted_by: memberId, limit: 50 }, isStudentAuthor && !!memberId
+  );
   const isArchivistOrAdmin = ["archivist", "admin"].includes(user?.role ?? "");
   const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
   const { mutateAsync: reviewRequest } = useReviewAccessRequest();
@@ -1712,7 +1720,9 @@ function AdminPageInner() {
   const activeHoldsCount = memberHolds?.filter((h: any) => h.status === "pending" || h.status === "available").length ?? 0;
 
   const documentsData = user?.role === "researcher" ? researchSubmissionsData : user?.role === "archivist" ? archiveDocsData : catalogDocsData;
-  const docsLoading = isStudent ? (borrowLoading || holdsLoading || finesLoading) : (user?.role === "researcher" ? researchLoading : user?.role === "archivist" ? archiveLoading : catalogDocsLoading);
+  const docsLoading = isLibraryStudent ? (borrowLoading || holdsLoading || finesLoading)
+    : isStudentAuthor ? submissionsLoading
+    : (user?.role === "researcher" ? researchLoading : user?.role === "archivist" ? archiveLoading : catalogDocsLoading);
 
   // ── Move all hooks to top before any conditional logic ──
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -1802,17 +1812,16 @@ function AdminPageInner() {
   }
 
   // ── NON-ADMIN: original unchanged layout ─────────────────────────────────
-  const roleTitle = isStudent ? "Admin panel" : ({
+  const roleTitle = isLibraryStudent ? "Student Portal" : ({
     researcher: "My Submissions", member: "Member Dashboard",
-    student: "Student Portal", student_author: "Student Submissions",
+    student_author: "Student Submissions",
     archivist: "Archive Management",
   } as Record<string, string>)[user?.role ?? ""] || "Admin Panel";
 
-  const roleDescription = isStudent ? "View your borrowed books, active reservations, loan durations, and pending fines." : ({
+  const roleDescription = isLibraryStudent ? "View your borrowed books, active reservations, loan durations, and pending fines." : ({
     researcher: "View and manage your research submissions under review.",
     member: "Manage your contributions and submissions.",
-    student: "View your learning resources and submissions.",
-    student_author: "Submit and track academic and student projects.",
+    student_author: "Submit and track your academic and student showcase projects.",
     archivist: "Oversee digital archives and preservation tasks.",
   } as Record<string, string>)[user?.role ?? ""] || "Admin panel for platform management";
 
@@ -1820,10 +1829,11 @@ function AdminPageInner() {
     queryClient.invalidateQueries({ queryKey: ["admin"] });
     queryClient.invalidateQueries({ queryKey: ["library"] });
     queryClient.invalidateQueries({ queryKey: ["archive"] });
+    queryClient.invalidateQueries({ queryKey: ["showcase"] });
     toast.success("Data refreshed");
   };
 
-  const roleIcon = isStudent ? BookOpen : user?.role === "researcher" ? FlaskConical : user?.role === "archivist" ? Archive : UserCog;
+  const roleIcon = isLibraryStudent ? BookOpen : isStudentAuthor ? GraduationCap : user?.role === "researcher" ? FlaskConical : user?.role === "archivist" ? Archive : UserCog;
   const RoleIcon = roleIcon;
 
   return (
@@ -1853,11 +1863,25 @@ function AdminPageInner() {
 
         {/* Stat Cards */}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : user?.role === "researcher" ? "repeat(1, 1fr)" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
-          {isStudent ? (
+          {isLibraryStudent ? (
             <>
               <StatCard label="Borrowed Books" value={docsLoading ? "—" : activeLoansCount} sub="currently borrowed" icon={BookOpen} />
               <StatCard label="Reserved Books" value={docsLoading ? "—" : activeHoldsCount} sub="active holds / reservations" icon={HardDrive} />
               <StatCard label="Total Fines" value={docsLoading ? "—" : `${finesData?.total_pending ?? 0} TK`} sub="flat 100 TK fine for overdue books" icon={AlertCircle} accent={(finesData?.total_pending ?? 0) > 0 ? "#dc2626" : "var(--avatar-theme-color)"} />
+            </>
+          ) : isStudentAuthor ? (
+            <>
+              <StatCard label="Total Submissions" value={docsLoading ? "—" : mySubmissions?.items?.length ?? 0} sub="projects submitted" icon={GraduationCap} />
+              <StatCard
+                label="Pending Review"
+                value={docsLoading ? "—" : (mySubmissions?.items ?? []).filter((p: any) => p.status === "pending_review" || p.status === "changes_requested").length}
+                sub="awaiting advisor decision" icon={AlertCircle}
+              />
+              <StatCard
+                label="Published"
+                value={docsLoading ? "—" : (mySubmissions?.items ?? []).filter((p: any) => p.status === "published").length}
+                sub="live on the showcase" icon={ClipboardList}
+              />
             </>
           ) : user?.role === "researcher" ? (
             <StatCard label="My Submissions Under Review" value={statsLoading ? "—" : adminStats?.pendingReview ?? 0} sub={adminStats?.pendingReview ? "awaiting decision" : "all approved"} icon={AlertCircle} accent="#dc2626" />
@@ -1880,7 +1904,7 @@ function AdminPageInner() {
           <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
             style={{ padding: "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "#374151", outline: "none", cursor: "pointer", minWidth: isMobile ? "auto" : "140px" }}>
             <option value="all">All Statuses</option>
-            {isStudent ? (<><option value="active">Active Borrowed</option><option value="overdue">Overdue Books</option><option value="returned">Returned Books</option><option value="pending">Pending Hold</option><option value="available">Available Hold</option></>) : (<><option value="published">Published</option><option value="pending_review">Pending Review</option><option value="changes_requested">Changes Requested</option><option value="draft">Draft</option></>)}
+            {isLibraryStudent ? (<><option value="active">Active Borrowed</option><option value="overdue">Overdue Books</option><option value="returned">Returned Books</option><option value="pending">Pending Hold</option><option value="available">Available Hold</option></>) : (<><option value="published">Published</option><option value="pending_review">Pending Review</option><option value="changes_requested">Changes Requested</option><option value="draft">Draft</option></>)}
           </select>
           <button onClick={() => { setFilterStatus("all"); setSearchQuery(""); setCurrentPage(1); }}
             style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 6, padding: isMobile ? "10px 8px" : "10px 14px", background: (filterStatus !== "all" || searchQuery) ? "var(--avatar-theme-color)" : "#fff", border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", fontSize: isMobile ? 11 : 13, fontWeight: 600, color: (filterStatus !== "all" || searchQuery) ? "#fff" : "#6b7280", whiteSpace: "nowrap" }}>
@@ -1977,7 +2001,7 @@ function AdminPageInner() {
         )}
 
         {/* Student policy notice */}
-        {isStudent && (
+        {isLibraryStudent && (
           <div style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", border: "1px solid #fcd34d", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
             <AlertCircle size={20} color="#d97706" style={{ flexShrink: 0 }} />
             <div style={{ fontSize: 13, color: "#92400e", fontWeight: 500, lineHeight: 1.5 }}>
@@ -1990,7 +2014,45 @@ function AdminPageInner() {
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
           {docsLoading ? (
             <div style={{ padding: "32px 24px" }}>{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 mb-3" />)}</div>
-          ) : isStudent ? (
+          ) : isStudentAuthor ? (
+            !mySubmissions?.items || mySubmissions.items.length === 0 ? (
+              <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}>
+                <p>No showcase submissions yet</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
+                {mySubmissions.items
+                  .filter((p: any) => filterStatus === "all" || p.status === filterStatus)
+                  .filter((p: any) => !searchQuery || p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((project: any) => {
+                    const statusStyle = PILL[project.status] || PILL.draft;
+                    return (
+                      <div key={project.project_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 600, color: "#1f2937", fontSize: 14 }}>{project.title}</p>
+                            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>
+                              {project.department} &middot; {project.semester} &middot; Advisor: {project.advisor_name ?? "Unassigned"}
+                            </p>
+                          </div>
+                          <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", background: statusStyle.bg, color: statusStyle.color, whiteSpace: "nowrap" }}>
+                            {project.status?.replace("_", " ")}
+                          </span>
+                        </div>
+                        {project.status === "changes_requested" && project.advisor_comments && (
+                          <div style={{ fontSize: 12, color: "#92400e", background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 6, padding: "8px 10px" }}>
+                            <strong>Advisor feedback:</strong> {project.advisor_comments}
+                          </div>
+                        )}
+                        <a href={`/showcase/${project.project_id}`} style={{ fontSize: 12, color: "var(--avatar-theme-color, #2563eb)", fontWeight: 600, textDecoration: "none" }}>
+                          View submission →
+                        </a>
+                      </div>
+                    );
+                  })}
+              </div>
+            )
+          ) : isLibraryStudent ? (
             !filteredCombinedItems || filteredCombinedItems.length === 0 ? (
               <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}><p>No borrowed or reserved books found</p></div>
             ) : isMobile ? (

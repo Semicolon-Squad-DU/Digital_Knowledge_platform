@@ -19,12 +19,12 @@ import { useAuthStore } from "@/store/auth.store";
 // existing admin to approve them before they get real access (see
 // APPROVAL_REQUIRED_ROLES in the backend's auth.routes.ts).
 const ROLES = [
-  { value: "member",         label: "Member",         desc: "Browse and access published content" },
-  { value: "student_author", label: "Student Author",  desc: "Submit projects to the showcase" },
-  { value: "researcher",     label: "Researcher",      desc: "Publish research outputs and manage labs" },
-  { value: "archivist",      label: "Archivist",       desc: "Upload and manage archive documents" },
-  { value: "librarian",      label: "Librarian",       desc: "Manage library catalog and lending" },
-  { value: "admin",          label: "Admin",           desc: "Full platform access and user management" },
+  { value: "member",         label: "Member",         desc: "Browse and access published content", approvalRequired: false },
+  { value: "student_author", label: "Student Author",  desc: "Submit projects to the showcase", approvalRequired: false },
+  { value: "researcher",     label: "Researcher",      desc: "Publish research outputs and manage labs", approvalRequired: true },
+  { value: "archivist",      label: "Archivist",       desc: "Upload and manage archive documents", approvalRequired: true },
+  { value: "librarian",      label: "Librarian",       desc: "Manage library catalog and lending", approvalRequired: true },
+  { value: "admin",          label: "Admin",           desc: "Full platform access and user management", approvalRequired: true },
 ] as const;
 type RoleValue = typeof ROLES[number]["value"];
 
@@ -364,7 +364,14 @@ export default function RegisterPage() {
                       onChange={e => setSelectedRole(e.target.value as RoleValue)}
                       style={{ marginTop: "3px", cursor: "pointer" }} />
                     <div>
-                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#ffffff", margin: "0 0 2px 0" }}>{r.label}</p>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#ffffff", margin: "0 0 2px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+                        {r.label}
+                        {r.approvalRequired && (
+                          <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#fbbf24", background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: "4px", padding: "1px 6px" }}>
+                            Requires approval
+                          </span>
+                        )}
+                      </p>
                       <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", margin: 0 }}>{r.desc}</p>
                     </div>
                   </label>

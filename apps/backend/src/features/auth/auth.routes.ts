@@ -72,14 +72,22 @@ router.post("/register", registerValidation, asyncHandler(async (req: Request, r
     throw new AppError(400, `Registration is restricted to institutional email addresses (e.g. @du.ac.bd). Please use your university email.`);
   }
 
-  const existing = await queryOne<{ user_id: string; role: string; email_verified: boolean; membership_status: string }>(
-    "SELECT user_id, role, email_verified, membership_status FROM users WHERE email = $1 AND deleted_at IS NULL",
+  const existing = await queryOne<{ user_id: string; role: string; email_verified: boolean; membership_status: string; password_hash: string | null }>(
+    "SELECT user_id, role, email_verified, membership_status, password_hash FROM users WHERE email = $1 AND deleted_at IS NULL",
     [email]
   );
   if (existing) {
     if (!existing.email_verified) {
       throw new AppError(409, "Email already registered but not verified. Use resend-verification to get a new code.");
     }
+
+    // A role-switch request rewrites this account's membership_status and fires an
+    // admin notification — must prove ownership of the account with its real password
+    // first, or anyone could file a bogus escalation request against any known email.
+    if (!existing.password_hash || !(await bcrypt.compare(password, existing.password_hash))) {
+      throw new AppError(409, "Email already registered.");
+    }
+
     const assignedRole = role && SELF_SERVICE_ROLES.includes(role) ? role : "member";
     if (assignedRole === existing.role) {
       throw new AppError(409, "Email already registered.");

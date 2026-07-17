@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { ShowcaseFilterParams, StudentProject } from "@dkp/shared";
 
-export function useShowcaseGallery(params: ShowcaseFilterParams) {
+export function useShowcaseGallery(params: ShowcaseFilterParams, enabled: boolean = true) {
   return useQuery({
     queryKey: ["showcase", "gallery", params],
     queryFn: async () => {
@@ -10,6 +10,7 @@ export function useShowcaseGallery(params: ShowcaseFilterParams) {
       return data.data;
     },
     staleTime: 30_000,
+    enabled,
   });
 }
 

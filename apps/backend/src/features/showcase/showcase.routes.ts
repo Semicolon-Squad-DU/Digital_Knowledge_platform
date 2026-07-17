@@ -43,6 +43,7 @@ router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Respons
   const projects = await query(
     `SELECT sp.project_id, sp.title, sp.abstract, sp.team_members, sp.semester,
             sp.department, sp.technologies, sp.thumbnail_url, sp.created_at,
+            sp.status, sp.advisor_comments,
             u.name as advisor_name
      FROM student_projects sp
      JOIN users u ON sp.advisor_id = u.user_id

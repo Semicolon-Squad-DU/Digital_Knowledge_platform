@@ -149,6 +149,10 @@ export default function DashboardPage() {
   // (scoped to this researcher's own advisees) lives at a dedicated endpoint.
   const isAdvisorRole = ["researcher", "admin"].includes(user?.role ?? "");
   const { data: pendingReviewQueue, isLoading: pendingLoading } = usePendingReviewQueue(isAdvisorRole);
+  const isStudentAuthor = user?.role === "student_author";
+  const { data: mySubmissions, isLoading: mySubmissionsLoading } = useShowcaseGallery(
+    { submitted_by: user?.user_id ?? "", limit: 50 }, isStudentAuthor && !!user?.user_id
+  );
 
   if (!ready) return null;
 
@@ -158,6 +162,9 @@ export default function DashboardPage() {
   const publishedItems = researchData?.total ?? 0;
   const pendingReviews = isAdvisorRole ? (pendingReviewQueue?.length ?? 0) : 0;
   const archivedItems  = returnedLoans.length;
+  const mySubmissionItems  = mySubmissions?.items ?? [];
+  const myPendingSubmissions = mySubmissionItems.filter((p: Showcase) => p.status === "pending_review" || p.status === "changes_requested").length;
+  const myPublishedSubmissions = mySubmissionItems.filter((p: Showcase) => p.status === "published").length;
 
   type Entry = { id: string; type: string; actor: string; action: string; subject: string; status: string; time: string; };
   const feed: Entry[] = [
@@ -289,6 +296,27 @@ export default function DashboardPage() {
                   label="Wishlist Saved" icon={Heart} iconBg="#fdf4ff" iconColor="#a855f7" accent="#a855f7"
                   value={wishlist?.length ?? 0}
                   sub="Books saved for later" loading={histLoading}
+                />
+              </>
+            ) : isStudentAuthor ? (
+              <>
+                <StatCard
+                  label="Total Submissions" icon={FolderOpen} iconBg="#eff6ff" iconColor="#3b82f6" accent="#3b82f6"
+                  value={mySubmissionItems.length}
+                  sub="projects submitted" loading={mySubmissionsLoading}
+                />
+                <StatCard
+                  label="Published" icon={CheckCircle} iconBg="#f0fdf4" iconColor="#22c55e" accent="#22c55e"
+                  value={myPublishedSubmissions}
+                  sub={myPublishedSubmissions > 0 ? "live on the showcase" : "No published items"}
+                  loading={mySubmissionsLoading}
+                />
+                <StatCard
+                  label="Pending Review" icon={Clock} iconBg="#fff7ed" iconColor="#f97316"
+                  accent={myPendingSubmissions > 0 ? "#f97316" : "#e5e7eb"}
+                  value={myPendingSubmissions}
+                  sub={myPendingSubmissions > 0 ? `${myPendingSubmissions} awaiting advisor` : "No pending reviews"}
+                  subColor={myPendingSubmissions > 0 ? "#f97316" : "#6b7280"} loading={mySubmissionsLoading}
                 />
               </>
             ) : (
