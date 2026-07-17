@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, FlaskConical, ExternalLink, Calendar, FileText, X, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { Search, Plus, FlaskConical, ExternalLink, Calendar, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -86,18 +86,6 @@ function ResearchCard({ item, onView }: {
         {item.authors && (
           <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 6px" }}>
             {item.authors.map(a => a.name).join(", ")}
-            {item.uploaded_by && item.uploader_name && (
-              <>
-                {" "}·{" "}
-                <Link
-                  href={`/research/authors/${item.uploaded_by}`}
-                  onClick={e => e.stopPropagation()}
-                  style={{ color: "#1a56db", fontWeight: 600, textDecoration: "none" }}
-                >
-                  View author profile
-                </Link>
-              </>
-            )}
           </p>
         )}
         {item.abstract && (
@@ -196,34 +184,6 @@ export default function ResearchPage() {
             </div>
 
             <div style={{ display: "flex", gap: isMobile ? 6 : 8, flexShrink: 0, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
-              <Link
-                href="/research/authors"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: isMobile ? 5 : 7,
-                  padding: isMobile ? "7px 11px" : "9px 16px", borderRadius: isMobile ? 7 : 9,
-                  background: "#fff", border: "1.5px solid #dde2ff",
-                  fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
-                  transition: "opacity 0.2s", flex: isMobile ? "1 1 auto" : "0 0 auto", justifyContent: "center",
-                }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                <Users size={isMobile ? 12 : 14} /> Researchers
-              </Link>
-              <Link
-                href="/research/labs"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: isMobile ? 5 : 7,
-                  padding: isMobile ? "7px 11px" : "9px 16px", borderRadius: isMobile ? 7 : 9,
-                  background: "#fff", border: "1.5px solid #dde2ff",
-                  fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "var(--avatar-theme-color, #1a1a2e)", textDecoration: "none",
-                  transition: "opacity 0.2s", flex: isMobile ? "1 1 auto" : "0 0 auto", justifyContent: "center",
-                }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                <FlaskConical size={isMobile ? 12 : 14} /> Labs
-              </Link>
               {canUpload && (
                 <Link
                   href="/research/upload"
