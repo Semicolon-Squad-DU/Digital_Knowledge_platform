@@ -15,8 +15,6 @@ export default function ShowcaseReviewPage() {
   const { user } = useAuthStore();
   const [comments, setComments] = useState("");
 
-  const canReview = useMemo(() => user?.role === "researcher" || user?.role === "admin", [user?.role]);
-
   const { data: project, isLoading } = useQuery({
     queryKey: ["showcase", "review", projectId],
     queryFn: async () => {
@@ -25,6 +23,11 @@ export default function ShowcaseReviewPage() {
     },
     enabled: !!projectId,
   });
+
+  const canReview = useMemo(
+    () => user?.role === "admin" || (user?.role === "researcher" && user?.user_id === project?.advisor_id),
+    [user?.role, user?.user_id, project?.advisor_id]
+  );
 
   const reviewMutation = useMutation({
     mutationFn: async (action: "approve" | "request_changes") => {
@@ -49,7 +52,7 @@ export default function ShowcaseReviewPage() {
   }
 
   if (!canReview) {
-    return <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">Only researchers or admins can review projects.</div>;
+    return <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-slate-500">Only the assigned advisor or an admin can review this project.</div>;
   }
 
   return (

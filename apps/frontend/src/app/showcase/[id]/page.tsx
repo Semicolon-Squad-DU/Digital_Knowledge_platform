@@ -61,6 +61,7 @@ export default function ShowcaseDetailPage() {
 
   const isOwnerOrAdmin = user && (project.submitted_by === user.user_id || user.role === "admin");
   const isEditable = project.status === "pending_review" || project.status === "changes_requested";
+  const canReviewProject = user && (user.role === "admin" || (user.role === "researcher" && user.user_id === project.advisor_id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -141,7 +142,7 @@ export default function ShowcaseDetailPage() {
               Please <Link href={`/login?redirect=/showcase/${projectId}`} className="text-primary hover:underline font-semibold">sign in</Link> to view source code or report.
             </span>
           )}
-          {(project.status === "pending_review" || project.status === "changes_requested") && (
+          {canReviewProject && (project.status === "pending_review" || project.status === "changes_requested") && (
             <Link href={`/showcase/review/${project.project_id}`} className="text-[var(--color-accent-fg)] hover:underline">
               Review Page
             </Link>

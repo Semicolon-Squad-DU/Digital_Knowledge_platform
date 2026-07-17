@@ -88,6 +88,10 @@ router.post(
       throw new AppError(400, "All event details are required");
     }
 
+    if (Number.isNaN(new Date(scheduledAt).getTime()) || new Date(scheduledAt).getTime() <= Date.now()) {
+      throw new AppError(400, "Scheduled date must be a valid date in the future");
+    }
+
     if (req.file) {
       const key = generateS3Key("events", req.file.originalname, req.file.mimetype);
       await uploadToS3(key, req.file.buffer, req.file.mimetype);

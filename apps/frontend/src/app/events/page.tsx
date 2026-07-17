@@ -78,6 +78,11 @@ export default function EventsPage() {
       return;
     }
 
+    if (new Date(formData.scheduledAt).getTime() <= Date.now()) {
+      toast.error("Scheduled date must be in the future");
+      return;
+    }
+
     try {
       await createEvent({
         ...formData,

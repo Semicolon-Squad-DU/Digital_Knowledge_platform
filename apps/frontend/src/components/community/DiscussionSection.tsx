@@ -106,24 +106,35 @@ export function DiscussionSection({ entityType, entityId }: DiscussionSectionPro
     // Find if user already has a different active reaction
     const previousReaction = reactions?.userReactions?.find((r: string) => r !== reactionType);
 
-    try {
-      // Untoggle the previous reaction first
-      if (previousReaction) {
+    // Untoggle the previous reaction first
+    if (previousReaction) {
+      try {
         await toggleReaction({
           entityType,
           entityId,
           reactionType: previousReaction,
         });
+      } catch {
+        toast.error("Failed to update reaction");
+        return;
       }
+    }
 
-      // Toggle the clicked reaction
+    // Toggle the clicked reaction
+    try {
       await toggleReaction({
         entityType,
         entityId,
         reactionType,
       });
     } catch {
-      toast.error("Failed to update reaction");
+      // The previous reaction (if any) was already removed server-side at this point —
+      // tell the user their old reaction is gone rather than implying nothing happened.
+      toast.error(
+        previousReaction
+          ? "Your previous reaction was removed, but the new one couldn't be added. Please try again."
+          : "Failed to update reaction"
+      );
     }
   };
 
