@@ -198,11 +198,14 @@ router.get("/:id/cite", optionalAuth, asyncHandler(async (req: AuthRequest, res:
 
 // GET /api/research/:id/download-url
 router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const output = await queryOne<{ file_url: string; access_tier: AccessTier }>(
-    "SELECT file_url, access_tier FROM research_outputs WHERE output_id = $1",
+  const output = await queryOne<{ file_url: string; access_tier: AccessTier; status: string; uploaded_by: string }>(
+    "SELECT file_url, access_tier, status, uploaded_by FROM research_outputs WHERE output_id = $1",
     [req.params.id]
   );
   if (!output || !output.file_url) throw new AppError(404, "File not found");
+
+  const isOwnerOrAdmin = req.user?.user_id === output.uploaded_by || req.user?.role === "admin";
+  if (output.status === "retracted" && !isOwnerOrAdmin) throw new AppError(404, "File not found");
 
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
@@ -216,7 +219,7 @@ router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthReque
 
 // GET /api/research/:id
 router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const output = await queryOne<{ access_tier: AccessTier }>(
+  const output = await queryOne<{ access_tier: AccessTier; status: string; uploaded_by: string }>(
     `SELECT ro.*, u.name as uploader_name, l.name as lab_name
      FROM research_outputs ro
      JOIN users u ON ro.uploaded_by = u.user_id
@@ -226,6 +229,9 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
   );
   if (!output) throw new AppError(404, "Research output not found");
 
+  const isOwnerOrAdmin = req.user?.user_id === output.uploaded_by || req.user?.role === "admin";
+  if (output.status === "retracted" && !isOwnerOrAdmin) throw new AppError(404, "Research output not found");
+
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
   if (!allowedTiers.includes(output.access_tier)) {
@@ -234,6 +240,38 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
 
   res.json({ success: true, data: output });
 }));
+
+// PATCH /api/research/:id/retract — self-service takedown for the uploader (or admin).
+// Retracted outputs stay in the DB (citations/audit trail intact) but drop out of
+// search, listing, and direct-view for everyone except the owner/admin.
+router.patch(
+  "/:id/retract",
+  authenticate,
+  requireRole("researcher", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const existing = await queryOne<{ output_id: string; uploaded_by: string; status: string }>(
+      "SELECT output_id, uploaded_by, status FROM research_outputs WHERE output_id = $1",
+      [req.params.id]
+    );
+    if (!existing) throw new AppError(404, "Research output not found");
+    if (existing.uploaded_by !== req.user!.user_id && req.user!.role !== "admin") {
+      throw new AppError(403, "You can only retract your own research outputs");
+    }
+    if (existing.status === "retracted") {
+      throw new AppError(409, "This research output is already retracted");
+    }
+
+    await query(
+      "UPDATE research_outputs SET status = 'retracted', updated_at = NOW() WHERE output_id = $1",
+      [req.params.id]
+    );
+
+    const joined = await fetchResearchOutputWithJoins(req.params.id);
+    if (joined) void indexResearchOutput(joined as Record<string, unknown>);
+
+    res.json({ success: true, data: joined });
+  })
+);
 
 
 
@@ -269,7 +307,16 @@ router.patch(
     if (abstract !== undefined) { updates.push(`abstract = $${idx++}`); params.push(abstract || null); }
     if (authors !== undefined) { updates.push(`authors = $${idx++}`); params.push(typeof authors === "string" ? JSON.parse(authors) : authors); }
     if (keywords !== undefined) { updates.push(`keywords = $${idx++}`); params.push(typeof keywords === "string" ? JSON.parse(keywords) : keywords); }
-    if (doi !== undefined) { updates.push(`doi = $${idx++}`); params.push(doi || null); }
+    if (doi !== undefined) {
+      if (doi) {
+        const duplicate = await queryOne(
+          "SELECT output_id FROM research_outputs WHERE doi = $1 AND output_id != $2",
+          [doi, req.params.id]
+        );
+        if (duplicate) throw new AppError(409, "A research output with this DOI already exists");
+      }
+      updates.push(`doi = $${idx++}`); params.push(doi || null);
+    }
     if (output_type !== undefined) { updates.push(`output_type = $${idx++}`); params.push(output_type); }
     if (lab_id !== undefined) { updates.push(`lab_id = $${idx++}`); params.push(lab_id || null); }
     if (published_date !== undefined) { updates.push(`published_date = $${idx++}`); params.push(published_date || null); }
@@ -307,6 +354,20 @@ router.post(
 
     if (!title) throw new AppError(400, "Title is required");
 
+    // Defaults to "public" like the DB column, but a researcher may only choose a tier
+    // they themselves can see — otherwise they could restrict a doc above their own
+    // access, or (before this check) it silently landed on "public" no matter what.
+    const requestedTier = (body.access_tier as AccessTier) || "public";
+    const allowedTiers = ALLOWED_TIERS_BY_ROLE[req.user!.role] ?? ["public"];
+    if (!allowedTiers.includes(requestedTier)) {
+      throw new AppError(403, `You cannot set access tier to "${requestedTier}"`);
+    }
+
+    if (doi) {
+      const duplicate = await queryOne("SELECT output_id FROM research_outputs WHERE doi = $1", [doi]);
+      if (duplicate) throw new AppError(409, "A research output with this DOI already exists");
+    }
+
     // Safely parse JSON fields from multipart FormData
     let authors: unknown[] = [];
     let keywords: string[] = [];
@@ -332,8 +393,8 @@ router.post(
 
     const output = await queryOne(
       `INSERT INTO research_outputs
-         (title, abstract, authors, keywords, doi, dkp_identifier, file_url, output_type, lab_id, published_date, journal_name, uploaded_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         (title, abstract, authors, keywords, doi, dkp_identifier, file_url, output_type, lab_id, published_date, journal_name, uploaded_by, access_tier)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING *`,
       [
         title, abstract || null,
@@ -342,7 +403,7 @@ router.post(
         doi || null, dkp_identifier, file_url,
         output_type || "journal",
         lab_id || null, published_date || null, journal_name || null,
-        req.user!.user_id,
+        req.user!.user_id, requestedTier,
       ]
     );
 
@@ -361,7 +422,7 @@ router.post(
           [
             title, archiveDescription,
             authorNames, "Research", "en",
-            "member", "published", file_url, req.file.mimetype || "application/pdf", req.file.size,
+            requestedTier, "published", file_url, req.file.mimetype || "application/pdf", req.file.size,
             req.user!.user_id, "research", (output as Record<string, string>).output_id
           ]
         );

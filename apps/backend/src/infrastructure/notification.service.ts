@@ -31,6 +31,20 @@ export async function notifyAllUsersExcept(
   }
 }
 
+// Same idea, but targeted at an explicit list of user ids — used when the audience
+// isn't "everyone" or "admins" but a specific set (e.g. everyone who RSVPed to an
+// event that's being cancelled).
+export async function notifyUsers(userIds: string[], notification: BroadcastNotification): Promise<void> {
+  try {
+    await bulkInsert(userIds, notification);
+  } catch (err) {
+    logger.error("Failed to notify targeted users", {
+      error: (err as Error).message,
+      type: notification.type,
+    });
+  }
+}
+
 // Same idea, but targeted at admins only — used to alert admins that a new
 // privileged-role signup needs their approval.
 export async function notifyAdmins(notification: BroadcastNotification): Promise<void> {

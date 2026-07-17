@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { query, queryOne, withTransaction } from "../core/db/pool";
 import { authenticate, optionalAuth, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
-import { notifyAllUsersExcept } from "../infrastructure/notification.service";
+import { notifyAllUsersExcept, notifyUsers } from "../infrastructure/notification.service";
 import { uploadSingle } from "../core/middleware/upload.middleware";
 import { uploadToS3, generateS3Key } from "../infrastructure/s3.service";
 
@@ -276,13 +276,33 @@ router.delete(
   requireRole("admin", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+
+    const rsvpedUsers = await query<{ user_id: string }>(
+      "SELECT user_id FROM event_rsvps WHERE event_id = $1",
+      [id]
+    );
+
+    let eventTitle = "";
     await withTransaction(async (client) => {
+      const eventRes = await client.query("SELECT title FROM events WHERE event_id = $1", [id]);
+      if (eventRes.rowCount === 0) throw new AppError(404, "Event not found");
+      eventTitle = eventRes.rows[0].title;
+
       await client.query("DELETE FROM event_rsvps WHERE event_id = $1", [id]);
-      const resDel = await client.query("DELETE FROM events WHERE event_id = $1 RETURNING *", [id]);
-      if (resDel.rowCount === 0) {
-        throw new AppError(404, "Event not found");
-      }
+      await client.query("DELETE FROM events WHERE event_id = $1", [id]);
     });
+
+    // Everyone who RSVPed loses their seat when the event disappears — tell them
+    // rather than letting them show up to nothing.
+    if (rsvpedUsers.length > 0) {
+      void notifyUsers(rsvpedUsers.map((u) => u.user_id), {
+        type: "event_cancelled",
+        title: "Event Cancelled",
+        message: `"${eventTitle}" has been cancelled. Your RSVP is no longer valid.`,
+        action_url: "/events",
+      });
+    }
+
     res.json({
       success: true,
       message: "Event deleted successfully",

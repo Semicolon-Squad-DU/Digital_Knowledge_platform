@@ -28,6 +28,14 @@ const OUTPUT_TYPES = [
   { value: "report", label: "Report" },
 ];
 
+// Mirrors ALLOWED_TIERS_BY_ROLE on the backend — researcher/admin may pick
+// any of these; the server re-validates against the caller's actual role.
+const ACCESS_TIERS = [
+  { value: "public", label: "Public — anyone can view and download" },
+  { value: "member", label: "Member — signed-in users only" },
+  { value: "staff", label: "Staff — researchers, librarians, archivists, admins only" },
+];
+
 /**
  * PDF Preview component for local files
  */
@@ -78,6 +86,7 @@ const schema = z.object({
   doi: z.string().optional(),
   journal_name: z.string().optional(),
   keywords_raw: z.string().optional(),
+  access_tier: z.string().min(1, "Access level is required"),
   authors: z.array(authorSchema).min(1, "At least one author is required"),
 });
 
@@ -103,6 +112,7 @@ export default function UploadResearchPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       output_type: "journal",
+      access_tier: "public",
       authors: [{ name: user?.name ?? "", email: user?.email ?? "", affiliation: "" }],
     },
   });
@@ -141,6 +151,7 @@ export default function UploadResearchPage() {
     const fd = new FormData();
     fd.append("title", values.title);
     fd.append("output_type", values.output_type);
+    fd.append("access_tier", values.access_tier);
     fd.append("abstract", values.abstract);
     fd.append("authors", JSON.stringify(values.authors));
     fd.append("keywords", JSON.stringify(
@@ -209,6 +220,14 @@ export default function UploadResearchPage() {
               options={OUTPUT_TYPES}
               error={errors.output_type?.message}
               {...register("output_type")}
+            />
+            <Select
+              label="Access Level"
+              required
+              options={ACCESS_TIERS}
+              hint="Who can view and download this output — defaults to Public if left unset"
+              error={errors.access_tier?.message}
+              {...register("access_tier")}
             />
             <Input
               label="Title"

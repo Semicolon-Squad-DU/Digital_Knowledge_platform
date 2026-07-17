@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Copy, Check, Download, FileText, ExternalLink,
-  BookOpen, Tag, FlaskConical, Calendar,
+  BookOpen, Tag, FlaskConical, Calendar, Ban,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
@@ -15,6 +15,7 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn, getAccessTierBadge } from "@/lib/utils";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useRetractResearchOutput } from "@/features/research/hooks/useResearch";
 
 import Link from "next/link";
 import { Pencil } from "lucide-react";
@@ -262,6 +263,18 @@ export default function ResearchDetailPage() {
   // Admin manages the platform, not individual researchers' own output — only the
   // researcher who owns this piece can edit it here.
   const isOwner = user && output.uploaded_by === user.user_id;
+  const canRetract = (isOwner || user?.role === "admin") && output.status !== "retracted";
+  const retractMutation = useRetractResearchOutput();
+
+  const handleRetract = async () => {
+    if (!confirm("Retract this research output? It will be removed from search and public view, but stays available to you and admins.")) return;
+    try {
+      await retractMutation.mutateAsync(outputId);
+      toast.success("Research output retracted");
+    } catch {
+      toast.error("Failed to retract research output");
+    }
+  };
 
   return (
     <AppLayout>
@@ -275,19 +288,36 @@ export default function ResearchDetailPage() {
             { label: "Detail" },
           ]}
         />
-        {isOwner && (
-          <Link
-            href={`/research/${outputId}/edit`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm shrink-0 self-start sm:self-center hover:opacity-90"
-            style={{
-              background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
-            }}
-          >
-            <Pencil size={13} />
-            Edit Research
-          </Link>
-        )}
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+          {isOwner && (
+            <Link
+              href={`/research/${outputId}/edit`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm hover:opacity-90"
+              style={{
+                background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
+              }}
+            >
+              <Pencil size={13} />
+              Edit Research
+            </Link>
+          )}
+          {canRetract && (
+            <button
+              onClick={handleRetract}
+              disabled={retractMutation.isPending}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-red-600 bg-red-50 border border-red-200 transition-all hover:bg-red-100 disabled:opacity-60"
+            >
+              <Ban size={13} />
+              Retract
+            </button>
+          )}
+        </div>
       </div>
+      {output.status === "retracted" && (
+        <div className="mb-4 px-4 py-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+          This research output has been retracted and is no longer visible to the public.
+        </div>
+      )}
 
       {/* ── Main info card ─────────────────────────────── */}
       <div className="gh-box mb-5">

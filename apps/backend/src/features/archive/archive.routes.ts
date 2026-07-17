@@ -277,16 +277,15 @@ router.post(
         const key = generateS3Key("archive", file.originalname, file.mimetype);
         await uploadToS3(key, file.buffer, file.mimetype);
 
-        const [item] = await query<{ item_id: string }>(
-          `INSERT INTO archive_items
-             (title_en, category, language, access_tier, file_url, file_type, file_size, uploaded_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           RETURNING item_id`,
-          [
-            file.originalname.replace(/\.[^/.]+$/, ""),
-            "General", "en", "member", key, file.mimetype, file.size, req.user!.user_id,
-          ]
-        );
+        // Routed through the same shared creator as the single-file upload paths so
+        // bulk items get a real archive_versions baseline row too (previously hand-rolled
+        // its own INSERT and skipped it, leaving nothing for later diffing/versioning).
+        const item = await createArchiveItemRecord({
+          key, fileType: file.mimetype, fileSize: file.size,
+          uploadedBy: req.user!.user_id, ip: req.ip || "",
+          title_en: file.originalname.replace(/\.[^/.]+$/, ""),
+          category: "General", language: "en", access_tier: "member",
+        });
 
         results.push({ filename: file.originalname, status: "success", item_id: item.item_id });
       } catch (err) {
@@ -367,11 +366,31 @@ router.delete(
   authenticate,
   requireRole("archivist", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const item = await queryOne<{ item_id: string; file_url: string; title_en: string }>(
-      "SELECT item_id, file_url, title_en FROM archive_items WHERE item_id = $1",
+    const item = await queryOne<{ item_id: string; file_url: string; title_en: string; source_type: string | null; source_id: string | null }>(
+      "SELECT item_id, file_url, title_en, source_type, source_id FROM archive_items WHERE item_id = $1",
       [req.params.id]
     );
     if (!item) throw new AppError(404, "Archive item not found");
+
+    // Auto-archived twin of a live research output or showcase project — deleting it
+    // here would silently orphan that record's reference with no warning. The source
+    // record is the record of truth; retract/remove it there instead.
+    if (item.source_type === "research") {
+      const source = await queryOne<{ output_id: string }>(
+        "SELECT output_id FROM research_outputs WHERE output_id = $1", [item.source_id]
+      );
+      if (source) {
+        throw new AppError(409, "This archive item is the published copy of a research output. Retract the research output first, then delete this record.");
+      }
+    }
+    if (item.source_type === "showcase") {
+      const source = await queryOne<{ project_id: string }>(
+        "SELECT project_id FROM student_projects WHERE project_id = $1", [item.source_id]
+      );
+      if (source) {
+        throw new AppError(409, "This archive item is the published copy of a showcase project. Remove the showcase project first, then delete this record.");
+      }
+    }
 
     const versions = await query<{ file_url: string }>(
       "SELECT file_url FROM archive_versions WHERE item_id = $1",

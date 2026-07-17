@@ -473,7 +473,7 @@ export async function searchResearch(params: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const must: any[] = [{ terms: { access_tier: allowed_tiers } }];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filter: any[] = [];
+  const filter: any[] = [{ term: { status: "published" } }];
 
   if (query) {
     must.push({
@@ -519,7 +519,7 @@ export async function searchResearch(params: {
   } catch (err) {
     logger.warn("Research search falling back to PostgreSQL", { error: (err as Error).message });
 
-    const conditions: string[] = ["ro.access_tier = ANY($1)"];
+    const conditions: string[] = ["ro.access_tier = ANY($1)", "ro.status = 'published'"];
     const values: unknown[] = [allowed_tiers];
     let idx = 2;
 

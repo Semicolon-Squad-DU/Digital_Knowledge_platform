@@ -157,11 +157,9 @@ export default function DashboardPage() {
   if (!ready) return null;
 
   const overdueLoans   = (history ?? []).filter((t: Loan) => t.status === "overdue");
-  const returnedLoans  = (history ?? []).filter((t: Loan) => t.status === "returned");
   const totalDocs      = archiveData?.total ?? 0;
   const publishedItems = researchData?.total ?? 0;
   const pendingReviews = isAdvisorRole ? (pendingReviewQueue?.length ?? 0) : 0;
-  const archivedItems  = returnedLoans.length;
   const mySubmissionItems  = mySubmissions?.items ?? [];
   const myPendingSubmissions = mySubmissionItems.filter((p: Showcase) => p.status === "pending_review" || p.status === "changes_requested").length;
   const myPublishedSubmissions = mySubmissionItems.filter((p: Showcase) => p.status === "published").length;
@@ -341,9 +339,9 @@ export default function DashboardPage() {
                   subColor={pendingReviews > 0 ? "#f97316" : "#6b7280"} loading={isAdvisorRole && pendingLoading}
                 />
                 <StatCard
-                  label="Archived Items" icon={Archive} iconBg="#f5f3ff" iconColor="#8b5cf6" accent="#8b5cf6"
-                  value={archivedItems.toLocaleString()}
-                  sub="Legacy data stored" loading={histLoading}
+                  label="Archive Items" icon={Archive} iconBg="#f5f3ff" iconColor="#8b5cf6" accent="#8b5cf6"
+                  value={totalDocs.toLocaleString()}
+                  sub="Documents in the archive" loading={archLoading}
                 />
               </>
             )}

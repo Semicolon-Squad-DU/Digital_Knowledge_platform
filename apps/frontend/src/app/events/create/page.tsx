@@ -70,8 +70,8 @@ export default function CreateEventPage() {
     }
   };
 
-  // Guard — only admin, archivist, librarian
-  const canCreate = user && ["admin", "archivist", "librarian"].includes(user.role);
+  // Guard — matches backend's requireRole("admin", "archivist") on POST /api/events
+  const canCreate = user && ["admin", "archivist"].includes(user.role);
 
   if (user && !canCreate) {
     return (
@@ -80,7 +80,7 @@ export default function CreateEventPage() {
           <Calendar size={40} style={{ margin: "0 auto 16px", color: "#6b7280" }} />
           <p style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Access Restricted</p>
           <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
-            Only administrators, librarians, or archivists can schedule events.
+            Only administrators or archivists can schedule events.
           </p>
         </div>
       </AppLayout>

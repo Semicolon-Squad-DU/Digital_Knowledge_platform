@@ -24,6 +24,7 @@ export interface ResearchOutput {
   issue?: string;
   pages?: string;
   uploaded_by: string;
+  status: "published" | "retracted";
   created_at: string;
   updated_at: string;
 }

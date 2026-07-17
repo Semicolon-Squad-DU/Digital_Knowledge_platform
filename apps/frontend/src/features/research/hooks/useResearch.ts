@@ -131,3 +131,17 @@ export function useUpdateResearchOutput() {
     },
   });
 }
+
+export function useRetractResearchOutput() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.patch(`/research/${id}/retract`);
+      return data.data as ResearchOutput;
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["research", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["research", "list"] });
+    },
+  });
+}
