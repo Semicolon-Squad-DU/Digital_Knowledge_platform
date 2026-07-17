@@ -332,7 +332,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                     onClick={() => handleApprove(req.request_id)}
                     style={{
                       padding: "8px 14px", borderRadius: 6, border: "none",
-                      background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      background: "#111827", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
                     }}
                   >
@@ -341,8 +341,8 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                   <button
                     onClick={() => setDenyRequestId(req.request_id)}
                     style={{
-                      padding: "8px 14px", borderRadius: 6, border: "1px solid #fca5a5",
-                      background: "#fee2e2", color: "#991b1b", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      padding: "8px 14px", borderRadius: 6, border: "none",
+                      background: "#dc2626", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
                     }}
                   >
@@ -1703,6 +1703,26 @@ function AdminPageInner() {
   const isArchivistOrAdmin = ["archivist", "admin"].includes(user?.role ?? "");
   const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
   const { mutateAsync: reviewRequest } = useReviewAccessRequest();
+  const [denyRequestId, setDenyRequestId] = useState<string | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState("");
+  const [submittingDeny, setSubmittingDeny] = useState(false);
+
+  const handleDenySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!denyRequestId) return;
+    setSubmittingDeny(true);
+    try {
+      await reviewRequest({ requestId: denyRequestId, status: "denied", rejection_message: rejectionMessage });
+      toast.success("Access request denied");
+      setDenyRequestId(null);
+      setRejectionMessage("");
+      refetchRequests();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to deny access request");
+    } finally {
+      setSubmittingDeny(false);
+    }
+  };
 
   const combinedItems: any[] = [];
   if (borrowHistory) combinedItems.push(...borrowHistory);
@@ -1918,25 +1938,72 @@ function AdminPageInner() {
 
         {/* Access Requests (archivist) */}
         {isArchivistOrAdmin && pendingRequests && pendingRequests.length > 0 && (
-          <div style={{ background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", border: "1px solid #bfdbfe", borderRadius: 12, padding: "20px 24px", marginBottom: 24 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: "#1e3a8a", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
-              <Lock size={16} /> Restricted Document Access Requests ({pendingRequests.length})
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {pendingRequests.map((req: any) => (
-                <div key={req.request_id} style={{ background: "#fff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#111827" }}>Request by: <span style={{ color: "#2563eb" }}>{req.user_name}</span> ({req.user_email})</p>
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#374151" }}>Document: <strong>{req.item_title}</strong></p>
-                    <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280", fontStyle: "italic", background: "#f9fafb", padding: "6px 10px", borderRadius: 6, borderLeft: "3px solid #2563eb" }}>&ldquo;{req.reason}&rdquo;</p>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
+              <Lock size={15} color="#6b7280" />
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1f2937", margin: 0 }}>Restricted Document Access Requests</h3>
+              <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: PILL.pending.bg, color: PILL.pending.color }}>{pendingRequests.length}</span>
+            </div>
+            <div>
+              {pendingRequests.map((req: any, i: number) => (
+                <div key={req.request_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: "16px 20px", borderBottom: i === pendingRequests.length - 1 ? "none" : "1px solid #f3f4f6" }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: ROLE_COLORS.member.bg, color: ROLE_COLORS.member.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                      {(req.user_name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#1f2937" }}>
+                        {req.user_name} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({req.user_email})</span>
+                      </p>
+                      <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b7280" }}>
+                        requested access to <span style={{ fontWeight: 600, color: "#374151" }}>{req.item_title}</span>
+                      </p>
+                      <p style={{ margin: "6px 0 0", fontSize: 12, color: "#6b7280", fontStyle: "italic", background: "#f9fafb", padding: "6px 10px", borderRadius: 6, border: "1px solid #f3f4f6" }}>
+                        &ldquo;{req.reason}&rdquo;
+                      </p>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={async () => { try { await reviewRequest({ requestId: req.request_id, status: "approved" }); toast.success("Approved!"); refetchRequests(); } catch { toast.error("Failed"); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}><Check size={12} /> Approve</button>
-                    <button onClick={async () => { try { await reviewRequest({ requestId: req.request_id, status: "denied" }); toast.success("Denied!"); refetchRequests(); } catch { toast.error("Failed"); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fee2e2", color: "#991b1b", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}><X size={12} /> Deny</button>
+                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    <button onClick={async () => { try { await reviewRequest({ requestId: req.request_id, status: "approved" }); toast.success("Approved!"); refetchRequests(); } catch (err: any) { toast.error(err?.response?.data?.message || "Failed to approve"); } }}
+                      style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#111827", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                      <Check size={12} /> Approve
+                    </button>
+                    <button onClick={() => setDenyRequestId(req.request_id)}
+                      style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#fde8e8", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                      <X size={12} /> Deny
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Rejection Message Modal */}
+        {denyRequestId && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+            <form onSubmit={handleDenySubmit} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Deny Access Request</h3>
+                <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Explanation / Rejection Message</label>
+                <textarea
+                  required
+                  value={rejectionMessage}
+                  onChange={e => setRejectionMessage(e.target.value)}
+                  placeholder="Please enter a reason or rejection message explaining why access is denied..."
+                  style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setDenyRequestId(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+                <button type="submit" disabled={submittingDeny} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
+                  {submittingDeny ? "Submitting..." : "Deny Access"}
+                </button>
+              </div>
+            </form>
           </div>
         )}
 

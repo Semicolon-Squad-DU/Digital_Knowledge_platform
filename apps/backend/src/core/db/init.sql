@@ -137,6 +137,7 @@ CREATE TABLE access_requests (
   status      access_request_status NOT NULL DEFAULT 'pending',
   reviewed_by UUID REFERENCES users(user_id),
   reviewed_at TIMESTAMPTZ,
+  rejection_message TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

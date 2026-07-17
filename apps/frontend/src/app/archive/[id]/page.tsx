@@ -301,29 +301,96 @@ export default function ArchiveItemPage() {
                   </div>
                 </div>
               ) : (
-                <div
-                  style={{
-                    maxWidth: 500,
-                    margin: "0 auto",
-                    background: "#fef2f2",
-                    border: "1px solid #fca5a5",
-                    borderRadius: 12,
-                    padding: "20px 24px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 16,
-                    textAlign: "left",
-                  }}
-                >
-                  <XCircle size={36} color="#b91c1c" style={{ flexShrink: 0 }} />
-                  <div>
-                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#7f1d1d", margin: 0 }}>
-                      Access Request Denied
-                    </h4>
-                    <p style={{ fontSize: 13, color: "#991b1b", margin: "4px 0 0", lineHeight: 1.4 }}>
-                      Your request to view this restricted document has been reviewed and declined. Please contact the archives administrator for details.
-                    </p>
+                <div style={{ maxWidth: 500, margin: "0 auto", textAlign: "left" }}>
+                  <div
+                    style={{
+                      background: "#fef2f2",
+                      border: "1px solid #fca5a5",
+                      borderRadius: 12,
+                      padding: "20px 24px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 16,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <XCircle size={36} color="#b91c1c" style={{ flexShrink: 0 }} />
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#7f1d1d", margin: 0 }}>
+                        Access Request Denied
+                      </h4>
+                      <p style={{ fontSize: 13, color: "#991b1b", margin: "4px 0 0", lineHeight: 1.4 }}>
+                        {restrictedData.rejection_message
+                          ? `Reason: ${restrictedData.rejection_message}`
+                          : "Your request to view this restricted document has been reviewed and declined."}
+                        {" "}You may submit a new request below.
+                      </p>
+                    </div>
                   </div>
+
+                  <form
+                    onSubmit={handleRequestAccess}
+                    style={{
+                      background: "#f9fafb",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 12,
+                      padding: 20,
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#374151",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      Reason for requesting access again
+                    </label>
+                    <textarea
+                      required
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Provide an updated academic or institutional reason for this request..."
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        border: "1px solid #d1d5db",
+                        fontSize: 13,
+                        fontFamily: "inherit",
+                        resize: "none",
+                        outline: "none",
+                        marginBottom: 16,
+                        background: "#fff",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      style={{
+                        width: "100%",
+                        padding: "11px 16px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: "var(--theme-gradient-160)",
+                        color: "#fff",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        textAlign: "center",
+                        opacity: isSubmitting ? 0.7 : 1,
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                      }}
+                    >
+                      {isSubmitting ? "Submitting Request..." : "Submit New Access Request"}
+                    </button>
+                  </form>
                 </div>
               )}
             </div>

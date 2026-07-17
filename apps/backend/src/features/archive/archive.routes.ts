@@ -95,6 +95,74 @@ router.get("/meta/tags", asyncHandler(async (_req, res: Response) => {
   res.json({ success: true, data: tags });
 }));
 
+// GET /api/archive/access-requests/pending
+// Must be registered before "/:id" — otherwise Express matches "access-requests" as an :id param.
+router.get(
+  "/access-requests/pending",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const requests = await query(
+      `SELECT ar.*, u.name as user_name, u.email as user_email, ai.title_en as item_title
+       FROM access_requests ar
+       JOIN users u ON ar.user_id = u.user_id
+       JOIN archive_items ai ON ar.item_id = ai.item_id
+       WHERE ar.status = 'pending'
+       ORDER BY ar.created_at ASC`
+    );
+    res.json({ success: true, data: requests });
+  })
+);
+
+// PATCH /api/archive/access-requests/:id/review
+router.patch(
+  "/access-requests/:id/review",
+  authenticate,
+  requireRole("archivist", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
+    if (!["approved", "denied"].includes(status)) {
+      throw new AppError(400, "Invalid status (must be approved or denied)");
+    }
+
+    const request = await queryOne<{ user_id: string; item_id: string; status: string }>(
+      "SELECT * FROM access_requests WHERE request_id = $1",
+      [req.params.id]
+    );
+    if (!request) throw new AppError(404, "Access request not found");
+
+    const updated = await queryOne(
+      `UPDATE access_requests
+       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), rejection_message = $3
+       WHERE request_id = $4
+       RETURNING *`,
+      [status, req.user!.user_id, rejection_message || null, req.params.id]
+    );
+
+    // Notify user of access decision
+    const item = await queryOne<{ title_en: string }>(
+      "SELECT title_en FROM archive_items WHERE item_id = $1",
+      [request.item_id]
+    );
+
+    if (item) {
+      const type = status === "approved" ? "access_request_approved" : "access_request_denied";
+      const title = status === "approved" ? "Access Request Approved" : "Access Request Denied";
+      const message = status === "approved"
+        ? `Your request to access "${item.title_en}" has been approved.`
+        : `Your request to access "${item.title_en}" was denied.${rejection_message ? ` Reason: ${rejection_message}` : ""}`;
+
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, action_url)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [request.user_id, type, title, message, `/archive/${request.item_id}`]
+      );
+    }
+
+    res.json({ success: true, data: updated });
+  })
+);
+
 // GET /api/archive/:id
 router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
   const role = req.user?.role ?? "guest";
@@ -121,9 +189,10 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
 
   if (!allowedTiers.includes(item.access_tier)) {
     if (req.user) {
-      const accessReq = await queryOne<{ request_id: string; status: string }>(
-        `SELECT request_id, status FROM access_requests
-         WHERE user_id = $1 AND item_id = $2`,
+      const accessReq = await queryOne<{ request_id: string; status: string; rejection_message: string | null }>(
+        `SELECT request_id, status, rejection_message FROM access_requests
+         WHERE user_id = $1 AND item_id = $2
+         ORDER BY created_at DESC LIMIT 1`,
         [req.user.user_id, item.item_id]
       );
       if (!accessReq || accessReq.status !== "approved") {
@@ -137,6 +206,7 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
             category: (item as any).category,
             access_tier: item.access_tier,
             request_status: accessReq ? accessReq.status : null,
+            rejection_message: accessReq?.rejection_message ?? null,
           }
         });
         return;
@@ -499,8 +569,8 @@ router.post(
     const { reason } = req.body as { reason: string };
     if (!reason?.trim()) throw new AppError(400, "Reason is required");
 
-    const item = await queryOne(
-      "SELECT item_id, access_tier FROM archive_items WHERE item_id = $1 AND status = 'published'",
+    const item = await queryOne<{ item_id: string; access_tier: AccessTier; title_en: string }>(
+      "SELECT item_id, access_tier, title_en FROM archive_items WHERE item_id = $1 AND status = 'published'",
       [req.params.id]
     );
     if (!item) throw new AppError(404, "Item not found");
@@ -517,6 +587,10 @@ router.post(
     );
 
     // Notify all archivists about the new access request
+    const requester = await queryOne<{ name: string }>(
+      "SELECT name FROM users WHERE user_id = $1",
+      [req.user!.user_id]
+    );
     const archivists = await query<{ user_id: string }>(
       "SELECT user_id FROM users WHERE role = 'archivist'"
     );
@@ -524,78 +598,11 @@ router.post(
       await query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
          VALUES ($1, 'pending_approval', 'New Access Request', $2, '/admin')`,
-        [arch.user_id, `${req.user!.name} has requested access to "${item.title_en}".`]
+        [arch.user_id, `${requester?.name ?? "A user"} has requested access to "${item.title_en}".`]
       );
     }
 
     res.status(201).json({ success: true, data: request });
-  })
-);
-
-// GET /api/archive/access-requests/pending
-router.get(
-  "/access-requests/pending",
-  authenticate,
-  requireRole("archivist", "admin"),
-  asyncHandler(async (_req: AuthRequest, res: Response) => {
-    const requests = await query(
-      `SELECT ar.*, u.name as user_name, u.email as user_email, ai.title_en as item_title
-       FROM access_requests ar
-       JOIN users u ON ar.user_id = u.user_id
-       JOIN archive_items ai ON ar.item_id = ai.item_id
-       WHERE ar.status = 'pending'
-       ORDER BY ar.created_at ASC`
-    );
-    res.json({ success: true, data: requests });
-  })
-);
-
-// PATCH /api/archive/access-requests/:id/review
-router.patch(
-  "/access-requests/:id/review",
-  authenticate,
-  requireRole("archivist", "admin"),
-  asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
-    if (!["approved", "denied"].includes(status)) {
-      throw new AppError(400, "Invalid status (must be approved or denied)");
-    }
-
-    const request = await queryOne<{ user_id: string; item_id: string; status: string }>(
-      "SELECT * FROM access_requests WHERE request_id = $1",
-      [req.params.id]
-    );
-    if (!request) throw new AppError(404, "Access request not found");
-
-    const updated = await queryOne(
-      `UPDATE access_requests
-       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), rejection_message = $3
-       WHERE request_id = $4
-       RETURNING *`,
-      [status, req.user!.user_id, rejection_message || null, req.params.id]
-    );
-
-    // Notify user of access decision
-    const item = await queryOne<{ title_en: string }>(
-      "SELECT title_en FROM archive_items WHERE item_id = $1",
-      [request.item_id]
-    );
-
-    if (item) {
-      const type = status === "approved" ? "access_request_approved" : "access_request_denied";
-      const title = status === "approved" ? "Access Request Approved" : "Access Request Denied";
-      const message = status === "approved"
-        ? `Your request to access "${item.title_en}" has been approved.`
-        : `Your request to access "${item.title_en}" was denied.${rejection_message ? ` Reason: ${rejection_message}` : ""}`;
-
-      await query(
-        `INSERT INTO notifications (user_id, type, title, message, action_url)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [request.user_id, type, title, message, `/archive/${request.item_id}`]
-      );
-    }
-
-    res.json({ success: true, data: updated });
   })
 );
 
