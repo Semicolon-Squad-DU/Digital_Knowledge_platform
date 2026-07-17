@@ -17,7 +17,10 @@ const router = Router();
 // GET /api/archive/search
 router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
   const role = req.user?.role ?? "guest";
-  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  let allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  if (role !== "guest" && !allowedTiers.includes("restricted")) {
+    allowedTiers = [...allowedTiers, "restricted"];
+  }
 
   const {
     query: q, category, language, file_type, date_from, date_to, tags, page, limit,

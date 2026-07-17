@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Filter } from "lucide-react";
+import { Download, FileText, Filter, ChevronDown } from "lucide-react";
 import { useCirculationReport } from "@/features/library/hooks/useLibrary";
 import { downloadCsv, downloadReportPdf } from "@/lib/reports";
 import { Button } from "@/components/ui/Button";
@@ -32,6 +32,7 @@ export function CirculationReportPanel() {
   const [from, setFrom] = useState(defaultFrom());
   const [to, setTo] = useState(today());
   const [status, setStatus] = useState("all");
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const { data, isLoading, refetch, isFetching } = useCirculationReport({ from, to, status }, true);
 
   const headers = ["Title", "ISBN", "Member", "Email", "Issue Date", "Due Date", "Return Date", "Status", "Fine (Tk)", "Renewals"];
@@ -72,12 +73,57 @@ export function CirculationReportPanel() {
           Apply
         </Button>
         <div className="flex-1" />
-        <Button variant="outline" size="sm" icon={<Download size={13} />} onClick={handleExportCsv} disabled={!rows.length}>
-          Export CSV
-        </Button>
-        <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={handleExportPdf} disabled={!rows.length}>
-          Export PDF
-        </Button>
+        <div style={{ position: "relative" }}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!rows.length}
+            icon={<Download size={13} />}
+            onClick={() => setExportMenuOpen((v) => !v)}
+          >
+            Export Report <ChevronDown size={13} style={{ marginLeft: 2 }} />
+          </Button>
+          {exportMenuOpen && (
+            <>
+              <div
+                onClick={() => setExportMenuOpen(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 10 }}
+              />
+              <div
+                style={{
+                  position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20,
+                  background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 140, overflow: "hidden",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => { handleExportCsv(); setExportMenuOpen(false); }}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
+                    fontSize: 12.5, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                >
+                  Export as CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { handleExportPdf(); setExportMenuOpen(false); }}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
+                    fontSize: 12.5, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                >
+                  Export as PDF
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Summary */}
