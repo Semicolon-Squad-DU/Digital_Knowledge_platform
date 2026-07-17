@@ -200,6 +200,20 @@ export function useCancelHold() {
   });
 }
 
+export function useFulfillHold() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (holdId: string) => {
+      const { data } = await api.post(`/library/holds/${holdId}/fulfill`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
+}
+
 export function useMemberFines(memberId: string) {
   return useQuery({
     queryKey: ["library", "fines", memberId],

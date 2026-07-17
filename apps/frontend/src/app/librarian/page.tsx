@@ -6,7 +6,7 @@ import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, E
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useExportCatalog } from "@/features/library/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useFulfillHold, useExportCatalog } from "@/features/library/hooks/useLibrary";
 import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
 import { ImportCatalogModal } from "@/components/library/ImportCatalogModal";
 import { CirculationReportPanel } from "@/components/library/CirculationReportPanel";
@@ -441,6 +441,7 @@ export default function LibrarianDashboardPage() {
   const { mutateAsync: markFinePaid, isPending: isMarkingPaid } = useMarkFinePaid();
   const { mutateAsync: notifyOverdue, isPending: isNotifying } = useNotifyOverdue();
   const { mutateAsync: cancelHold, isPending: isCancellingHold } = useCancelHold();
+  const { mutateAsync: fulfillHold } = useFulfillHold();
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
   const [fulfillingHoldId, setFulfillingHoldId] = useState<string | null>(null);
 
@@ -540,8 +541,8 @@ export default function LibrarianDashboardPage() {
     }
 
     const amount = parseFloat(newAmount);
-    if (isNaN(amount) || amount < 0) {
-      toast.error("Please enter a valid amount");
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Amount must be greater than 0 — use Waive to clear a fine entirely");
       return;
     }
 
@@ -605,8 +606,7 @@ export default function LibrarianDashboardPage() {
     }
     setFulfillingHoldId(hold.hold_id);
     try {
-      await issueBook({ catalog_id: hold.catalog_id, member_id: hold.member_id });
-      await cancelHold(hold.hold_id);
+      await fulfillHold(hold.hold_id);
       toast.success("Hold fulfilled — book issued to member");
       refetch();
       refetchHolds();
@@ -639,7 +639,7 @@ export default function LibrarianDashboardPage() {
     { label: "Fines (Tk)",    value: (stats?.total_fines_amount ?? 0).toFixed(0), icon: Banknote, iconClass: "bg-orange-50 text-orange-600" },
   ];
 
-  if (!ready || user?.role !== "librarian") {
+  if (!ready || !["librarian", "admin"].includes(user?.role ?? "")) {
     if (ready) router.push("/");
     return null;
   }
@@ -1224,7 +1224,7 @@ export default function LibrarianDashboardPage() {
             onChange={(e) => setNewAmount(e.target.value)}
             placeholder="e.g. 150"
             step="0.01"
-            min="0"
+            min="0.01"
             required
           />
           <div>

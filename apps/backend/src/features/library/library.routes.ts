@@ -300,6 +300,54 @@ router.delete("/holds/:id", authenticate, asyncHandler(async (req: AuthRequest, 
   res.json({ success: true, message: "Hold cancelled" });
 }));
 
+// POST /api/library/holds/:id/fulfill — issue the held book to the requester and mark
+// the hold fulfilled (instead of the caller doing issue + cancel as two separate calls,
+// which could leave a checked-out book against a hold still showing "pending").
+router.post(
+  "/holds/:id/fulfill",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const hold = await queryOne<{ hold_id: string; catalog_id: string; member_id: string; status: string; created_at: string }>(
+      "SELECT hold_id, catalog_id, member_id, status, created_at FROM hold_requests WHERE hold_id = $1",
+      [req.params.id]
+    );
+    if (!hold) throw new AppError(404, "Hold not found");
+    if (!["pending", "available"].includes(hold.status)) {
+      throw new AppError(409, `Hold is already ${hold.status} and cannot be fulfilled`);
+    }
+
+    // Enforce first-come-first-served: block fulfilling this hold while an earlier
+    // pending/available hold for the same title is still waiting.
+    const earlierHold = await queryOne(
+      `SELECT hold_id FROM hold_requests
+       WHERE catalog_id = $1 AND status IN ('pending','available') AND created_at < $2
+       ORDER BY created_at ASC LIMIT 1`,
+      [hold.catalog_id, hold.created_at]
+    );
+    if (earlierHold) {
+      throw new AppError(409, "An earlier hold for this title is still waiting and must be fulfilled first");
+    }
+
+    const result = await BorrowService.issueResource(hold.catalog_id, hold.member_id, req.user!.user_id, req.ip || "");
+
+    const updatedHold = await queryOne(
+      "UPDATE hold_requests SET status = 'fulfilled' WHERE hold_id = $1 RETURNING *",
+      [hold.hold_id]
+    );
+
+    const transaction = {
+      ...result.borrow,
+      transaction_id: result.borrow.id,
+      member_id: result.borrow.user_id,
+      catalog_id: result.borrow.resource_id,
+      status: result.borrow.borrow_status,
+    };
+
+    res.json({ success: true, data: { transaction, hold: updatedHold } });
+  })
+);
+
 // GET /api/library/catalog/lookup/:barcode — resolve a scanned/typed barcode to a catalog item
 router.get(
   "/catalog/lookup/:barcode",
@@ -594,8 +642,8 @@ router.patch(
       throw new AppError(400, "Amount is required");
     }
 
-    if (amount < 0) {
-      throw new AppError(400, "Amount must be non-negative");
+    if (amount <= 0) {
+      throw new AppError(400, "Amount must be greater than 0 — use Waive to clear a fine entirely");
     }
 
     if (!reason || typeof reason !== "string" || !reason.trim()) {
@@ -755,6 +803,11 @@ router.post(
     if (!title) throw new AppError(400, "Title is required");
     if (!totalCopies || totalCopies < 1) throw new AppError(400, "At least 1 copy required");
 
+    if (isbn) {
+      const duplicate = await queryOne("SELECT catalog_id FROM catalog_items WHERE isbn = $1", [isbn]);
+      if (duplicate) throw new AppError(409, "A catalog item with this ISBN already exists");
+    }
+
     let documentUrl: string | null = null;
     if (req.file) {
       const key = generateS3Key("catalog", req.file.originalname, req.file.mimetype);
@@ -815,6 +868,14 @@ router.put(
 
     const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode } =
       req.body as Record<string, unknown>;
+
+    if (total_copies !== undefined && total_copies !== null) {
+      const onLoan = (existing as { total_copies: number; available_copies: number }).total_copies -
+        (existing as { total_copies: number; available_copies: number }).available_copies;
+      if ((total_copies as number) < onLoan) {
+        throw new AppError(400, `Cannot set total copies below ${onLoan} — that many are currently on loan`);
+      }
+    }
 
     const item = await queryOne(
       `UPDATE catalog_items SET
