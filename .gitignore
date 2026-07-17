@@ -29,3 +29,6 @@ apps/frontend/src/app/tailwind.generated.css
 /tailwindcss
 /tsx
 /digital-knowledge-platform@1.0.0
+
+# Vendored local-dev-only pg_dump/psql binaries (see apps/backend/vendor/README.md)
+apps/backend/vendor/pgsql-bin/

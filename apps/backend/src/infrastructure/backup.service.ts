@@ -1,4 +1,6 @@
 import { spawn } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join, parse } from "path";
 import { Readable } from "stream";
 import zlib from "zlib";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -6,6 +8,46 @@ import { config } from "../core/config";
 import { logger } from "../core/config/logger";
 import { query, queryOne } from "../core/db/pool";
 import { s3Client, uploadToS3, getPresignedUrl } from "./s3.service";
+
+// Docker/production images install postgresql client tools onto PATH (see
+// apps/backend/Dockerfile). Local Windows dev machines usually don't have
+// pg_dump/psql installed system-wide, so we fall back to a vendored copy at
+// apps/backend/vendor/pgsql-bin (gitignored — see vendor/README) if PATH
+// resolution would otherwise fail. Walk up from __dirname to find the
+// apps/backend package root, since it sits at a different depth under
+// dist/ (tsc build) vs src/ (tsx dev).
+function findBackendRoot(): string | null {
+  let dir = __dirname;
+  while (true) {
+    if (existsSync(join(dir, "package.json")) && existsSync(join(dir, "vendor"))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir || parse(dir).root === dir) return null;
+    dir = parent;
+  }
+}
+
+function resolveBinary(name: string): string {
+  const exe = process.platform === "win32" ? `${name}.exe` : name;
+  const backendRoot = findBackendRoot();
+  if (backendRoot) {
+    const vendored = join(backendRoot, "vendor", "pgsql-bin", exe);
+    if (existsSync(vendored)) return vendored;
+  }
+  return name;
+}
+
+// config.db.url carries driver-specific query params (e.g. Supabase pooler's
+// "uselibpqcompat") meant for the app's `pg` connection pool. Raw libpq-based
+// CLI tools like pg_dump/psql reject unrecognized URI query params outright,
+// so strip anything libpq doesn't understand before shelling out.
+const LIBPQ_ALLOWED_PARAMS = new Set(["sslmode", "sslcert", "sslkey", "sslrootcert", "connect_timeout", "application_name", "options"]);
+function toLibpqConnectionString(url: string): string {
+  const parsed = new URL(url);
+  for (const key of [...parsed.searchParams.keys()]) {
+    if (!LIBPQ_ALLOWED_PARAMS.has(key)) parsed.searchParams.delete(key);
+  }
+  return parsed.toString();
+}
 
 export interface BackupRecord {
   backup_id: string;
@@ -43,7 +85,7 @@ export async function getBackup(id: string): Promise<BackupRecord | null> {
 // crashing the process, so callers can record an honest failure status.
 function dumpDatabase(): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const pgDump = spawn("pg_dump", [config.db.url, "--no-owner", "--no-privileges", "--clean", "--if-exists"]);
+    const pgDump = spawn(resolveBinary("pg_dump"), ["--no-owner", "--no-privileges", "--clean", "--if-exists", "-d", toLibpqConnectionString(config.db.url)]);
     const gzip = zlib.createGzip();
     const chunks: Buffer[] = [];
     let stderr = "";
@@ -138,7 +180,7 @@ async function downloadBackupBuffer(s3Key: string): Promise<Buffer> {
 
 function restoreDatabase(gzippedSql: Buffer): Promise<void> {
   return new Promise((resolve, reject) => {
-    const psql = spawn("psql", [config.db.url, "--set", "ON_ERROR_STOP=1"]);
+    const psql = spawn(resolveBinary("psql"), ["--set", "ON_ERROR_STOP=1", "-d", toLibpqConnectionString(config.db.url)]);
     let stderr = "";
     let settled = false;
 

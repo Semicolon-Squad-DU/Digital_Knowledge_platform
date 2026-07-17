@@ -17,8 +17,10 @@ RUN npm run build --workspace=apps/backend
 FROM node:22-alpine AS runtime
 WORKDIR /repo
 ENV NODE_ENV=production
-# postgresql16-client provides pg_dump/psql, used by the backup/restore jobs
-RUN apk add --no-cache postgresql16-client
+# postgresql17-client provides pg_dump/psql, used by the backup/restore jobs.
+# pg_dump refuses to run against a newer server (Supabase runs PG 17), so this
+# must track the target database's major version, not just "latest available".
+RUN apk add --no-cache postgresql17-client
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY apps/frontend/package.json apps/frontend/package.json
