@@ -233,6 +233,8 @@ export default function ResearchDetailPage() {
     enabled: !!outputId,
   });
 
+  const retractMutation = useRetractResearchOutput();
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -264,7 +266,6 @@ export default function ResearchDetailPage() {
   // researcher who owns this piece can edit it here.
   const isOwner = user && output.uploaded_by === user.user_id;
   const canRetract = (isOwner || user?.role === "admin") && output.status !== "retracted";
-  const retractMutation = useRetractResearchOutput();
 
   const handleRetract = async () => {
     if (!confirm("Retract this research output? It will be removed from search and public view, but stays available to you and admins.")) return;

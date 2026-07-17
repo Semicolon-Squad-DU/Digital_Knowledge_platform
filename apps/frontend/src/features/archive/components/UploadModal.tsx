@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import {
-  Upload, X, FileText, Image, Music, Video, File,
+  Upload, X, FileText, Image as ImageIcon, Music, Video, File,
   AlertCircle, CheckCircle2, Clock, Loader2, Tag, Plus,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -76,7 +76,7 @@ function addToQueue(item: Omit<QueuedUpload, "id" | "addedAt" | "status">): Queu
 }
 
 function FileIcon({ mime, size = 20 }: { mime: string; size?: number }) {
-  if (mime.startsWith("image/"))  return <Image  size={size} className="text-purple-500" />;
+  if (mime.startsWith("image/"))  return <ImageIcon  size={size} className="text-purple-500" />;
   if (mime.startsWith("audio/"))  return <Music  size={size} className="text-green-500" />;
   if (mime.startsWith("video/"))  return <Video  size={size} className="text-blue-500" />;
   if (mime.includes("pdf"))       return <FileText size={size} className="text-red-500" />;
