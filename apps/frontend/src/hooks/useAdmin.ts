@@ -41,6 +41,96 @@ export function useAdminStats() {
   });
 }
 
+// FR-051: top 10 archive items by download count over the past 30 days.
+export interface MostAccessedItem {
+  item_id: string;
+  title: string;
+  download_count: number;
+}
+
+export function useMostAccessedResources() {
+  return useQuery({
+    queryKey: ["admin", "analytics", "most-accessed"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/analytics/most-accessed");
+      return data.data as MostAccessedItem[];
+    },
+    staleTime: 60_000,
+  });
+}
+
+// FR-050: daily uploads/downloads/searches time-series
+export interface UsageAnalytics {
+  days: number;
+  uploads: { date: string; count: number }[];
+  downloads: { date: string; count: number }[];
+  searches: { date: string; count: number }[];
+}
+
+export function useUsageAnalytics(days = 30) {
+  return useQuery({
+    queryKey: ["admin", "analytics", "usage", days],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/analytics/usage", { params: { days } });
+      return data.data as UsageAnalytics;
+    },
+    staleTime: 60_000,
+  });
+}
+
+// FR-052: active users, new registrations, returning-visitor rate
+export interface EngagementAnalytics {
+  days: number;
+  active_users: number;
+  new_registrations: number;
+  returning_users: number;
+  returning_rate: number;
+  daily_active: { date: string; count: number }[];
+}
+
+export function useEngagementAnalytics(days = 30) {
+  return useQuery({
+    queryKey: ["admin", "analytics", "engagement", days],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/analytics/engagement", { params: { days } });
+      return data.data as EngagementAnalytics;
+    },
+    staleTime: 60_000,
+  });
+}
+
+// FR-053: top search terms, zero-result queries, Bangla/English breakdown
+export interface SearchAnalytics {
+  top_queries: { query_text: string; search_count: number; is_bangla: boolean }[];
+  zero_result_queries: { query_text: string; search_count: number; is_bangla: boolean }[];
+  language_breakdown: { bangla: number; english: number };
+}
+
+export function useSearchAnalytics() {
+  return useQuery({
+    queryKey: ["admin", "analytics", "search"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/analytics/search");
+      return data.data as SearchAnalytics;
+    },
+    staleTime: 60_000,
+  });
+}
+
+// FR-054: CSV export of any analytics metric for a chosen date range
+export async function exportAnalyticsCsv(metric: "usage" | "most-accessed" | "engagement" | "search", days = 30) {
+  const { data } = await api.get("/admin/analytics/export", {
+    params: { metric, days },
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(new Blob([data], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dkp-${metric}-analytics.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function useCatalogDocuments(params?: { page?: number; limit?: number; status?: string; search?: string }, enabled = true) {
   return useQuery({
     queryKey: ["admin", "catalog", params],

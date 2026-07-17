@@ -45,3 +45,18 @@ export function parseCsv(text: string): Record<string, string>[] {
     return obj;
   });
 }
+
+/** Serializes an array of flat objects to RFC 4180 CSV text (header row + quoted fields). */
+export function toCsv(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return "";
+  const headers = Object.keys(rows[0]);
+  const escape = (value: unknown): string => {
+    const s = value === null || value === undefined ? "" : String(value);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(",")];
+  for (const row of rows) {
+    lines.push(headers.map((h) => escape(row[h])).join(","));
+  }
+  return lines.join("\r\n");
+}

@@ -317,6 +317,13 @@ router.post(
     const tokens = generateTokens(user.user_id, user.email, user.role as never);
     await storeRefreshToken(user.user_id, tokens.refresh_token);
 
+    // FR-052 depends on this: /admin/stats and /admin/analytics/engagement
+    // both query audit_logs for action='LOGIN' to compute active-user counts.
+    await query(
+      "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'LOGIN', 'user', $1, $2)",
+      [user.user_id, req.ip || null]
+    ).catch((err) => logger.warn("Failed to record login audit log", { error: err.message }));
+
     logger.info("User logged in", { user_id: user.user_id });
     res.json({ success: true, data: { ...tokens, user: safeUser } });
   })
@@ -797,6 +804,11 @@ router.post(
 
     const tokens = generateTokens(user!.user_id, user!.email, user!.role as never);
     await storeRefreshToken(user!.user_id, tokens.refresh_token);
+
+    await query(
+      "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'LOGIN', 'user', $1, $2)",
+      [user!.user_id, req.ip || null]
+    ).catch((err) => logger.warn("Failed to record login audit log", { error: err.message }));
 
     logger.info("OAuth Login Successful", { user_id: user!.user_id, email, provider });
     res.json({ success: true, data: { ...tokens, user } });

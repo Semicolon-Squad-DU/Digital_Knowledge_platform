@@ -6,6 +6,7 @@ import { config } from "../core/config";
 import { authenticate, requireRole, AuthRequest } from "../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../core/middleware/error.middleware";
 import { parsePagination } from "../core/utils/pagination";
+import { toCsv } from "../core/utils/csv";
 import { sendEmail, accountApprovalEmail } from "../infrastructure/email.service";
 import { s3Client } from "../infrastructure/s3.service";
 import { esClient } from "../infrastructure/elasticsearch.service";
@@ -1182,36 +1183,291 @@ router.put(
   })
 );
 
-// GET /api/admin/analytics/search — Top search terms and zero-result queries
+// GET /api/admin/analytics/search — Top search terms and zero-result
+// queries, with a Bangla-vs-English breakdown (FR-053). A query counts as
+// Bangla if it contains any character in the Bangla Unicode block
+// (U+0980-U+09FF), matching the script-detection rule described in the SRS.
+const BANGLA_REGEX = "[\\u0980-\\u09FF]";
 router.get(
   "/analytics/search",
   authenticate,
   requireRole("admin", "librarian", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const topQueries = await query(
-      `SELECT query_text, COUNT(*)::int as search_count
-       FROM search_queries
-       GROUP BY query_text
-       ORDER BY search_count DESC
-       LIMIT 20`
-    );
+    const [topQueries, zeroResultQueries, languageBreakdown] = await Promise.all([
+      query(
+        `SELECT query_text, COUNT(*)::int as search_count,
+                (query_text ~ $1) as is_bangla
+         FROM search_queries
+         GROUP BY query_text
+         ORDER BY search_count DESC
+         LIMIT 20`,
+        [BANGLA_REGEX]
+      ),
+      query(
+        `SELECT query_text, COUNT(*)::int as search_count,
+                (query_text ~ $1) as is_bangla
+         FROM search_queries
+         WHERE results_count = 0
+         GROUP BY query_text
+         ORDER BY search_count DESC
+         LIMIT 20`,
+        [BANGLA_REGEX]
+      ),
+      query<{ is_bangla: boolean; count: string }>(
+        `SELECT (query_text ~ $1) as is_bangla, COUNT(*)::int as count
+         FROM search_queries
+         GROUP BY is_bangla`,
+        [BANGLA_REGEX]
+      ),
+    ]);
 
-    const zeroResultQueries = await query(
-      `SELECT query_text, COUNT(*)::int as search_count
-       FROM search_queries
-       WHERE results_count = 0
-       GROUP BY query_text
-       ORDER BY search_count DESC
-       LIMIT 20`
-    );
+    const bangla = languageBreakdown.find(r => r.is_bangla)?.count ?? 0;
+    const english = languageBreakdown.find(r => !r.is_bangla)?.count ?? 0;
 
     res.json({
       success: true,
       data: {
         top_queries: topQueries,
         zero_result_queries: zeroResultQueries,
+        language_breakdown: { bangla: Number(bangla), english: Number(english) },
       },
     });
+  })
+);
+
+// GET /api/admin/analytics/usage — FR-050: platform-wide uploads/downloads/
+// searches as a daily time-series over a selectable window (default 30 days).
+router.get(
+  "/analytics/usage",
+  authenticate,
+  requireRole("admin", "librarian", "archivist"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const days = Math.min(Math.max(parseInt((req.query.days as string) || "30", 10) || 30, 1), 365);
+
+    const [uploads, downloads, searches] = await Promise.all([
+      // Uploads: new items created across all three content modules, unioned
+      // and grouped by day — this counts real content creation, not audit
+      // log rows, so it's accurate even for modules that don't log CREATE.
+      query<{ day: string; count: string }>(
+        `SELECT day::date::text as day, COUNT(*)::int as count FROM (
+           SELECT created_at as day FROM archive_items WHERE created_at >= NOW() - ($1 || ' days')::interval
+           UNION ALL
+           SELECT created_at FROM research_outputs WHERE created_at >= NOW() - ($1 || ' days')::interval
+           UNION ALL
+           SELECT created_at FROM student_projects WHERE created_at >= NOW() - ($1 || ' days')::interval
+         ) uploads
+         GROUP BY day::date
+         ORDER BY day::date`,
+        [days]
+      ),
+      query<{ day: string; count: string }>(
+        `SELECT timestamp::date::text as day, COUNT(*)::int as count
+         FROM audit_logs
+         WHERE action = 'DOWNLOAD' AND timestamp >= NOW() - ($1 || ' days')::interval
+         GROUP BY timestamp::date
+         ORDER BY timestamp::date`,
+        [days]
+      ),
+      query<{ day: string; count: string }>(
+        `SELECT created_at::date::text as day, COUNT(*)::int as count
+         FROM search_queries
+         WHERE created_at >= NOW() - ($1 || ' days')::interval
+         GROUP BY created_at::date
+         ORDER BY created_at::date`,
+        [days]
+      ),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        days,
+        uploads: uploads.map(r => ({ date: r.day, count: Number(r.count) })),
+        downloads: downloads.map(r => ({ date: r.day, count: Number(r.count) })),
+        searches: searches.map(r => ({ date: r.day, count: Number(r.count) })),
+      },
+    });
+  })
+);
+
+// GET /api/admin/analytics/most-accessed — FR-051: top 10 catalog/archive
+// items by download count over the past 30 days.
+router.get(
+  "/analytics/most-accessed",
+  authenticate,
+  requireRole("admin", "librarian", "archivist"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const topArchiveItems = await query(
+      `SELECT ai.item_id, ai.title_en as title, COUNT(*)::int as download_count
+       FROM audit_logs al
+       JOIN archive_items ai ON ai.item_id = al.entity_id
+       WHERE al.action = 'DOWNLOAD' AND al.entity_type = 'archive_item'
+         AND al.timestamp >= NOW() - INTERVAL '30 days'
+       GROUP BY ai.item_id, ai.title_en
+       ORDER BY download_count DESC
+       LIMIT 10`
+    );
+
+    res.json({ success: true, data: topArchiveItems });
+  })
+);
+
+// GET /api/admin/analytics/engagement — FR-052: active users, new
+// registrations, and returning-visitor rate over a selectable window.
+// "Active" = distinct users with a LOGIN audit event in the window.
+// "New" = accounts created in the window. "Returning" = active users in the
+// window who also had at least one LOGIN before the window started.
+router.get(
+  "/analytics/engagement",
+  authenticate,
+  requireRole("admin", "librarian", "archivist"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const days = Math.min(Math.max(parseInt((req.query.days as string) || "30", 10) || 30, 1), 365);
+
+    const [[activeResult], [newResult], [returningResult]] = await Promise.all([
+      query<{ count: string }>(
+        `SELECT COUNT(DISTINCT user_id)::int as count FROM audit_logs
+         WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval`,
+        [days]
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::int as count FROM users
+         WHERE created_at >= NOW() - ($1 || ' days')::interval AND deleted_at IS NULL`,
+        [days]
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(DISTINCT al.user_id)::int as count
+         FROM audit_logs al
+         WHERE al.action = 'LOGIN'
+           AND al.timestamp >= NOW() - ($1 || ' days')::interval
+           AND EXISTS (
+             SELECT 1 FROM audit_logs prior
+             WHERE prior.user_id = al.user_id AND prior.action = 'LOGIN'
+               AND prior.timestamp < NOW() - ($1 || ' days')::interval
+           )`,
+        [days]
+      ),
+    ]);
+
+    const activeUsers = Number(activeResult.count);
+    const returningUsers = Number(returningResult.count);
+
+    // Daily active-user trend for the same window, one point per day.
+    const dailyActive = await query<{ day: string; count: string }>(
+      `SELECT timestamp::date::text as day, COUNT(DISTINCT user_id)::int as count
+       FROM audit_logs
+       WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval
+       GROUP BY timestamp::date
+       ORDER BY timestamp::date`,
+      [days]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        days,
+        active_users: activeUsers,
+        new_registrations: Number(newResult.count),
+        returning_users: returningUsers,
+        returning_rate: activeUsers > 0 ? Math.round((returningUsers / activeUsers) * 1000) / 10 : 0,
+        daily_active: dailyActive.map(r => ({ date: r.day, count: Number(r.count) })),
+      },
+    });
+  })
+);
+
+// GET /api/admin/analytics/export?metric=usage|most-accessed|engagement|search&days=N
+// FR-054: CSV export for any of the analytics metrics above, for a chosen
+// date range. PDF export is handled client-side (jsPDF) from this same data.
+const EXPORTABLE_METRICS = ["usage", "most-accessed", "engagement", "search"] as const;
+router.get(
+  "/analytics/export",
+  authenticate,
+  requireRole("admin", "librarian", "archivist"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const metric = req.query.metric as string;
+    if (!EXPORTABLE_METRICS.includes(metric as typeof EXPORTABLE_METRICS[number])) {
+      throw new AppError(400, `metric must be one of: ${EXPORTABLE_METRICS.join(", ")}`);
+    }
+    const days = Math.min(Math.max(parseInt((req.query.days as string) || "30", 10) || 30, 1), 365);
+
+    let rows: Record<string, unknown>[];
+
+    switch (metric) {
+      case "usage": {
+        const [uploads, downloads, searches] = await Promise.all([
+          query<{ day: string; count: string }>(
+            `SELECT day::date::text as day, COUNT(*)::int as count FROM (
+               SELECT created_at as day FROM archive_items WHERE created_at >= NOW() - ($1 || ' days')::interval
+               UNION ALL SELECT created_at FROM research_outputs WHERE created_at >= NOW() - ($1 || ' days')::interval
+               UNION ALL SELECT created_at FROM student_projects WHERE created_at >= NOW() - ($1 || ' days')::interval
+             ) t GROUP BY day::date ORDER BY day::date`,
+            [days]
+          ),
+          query<{ day: string; count: string }>(
+            `SELECT timestamp::date::text as day, COUNT(*)::int as count FROM audit_logs
+             WHERE action = 'DOWNLOAD' AND timestamp >= NOW() - ($1 || ' days')::interval
+             GROUP BY timestamp::date ORDER BY timestamp::date`,
+            [days]
+          ),
+          query<{ day: string; count: string }>(
+            `SELECT created_at::date::text as day, COUNT(*)::int as count FROM search_queries
+             WHERE created_at >= NOW() - ($1 || ' days')::interval
+             GROUP BY created_at::date ORDER BY created_at::date`,
+            [days]
+          ),
+        ]);
+        const byDate = new Map<string, { date: string; uploads: number; downloads: number; searches: number }>();
+        for (const r of uploads) byDate.set(r.day, { date: r.day, uploads: Number(r.count), downloads: 0, searches: 0 });
+        for (const r of downloads) byDate.set(r.day, { ...(byDate.get(r.day) ?? { date: r.day, uploads: 0, downloads: 0, searches: 0 }), downloads: Number(r.count) });
+        for (const r of searches) byDate.set(r.day, { ...(byDate.get(r.day) ?? { date: r.day, uploads: 0, downloads: 0, searches: 0 }), searches: Number(r.count) });
+        rows = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+        break;
+      }
+      case "most-accessed":
+        rows = await query(
+          `SELECT ai.title_en as title, COUNT(*)::int as download_count
+           FROM audit_logs al JOIN archive_items ai ON ai.item_id = al.entity_id
+           WHERE al.action = 'DOWNLOAD' AND al.entity_type = 'archive_item'
+             AND al.timestamp >= NOW() - INTERVAL '30 days'
+           GROUP BY ai.item_id, ai.title_en ORDER BY download_count DESC LIMIT 10`
+        );
+        break;
+      case "engagement": {
+        const [[active], [newReg], [returning]] = await Promise.all([
+          query<{ count: string }>(
+            `SELECT COUNT(DISTINCT user_id)::int as count FROM audit_logs
+             WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval`, [days]
+          ),
+          query<{ count: string }>(
+            `SELECT COUNT(*)::int as count FROM users WHERE created_at >= NOW() - ($1 || ' days')::interval AND deleted_at IS NULL`, [days]
+          ),
+          query<{ count: string }>(
+            `SELECT COUNT(DISTINCT al.user_id)::int as count FROM audit_logs al
+             WHERE al.action = 'LOGIN' AND al.timestamp >= NOW() - ($1 || ' days')::interval
+               AND EXISTS (SELECT 1 FROM audit_logs prior WHERE prior.user_id = al.user_id AND prior.action = 'LOGIN' AND prior.timestamp < NOW() - ($1 || ' days')::interval)`,
+            [days]
+          ),
+        ]);
+        rows = [{ metric: "active_users", value: Number(active.count) }, { metric: "new_registrations", value: Number(newReg.count) }, { metric: "returning_users", value: Number(returning.count) }];
+        break;
+      }
+      case "search":
+        rows = await query(
+          `SELECT query_text, COUNT(*)::int as search_count,
+                  CASE WHEN query_text ~ $1 THEN 'bangla' ELSE 'english' END as language
+           FROM search_queries GROUP BY query_text ORDER BY search_count DESC LIMIT 50`,
+          [BANGLA_REGEX]
+        );
+        break;
+      default:
+        rows = [];
+    }
+
+    const csv = toCsv(rows);
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="dkp-${metric}-analytics.csv"`);
+    res.send(csv);
   })
 );
 

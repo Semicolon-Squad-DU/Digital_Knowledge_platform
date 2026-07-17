@@ -19,6 +19,7 @@ import {
   useApproveUser, useBackups, useGenerateBackup, useDownloadBackup, useRestoreBackup,
   useBackupSchedule, useUpdateBackupSchedule, type BackupRecord,
   useAnnouncements, useBroadcastAnnouncement, type Announcement,
+  useMostAccessedResources, useUsageAnalytics, useEngagementAnalytics, useSearchAnalytics, exportAnalyticsCsv,
 } from "@/hooks/useAdmin";
 import { useBorrowingHistory, useMemberHolds, useMemberFines } from "@/features/library/hooks/useLibrary";
 import { useShowcaseGallery } from "@/features/showcase/hooks/useShowcase";
@@ -29,7 +30,7 @@ import { formatFileSize } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type AdminTab = "overview" | "users" | "audit" | "config" | "backups" | "alerts" | "announcements";
+type AdminTab = "overview" | "users" | "audit" | "config" | "backups" | "alerts" | "announcements" | "analytics";
 
 // ── Responsive helper ─────────────────────────────────────────────────────────
 const getResponsiveStyle = (isMobile: boolean) => ({
@@ -157,6 +158,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
   const isTablet = useMediaQuery("(max-width: 1024px)");
   const { data: pendingRequests, refetch: refetchRequests } = usePendingAccessRequests();
   const { mutateAsync: reviewRequest } = useReviewAccessRequest();
+  const { data: mostAccessed, isLoading: mostAccessedLoading } = useMostAccessedResources();
   const [denyRequestId, setDenyRequestId] = useState<string | null>(null);
   const [rejectionMessage, setRejectionMessage] = useState("");
   const [submittingDeny, setSubmittingDeny] = useState(false);
@@ -280,6 +282,34 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Most Accessed Resources — FR-051: top 10 by download count, past 30 days */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px", marginBottom: 28 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Most Accessed Resources</h3>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>Top 10 archive items by download count over the past 30 days</p>
+
+        {mostAccessedLoading ? (
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+        ) : !mostAccessed || mostAccessed.length === 0 ? (
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>No downloads recorded in the past 30 days.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {(() => {
+              const maxDownloads = Math.max(1, ...mostAccessed.map(i => i.download_count));
+              return mostAccessed.map((item, i) => (
+                <div key={item.item_id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
+                  <span style={{ fontSize: 12.5, color: "#374151", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
+                  <div style={{ width: 100, height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                    <div style={{ height: "100%", width: `${Math.max(4, (item.download_count / maxDownloads) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Quick action cards - responsive */}
@@ -1641,8 +1671,212 @@ function AnnouncementsTab() {
   );
 }
 
+// ── Tab: Analytics (FR-050/051/052/053/054) ─────────────────────────────────
+function AnalyticsTab() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [days, setDays] = useState(30);
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  const { data: usage, isLoading: usageLoading } = useUsageAnalytics(days);
+  const { data: engagement, isLoading: engagementLoading } = useEngagementAnalytics(days);
+  const { data: mostAccessed, isLoading: mostAccessedLoading } = useMostAccessedResources();
+  const { data: search, isLoading: searchLoading } = useSearchAnalytics();
+
+  const handleExport = async (metric: "usage" | "most-accessed" | "engagement" | "search") => {
+    setExporting(metric);
+    try {
+      await exportAnalyticsCsv(metric, days);
+      toast.success("Export downloaded");
+    } catch {
+      toast.error("Export failed");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const Card = ({ title, desc, metric, children }: { title: string; desc: string; metric: "usage" | "most-accessed" | "engagement" | "search"; children: React.ReactNode }) => (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px", marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4, gap: 12 }}>
+        <div>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>{title}</h3>
+          <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>{desc}</p>
+        </div>
+        <button
+          onClick={() => handleExport(metric)}
+          disabled={exporting === metric}
+          style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: exporting === metric ? "wait" : "pointer", flexShrink: 0 }}
+        >
+          <Download size={12} /> CSV
+        </button>
+      </div>
+      <div style={{ marginTop: 16 }}>{children}</div>
+    </div>
+  );
+
+  return (
+    <div>
+      <SectionHeader
+        title="Analytics"
+        desc="Platform-wide usage statistics, engagement metrics, and search insights."
+        action={
+          <select value={days} onChange={e => setDays(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}>
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 90 days</option>
+          </select>
+        }
+      />
+
+      {/* Engagement stat row */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
+        <StatCard label="Active Users" value={engagementLoading ? "—" : (engagement?.active_users ?? 0).toLocaleString()} sub={`logged in, last ${days}d`} icon={Users} />
+        <StatCard label="New Registrations" value={engagementLoading ? "—" : (engagement?.new_registrations ?? 0).toLocaleString()} sub={`signed up, last ${days}d`} icon={UserCheck} />
+        <StatCard label="Returning Rate" value={engagementLoading ? "—" : `${engagement?.returning_rate ?? 0}%`} sub="of active users" icon={RotateCcw} />
+      </div>
+
+      {/* Usage time-series */}
+      <Card title="Usage Over Time" desc={`Daily uploads, downloads, and searches — last ${days} days`} metric="usage">
+        {usageLoading ? (
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+        ) : (
+          (() => {
+            const dates = [...new Set([
+              ...(usage?.uploads ?? []).map(r => r.date),
+              ...(usage?.downloads ?? []).map(r => r.date),
+              ...(usage?.searches ?? []).map(r => r.date),
+            ])].sort();
+            if (dates.length === 0) return <p style={{ fontSize: 12, color: "#9ca3af" }}>No activity recorded in this window.</p>;
+            const uploadsMap = new Map((usage?.uploads ?? []).map(r => [r.date, r.count]));
+            const downloadsMap = new Map((usage?.downloads ?? []).map(r => [r.date, r.count]));
+            const searchesMap = new Map((usage?.searches ?? []).map(r => [r.date, r.count]));
+            const maxValue = Math.max(1, ...dates.map(d => Math.max(uploadsMap.get(d) ?? 0, downloadsMap.get(d) ?? 0, searchesMap.get(d) ?? 0)));
+            return (
+              <>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 4 : 8, height: 140, overflowX: "auto", paddingBottom: 8 }}>
+                  {dates.map(date => (
+                    <div key={date} title={date} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0, minWidth: 28 }}>
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 110 }}>
+                        <div title={`Uploads: ${uploadsMap.get(date) ?? 0}`} style={{ width: 6, height: `${Math.max(2, ((uploadsMap.get(date) ?? 0) / maxValue) * 100)}%`, background: "#0284c7", borderRadius: "2px 2px 0 0" }} />
+                        <div title={`Downloads: ${downloadsMap.get(date) ?? 0}`} style={{ width: 6, height: `${Math.max(2, ((downloadsMap.get(date) ?? 0) / maxValue) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "2px 2px 0 0" }} />
+                        <div title={`Searches: ${searchesMap.get(date) ?? 0}`} style={{ width: 6, height: `${Math.max(2, ((searchesMap.get(date) ?? 0) / maxValue) * 100)}%`, background: "#16a34a", borderRadius: "2px 2px 0 0" }} />
+                      </div>
+                      <span style={{ fontSize: 9, color: "#9ca3af", writingMode: "vertical-rl", transform: "rotate(180deg)" }}>{date.slice(5)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
+                  {[["Uploads", "#0284c7"], ["Downloads", "var(--avatar-theme-color)"], ["Searches", "#16a34a"]].map(([label, color]) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 2, background: color }} />
+                      <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()
+        )}
+      </Card>
+
+      {/* Most accessed */}
+      <Card title="Most Accessed Resources" desc="Top 10 archive items by download count, past 30 days" metric="most-accessed">
+        {mostAccessedLoading ? (
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+        ) : !mostAccessed || mostAccessed.length === 0 ? (
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>No downloads recorded in the past 30 days.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {(() => {
+              const maxDownloads = Math.max(1, ...mostAccessed.map(i => i.download_count));
+              return mostAccessed.map((item, i) => (
+                <div key={item.item_id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
+                  <span style={{ fontSize: 12.5, color: "#374151", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
+                  <div style={{ width: 100, height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                    <div style={{ height: "100%", width: `${Math.max(4, (item.download_count / maxDownloads) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
+      </Card>
+
+      {/* Search analytics */}
+      <Card title="Search Analytics" desc="Top search terms and zero-result queries, by language" metric="search">
+        {searchLoading ? (
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: 16, marginBottom: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Bangla queries:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{search?.language_breakdown.bangla ?? 0}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>English queries:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{search?.language_breakdown.english ?? 0}</span>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>Top Search Terms</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {(search?.top_queries ?? []).slice(0, 10).map(q => (
+                    <div key={q.query_text} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12.5, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.query_text} {q.is_bangla && <span style={{ fontSize: 10, color: "#9ca3af" }}>(bn)</span>}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>{q.search_count}</span>
+                    </div>
+                  ))}
+                  {(!search?.top_queries || search.top_queries.length === 0) && <p style={{ fontSize: 12, color: "#9ca3af" }}>No searches yet.</p>}
+                </div>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>Zero-Result Queries</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {(search?.zero_result_queries ?? []).slice(0, 10).map(q => (
+                    <div key={q.query_text} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12.5, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.query_text} {q.is_bangla && <span style={{ fontSize: 10, color: "#9ca3af" }}>(bn)</span>}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", flexShrink: 0 }}>{q.search_count}</span>
+                    </div>
+                  ))}
+                  {(!search?.zero_result_queries || search.zero_result_queries.length === 0) && <p style={{ fontSize: 12, color: "#9ca3af" }}>None — every search returned results.</p>}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* Engagement export (no dedicated chart, just export access) */}
+      <Card title="Engagement Data" desc="Active users, new registrations, and returning-user counts" metric="engagement">
+        <div style={{ display: "flex", gap: 24 }}>
+          <div>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>{engagement?.active_users ?? 0}</p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>Active users</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>{engagement?.new_registrations ?? 0}</p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>New registrations</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>{engagement?.returning_users ?? 0}</p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>Returning users</p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
-const ADMIN_TABS: AdminTab[] = ["overview", "users", "audit", "config", "backups", "alerts", "announcements"];
+const ADMIN_TABS: AdminTab[] = ["overview", "users", "audit", "config", "backups", "alerts", "announcements", "analytics"];
 
 function AdminPageInner() {
   const router = useRouter();
@@ -1761,6 +1995,7 @@ function AdminPageInner() {
     const TABS: { id: AdminTab; label: string; icon: React.ElementType }[] = [
       { id: "overview", label: "Overview", icon: LayoutDashboard },
       { id: "users",    label: "Users",    icon: Users },
+      { id: "analytics", label: "Analytics", icon: Activity },
       { id: "audit",    label: "Audit Logs", icon: ClipboardList },
       { id: "config",   label: "System Config", icon: Settings },
       { id: "backups",  label: "Backups",  icon: Database },
@@ -1820,6 +2055,7 @@ function AdminPageInner() {
           {/* Tab content */}
           {activeTab === "overview" && <OverviewTab adminStats={adminStats} statsLoading={statsLoading} setActiveTab={setActiveTab} />}
           {activeTab === "users"    && <UsersTab />}
+          {activeTab === "analytics" && <AnalyticsTab />}
           {activeTab === "audit"    && <AuditTab />}
           {activeTab === "config"   && <ConfigTab />}
           {activeTab === "backups"  && <BackupsTab />}
