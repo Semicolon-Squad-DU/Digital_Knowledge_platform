@@ -1,7 +1,7 @@
 import cron, { type ScheduledTask } from "node-cron";
 import { query, queryOne } from "../core/db/pool";
 import { config } from "../core/config";
-import { sendEmail, dueDateReminderEmail } from "../infrastructure/email.service";
+import { sendEmail, dueDateReminderEmail, weeklyDigestEmail } from "../infrastructure/email.service";
 import { retryQueuedUploads } from "../infrastructure/s3.service";
 import { performBackup } from "../infrastructure/backup.service";
 import { logger } from "../core/config/logger";
@@ -107,6 +107,15 @@ export async function startScheduler(): Promise<void> {
     }
   });
 
+  // Weekly, Monday 7 AM: email digest of the past 7 days' notifications, sent
+  // only to users who opted into "Weekly Digest" in their notification
+  // preferences (see FR-044). Matches the label in profile settings — this
+  // is not a daily job.
+  cron.schedule("0 7 * * 1", async () => {
+    logger.info("Running weekly notification digest");
+    await withRetry("sendWeeklyDigests", sendWeeklyDigests);
+  });
+
   await loadBackupSchedule();
 
   logger.info("Job scheduler started");
@@ -174,7 +183,9 @@ export function applyBackupSchedule(cronExpression: string, enabled: boolean): v
 // ---------------------------------------------------------------------------
 
 async function checkOverdueAndSendReminders(): Promise<void> {
-  // 3-day reminder
+  // 3-day reminder — LEFT JOIN so a user with no preferences row (never
+  // visited Account Settings) still gets reminders, matching the column
+  // defaults (due_date_reminders / in_app_alerts both TRUE by default).
   const threeDayReminders = await query<{
     borrow_id: string;
     member_id: string;
@@ -182,29 +193,38 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     member_email: string;
     book_title: string;
     due_date: string;
+    due_date_reminders: boolean;
+    in_app_alerts: boolean;
   }>(
     `SELECT b.id as borrow_id, b.user_id as member_id, u.name as member_name, u.email as member_email,
-            ci.title as book_title, b.due_date
+            ci.title as book_title, b.due_date,
+            COALESCE(np.due_date_reminders, TRUE) as due_date_reminders,
+            COALESCE(np.in_app_alerts, TRUE) as in_app_alerts
      FROM borrows b
      JOIN users u ON b.user_id = u.user_id
      JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+     LEFT JOIN notification_preferences np ON np.user_id = b.user_id
      WHERE b.borrow_status = 'active'
        AND b.due_date = CURRENT_DATE + INTERVAL '3 days'`
   );
 
   for (const reminder of threeDayReminders) {
-    await sendEmail({
-      to: reminder.member_email,
-      subject: `Reminder: "${reminder.book_title}" due in 3 days`,
-      html: dueDateReminderEmail(reminder.member_name, reminder.book_title, reminder.due_date, 3),
-    });
+    if (reminder.due_date_reminders) {
+      await sendEmail({
+        to: reminder.member_email,
+        subject: `Reminder: "${reminder.book_title}" due in 3 days`,
+        html: dueDateReminderEmail(reminder.member_name, reminder.book_title, reminder.due_date, 3),
+      });
+    }
 
-    await query(
-      `INSERT INTO notifications (user_id, type, title, message, action_url)
-       VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
-       ON CONFLICT DO NOTHING`,
-      [reminder.member_id, "Book Due in 3 Days", `"${reminder.book_title}" is due on ${reminder.due_date}`]
-    );
+    if (reminder.in_app_alerts) {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, action_url)
+         VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
+         ON CONFLICT DO NOTHING`,
+        [reminder.member_id, "Book Due in 3 Days", `"${reminder.book_title}" is due on ${reminder.due_date}`]
+      );
+    }
   }
 
   // Same-day reminder
@@ -214,28 +234,37 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     member_email: string;
     book_title: string;
     due_date: string;
+    due_date_reminders: boolean;
+    in_app_alerts: boolean;
   }>(
     `SELECT b.user_id as member_id, u.name as member_name, u.email as member_email,
-            ci.title as book_title, b.due_date
+            ci.title as book_title, b.due_date,
+            COALESCE(np.due_date_reminders, TRUE) as due_date_reminders,
+            COALESCE(np.in_app_alerts, TRUE) as in_app_alerts
      FROM borrows b
      JOIN users u ON b.user_id = u.user_id
      JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+     LEFT JOIN notification_preferences np ON np.user_id = b.user_id
      WHERE b.borrow_status = 'active' AND b.due_date = CURRENT_DATE`
   );
 
   for (const reminder of todayReminders) {
-    await sendEmail({
-      to: reminder.member_email,
-      subject: `Due Today: "${reminder.book_title}"`,
-      html: dueDateReminderEmail(reminder.member_name, reminder.book_title, reminder.due_date, 0),
-    });
+    if (reminder.due_date_reminders) {
+      await sendEmail({
+        to: reminder.member_email,
+        subject: `Due Today: "${reminder.book_title}"`,
+        html: dueDateReminderEmail(reminder.member_name, reminder.book_title, reminder.due_date, 0),
+      }).catch(() => {});
+    }
 
-    await query(
-      `INSERT INTO notifications (user_id, type, title, message, action_url)
-       VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
-       ON CONFLICT DO NOTHING`,
-      [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`]
-    ).catch(() => {});
+    if (reminder.in_app_alerts) {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, action_url)
+         VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
+         ON CONFLICT DO NOTHING`,
+        [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`]
+      ).catch(() => {});
+    }
   }
 
   logger.info("Overdue reminders sent", {
@@ -280,4 +309,42 @@ async function calculateOverdueFines(): Promise<void> {
   }
 
   logger.info("Overdue fines calculated", { count: overdueItems.length });
+}
+
+// FR-043: one email per user summarizing all in-app notifications they
+// received (read or not) over the past 7 days — reuses the notifications
+// table as the source of truth rather than tracking digest-eligible events
+// separately, so the digest always matches what the in-app feed shows.
+// Only sent to users who opted into weekly_digest (FR-044); everyone else
+// is skipped even if they have unread notifications.
+async function sendWeeklyDigests(): Promise<void> {
+  const recipients = await query<{ user_id: string; name: string; email: string }>(
+    `SELECT DISTINCT u.user_id, u.name, u.email
+     FROM notifications n
+     JOIN users u ON u.user_id = n.user_id
+     JOIN notification_preferences np ON np.user_id = u.user_id
+     WHERE n.created_at >= NOW() - INTERVAL '7 days'
+       AND u.deleted_at IS NULL
+       AND np.weekly_digest = TRUE`
+  );
+
+  let sent = 0;
+  for (const recipient of recipients) {
+    const items = await query<{ title: string; message: string; created_at: string }>(
+      `SELECT title, message, created_at FROM notifications
+       WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '7 days'
+       ORDER BY created_at DESC`,
+      [recipient.user_id]
+    );
+    if (items.length === 0) continue;
+
+    await sendEmail({
+      to: recipient.email,
+      subject: `Your DKP weekly digest — ${items.length} update${items.length > 1 ? "s" : ""}`,
+      html: weeklyDigestEmail(recipient.name, items),
+    });
+    sent++;
+  }
+
+  logger.info("Weekly digests sent", { recipients: sent });
 }

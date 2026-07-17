@@ -217,3 +217,38 @@ export function holdAvailableEmail(
     </div>
   `;
 }
+
+// FR-043: weekly digest summarizing everything a user was notified about
+// in-app over the past 7 days — due-date reminders, new uploads, approvals,
+// etc. Only sent to users who opted into "Weekly Digest" (FR-044).
+export function weeklyDigestEmail(
+  userName: string,
+  items: { title: string; message: string; created_at: string }[]
+): string {
+  const rows = items
+    .map(
+      (n) => `
+        <div style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+          <strong style="color: #111827;">${n.title}</strong>
+          <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">${n.message}</p>
+        </div>`
+    )
+    .join("");
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1a56db;">Digital Knowledge Platform</h2>
+      <p>Dear ${userName},</p>
+      <p>Here's a summary of your notifications from the past week:</p>
+      <div style="background: #f9fafb; padding: 4px 16px; border-radius: 8px; margin: 16px 0;">
+        ${rows}
+      </div>
+      <p>Visit your <a href="${config.frontendUrl}/notifications">notification feed</a> to see the full history.</p>
+      <hr/>
+      <p style="color: #9ca3af; font-size: 12px;">
+        Digital Knowledge Platform — University of Dhaka, CSE Department.
+        You're receiving this because you enabled Weekly Digest in your notification preferences.
+      </p>
+    </div>
+  `;
+}

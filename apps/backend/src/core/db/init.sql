@@ -337,6 +337,16 @@ CREATE TABLE notifications (
 CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_unread ON notifications(user_id, read) WHERE read = FALSE;
 
+-- Per-user notification channel/event-type preferences (FR-044)
+CREATE TABLE notification_preferences (
+  user_id            UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+  due_date_reminders BOOLEAN NOT NULL DEFAULT TRUE,
+  hold_availability  BOOLEAN NOT NULL DEFAULT TRUE,
+  weekly_digest      BOOLEAN NOT NULL DEFAULT FALSE,
+  in_app_alerts      BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Announcements
 CREATE TABLE announcements (
   announcement_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

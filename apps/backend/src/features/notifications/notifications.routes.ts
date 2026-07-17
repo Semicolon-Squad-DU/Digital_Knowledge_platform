@@ -162,4 +162,48 @@ router.post(
   })
 );
 
+// GET /api/notifications/preferences — current user's channel/event-type preferences.
+// Rows are created lazily on first write; a user who has never saved preferences
+// gets the same defaults the frontend toggles start at (see profile page).
+router.get("/preferences", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const prefs = await queryOne(
+    "SELECT due_date_reminders, hold_availability, weekly_digest, in_app_alerts FROM notification_preferences WHERE user_id = $1",
+    [req.user!.user_id]
+  );
+
+  res.json({
+    success: true,
+    data: prefs || {
+      due_date_reminders: true,
+      hold_availability: true,
+      weekly_digest: false,
+      in_app_alerts: true,
+    },
+  });
+}));
+
+// PUT /api/notifications/preferences — upsert the current user's preferences
+router.put("/preferences", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { due_date_reminders, hold_availability, weekly_digest, in_app_alerts } = req.body as {
+    due_date_reminders?: boolean; hold_availability?: boolean; weekly_digest?: boolean; in_app_alerts?: boolean;
+  };
+
+  const prefs = await queryOne(
+    `INSERT INTO notification_preferences (user_id, due_date_reminders, hold_availability, weekly_digest, in_app_alerts)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (user_id) DO UPDATE SET
+       due_date_reminders = $2, hold_availability = $3, weekly_digest = $4, in_app_alerts = $5, updated_at = NOW()
+     RETURNING due_date_reminders, hold_availability, weekly_digest, in_app_alerts`,
+    [
+      req.user!.user_id,
+      due_date_reminders ?? true,
+      hold_availability ?? true,
+      weekly_digest ?? false,
+      in_app_alerts ?? true,
+    ]
+  );
+
+  res.json({ success: true, data: prefs });
+}));
+
 export default router;

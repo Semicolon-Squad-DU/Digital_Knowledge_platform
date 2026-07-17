@@ -53,13 +53,15 @@ export default function ProfilePage() {
   const [tempBio, setTempBio] = useState("");
   
 
-  // Notification Preferences states
+  // Notification Preferences states — persisted server-side via
+  // /notifications/preferences, not localStorage (see FR-044).
   const [notificationPrefs, setNotificationPrefs] = useState({
     dueDateReminders: true,
     holdAvailability: true,
     weeklyDigests: false,
     appAlerts: true,
   });
+  const [prefsLoading, setPrefsLoading] = useState(true);
 
   // Role change request states
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -105,16 +107,23 @@ export default function ProfilePage() {
 
     const savedColor = localStorage.getItem("user_avatar_color");
     if (savedColor) setAvatarColor(savedColor);
-
-    const savedPrefs = localStorage.getItem("notification_prefs");
-    if (savedPrefs) {
-      try {
-        setNotificationPrefs(JSON.parse(savedPrefs));
-      } catch (e) {
-        // ignore
-      }
-    }
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api.get("/notifications/preferences")
+      .then(({ data }) => {
+        const p = data.data;
+        setNotificationPrefs({
+          dueDateReminders: p.due_date_reminders,
+          holdAvailability: p.hold_availability,
+          weeklyDigests: p.weekly_digest,
+          appAlerts: p.in_app_alerts,
+        });
+      })
+      .catch(() => { /* keep defaults on failure */ })
+      .finally(() => setPrefsLoading(false));
+  }, [isAuthenticated]);
 
   const handleSignOut = async () => {
     await logout();
@@ -155,11 +164,22 @@ export default function ProfilePage() {
     toast.success("Theme updated!");
   };
 
-  const handleTogglePref = (key: keyof typeof notificationPrefs) => {
+  const handleTogglePref = async (key: keyof typeof notificationPrefs) => {
+    const previous = notificationPrefs;
     const updated = { ...notificationPrefs, [key]: !notificationPrefs[key] };
     setNotificationPrefs(updated);
-    localStorage.setItem("notification_prefs", JSON.stringify(updated));
-    toast.success("Preferences updated");
+    try {
+      await api.put("/notifications/preferences", {
+        due_date_reminders: updated.dueDateReminders,
+        hold_availability: updated.holdAvailability,
+        weekly_digest: updated.weeklyDigests,
+        in_app_alerts: updated.appAlerts,
+      });
+      toast.success("Preferences updated");
+    } catch {
+      setNotificationPrefs(previous);
+      toast.error("Failed to update preferences. Please try again.");
+    }
   };
 
   const handleChangePasswordSubmit = async (e: React.FormEvent) => {
@@ -383,13 +403,14 @@ export default function ProfilePage() {
   ];
 
   // ── helpers ──────────────────────────────────────────────────────────────────
-  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+  const Toggle = ({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) => (
     <div
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
       style={{
-        width: 42, height: 24, borderRadius: 12, cursor: "pointer", flexShrink: 0,
+        width: 42, height: 24, borderRadius: 12, cursor: disabled ? "not-allowed" : "pointer", flexShrink: 0,
         background: checked ? "var(--avatar-theme-color, #1a56db)" : "#d1d5db",
         position: "relative", transition: "background 0.2s",
+        opacity: disabled ? 0.5 : 1,
       }}
     >
       <div style={{
@@ -691,7 +712,7 @@ export default function ProfilePage() {
                   <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>{label}</p>
                   <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>{desc}</p>
                 </div>
-                <Toggle checked={notificationPrefs[key]} onChange={() => handleTogglePref(key)} />
+                <Toggle checked={notificationPrefs[key]} onChange={() => handleTogglePref(key)} disabled={prefsLoading} />
               </div>
             ))}
           </div>

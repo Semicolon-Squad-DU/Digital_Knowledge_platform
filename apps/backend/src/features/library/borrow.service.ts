@@ -144,8 +144,12 @@ export class BorrowService {
 
       // Check next holds
       const [nextHold] = (await client.query(
-        `SELECT hr.*, u.email, u.name FROM hold_requests hr
+        `SELECT hr.*, u.email, u.name,
+                COALESCE(np.hold_availability, TRUE) as hold_availability,
+                COALESCE(np.in_app_alerts, TRUE) as in_app_alerts
+         FROM hold_requests hr
          JOIN users u ON hr.member_id = u.user_id
+         LEFT JOIN notification_preferences np ON np.user_id = hr.member_id
          WHERE hr.catalog_id = $1 AND hr.status = 'pending'
          ORDER BY hr.request_date ASC LIMIT 1`,
         [borrow.resource_id]
@@ -156,19 +160,24 @@ export class BorrowService {
           "UPDATE hold_requests SET status = 'available' WHERE hold_id = $1",
           [nextHold.hold_id]
         );
-        await client.query(
-          `INSERT INTO notifications (user_id, type, title, message, action_url)
-           VALUES ($1, 'hold_available', $2, $3, $4)`,
-          [nextHold.member_id, "Hold Available", `"${borrow.book_title}" is now available`, "/dashboard"]
-        );
 
-        const pickupDeadline = new Date();
-        pickupDeadline.setDate(pickupDeadline.getDate() + 3);
-        sendEmail({
-          to: nextHold.email,
-          subject: "Your Hold is Available",
-          html: holdAvailableEmail(nextHold.name, borrow.book_title, pickupDeadline.toDateString()),
-        }).catch(() => {});
+        if (nextHold.in_app_alerts) {
+          await client.query(
+            `INSERT INTO notifications (user_id, type, title, message, action_url)
+             VALUES ($1, 'hold_available', $2, $3, $4)`,
+            [nextHold.member_id, "Hold Available", `"${borrow.book_title}" is now available`, "/dashboard"]
+          );
+        }
+
+        if (nextHold.hold_availability) {
+          const pickupDeadline = new Date();
+          pickupDeadline.setDate(pickupDeadline.getDate() + 3);
+          sendEmail({
+            to: nextHold.email,
+            subject: "Your Hold is Available",
+            html: holdAvailableEmail(nextHold.name, borrow.book_title, pickupDeadline.toDateString()),
+          }).catch(() => {});
+        }
       }
 
       return { borrow: updatedBorrow, fine_amount: fineAmount };
