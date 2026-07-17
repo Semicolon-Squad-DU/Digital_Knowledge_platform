@@ -212,6 +212,17 @@ export default function RegisterPage() {
         const client = (window as any).google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+          // Fires when Google's popup itself fails to open/complete — e.g. the
+          // browser blocked it, which is common on mobile Safari/Chrome unless
+          // popups are explicitly allowed for this site. Without this, a blocked
+          // popup used to fail silently with no feedback at all.
+          error_callback: (err: any) => {
+            if (err?.type === "popup_failed_to_open" || err?.type === "popup_closed") {
+              toast.error("Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.");
+            } else {
+              toast.error("Google sign-in was cancelled or failed. Please try again.");
+            }
+          },
           callback: async (tokenResponse: any) => {
             if (tokenResponse?.access_token) {
               // The backend independently verifies this token with Google and
@@ -228,7 +239,7 @@ export default function RegisterPage() {
         toast.error("Failed to initialize Google Sign-In SDK");
       }
     } else {
-      toast.error("Google SDK is still loading. Please try again.");
+      toast.error("Google Sign-In is still loading. Please wait a moment and try again.");
     }
   };
 
@@ -564,7 +575,10 @@ export default function RegisterPage() {
         </div>
       </footer>
 
-      <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
+      {/* afterInteractive (not lazyOnload) — on a slow mobile connection the SDK
+          could still be loading by the time someone taps "Sign in with Google",
+          which used to just fail silently with "SDK is still loading." */}
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </div>
   );
 }
