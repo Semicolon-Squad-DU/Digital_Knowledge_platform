@@ -82,7 +82,9 @@ function PasswordChecklist({ password }: { password: string }) {
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const inputStyle = (hasError?: boolean): React.CSSProperties => ({
   display: "block", width: "100%", padding: "10px 12px",
-  fontSize: "13px", color: "#111827", background: "#ffffff",
+  // Must stay >= 16px — iOS Safari auto-zooms the viewport on focus for any
+  // input under 16px, which makes typing look broken on phones.
+  fontSize: "16px", color: "#111827", background: "#ffffff",
   border: `1.5px solid ${hasError ? "#ef4444" : "#e5e7eb"}`,
   borderRadius: "7px", outline: "none", boxShadow: "none", boxSizing: "border-box",
   transition: "border-color 0.2s",

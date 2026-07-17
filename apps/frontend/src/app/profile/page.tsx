@@ -749,7 +749,7 @@ export default function ProfilePage() {
                     padding: "10px 12px",
                     borderRadius: "6px",
                     border: "1px solid #d1d5db",
-                    fontSize: "13px",
+                    fontSize: "16px",
                     outline: "none"
                   }}
                 />
@@ -766,7 +766,7 @@ export default function ProfilePage() {
                     padding: "10px 12px",
                     borderRadius: "6px",
                     border: "1px solid #d1d5db",
-                    fontSize: "13px",
+                    fontSize: "16px",
                     outline: "none"
                   }}
                 />
@@ -786,7 +786,7 @@ export default function ProfilePage() {
                     padding: "10px 12px",
                     borderRadius: "6px",
                     border: "1px solid #d1d5db",
-                    fontSize: "13px",
+                    fontSize: "16px",
                     outline: "none"
                   }}
                 />

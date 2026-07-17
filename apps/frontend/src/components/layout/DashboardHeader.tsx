@@ -77,7 +77,7 @@ export function DashboardHeader({
             style={{
               border: "none",
               background: "transparent",
-              fontSize: 13,
+              fontSize: 16,
               color: "#6b7280",
               width: "100%",
               outline: "none",

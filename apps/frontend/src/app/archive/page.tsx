@@ -156,7 +156,7 @@ export default function ArchivePage() {
               onKeyDown={e => e.key === "Enter" && handleSearch()}
               style={{
                 flex: 1, border: "none", outline: "none",
-                fontSize: 14, padding: "13px 12px",
+                fontSize: 16, padding: "13px 12px",
                 color: "#1f2937", background: "transparent",
               }}
             />

@@ -370,7 +370,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                 value={rejectionMessage}
                 onChange={e => setRejectionMessage(e.target.value)}
                 placeholder="Please enter a reason or rejection message explaining why access is denied..."
-                style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
+                style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
               />
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -564,17 +564,17 @@ function UsersTab() {
         <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
           <input type="text" placeholder="Search by name or email…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", width: "100%" }} />
+            style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#111827", width: "100%" }} />
         </div>
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Roles</option>
           {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
             <option key={r} value={r}>{r.replace("_"," ")}</option>
           ))}
         </select>
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
           <option value="pending_approval">Pending Approval</option>
@@ -698,23 +698,23 @@ function UsersTab() {
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
-              <input name="name" required type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="name" required type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
-              <input name="email" required type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="email" required type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Password</label>
-              <input name="password" required type="password" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="password" required type="password" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
-              <input name="department" type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="department" type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
-              <select name="role" defaultValue="member" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+              <select name="role" defaultValue="member" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
                 {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
@@ -740,19 +740,19 @@ function UsersTab() {
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
-              <input name="name" required defaultValue={editUser.name} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="name" required defaultValue={editUser.name} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
-              <input name="email" required defaultValue={editUser.email} type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="email" required defaultValue={editUser.email} type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
-              <input name="department" defaultValue={editUser.department} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <input name="department" defaultValue={editUser.department} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
-              <select name="role" defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+              <select name="role" defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
                 {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
@@ -760,7 +760,7 @@ function UsersTab() {
             </div>
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Status</label>
-              <select name="membership_status" defaultValue={editUser.membership_status} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+              <select name="membership_status" defaultValue={editUser.membership_status} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
                 <option value="inactive">Inactive</option>
@@ -886,17 +886,17 @@ function AuditTab() {
         <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
           <input type="text" placeholder="Filter by user ID or name…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", width: "100%" }} />
+            style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#111827", width: "100%" }} />
         </div>
         <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Actions</option>
           {["CREATE","UPDATE","DELETE","ACCESS","LOGIN","LOGOUT","DOWNLOAD","STATUS_CHANGE","BACKUP","RESTORE","APPROVE_USER","REJECT_USER"].map(a => (
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
         <select value={entityFilter} onChange={e => { setEntityFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Entity Types</option>
           {["user","archive_item","backup","backup_schedule","system_config","borrow","fine","catalog_import"].map(t => (
             <option key={t} value={t}>{t.replace(/_/g," ")}</option>
@@ -1058,7 +1058,7 @@ function ConfigTab() {
                   type="text"
                   value={config[item.key] ?? item.value}
                   onChange={e => setConfig(prev => ({ ...prev, [item.key]: e.target.value }))}
-                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }}
                   onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
                   onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
                 />
@@ -1182,7 +1182,7 @@ function BackupsTab() {
           <div style={{ flex: 1, minWidth: 180 }}>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Cron Expression</label>
             <input type="text" value={cronInput} onChange={e => setCronInput(e.target.value)} placeholder="e.g. 0 9 * * *"
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }}
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }}
               onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
               onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }} />
             <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
@@ -1270,7 +1270,7 @@ function BackupsTab() {
               value={confirmFilename}
               onChange={e => setConfirmFilename(e.target.value)}
               placeholder={restoreTarget.filename}
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 16, fontFamily: "monospace" }}
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 16, fontFamily: "monospace" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button onClick={() => { setRestoreTarget(null); setConfirmFilename(""); }} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
@@ -1416,7 +1416,7 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
                 placeholder="https://hooks.slack.com/services/..."
                 value={slackWebhook}
                 onChange={(e) => setSlackWebhook(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" onClick={() => setSlackOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
@@ -1446,7 +1446,7 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
                 placeholder="admin@dkp-institutional.org"
                 value={emailRecipient}
                 onChange={(e) => setEmailRecipient(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" onClick={() => setEmailOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
@@ -1580,7 +1580,7 @@ function AnnouncementsTab() {
         <form onSubmit={handleBroadcast} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
           <div>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
-            <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", background: "#fff" }}>
+            <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
               <option value="all">All Registered Users</option>
               {ANNOUNCEMENT_ROLES.map(r => (
                 <option key={r} value={r}>{r.replace("_"," ")}</option>
@@ -1589,11 +1589,11 @@ function AnnouncementsTab() {
           </div>
           <div>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
-            <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+            <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
             {editingId && (
@@ -1899,10 +1899,10 @@ function AdminPageInner() {
           <div style={{ flex: 1, minWidth: isMobile ? "100%" : "auto", display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 12px" }}>
             <Search size={14} color="#9ca3af" />
             <input type="text" placeholder={isMobile ? "Search..." : "Search by title, author, or DOI..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#1f2937", width: "100%" }} />
+              style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#1f2937", width: "100%" }} />
           </div>
           <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-            style={{ padding: "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "#374151", outline: "none", cursor: "pointer", minWidth: isMobile ? "auto" : "140px" }}>
+            style={{ padding: "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, fontWeight: 600, color: "#374151", outline: "none", cursor: "pointer", minWidth: isMobile ? "auto" : "140px" }}>
             <option value="all">All Statuses</option>
             {isLibraryStudent ? (<><option value="active">Active Borrowed</option><option value="overdue">Overdue Books</option><option value="returned">Returned Books</option><option value="pending">Pending Hold</option><option value="available">Available Hold</option></>) : (<><option value="published">Published</option><option value="pending_review">Pending Review</option><option value="changes_requested">Changes Requested</option><option value="draft">Draft</option></>)}
           </select>
@@ -1952,7 +1952,7 @@ function AdminPageInner() {
             </span>
             <select
               id="bulk-category"
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12, outline: "none", color: "#111827" }}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 16, outline: "none", color: "#111827" }}
             >
               <option value="">-- Change Category --</option>
               <option value="General">General</option>
@@ -1962,7 +1962,7 @@ function AdminPageInner() {
             </select>
             <select
               id="bulk-access"
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12, outline: "none", color: "#111827" }}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 16, outline: "none", color: "#111827" }}
             >
               <option value="">-- Change Access Tier --</option>
               <option value="public">Public</option>

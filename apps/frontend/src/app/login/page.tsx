@@ -164,7 +164,9 @@ function LoginForm() {
 
   const inputBase: React.CSSProperties = {
     display: "block", width: "100%", padding: "10px 12px",
-    fontSize: "13.5px", color: "#111827", background: "#ffffff",
+    // Must stay >= 16px — iOS Safari auto-zooms the viewport on focus for any
+    // input under 16px, which makes typing look broken on phones.
+    fontSize: "16px", color: "#111827", background: "#ffffff",
     border: "1.5px solid #e5e7eb", borderRadius: "8px",
     outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
   };

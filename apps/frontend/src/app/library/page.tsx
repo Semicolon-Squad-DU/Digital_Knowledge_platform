@@ -244,7 +244,7 @@ export default function LibraryPage() {
               type="text" value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder="Search by title, author, or ISBN…"
-              style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "13px 12px", color: "#1f2937", background: "transparent" }}
+              style={{ flex: 1, border: "none", outline: "none", fontSize: 16, padding: "13px 12px", color: "#1f2937", background: "transparent" }}
             />
             <button type="submit" style={{ margin: 5, padding: "9px 20px", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", transition: "opacity 0.15s" }}
               onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
@@ -370,7 +370,7 @@ export default function LibraryPage() {
                 <select
                   value={params.availability}
                   onChange={e => setParams(p => ({ ...p, availability: e.target.value as any, page: 1 }))}
-                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}
+                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 16, color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}
                 >
                   <option value="all">All Statuses</option>
                   <option value="available">Available in Library</option>
@@ -391,7 +391,7 @@ export default function LibraryPage() {
               <span style={{ fontSize:12, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.08em" }}>Sort by:</span>
               <div style={{ position:"relative" }}>
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  style={{ padding:"6px 32px 6px 12px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, color:"#374151", background:"#fff", appearance:"none", cursor:"pointer", outline:"none" }}>
+                  style={{ padding:"6px 32px 6px 12px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:16, color:"#374151", background:"#fff", appearance:"none", cursor:"pointer", outline:"none" }}>
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
                 <ChevronDown size={13} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", color:"#9ca3af", pointerEvents:"none" }} />
