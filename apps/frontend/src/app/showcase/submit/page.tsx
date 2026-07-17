@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -80,14 +80,10 @@ export default function SubmitProjectPage() {
     },
   });
 
-  const selectedDepartment = watch("department");
-
   const { data: advisorData } = useQuery({
-    queryKey: ["advisors", selectedDepartment],
+    queryKey: ["advisors"],
     queryFn: async () => {
-      const { data } = await api.get("/auth/advisors", {
-        params: selectedDepartment ? { department: selectedDepartment } : undefined,
-      });
+      const { data } = await api.get("/auth/advisors");
       return data.data as { user_id: string; name: string; department: string }[];
     },
   });
@@ -96,15 +92,6 @@ export default function SubmitProjectPage() {
       value: u.user_id,
       label: u.department ? `${u.name} (${u.department})` : u.name,
     }));
-
-  // Selected advisor no longer valid for the current department — clear it
-  const prevDepartment = useRef(selectedDepartment);
-  useEffect(() => {
-    if (prevDepartment.current !== selectedDepartment) {
-      setValue("advisor_id", "");
-      prevDepartment.current = selectedDepartment;
-    }
-  }, [selectedDepartment, setValue]);
 
   const { fields, append, remove } = useFieldArray({ control, name: "team_members" });
 
@@ -306,15 +293,15 @@ export default function SubmitProjectPage() {
               <Select
                 label="Advisor"
                 required
-                placeholder={selectedDepartment ? "Select advisor" : "Select a department first"}
+                placeholder="Select advisor"
                 options={advisors}
                 error={errors.advisor_id?.message}
-                disabled={!selectedDepartment || advisors.length === 0}
+                disabled={advisors.length === 0}
                 {...register("advisor_id")}
               />
-              {selectedDepartment && advisors.length === 0 && (
+              {advisors.length === 0 && (
                 <p style={{ fontSize: 12, color: "#9ca3af", marginTop: -8 }}>
-                  No advisors on file for {selectedDepartment} yet.
+                  No advisors on file yet.
                 </p>
               )}
               <Input

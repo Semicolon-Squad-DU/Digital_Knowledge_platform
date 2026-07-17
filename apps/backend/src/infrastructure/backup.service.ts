@@ -18,7 +18,7 @@ import { s3Client, uploadToS3, getPresignedUrl } from "./s3.service";
 // dist/ (tsc build) vs src/ (tsx dev).
 function findBackendRoot(): string | null {
   let dir = __dirname;
-  while (true) {
+  for (;;) {
     if (existsSync(join(dir, "package.json")) && existsSync(join(dir, "vendor"))) return dir;
     const parent = dirname(dir);
     if (parent === dir || parse(dir).root === dir) return null;
