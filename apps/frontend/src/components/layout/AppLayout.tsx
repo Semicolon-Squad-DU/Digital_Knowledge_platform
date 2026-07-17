@@ -11,6 +11,7 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useIdleLogout } from "@/hooks/useIdleLogout";
 
 export const APP_NAV = [
   { label: "Dashboard",   guestLabel: undefined,    href: "/dashboard",  icon: LayoutDashboard, public: false, roles: undefined },
@@ -406,6 +407,8 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
   const { user, isAuthenticated, logout } = useAuthStore();
   const { data: notifData } = useNotifications(1, false, isAuthenticated);
   const unreadCount = notifData?.unread_count ?? 0;
+
+  useIdleLogout(isAuthenticated);
 
   const handleLogout = async () => { await logout(); router.push("/"); };
   const closeDrawer = () => setOpen(false);

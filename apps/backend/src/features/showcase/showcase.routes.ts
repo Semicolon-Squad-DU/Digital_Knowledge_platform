@@ -3,7 +3,7 @@ import { query, queryOne } from "../../core/db/pool";
 import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core/middleware/auth.middleware";
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { parsePagination } from "../../core/utils/pagination";
-import { uploadWithThumbnail } from "../../core/middleware/upload.middleware";
+import { uploadShowcaseFiles } from "../../core/middleware/upload.middleware";
 import { uploadToS3, generateS3Key, getPresignedUrl } from "../../infrastructure/s3.service";
 import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
@@ -138,16 +138,29 @@ router.get("/:id/download-url", authenticate, asyncHandler(async (req: AuthReque
   res.json({ success: true, data: { url } });
 }));
 
+// GET /api/showcase/:id/video-url — presigned URL for the demo video, for inline playback
+router.get("/:id/video-url", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const project = await queryOne<{ video_url: string | null }>(
+    "SELECT video_url FROM student_projects WHERE project_id = $1",
+    [req.params.id]
+  );
+  if (!project || !project.video_url) throw new AppError(404, "Video not found");
+
+  const url = await getPresignedUrl(project.video_url);
+  res.json({ success: true, data: { url } });
+}));
+
 // POST /api/showcase
 router.post(
   "/",
   authenticate,
   requireRole("student_author", "admin"),
-  uploadWithThumbnail,
+  uploadShowcaseFiles,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const body = req.body as Record<string, unknown>;
-    const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
+    const files = req.files as { file?: Express.Multer.File[]; video?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
     const reportFile = files?.file?.[0];
+    const videoFile = files?.video?.[0];
     const thumbnailFile = files?.thumbnail?.[0];
 
     const title          = body.title as string;
@@ -186,6 +199,16 @@ router.post(
       report_url = key;
     }
 
+    let video_url: string | null = null;
+    if (videoFile) {
+      if (!videoFile.mimetype.startsWith("video/")) {
+        throw new AppError(400, "Demo video must be a video file");
+      }
+      const key = generateS3Key("showcase/videos", videoFile.originalname, videoFile.mimetype);
+      await uploadToS3(key, videoFile.buffer, videoFile.mimetype);
+      video_url = key;
+    }
+
     let thumbnail_url: string | null = null;
     if (thumbnailFile) {
       if (!thumbnailFile.mimetype.startsWith("image/")) {
@@ -198,15 +221,15 @@ router.post(
 
     const project = await queryOne(
       `INSERT INTO student_projects
-         (title, abstract, team_members, advisor_id, semester, department, technologies, report_url, source_code_url, thumbnail_url, submitted_by, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending_review')
+         (title, abstract, team_members, advisor_id, semester, department, technologies, report_url, video_url, source_code_url, thumbnail_url, submitted_by, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending_review')
        RETURNING *`,
       [
         title, abstract,
         JSON.stringify(team_members),   // JSONB column
         advisor_id, semester, department,
         technologies,                   // TEXT[] column — pass array directly
-        report_url, source_code_url || null, thumbnail_url,
+        report_url, video_url, source_code_url || null, thumbnail_url,
         req.user!.user_id,
       ]
     );
@@ -325,12 +348,13 @@ router.patch(
   "/:id",
   authenticate,
   requireRole("student_author", "admin"),
-  uploadWithThumbnail,
+  uploadShowcaseFiles,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const body = req.body as Record<string, unknown>;
-    const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
+    const files = req.files as { file?: Express.Multer.File[]; video?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
     const reportFile = files?.file?.[0];
+    const videoFile = files?.video?.[0];
     const thumbnailFile = files?.thumbnail?.[0];
 
     // 1. Fetch current project to verify ownership and review status
@@ -339,8 +363,9 @@ router.patch(
       submitted_by: string;
       status: string;
       report_url: string | null;
+      video_url: string | null;
       thumbnail_url: string | null;
-    }>("SELECT project_id, submitted_by, status, report_url, thumbnail_url FROM student_projects WHERE project_id = $1", [id]);
+    }>("SELECT project_id, submitted_by, status, report_url, video_url, thumbnail_url FROM student_projects WHERE project_id = $1", [id]);
 
     if (!project) throw new AppError(404, "Project not found");
     if (project.submitted_by !== req.user!.user_id && req.user!.role !== "admin") {
@@ -386,6 +411,16 @@ router.patch(
       report_url = key;
     }
 
+    let video_url = project.video_url;
+    if (videoFile) {
+      if (!videoFile.mimetype.startsWith("video/")) {
+        throw new AppError(400, "Demo video must be a video file");
+      }
+      const key = generateS3Key("showcase/videos", videoFile.originalname, videoFile.mimetype);
+      await uploadToS3(key, videoFile.buffer, videoFile.mimetype);
+      video_url = key;
+    }
+
     let thumbnail_url = project.thumbnail_url;
     if (thumbnailFile) {
       if (!thumbnailFile.mimetype.startsWith("image/")) {
@@ -410,6 +445,7 @@ router.patch(
     if (team_members !== undefined) { updates.push(`team_members = $${idx++}`); params.push(JSON.stringify(team_members)); }
     if (technologies !== undefined) { updates.push(`technologies = $${idx++}`); params.push(technologies); }
     if (report_url !== undefined) { updates.push(`report_url = $${idx++}`); params.push(report_url); }
+    if (video_url !== undefined) { updates.push(`video_url = $${idx++}`); params.push(video_url); }
     if (thumbnail_url !== undefined) { updates.push(`thumbnail_url = $${idx++}`); params.push(thumbnail_url); }
 
     // Reset status to pending_review when student edits/re-submits

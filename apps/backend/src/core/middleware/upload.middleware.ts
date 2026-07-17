@@ -87,10 +87,12 @@ export const checkUploadQuota = async (req: AuthRequest, res: Response, next: Ne
 export const uploadSingle = upload.single("file");
 export const uploadMultiple = upload.array("files", 50); // max 50 for bulk
 
-// Showcase project submission: the main report file plus an optional gallery
-// thumbnail image, uploaded together in one multipart request.
-export const uploadWithThumbnail = upload.fields([
+// Showcase project submission: the main report file, an optional demo video,
+// and an optional gallery thumbnail image — all uploaded together in one
+// multipart request.
+export const uploadShowcaseFiles = upload.fields([
   { name: "file", maxCount: 1 },
+  { name: "video", maxCount: 1 },
   { name: "thumbnail", maxCount: 1 },
 ]);
 

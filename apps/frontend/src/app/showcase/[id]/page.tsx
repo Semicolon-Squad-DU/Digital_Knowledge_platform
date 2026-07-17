@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -34,6 +34,66 @@ function DownloadReportButton({ projectId }: { projectId: string }) {
       {loading ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
       View Report
     </button>
+  );
+}
+
+// Embedded PDF report viewer — fetches a fresh presigned URL and renders it inline
+// via <iframe> instead of only offering a download link.
+function ReportViewer({ projectId }: { projectId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/showcase/${projectId}/download-url`)
+      .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
+      .catch(() => { if (!cancelled) setError(true); });
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  if (error) return null;
+  if (!url) {
+    return (
+      <div className="mt-4 flex items-center justify-center h-64 rounded-lg border" style={{ borderColor: "var(--color-border-default)", background: "var(--color-canvas-subtle)" }}>
+        <Loader2 size={18} className="animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-lg overflow-hidden border" style={{ borderColor: "var(--color-border-default)" }}>
+      <iframe src={url} title="Project report" className="w-full" style={{ height: 500, border: "none" }} />
+    </div>
+  );
+}
+
+// Embedded demo video player — fetches a fresh presigned URL for the uploaded video.
+function VideoPlayer({ projectId }: { projectId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/showcase/${projectId}/video-url`)
+      .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
+      .catch(() => { if (!cancelled) setError(true); });
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  if (error) return null;
+  if (!url) {
+    return (
+      <div className="mt-4 flex items-center justify-center h-64 rounded-lg border" style={{ borderColor: "var(--color-border-default)", background: "var(--color-canvas-subtle)" }}>
+        <Loader2 size={18} className="animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-lg overflow-hidden border" style={{ borderColor: "var(--color-border-default)" }}>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video src={url} controls className="w-full" style={{ maxHeight: 500, display: "block", background: "#000" }} />
+    </div>
   );
 }
 
@@ -148,7 +208,21 @@ export default function ShowcaseDetailPage() {
             </Link>
           )}
         </div>
-        
+
+        {isAuthenticated && project.video_url && (
+          <div>
+            <p className="font-medium text-sm mt-5 mb-1" style={{ color: "var(--color-fg-default)" }}>Demo Video</p>
+            <VideoPlayer projectId={projectId} />
+          </div>
+        )}
+
+        {isAuthenticated && project.report_url && (
+          <div>
+            <p className="font-medium text-sm mt-5 mb-1" style={{ color: "var(--color-fg-default)" }}>Project Report</p>
+            <ReportViewer projectId={projectId} />
+          </div>
+        )}
+
         <DiscussionSection entityType="project" entityId={project.project_id} />
       </div>
     </div>
