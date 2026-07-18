@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import { MulterError } from "multer";
 import { logger } from "../config/logger";
 import { MalwareDetectedError, ScannerUnavailableError } from "../../infrastructure/antivirus.service";
+import { FileSignatureMismatchError } from "../../infrastructure/s3.service";
 
 export class AppError extends Error {
   constructor(
@@ -45,6 +46,11 @@ export function errorHandler(
   }
 
   if (err instanceof MalwareDetectedError) {
+    res.status(422).json({ success: false, message: err.message });
+    return;
+  }
+
+  if (err instanceof FileSignatureMismatchError) {
     res.status(422).json({ success: false, message: err.message });
     return;
   }

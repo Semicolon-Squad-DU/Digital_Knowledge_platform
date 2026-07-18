@@ -13,6 +13,7 @@ import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import { scanBuffer } from "./antivirus.service";
+import { validateFileSignature } from "../core/utils/file-signature";
 
 export const s3Client = new S3Client({
   endpoint: config.s3.endpoint,
@@ -45,6 +46,13 @@ export const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 export const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
+
+export class FileSignatureMismatchError extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = "FileSignatureMismatchError";
+  }
+}
 
 export function validateFile(
   mimetype: string,
@@ -96,6 +104,14 @@ export async function uploadToS3(
   options: { skipScan?: boolean } = {}
 ): Promise<string> {
   if (!options.skipScan) {
+    // NFR-011: magic-byte check first — cheaper than a full AV scan and
+    // catches the "renamed .exe" class of attack that a spoofed Content-Type
+    // header alone would sail past.
+    const signatureResult = validateFileSignature(body, contentType);
+    if (!signatureResult.valid) {
+      logger.warn("File signature mismatch — upload rejected", { key, contentType, reason: signatureResult.reason });
+      throw new FileSignatureMismatchError(signatureResult.reason || "File content does not match its declared type");
+    }
     await scanBuffer(body);
   }
 
