@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign, Download, ChevronDown, Lock, Check } from "lucide-react";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, CalendarClock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign, Download, ChevronDown, Lock, Check, RefreshCcw } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useFulfillHold, useExportCatalog, usePendingCatalogAccessRequests, useReviewCatalogAccessRequest } from "@/features/library/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useOnLoanTransactions, useDueSoonTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useRenewBook, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useFulfillHold, useExportCatalog, usePendingCatalogAccessRequests, useReviewCatalogAccessRequest } from "@/features/library/hooks/useLibrary";
 import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
 import { ImportCatalogModal } from "@/components/library/ImportCatalogModal";
 import { CirculationReportPanel } from "@/components/library/CirculationReportPanel";
@@ -446,14 +446,20 @@ function ReturnBookForm({
   );
 }
 
-type Tab = "overview" | "overdue" | "holds" | "access-requests" | "reports";
+type Tab = "overview" | "on-loan" | "due-soon" | "overdue" | "holds" | "access-requests" | "reports";
+const LIBRARIAN_TABS: Tab[] = ["overview", "on-loan", "due-soon", "overdue", "holds", "access-requests", "reports"];
 
-export default function LibrarianDashboardPage() {
+function LibrarianDashboardPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab: Tab = LIBRARIAN_TABS.includes(requestedTab as Tab) ? (requestedTab as Tab) : "overview";
   const { user, ready } = useAuthGuard();
 
   const { data: stats, isLoading, refetch } = useLibrarianDashboard();
   const { data: overdueData, isLoading: overdueLoading, refetch: refetchOverdue } = useOverdueTransactions();
+  const { data: onLoanData, isLoading: onLoanLoading, refetch: refetchOnLoan } = useOnLoanTransactions();
+  const { data: dueSoonData, isLoading: dueSoonLoading, refetch: refetchDueSoon } = useDueSoonTransactions();
   const { data: holdsData, isLoading: holdsLoading, refetch: refetchHolds } = useHoldsPending();
   const { mutateAsync: issueBook, isPending: isIssuing } = useIssueBook();
   const { mutateAsync: returnBook, isPending: isReturning } = useReturnBook();
@@ -461,9 +467,13 @@ export default function LibrarianDashboardPage() {
   const { mutateAsync: waiveFine, isPending: isWaiving } = useWaiveFine();
   const { mutateAsync: markFinePaid, isPending: isMarkingPaid } = useMarkFinePaid();
   const { mutateAsync: notifyOverdue, isPending: isNotifying } = useNotifyOverdue();
+  const { mutateAsync: renewBook, isPending: isRenewing } = useRenewBook();
+  const [renewingId, setRenewingId] = useState<string | null>(null);
   const { mutateAsync: cancelHold, isPending: isCancellingHold } = useCancelHold();
   const { mutateAsync: fulfillHold } = useFulfillHold();
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
+  const [notifyTarget, setNotifyTarget] = useState<{ transaction_id: string; title: string } | null>(null);
+  const [notifyMessage, setNotifyMessage] = useState("");
   const [fulfillingHoldId, setFulfillingHoldId] = useState<string | null>(null);
 
   const { data: accessRequestsData, isLoading: accessRequestsLoading, refetch: refetchAccessRequests } = usePendingCatalogAccessRequests();
@@ -496,7 +506,7 @@ export default function LibrarianDashboardPage() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [issueModal, setIssueModal] = useState(false);
   const [returnModal, setReturnModal] = useState(false);
   const [adjustModal, setAdjustModal] = useState(false);
@@ -637,16 +647,34 @@ export default function LibrarianDashboardPage() {
     }
   };
 
-  const handleNotify = async (transactionId: string) => {
-    setNotifyingId(transactionId);
+  const handleSendNotify = async () => {
+    if (!notifyTarget) return;
+    setNotifyingId(notifyTarget.transaction_id);
     try {
-      await notifyOverdue(transactionId);
-      toast.success("Reminder email sent to member");
+      await notifyOverdue({ transaction_id: notifyTarget.transaction_id, message: notifyMessage.trim() || undefined });
+      toast.success("Reminder sent to member");
+      setNotifyTarget(null);
+      setNotifyMessage("");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || "Failed to send reminder");
     } finally {
       setNotifyingId(null);
+    }
+  };
+
+  const handleRenew = async (transactionId: string) => {
+    setRenewingId(transactionId);
+    try {
+      const result = await renewBook(transactionId);
+      toast.success(`Loan renewed — ${result.renewals_left} renewal(s) left`);
+      refetchOnLoan();
+      refetchDueSoon();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to renew loan");
+    } finally {
+      setRenewingId(null);
     }
   };
 
@@ -684,6 +712,7 @@ export default function LibrarianDashboardPage() {
 
   const statCards = [
     { label: "On Loan",       value: stats?.on_loan ?? 0,           icon: BookOpen,      iconClass: "bg-blue-50 text-blue-600" },
+    { label: "Due Soon",      value: stats?.due_soon ?? 0,          icon: CalendarClock, iconClass: (stats?.due_soon ?? 0) > 0 ? "bg-amber-50 text-amber-600" : "bg-slate-50 text-slate-400" },
     { label: "Overdue",       value: stats?.overdue ?? 0,           icon: AlertTriangle, iconClass: (stats?.overdue ?? 0) > 0 ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-400" },
     { label: "Returns Today", value: stats?.returns_today ?? 0,     icon: RotateCcw,     iconClass: "bg-green-50 text-green-600" },
     { label: "Holds Pending", value: stats?.holds_pending ?? 0,     icon: Clock,         iconClass: "bg-amber-50 text-amber-600" },
@@ -721,7 +750,7 @@ export default function LibrarianDashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { refetch(); refetchOverdue(); }}
+                onClick={() => { refetch(); refetchOverdue(); refetchOnLoan(); refetchDueSoon(); }}
                 icon={<RefreshCw size={14} />}
                 aria-label="Refresh dashboard"
                 style={{
@@ -841,6 +870,26 @@ export default function LibrarianDashboardPage() {
           Overview
         </button>
         <button
+          onClick={() => setActiveTab("on-loan")}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === "on-loan"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          On Loan{onLoanData?.length ? ` (${onLoanData.length})` : ""}
+        </button>
+        <button
+          onClick={() => setActiveTab("due-soon")}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === "due-soon"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Due Soon{dueSoonData?.length ? ` (${dueSoonData.length})` : ""}
+        </button>
+        <button
           onClick={() => setActiveTab("overdue")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "overdue"
@@ -886,16 +935,21 @@ export default function LibrarianDashboardPage() {
       {activeTab === "overview" && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => <SkeletonStatCard key={i} />)
-              : statCards.map((stat, idx) => {
-                  const clickTab: Tab | null = stat.label === "Overdue" ? "overdue" : stat.label === "Holds Pending" ? "holds" : null;
+              ? Array.from({ length: 6 }).map((_, i) => <SkeletonStatCard key={i} />)
+              : statCards.map((stat) => {
+                  const clickTab: Tab | null =
+                    stat.label === "On Loan" ? "on-loan"
+                    : stat.label === "Due Soon" ? "due-soon"
+                    : stat.label === "Overdue" ? "overdue"
+                    : stat.label === "Holds Pending" ? "holds"
+                    : null;
                   return (
                     <div
                       key={stat.label}
                       onClick={clickTab ? () => setActiveTab(clickTab) : undefined}
-                      className={`stat-card ${idx === 4 ? "col-span-2 sm:col-span-1" : ""}`}
+                      className="stat-card"
                       style={clickTab ? { cursor: "pointer" } : undefined}
                     >
                       <div className={`stat-icon ${stat.iconClass}`}>
@@ -966,6 +1020,179 @@ export default function LibrarianDashboardPage() {
         </>
       )}
 
+      {/* On Loan Tab */}
+      {activeTab === "on-loan" && (
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <CardTitle>Currently On Loan</CardTitle>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table" aria-label="Active loans">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Book Title</th>
+                  <th>Issue Date</th>
+                  <th>Due Date</th>
+                  <th>Renewals</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {onLoanLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={6} />)
+                ) : !onLoanData?.length ? (
+                  <tr>
+                    <td colSpan={6}>
+                      <EmptyState
+                        icon={<BookOpen size={22} />}
+                        title="Nothing on loan"
+                        description="No active loans right now."
+                        className="py-8"
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  onLoanData.map((item: {
+                    transaction_id: string;
+                    member_name: string;
+                    title: string;
+                    issue_date: string;
+                    due_date: string;
+                    renewal_count: number;
+                  }) => (
+                    <tr key={item.transaction_id}>
+                      <td className="font-medium text-slate-900">{item.member_name}</td>
+                      <td className="max-w-xs">
+                        <span className="line-clamp-1 text-slate-700">{item.title}</span>
+                      </td>
+                      <td className="text-slate-500 text-sm">{formatDate(item.issue_date)}</td>
+                      <td className="text-slate-500 text-sm">{formatDate(item.due_date)}</td>
+                      <td className="text-slate-500 text-sm">{item.renewal_count}</td>
+                      <td className="text-sm flex gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRenew(item.transaction_id)}
+                          loading={isRenewing && renewingId === item.transaction_id}
+                          icon={<RefreshCcw size={13} />}
+                          aria-label="Renew loan"
+                          style={{
+                            borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                            color: "var(--avatar-theme-color, #1a1a2e)",
+                          }}
+                        >
+                          Renew
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setNotifyTarget({ transaction_id: item.transaction_id, title: item.title }); setNotifyMessage(""); }}
+                          icon={<Bell size={13} />}
+                          aria-label="Notify member"
+                          style={{
+                            borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                            color: "var(--avatar-theme-color, #1a1a2e)",
+                          }}
+                        >
+                          Notify
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Due Soon Tab */}
+      {activeTab === "due-soon" && (
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <CardTitle>Due Soon (next 3 days)</CardTitle>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table" aria-label="Loans due soon">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Book Title</th>
+                  <th>Due Date</th>
+                  <th>Days Until Due</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dueSoonLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={5} />)
+                ) : !dueSoonData?.length ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={<CalendarClock size={22} />}
+                        title="Nothing due soon"
+                        description="No active loans are due in the next 3 days."
+                        className="py-8"
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  dueSoonData.map((item: {
+                    transaction_id: string;
+                    member_name: string;
+                    title: string;
+                    due_date: string;
+                    days_until_due: number;
+                  }) => (
+                    <tr key={item.transaction_id}>
+                      <td className="font-medium text-slate-900">{item.member_name}</td>
+                      <td className="max-w-xs">
+                        <span className="line-clamp-1 text-slate-700">{item.title}</span>
+                      </td>
+                      <td className="text-slate-500 text-sm">{formatDate(item.due_date)}</td>
+                      <td className="text-amber-600 font-medium">
+                        {item.days_until_due === 0 ? "Today" : `${item.days_until_due} day(s)`}
+                      </td>
+                      <td className="text-sm flex gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRenew(item.transaction_id)}
+                          loading={isRenewing && renewingId === item.transaction_id}
+                          icon={<RefreshCcw size={13} />}
+                          aria-label="Renew loan"
+                          style={{
+                            borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                            color: "var(--avatar-theme-color, #1a1a2e)",
+                          }}
+                        >
+                          Renew
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setNotifyTarget({ transaction_id: item.transaction_id, title: item.title }); setNotifyMessage(""); }}
+                          icon={<Bell size={13} />}
+                          aria-label="Notify member"
+                          style={{
+                            borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                            color: "var(--avatar-theme-color, #1a1a2e)",
+                          }}
+                        >
+                          Notify
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
       {/* Overdue & Fines Tab */}
       {activeTab === "overdue" && (
         <Card padding="none">
@@ -1029,7 +1256,7 @@ export default function LibrarianDashboardPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleNotify(item.transaction_id)}
+                            onClick={() => { setNotifyTarget({ transaction_id: item.transaction_id, title: item.title }); setNotifyMessage(""); }}
                             loading={notifyingId === item.transaction_id}
                             icon={<Bell size={13} />}
                             aria-label="Notify member"
@@ -1418,6 +1645,52 @@ export default function LibrarianDashboardPage() {
         </div>
       </Modal>
 
+      {/* Send Reminder Modal */}
+      <Modal
+        isOpen={!!notifyTarget}
+        onClose={() => { setNotifyTarget(null); setNotifyMessage(""); }}
+        title="Send Reminder"
+        description={notifyTarget ? `Send a reminder to the member about "${notifyTarget.title}". Add an optional note below — it'll be included in the email and the in-app notification.` : undefined}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-900 mb-1">Message (optional)</label>
+            <textarea
+              value={notifyMessage}
+              onChange={(e) => setNotifyMessage(e.target.value)}
+              placeholder="e.g. Another member is waiting on this title — please return it early if you can."
+              rows={3}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setNotifyTarget(null); setNotifyMessage(""); }}
+              style={{
+                borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                color: "var(--avatar-theme-color, #1a1a2e)",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendNotify}
+              loading={isNotifying && notifyingId === notifyTarget?.transaction_id}
+              icon={<Bell size={14} />}
+              style={{
+                background: "var(--theme-sidebar-gradient)",
+                color: "#ffffff",
+                border: "none",
+              }}
+            >
+              Send Reminder
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Deny Access Request Modal */}
       <Modal
         isOpen={!!denyRequestId}
@@ -1466,6 +1739,14 @@ export default function LibrarianDashboardPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function LibrarianDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <LibrarianDashboardPageInner />
+    </Suspense>
   );
 }
 
