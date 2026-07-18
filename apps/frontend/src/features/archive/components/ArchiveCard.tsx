@@ -18,7 +18,10 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
       <div className="flex items-start gap-3">
         <div
           className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-          style={{ background: "var(--color-canvas-subtle)", border: "1px solid var(--color-border-default)" }}
+          style={{
+            background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, #fff)",
+            border: "1px solid color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 25%, transparent)",
+          }}
         >
           {getFileIcon(item.file_type)}
         </div>

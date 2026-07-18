@@ -6,14 +6,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, X, Plus, Trash2, FlaskConical, ArrowLeft } from "lucide-react";
+import { Upload, FileText, X, Plus, Trash2, FlaskConical } from "lucide-react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { useSubmitResearchOutput } from "@/features/research/hooks/useResearch";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { cn, formatFileSize } from "@/lib/utils";
+import { formatFileSize } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 // ---------------------------------------------------------------------------
@@ -195,20 +193,54 @@ export default function UploadResearchPage() {
 
   return (
     <AppLayout>
-      <div className="page-container py-8 max-w-3xl">
-        <PageHeader
-          title={<span className="font-extrabold text-[var(--avatar-theme-color,#1a1a2e)]">Upload Research Output</span>}
-          subtitle="Submit your research for DKP repository"
-        />
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <FlaskConical size={19} color="var(--avatar-theme-color, #6366f1)" />
+              </div>
+              <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                Upload Research Output
+              </h1>
+            </div>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              Submit your research for DKP repository.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ padding: "24px 40px", maxWidth: 800, margin: "0 auto" }}>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
 
-        {/* ── Type + Title ─────────────────────────────── */}
-        <section className="gh-box">
-          <div className="gh-box-header">
-            <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">Basic Information</h2>
+        {/* ── Basic Information ─────────────────────────── */}
+        <section style={{
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 14,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          marginBottom: 24,
+          overflow: "hidden",
+        }}>
+          <div style={{
+            padding: "16px 20px",
+            background: "#f9fafb",
+            borderBottom: "1px solid #e5e7eb",
+          }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Basic Information</h2>
           </div>
-          <div className="gh-box-body space-y-4">
+          <div style={{ padding: 20 }} className="space-y-4">
             <Select
               label="Output Type"
               required
@@ -263,51 +295,64 @@ export default function UploadResearchPage() {
         </section>
 
         {/* ── Authors ──────────────────────────────────── */}
-        <section className="gh-box">
-          <div className="gh-box-header flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">
+        <section style={{
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 14,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          marginBottom: 24,
+          overflow: "hidden",
+        }}>
+          <div style={{
+            padding: "16px 20px",
+            background: "#f9fafb",
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
               Authors
-              <span className="ml-2 text-xs font-normal text-[var(--color-fg-muted)]">({authors.length})</span>
+              <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>({authors.length})</span>
             </h2>
-            <Button
+            <button
               type="button"
-              size="sm"
-              icon={<Plus size={13} />}
               onClick={addAuthor}
               style={{
-                background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
-                color: "#ffffff",
-                border: "none",
-                boxShadow: "0 2px 6px rgba(26, 26, 46, 0.15)",
-                transition: "all 0.2s ease",
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "6px 14px", background: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 70%, #fff) 100%)",
+                border: "none", borderRadius: 8, cursor: "pointer",
+                fontSize: 12, fontWeight: 600, color: "#fff",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)", transition: "all 0.2s ease",
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.filter = "brightness(1.15)";
-                e.currentTarget.style.transform = "translateY(-1px)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.filter = "none";
-                e.currentTarget.style.transform = "none";
-              }}
+              onMouseOver={(e) => { e.currentTarget.style.filter = "brightness(1.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseOut={(e) => { e.currentTarget.style.filter = "none"; e.currentTarget.style.transform = "none"; }}
             >
-              Add Author
-            </Button>
+              <Plus size={13} /> Add Author
+            </button>
           </div>
-          <div className="gh-box-body space-y-4">
+          <div style={{ padding: 20 }} className="space-y-4">
             {errors.authors?.root && (
               <p className="form-error">{errors.authors.root.message}</p>
             )}
             {authors.map((_, idx) => (
-              <div key={idx} className="relative rounded-md border border-[var(--color-border-default)] p-4 bg-[var(--color-canvas-subtle)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
+              <div
+                key={idx}
+                style={{
+                  position: "relative", borderRadius: 8, border: "1px solid #e5e7eb",
+                  padding: 16, background: "#f9fafb",
+                  marginBottom: idx === authors.length - 1 ? 0 : 16,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>
                     Author {idx + 1}
                   </span>
                   {authors.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeAuthor(idx)}
-                      className="p-1 rounded text-[var(--color-danger-fg)] hover:bg-[var(--color-danger-subtle)] transition-colors"
+                      style={{ padding: 4, borderRadius: 4, border: "none", background: "transparent", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                      onMouseOver={(e) => (e.currentTarget.style.background = "#fee2e2")}
+                      onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
                       aria-label={`Remove author ${idx + 1}`}
                     >
                       <Trash2 size={14} />
@@ -340,25 +385,45 @@ export default function UploadResearchPage() {
         </section>
 
         {/* ── File Upload ───────────────────────────────── */}
-        <section className="gh-box">
-          <div className="gh-box-header">
-            <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">
+        <section style={{
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 14,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          marginBottom: 24,
+          overflow: "hidden",
+        }}>
+          <div style={{
+            padding: "16px 20px",
+            background: "#f9fafb",
+            borderBottom: "1px solid #e5e7eb",
+          }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
               Document / Dataset File Upload
-              <span className="ml-1.5 text-xs font-normal text-[var(--color-fg-muted)]">(optional)</span>
+              <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
             </h2>
           </div>
-          <div className="gh-box-body">
+          <div style={{ padding: 20 }}>
             {pdfFile ? (
-              <div className="flex items-center gap-3 p-3 rounded-md border border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
-                <FileText size={20} className="text-[var(--color-accent-fg)] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-fg-default)] truncate">{pdfFile.name}</p>
-                  <p className="text-xs text-[var(--color-fg-muted)]">{formatFileSize(pdfFile.size)}</p>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 16px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb",
+              }}>
+                <FileText size={20} color="var(--avatar-theme-color, #2563eb)" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {pdfFile.name}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                    {formatFileSize(pdfFile.size)}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPdfFile(null)}
-                  className="p-1 rounded text-[var(--color-fg-muted)] hover:text-[var(--color-danger-fg)] hover:bg-[var(--color-danger-subtle)] transition-colors"
+                  style={{ padding: 4, borderRadius: 4, border: "none", background: "transparent", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = "#fee2e2"; e.currentTarget.style.color = "#dc2626"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; }}
                   aria-label="Remove file"
                 >
                   <X size={15} />
@@ -367,20 +432,32 @@ export default function UploadResearchPage() {
             ) : (
               <div
                 {...getRootProps()}
-                className={cn(
-                  "border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors",
-                  isDragActive
-                    ? "border-[var(--color-accent-fg)] bg-[var(--color-accent-subtle)]"
-                    : "border-[var(--color-border-default)] hover:border-[var(--color-accent-fg)] hover:bg-[var(--color-canvas-subtle)]"
-                )}
+                style={{
+                  border: "2px dashed #d1d5db", borderRadius: 8, padding: "32px 20px", textAlign: "center", cursor: "pointer",
+                  background: isDragActive ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 8%, transparent)" : "#fff",
+                  borderColor: isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#d1d5db",
+                  transition: "all 0.2s",
+                }}
+                onMouseOver={(e) => {
+                  if (!isDragActive) {
+                    e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)";
+                    e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isDragActive) {
+                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.background = "#fff";
+                  }
+                }}
               >
                 <input {...getInputProps()} aria-label="Upload PDF, ZIP or JSON" />
-                <Upload size={24} className={cn("mx-auto mb-3", isDragActive ? "text-[var(--color-accent-fg)]" : "text-[var(--color-fg-muted)]")} />
-                <p className="text-sm font-medium text-[var(--color-fg-default)]">
+                <Upload size={24} color={isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#6b7280"} style={{ margin: "0 auto 12px" }} />
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", margin: 0 }}>
                   {isDragActive ? "Drop your file here" : "Drag & drop your PDF, ZIP or JSON file"}
                 </p>
-                <p className="text-xs text-[var(--color-fg-muted)] mt-1">
-                  or <span className="text-[var(--color-accent-fg)]">browse to upload</span> · PDF, ZIP or JSON · max 500 MB
+                <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
+                  or <span style={{ color: "var(--avatar-theme-color, #2563eb)", fontWeight: 500 }}>browse to upload</span> · PDF, ZIP or JSON · max 500 MB
                 </p>
               </div>
             )}
@@ -390,21 +467,31 @@ export default function UploadResearchPage() {
         </section>
 
         {/* ── Actions ──────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <Button type="button" variant="invisible" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            size="lg"
-            loading={isSubmitting || submit.isPending}
-            icon={<FlaskConical size={15} />}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 24 }}>
+          <button
+            type="button"
+            onClick={() => router.back()}
             style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "10px 18px",
+              background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer",
+              fontSize: 13, fontWeight: 600, color: "#6b7280", transition: "all 0.2s",
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || submit.isPending}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "10px 18px",
               background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
-              color: "#ffffff",
-              border: "none",
-              boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
-              transition: "all 0.2s ease",
+              border: "none", borderRadius: 8,
+              cursor: (isSubmitting || submit.isPending) ? "not-allowed" : "pointer",
+              fontSize: 13, fontWeight: 600, color: "#fff",
+              opacity: (isSubmitting || submit.isPending) ? 0.7 : 1,
+              boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)", transition: "all 0.2s ease",
             }}
             onMouseOver={(e) => {
               if (!isSubmitting && !submit.isPending) {
@@ -419,12 +506,14 @@ export default function UploadResearchPage() {
               }
             }}
           >
-            Submit Research Output
-          </Button>
+            <FlaskConical size={15} />
+            {isSubmitting || submit.isPending ? "Submitting..." : "Submit Research Output"}
+          </button>
         </div>
 
       </form>
-    </div>
+        </div>
+      </div>
     </AppLayout>
   );
 }

@@ -36,6 +36,15 @@ export function useIdleLogout(enabled: boolean) {
     resetTimer();
     ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, resetTimer, { passive: true }));
 
+    // None of the events above fire while the OS focus is on another app
+    // (e.g. the user tabs over to VSCode) — the timer kept counting that time
+    // as idle, so a handful of short window-switches over 30 minutes could
+    // add up to a spurious logout the moment the tab regained focus. Coming
+    // back to the tab is itself activity, so reset on both signals.
+    const onVisibilityChange = () => { if (!document.hidden) resetTimer(); };
+    window.addEventListener("focus", resetTimer);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     // Multiple tabs share the same session — if one tab goes idle while the
     // user is active in another, staying signed in there is correct. Any
     // activity in that other tab still writes to localStorage's auth state
@@ -46,6 +55,8 @@ export function useIdleLogout(enabled: boolean) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, resetTimer));
+      window.removeEventListener("focus", resetTimer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("storage", onStorage);
     };
   }, [enabled, logout, router]);

@@ -423,26 +423,34 @@ export default function ArchiveItemPage() {
   // ─────────── Normal Details Render ───────────
   return (
     <AppLayout>
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <FileText size={19} color="var(--avatar-theme-color, #6366f1)" />
+              </div>
+              <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                Document Details
+              </h1>
+            </div>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              View archive item details, versions, and access information.
+            </p>
+          </div>
+        </div>
+
       <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto" }}>
-        
-        {/* Back button */}
-        <button
-          onClick={() => router.back()}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            border: "none",
-            background: "none",
-            color: "#6b7280",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            marginBottom: 20,
-          }}
-        >
-          <ArrowLeft size={14} /> Back to Archive
-        </button>
 
         {/* Detail Card */}
         <div
@@ -850,6 +858,7 @@ export default function ArchiveItemPage() {
         </div>
 
         <DiscussionSection entityType="archive" entityId={item.item_id} />
+      </div>
       </div>
 
       <ConfirmDialog

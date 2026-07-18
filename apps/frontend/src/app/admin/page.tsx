@@ -100,7 +100,8 @@ function StatCard({ label, value, sub, icon: Icon, accent = "var(--avatar-theme-
   icon: React.ElementType; accent?: string;
 }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 18px", display: "flex", alignItems: "flex-start", gap: 14 }}>
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 18px", display: "flex", alignItems: "flex-start", gap: 14, position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent, borderRadius: "12px 12px 0 0" }} />
       <div style={{ width: 44, height: 44, borderRadius: 8, background: accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <Icon size={20} color="#fff" />
       </div>
@@ -644,20 +645,20 @@ function UsersTab() {
 
       {/* Filters - responsive */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
-        <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
+        <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1.5px solid #111827", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
           <input type="text" placeholder="Search by name or email…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#111827", width: "100%" }} />
         </div>
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1.5px solid #111827", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Roles</option>
           {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
             <option key={r} value={r}>{r.replace("_"," ")}</option>
           ))}
         </select>
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1.5px solid #111827", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
           <option value="pending_approval">Pending Approval</option>
@@ -668,9 +669,9 @@ function UsersTab() {
       </div>
 
       {/* Table/Card layout - responsive */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: isMobile ? "visible" : "hidden" }}>
+      <div style={{ background: "#fff", border: "1.5px solid #111827", borderRadius: 10, overflow: isMobile ? "visible" : "hidden" }}>
         {!isMobile && (
-          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9fafb", borderBottom: "1.5px solid #111827", padding: "12px 20px" }}>
             {["USER","EMAIL","ROLE","STATUS","JOINED","ACTIONS"].map(c => (
               <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
             ))}
@@ -691,7 +692,7 @@ function UsersTab() {
         ) : isMobile ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
             {filtered.map((u: any) => (
-              <div key={u.user_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div key={u.user_id} style={{ background: "#f9fafb", border: "1px solid #111827", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
                   <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                     {(u.name || "U")[0].toUpperCase()}
@@ -720,7 +721,7 @@ function UsersTab() {
             <div key={u.user_id} style={{
               display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr",
               gap: 12, alignItems: "center", padding: "14px 20px",
-              borderBottom: i < filtered.length - 1 ? "1px solid #f3f4f6" : "none",
+              borderBottom: i < filtered.length - 1 ? "1px solid #111827" : "none",
               transition: "background 0.1s",
             }}
               onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
@@ -966,20 +967,20 @@ function AuditTab() {
 
       {/* Filters */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
+        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1.5px solid #111827", borderRadius: 8, padding: "9px 12px" }}>
           <Search size={13} color="#9ca3af" />
           <input type="text" placeholder="Filter by user ID or name…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#111827", width: "100%" }} />
         </div>
         <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1.5px solid #111827", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Actions</option>
           {["CREATE","UPDATE","DELETE","ACCESS","LOGIN","LOGOUT","DOWNLOAD","STATUS_CHANGE","BACKUP","RESTORE","APPROVE_USER","REJECT_USER"].map(a => (
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
         <select value={entityFilter} onChange={e => { setEntityFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1.5px solid #111827", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
           <option value="all">All Entity Types</option>
           {["user","archive_item","backup","backup_schedule","system_config","borrow","fine","catalog_import"].map(t => (
             <option key={t} value={t}>{t.replace(/_/g," ")}</option>
@@ -988,8 +989,8 @@ function AuditTab() {
       </div>
 
       {/* Table */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr 1.2fr 1.2fr 0.6fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+      <div style={{ background: "#fff", border: "1.5px solid #111827", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr 1.2fr 1.2fr 0.6fr", gap: 12, background: "#f9fafb", borderBottom: "1.5px solid #111827", padding: "12px 20px" }}>
           {["TIMESTAMP","USER","ACTION","ENTITY TYPE","ENTITY ID","DETAILS"].map(c => (
             <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
           ))}
@@ -1014,7 +1015,7 @@ function AuditTab() {
               <div style={{
                 display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr 1.2fr 1.2fr 0.6fr",
                 gap: 12, alignItems: "center", padding: "13px 20px",
-                borderBottom: "1px solid #f3f4f6", transition: "background 0.1s",
+                borderBottom: "1px solid #111827", transition: "background 0.1s",
               }}
                 onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
@@ -1655,15 +1656,35 @@ function AnnouncementsTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div ref={formRef} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px" }}>
-        <SectionHeader
-          title={editingId ? "Edit & Resend Announcement" : "Broadcast Announcement"}
-          desc="Send a platform-wide alert or targeted notification via email and in-app message."
-        />
-        <form onSubmit={handleBroadcast} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
+      <div ref={formRef} style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        overflow: "hidden",
+      }}>
+        <div style={{
+          padding: "16px 20px",
+          background: "#f9fafb",
+          borderBottom: "1px solid #e5e7eb",
+        }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+            {editingId ? "Edit & Resend Announcement" : "Broadcast Announcement"}
+          </h2>
+          <p style={{ fontSize: 12, color: "#6b7280", margin: "3px 0 0" }}>
+            Send a platform-wide alert or targeted notification via email and in-app message.
+          </p>
+        </div>
+        <form onSubmit={handleBroadcast} style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
           <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
-            <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Target Audience</label>
+            <select
+              value={targetRole}
+              onChange={e => setTargetRole(e.target.value)}
+              style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 14, color: "#111827", outline: "none", background: "#fff", transition: "border-color 0.15s" }}
+              onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)"; }}
+              onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
+            >
               <option value="all">All Registered Users</option>
               {ANNOUNCEMENT_ROLES.map(r => (
                 <option key={r} value={r}>{r.replace("_"," ")}</option>
@@ -1671,20 +1692,59 @@ function AnnouncementsTab() {
             </select>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Announcement Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              required
+              placeholder="e.g. Scheduled System Upgrade"
+              style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 14, color: "#111827", outline: "none", boxSizing: "border-box", transition: "border-color 0.15s" }}
+              onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)"; }}
+              onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
+            />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
-            <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Message Body</label>
+            <textarea
+              rows={6}
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              required
+              placeholder="Write your message here..."
+              style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 14, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit", transition: "border-color 0.15s" }}
+              onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)"; }}
+              onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
+            />
           </div>
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
             {editingId && (
-              <button type="button" onClick={handleCancelEdit} style={{ padding: "10px 20px", borderRadius: 7, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#6b7280", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseOver={e => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                onMouseOut={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+              >
                 Cancel
               </button>
             )}
-            <button type="submit" disabled={broadcast.isPending} style={{ padding: "10px 24px", borderRadius: 7, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              type="submit"
+              disabled={broadcast.isPending}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "10px 18px", borderRadius: 8, border: "none",
+                background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                fontSize: 13, fontWeight: 600, color: "#fff",
+                cursor: broadcast.isPending ? "not-allowed" : "pointer",
+                opacity: broadcast.isPending ? 0.7 : 1,
+                boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={e => { if (!broadcast.isPending) { e.currentTarget.style.filter = "brightness(1.15)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+              onMouseOut={e => { e.currentTarget.style.filter = "none"; e.currentTarget.style.transform = "none"; }}
+            >
               <Zap size={14} /> {broadcast.isPending ? "Sending..." : editingId ? "Resend Notice" : "Broadcast Notice"}
             </button>
           </div>

@@ -10,7 +10,6 @@ import {
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn, getAccessTierBadge } from "@/lib/utils";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
@@ -288,41 +287,58 @@ export default function ResearchDetailPage() {
 
   return (
     <AppLayout>
-      <div className="page-container py-8 max-w-4xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <PageHeader
-          title={output.title}
-          breadcrumb={[
-            { label: "Home", href: "/" },
-            { label: "Research", href: "/research" },
-            { label: "Detail" },
-          ]}
-        />
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-          {isOwner && (
-            <Link
-              href={`/research/${outputId}/edit`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm hover:opacity-90"
-              style={{
-                background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
-              }}
-            >
-              <Pencil size={13} />
-              Edit Research
-            </Link>
-          )}
-          {canRetract && (
-            <button
-              onClick={handleRetract}
-              disabled={retractMutation.isPending}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-red-600 bg-red-50 border border-red-200 transition-all hover:bg-red-100 disabled:opacity-60"
-            >
-              <Ban size={13} />
-              Retract
-            </button>
-          )}
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <FlaskConical size={19} color="var(--avatar-theme-color, #6366f1)" />
+                </div>
+                <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.25 }}>
+                  {output.title}
+                </h1>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-start">
+                {isOwner && (
+                  <Link
+                    href={`/research/${outputId}/edit`}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm hover:opacity-90"
+                    style={{
+                      background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
+                    }}
+                  >
+                    <Pencil size={13} />
+                    Edit Research
+                  </Link>
+                )}
+                {canRetract && (
+                  <button
+                    onClick={handleRetract}
+                    disabled={retractMutation.isPending}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-red-600 bg-red-50 border border-red-200 transition-all hover:bg-red-100 disabled:opacity-60"
+                  >
+                    <Ban size={13} />
+                    Retract
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+
+      <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto" }}>
+
       {output.status === "retracted" && (
         <div className="mb-4 px-4 py-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
           This research output has been retracted and is no longer visible to the public.
@@ -330,8 +346,15 @@ export default function ResearchDetailPage() {
       )}
 
       {/* ── Main info card ─────────────────────────────── */}
-      <div className="gh-box mb-5">
-        <div className="gh-box-body space-y-4">
+      <div style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        marginBottom: 20,
+        overflow: "hidden",
+      }}>
+        <div style={{ padding: 20 }} className="space-y-4">
 
           {/* Authors */}
           <div className="flex items-start gap-2">
@@ -493,9 +516,20 @@ export default function ResearchDetailPage() {
       </div>
 
       {/* ── Citation tools ─────────────────────────────── */}
-      <div className="gh-box">
-        <div className="gh-box-header flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--color-fg-default)]">
+      <div style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        overflow: "hidden",
+      }}>
+        <div style={{
+          padding: "16px 20px",
+          background: "#f9fafb",
+          borderBottom: "1px solid #e5e7eb",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
             Cite This Work
           </h2>
           {/* Tab switcher */}
@@ -519,7 +553,7 @@ export default function ResearchDetailPage() {
           )}
         </div>
 
-        <div className="gh-box-body">
+        <div style={{ padding: 20 }}>
           {citationLoading && (
             <div className="h-24 rounded-xl bg-[var(--color-canvas-subtle)] animate-pulse" />
           )}
@@ -555,7 +589,8 @@ export default function ResearchDetailPage() {
       </div>
 
       <DiscussionSection entityType="research" entityId={output.output_id} />
-    </div>
+      </div>
+      </div>
     </AppLayout>
   );
 }

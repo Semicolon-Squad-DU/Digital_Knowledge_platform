@@ -23,6 +23,14 @@ const DEPT_ICONS: Record<string, React.ElementType> = {
   Physics: Atom,
 };
 
+// The 5 avatar theme colors from the profile page's color picker — cycled
+// per department so each one gets a stable, recognizable hue independent of
+// the viewer's own chosen theme.
+const AVATAR_THEME_COLORS = ["#1a1a2e", "#312e81", "#064e3b", "#1e3a8a", "#4c0519"];
+const DEPT_COLORS: Record<string, string> = Object.fromEntries(
+  DEPARTMENTS.map((dept, i) => [dept, AVATAR_THEME_COLORS[i % AVATAR_THEME_COLORS.length]])
+);
+
 function ProjectCard({ project, onClick }: {
   project: {
     project_id: string; title: string; abstract: string;
@@ -32,6 +40,7 @@ function ProjectCard({ project, onClick }: {
   onClick: (id: string) => void;
 }) {
   const DeptIcon = DEPT_ICONS[project.department] ?? GraduationCap;
+  const deptColor = DEPT_COLORS[project.department] ?? "#1a1a2e";
   const [thumbFailed, setThumbFailed] = useState(false);
   const showThumb = project.thumbnail_url && !thumbFailed;
   return (
@@ -59,11 +68,37 @@ function ProjectCard({ project, onClick }: {
       ) : (
         <div style={{
           height: 96,
-          background: "linear-gradient(135deg, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 14%, #fff) 0%, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 5%, #f8f9ff) 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative",
+          overflow: "hidden",
+          background: `linear-gradient(135deg, color-mix(in srgb, ${deptColor} 22%, #fff) 0%, color-mix(in srgb, ${deptColor} 8%, #f8f9ff) 100%)`,
           borderBottom: "1px solid #f3f4f6",
         }}>
-          <DeptIcon size={22} color="var(--avatar-theme-color, #6366f1)" style={{ opacity: 0.55 }} />
+          {/* Repeating icon watermark — reads as a designed pattern rather than a missing image */}
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6,
+            padding: 10, opacity: 0.14, transform: "rotate(-8deg) scale(1.3)",
+          }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <DeptIcon key={i} size={16} color={deptColor} />
+            ))}
+          </div>
+          <div style={{
+            position: "absolute", left: 14, bottom: 12,
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8,
+              background: deptColor,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: `0 3px 10px color-mix(in srgb, ${deptColor} 45%, transparent)`,
+            }}>
+              <DeptIcon size={16} color="#fff" />
+            </div>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: deptColor, letterSpacing: "0.02em" }}>
+              {project.department}
+            </span>
+          </div>
         </div>
       )}
 

@@ -571,7 +571,14 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             >
               <Bell size={18} color="#6b7280" />
               {unreadCount > 0 && (
-                <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
+                <span style={{
+                  position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, padding: "0 3px",
+                  borderRadius: 999, background: "#ef4444", border: "2px solid #fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 9.5, fontWeight: 700, color: "#fff", lineHeight: 1,
+                }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
             </Link>
             <Link
