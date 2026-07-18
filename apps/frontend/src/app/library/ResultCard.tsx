@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Heart, Quote, Eye, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { AccessTierBadge } from "@/components/ui/AccessTierBadge";
 import toast from "react-hot-toast";
 
 export interface CatalogItem {
@@ -22,24 +23,20 @@ export interface CatalogItem {
   view_count?: number;
 }
 
-// ── Access tier badge ─────────────────────────────────────────────────────────
-function AccessBadge({ tier, copies }: { tier?: string; copies: number }) {
-  const t = copies === 0 ? "restricted" : (tier ?? "public");
-  const map: Record<string, { label: string; bg: string; color: string }> = {
-    public:      { label: "OPEN ACCESS",   bg: "#111827", color: "#fff" },
-    member:      { label: "INSTITUTIONAL", bg: "#1e3a5f", color: "#fff" },
-    staff:       { label: "INSTITUTIONAL", bg: "#1e3a5f", color: "#fff" },
-    restricted:  { label: "RESTRICTED",    bg: "#7f1d1d", color: "#fff" },
-  };
-  const s = map[t] ?? map.public;
+// ── Loan status badge ─────────────────────────────────────────────────────────
+// Physical-copy availability — same colors/wording as the item detail page,
+// shown separately from AccessBadge so the two concepts don't get conflated.
+function LoanStatusBadge({ copies }: { copies: number }) {
+  const available = copies > 0;
   return (
     <span style={{
       display: "inline-flex", alignItems: "center",
       padding: "2px 8px", borderRadius: 3,
       fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-      background: s.bg, color: s.color,
+      background: available ? "#e6f4ea" : "#fde8e8",
+      color: available ? "#1e7e34" : "#c81e1e",
     }}>
-      {s.label}
+      {available ? `${copies} AVAILABLE` : "ALL ON LOAN"}
     </span>
   );
 }
@@ -69,7 +66,8 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
       {/* Top row: badge + type/date + actions */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <AccessBadge tier={item.access_tier} copies={item.available_copies} />
+          <AccessTierBadge tier={item.access_tier} />
+          <LoanStatusBadge copies={item.available_copies} />
           <span style={{ fontSize: 13, color: "#6b7280" }}>
             {typeLabel} • {dateStr}
           </span>
