@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
+import Link from "next/link";
 import {
   User, Mail, Building2, Shield, LogOut, KeyRound,
-  Activity, Download, CheckCircle2, ChevronDown, ChevronUp, Camera, Clock
+  Activity, Download, CheckCircle2, ChevronDown, ChevronUp, Camera, Clock,
+  BookOpen, Heart, ArrowUpRight, History as HistoryIcon,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -491,10 +493,10 @@ export default function ProfilePage() {
     </div>
   );
 
-  const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) => (
+  const InfoRow = ({ icon: Icon, label, value, color = "#6b7280", bg = "#f3f4f6" }: { icon: React.ElementType; label: string; value: string; color?: string; bg?: string }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: "1px solid #f3f4f6" }}>
-      <div style={{ width: 34, height: 34, borderRadius: 8, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon size={15} color="#6b7280" />
+      <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon size={15} color={color} />
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
@@ -627,14 +629,25 @@ export default function ProfilePage() {
           {/* Quick stats row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid #f3f4f6" }}>
             {[
-              { label: "Borrowed", value: activeLoans.length },
-              { label: "History", value: returnedLoans.length },
-              { label: "Wishlist", value: (wishlist as any[])?.length ?? 0 },
-            ].map(({ label, value }, i) => (
-              <div key={label} style={{ padding: "14px 0", textAlign: "center", borderRight: i < 2 ? "1px solid #f3f4f6" : "none" }}>
-                <p style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>{value}</p>
-                <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0", fontWeight: 500 }}>{label}</p>
-              </div>
+              { label: "Borrowed", value: activeLoans.length, icon: BookOpen, color: "#2563eb", anchor: "#library-activity" },
+              { label: "History", value: returnedLoans.length, icon: HistoryIcon, color: "#7c3aed", anchor: "#library-activity" },
+              { label: "Wishlist", value: (wishlist as any[])?.length ?? 0, icon: Heart, color: "#dc2626", anchor: "#library-activity" },
+            ].map(({ label, value, icon: Icon, color, anchor }, i) => (
+              <a
+                key={label}
+                href={anchor}
+                style={{
+                  padding: "16px 0", textAlign: "center", borderRight: i < 2 ? "1px solid #f3f4f6" : "none",
+                  textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                  cursor: "pointer", transition: "background 0.15s",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <Icon size={15} color={color} strokeWidth={2.3} />
+                <p style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0, lineHeight: 1 }}>{value}</p>
+                <p style={{ fontSize: 11, color: "#6b7280", margin: 0, fontWeight: 500 }}>{label}</p>
+              </a>
             ))}
           </div>
         </SectionCard>
@@ -643,10 +656,10 @@ export default function ProfilePage() {
         <SectionCard style={{ marginBottom: 16 }}>
           <SectionHead title="Personal Info" />
           <div style={{ padding: "0 20px" }}>
-            <InfoRow icon={User} label="Full Name" value={user.name} />
-            <InfoRow icon={Mail} label="Email" value={user.email} />
-            <InfoRow icon={Building2} label="Department" value={user.department || "Computer Science & Engineering"} />
-            <InfoRow icon={Shield} label="Role" value={user.role?.replace(/_/g, " ") ?? "Member"} />
+            <InfoRow icon={User} label="Full Name" value={user.name} color="#2563eb" bg="#eff6ff" />
+            <InfoRow icon={Mail} label="Email" value={user.email} color="#7c3aed" bg="#faf5ff" />
+            <InfoRow icon={Building2} label="Department" value={user.department || "Computer Science & Engineering"} color="#0891b2" bg="#ecfeff" />
+            <InfoRow icon={Shield} label="Role" value={user.role?.replace(/_/g, " ") ?? "Member"} color="#d97706" bg="#fffbeb" />
           </div>
         </SectionCard>
 
@@ -720,53 +733,103 @@ export default function ProfilePage() {
           </div>
         </SectionCard>
 
-        {/* ── LIBRARY STATUS (members only) ─────────────────────────────── */}
-        {user?.role === "member" && (
-          <SectionCard style={{ marginBottom: 16 }}>
-            <SectionHead title="Library" />
-            <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Fines banner */}
-              {!finesLoading && (fineData?.total_pending ?? 0) > 0 && (
-                <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 18 }}>⚠️</span>
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: "#92400e", margin: 0 }}>Outstanding fine: BDT {fineData!.total_pending.toFixed(2)}</p>
-                    <p style={{ fontSize: 11, color: "#92400e", margin: "2px 0 0" }}>Please visit the library to clear your fine.</p>
-                  </div>
-                </div>
-              )}
-              {!finesLoading && (fineData?.total_pending ?? 0) === 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <CheckCircle2 size={16} color="#16a34a" />
-                  <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, margin: 0 }}>No outstanding fines</p>
-                </div>
-              )}
+        {/* ── LIBRARY ACTIVITY (borrowed + wishlist — everyone, not just "member") ── */}
+        <div id="library-activity" style={{ scrollMarginTop: 20 }}>
+        <SectionCard style={{ marginBottom: 16 }}>
+          <SectionHead title="Library Activity" />
+          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
 
-              {/* Active loans */}
-              {!histLoading && activeLoans.length > 0 && (
+            {/* Fines banner */}
+            {!finesLoading && (fineData?.total_pending ?? 0) > 0 && (
+              <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 18 }}>⚠️</span>
                 <div>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Currently Borrowed</p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {activeLoans.slice(0, 3).map((loan: any) => {
-                      const overdue = loan.status === "overdue" || new Date(loan.due_date) < new Date();
-                      return (
-                        <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb" }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{loan.title}</p>
-                          <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: overdue ? "#fee2e2" : "#dcfce7", color: overdue ? "#991b1b" : "#166534", flexShrink: 0 }}>
-                            {overdue ? "Overdue" : "Active"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#92400e", margin: 0 }}>Outstanding fine: BDT {fineData!.total_pending.toFixed(2)}</p>
+                  <p style={{ fontSize: 11, color: "#92400e", margin: "2px 0 0" }}>Please visit the library to clear your fine.</p>
                 </div>
-              )}
-              {!histLoading && activeLoans.length === 0 && (
-                <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No books currently borrowed.</p>
+              </div>
+            )}
+            {!finesLoading && (fineData?.total_pending ?? 0) === 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <CheckCircle2 size={16} color="#16a34a" />
+                <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, margin: 0 }}>No outstanding fines</p>
+              </div>
+            )}
+
+            {/* Currently Borrowed */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+                <BookOpen size={13} color="#2563eb" />
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Currently Borrowed{activeLoans.length > 0 ? ` (${activeLoans.length})` : ""}
+                </p>
+              </div>
+              {histLoading ? (
+                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Loading…</p>
+              ) : activeLoans.length === 0 ? (
+                <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No books currently borrowed.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {activeLoans.map((loan: any) => {
+                    const overdue = loan.status === "overdue" || new Date(loan.due_date) < new Date();
+                    return (
+                      <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #eef0f3" }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{loan.title}</p>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: overdue ? "#fee2e2" : "#dcfce7", color: overdue ? "#991b1b" : "#166534", flexShrink: 0 }}>
+                          {overdue ? "Overdue" : "Active"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-          </SectionCard>
-        )}
+
+            {/* Wishlist */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <Heart size={13} color="#dc2626" />
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Wishlist{(wishlist as any[])?.length ? ` (${(wishlist as any[]).length})` : ""}
+                  </p>
+                </div>
+                {(wishlist as any[])?.length > 0 && (
+                  <Link href="/library/wishlist" style={{ fontSize: 11.5, fontWeight: 600, color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                    View all <ArrowUpRight size={11} />
+                  </Link>
+                )}
+              </div>
+              {wishlistLoading ? (
+                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Loading…</p>
+              ) : !(wishlist as any[])?.length ? (
+                <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Nothing saved yet — browse the library and tap the heart on a book.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {(wishlist as any[]).slice(0, 5).map((item: any) => (
+                    <Link
+                      key={item.wishlist_id ?? item.catalog_id}
+                      href={`/library/${item.catalog_id}`}
+                      style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "10px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #eef0f3",
+                        textDecoration: "none", transition: "background 0.15s",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "#f9fafb")}
+                    >
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{item.title}</p>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: item.available_copies > 0 ? "#dcfce7" : "#f3f4f6", color: item.available_copies > 0 ? "#166534" : "#6b7280", flexShrink: 0 }}>
+                        {item.available_copies > 0 ? "Available" : "On Loan"}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </SectionCard>
+        </div>
 
         {/* ── NOTIFICATIONS ─────────────────────────────────────────────── */}
         <SectionCard style={{ marginBottom: 16 }}>

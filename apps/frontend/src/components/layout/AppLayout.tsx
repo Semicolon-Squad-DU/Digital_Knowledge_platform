@@ -39,30 +39,44 @@ function NavLink({ label, href, icon: Icon, active, onClick }: {
     <Link
       href={href}
       onClick={onClick}
-      style={{ textDecoration: "none", display: "block", marginBottom: 2 }}
+      style={{ textDecoration: "none", display: "block", marginBottom: 3, position: "relative" }}
     >
+      {active && (
+        <span style={{
+          position: "absolute", left: -8, top: "50%", transform: "translateY(-50%)",
+          width: 3, height: 18, borderRadius: 3, background: "#fff",
+        }} />
+      )}
       <div
         style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 14px", borderRadius: 8, cursor: "pointer",
-          fontSize: 13.5, fontWeight: active ? 700 : 500,
-          color: active ? "#fff" : "rgba(255,255,255,0.65)",
-          background: active ? "rgba(255,255,255,0.18)" : "transparent",
+          display: "flex", alignItems: "center", gap: 11,
+          padding: "8px 12px", borderRadius: 10, cursor: "pointer",
+          fontSize: 13.5, fontWeight: active ? 700 : 500, letterSpacing: "-0.005em",
+          color: active ? "#fff" : "rgba(255,255,255,0.62)",
+          background: active ? "rgba(255,255,255,0.14)" : "transparent",
+          boxShadow: active ? "inset 0 0 0 1px rgba(255,255,255,0.1)" : "none",
+          transition: "background 0.15s ease, color 0.15s ease",
         }}
         onMouseEnter={e => {
           if (!active) {
-            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.1)";
+            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
             (e.currentTarget as HTMLElement).style.color = "#fff";
           }
         }}
         onMouseLeave={e => {
           if (!active) {
             (e.currentTarget as HTMLElement).style.background = "transparent";
-            (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)";
+            (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.62)";
           }
         }}
       >
-        <Icon size={16} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0, opacity: active ? 1 : 0.8 }} />
+        <div style={{
+          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: active ? "rgba(255,255,255,0.16)" : "transparent",
+        }}>
+          <Icon size={14.5} strokeWidth={active ? 2.4 : 2} style={{ opacity: active ? 1 : 0.75 }} />
+        </div>
         <span>{label}</span>
       </div>
     </Link>
@@ -73,25 +87,31 @@ function NavLink({ label, href, icon: Icon, active, onClick }: {
 function SidebarBrand({ onClose }: { onClose?: () => void }) {
   return (
     <div style={{
-      height: 64, padding: "0 18px 8px 18px",
+      height: 64, padding: "0 16px 10px 18px",
       display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-      borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
+      flexShrink: 0, position: "relative",
     }}>
+      {/* Soft fade divider instead of a hard 1px line */}
+      <div style={{
+        position: "absolute", left: 18, right: 18, bottom: 0, height: 1,
+        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.14) 50%, transparent)",
+      }} />
       <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{
-          width: 30, height: 30, borderRadius: 7,
-          background: "rgba(255,255,255,0.18)",
+          width: 32, height: 32, borderRadius: 9,
+          background: "rgba(255,255,255,0.14)",
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.14), 0 2px 8px rgba(0,0,0,0.15)",
           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
         }}>
-          <GraduationCap size={15} color="#fff" />
+          <GraduationCap size={16} color="#fff" strokeWidth={2.2} />
         </div>
         <div style={{ minWidth: 0 }}>
           <p style={{
-            fontSize: "clamp(13px, 2vw, 18px)", fontWeight: 950, color: "#fff", margin: 0,
+            fontSize: "clamp(13px, 2vw, 17px)", fontWeight: 800, color: "#fff", margin: 0,
             lineHeight: 1.2, letterSpacing: "-0.02em",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>Digital Knowledge</p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "2px 0 0", letterSpacing: "0.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Academic Portal</p>
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.55)", margin: "2px 0 0", letterSpacing: "0.03em", textTransform: "uppercase", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Academic Portal</p>
         </div>
       </Link>
       {onClose && (
@@ -112,38 +132,53 @@ function SidebarBrand({ onClose }: { onClose?: () => void }) {
 function UserFooter({ user, onLogout }: { user: any; onLogout: () => void }) {
   if (!user) return null;
   return (
-    <div style={{ padding: "8px 8px 14px", borderTop: "1px solid rgba(255,255,255,0.09)", flexShrink: 0 }}>
-      <Link href="/profile" style={{ textDecoration: "none", display: "block", marginBottom: 6 }}>
+    <div style={{ padding: "10px 10px 14px", flexShrink: 0, position: "relative" }}>
+      <div style={{
+        position: "absolute", left: 18, right: 18, top: 0, height: 1,
+        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.14) 50%, transparent)",
+      }} />
+      <Link href="/profile" style={{ textDecoration: "none", display: "block", marginBottom: 8, marginTop: 2 }}>
         <div
-          style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 8 }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 12,
+            background: "rgba(255,255,255,0.06)",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
+            transition: "background 0.15s ease",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.11)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
         >
           <div style={{
-            width: 30, height: 30, borderRadius: "50%",
-            background: "rgba(255,255,255,0.2)", flexShrink: 0,
+            width: 32, height: 32, borderRadius: "50%",
+            background: "rgba(255,255,255,0.2)",
+            flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700, color: "#fff",
+            fontSize: 12.5, fontWeight: 700, color: "#fff",
           }}>
             {user.name?.[0]?.toUpperCase()}
           </div>
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>
               {user.name?.split(" ")[0]}
             </p>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: "1px 0 0", textTransform: "capitalize", letterSpacing: "0.01em" }}>
+            <span style={{
+              display: "inline-block", fontSize: 10, color: "rgba(255,255,255,0.75)",
+              margin: "3px 0 0", textTransform: "capitalize", letterSpacing: "0.02em", fontWeight: 600,
+              padding: "1px 7px", borderRadius: 5, background: "rgba(255,255,255,0.1)",
+            }}>
               {user.role?.replace("_", " ")}
-            </p>
+            </span>
           </div>
         </div>
       </Link>
       <button
         onClick={onLogout}
         style={{
-          width: "100%", display: "flex", alignItems: "center", gap: 7,
-          padding: "8px 10px", borderRadius: 8,
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+          padding: "8px 10px", borderRadius: 10,
           border: "1px solid rgba(255,255,255,0.15)", background: "transparent",
-          cursor: "pointer", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.65)",
+          cursor: "pointer", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.65)",
+          transition: "all 0.15s ease",
         }}
         onMouseEnter={e => {
           e.currentTarget.style.background = "rgba(255,255,255,0.1)";
