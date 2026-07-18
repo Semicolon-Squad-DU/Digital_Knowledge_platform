@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, GraduationCap, Users, Calendar, Send, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, GraduationCap, Users, Calendar, Send, FileText, X, ChevronLeft, ChevronRight, Code2, Zap, Cog, Building2, LineChart, BookOpen, Atom } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -13,13 +13,14 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 const DEPARTMENTS = ["CSE", "EEE", "ME", "CE", "BBA", "English", "Physics"];
 
-const TECH_COLORS: Record<string, string> = {
-  React:      "#3b82f6",
-  "Node.js":  "#10b981",
-  Python:     "#f59e0b",
-  Django:     "#059669",
-  Flutter:    "#06b6d4",
-  Arduino:    "#f97316",
+const DEPT_ICONS: Record<string, React.ElementType> = {
+  CSE:     Code2,
+  EEE:     Zap,
+  ME:      Cog,
+  CE:      Building2,
+  BBA:     LineChart,
+  English: BookOpen,
+  Physics: Atom,
 };
 
 function ProjectCard({ project, onClick }: {
@@ -30,46 +31,53 @@ function ProjectCard({ project, onClick }: {
   };
   onClick: (id: string) => void;
 }) {
+  const DeptIcon = DEPT_ICONS[project.department] ?? GraduationCap;
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const showThumb = project.thumbnail_url && !thumbFailed;
   return (
     <div
       onClick={() => onClick(project.project_id)}
       style={{
         background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
-        padding: 0, cursor: "pointer", transition: "all 0.18s",
+        padding: 0, cursor: "pointer",
         display: "flex", flexDirection: "column", overflow: "hidden",
+        boxShadow: "0 1px 2px rgba(17,24,39,0.03)",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.09)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 24px rgba(17,24,39,0.08)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(17,24,39,0.03)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
     >
       {/* Thumbnail */}
-      {project.thumbnail_url ? (
+      {showThumb ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={project.thumbnail_url}
+          src={project.thumbnail_url!}
           alt=""
-          style={{ height: 110, width: "100%", objectFit: "cover", borderBottom: "1px solid #f0f0f8" }}
+          onError={() => setThumbFailed(true)}
+          style={{ height: 96, width: "100%", objectFit: "cover", borderBottom: "1px solid #f3f4f6" }}
         />
       ) : (
         <div style={{
-          height: 110, background: "linear-gradient(135deg, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff) 0%, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 6%, #f8f9ff) 100%)",
+          height: 96,
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 14%, #fff) 0%, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 5%, #f8f9ff) 100%)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          borderBottom: "1px solid #f0f0f8",
+          borderBottom: "1px solid #f3f4f6",
         }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 12,
-            background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 15%, #fff)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <GraduationCap size={24} color="var(--avatar-theme-color, #6366f1)" />
-          </div>
+          <DeptIcon size={22} color="var(--avatar-theme-color, #6366f1)" style={{ opacity: 0.55 }} />
         </div>
       )}
 
-      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+        <span style={{
+          fontSize: 10.5, fontWeight: 700, color: "var(--avatar-theme-color, #6366f1)",
+          textTransform: "uppercase", letterSpacing: "0.05em",
+        }}>
+          {project.department}
+        </span>
         <p style={{
           fontSize: 14, fontWeight: 700, color: "#111827", margin: 0, lineHeight: 1.4,
           overflow: "hidden", textOverflow: "ellipsis",
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
+          display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" as any,
         }}>
           {project.title}
         </p>
@@ -83,19 +91,18 @@ function ProjectCard({ project, onClick }: {
 
         {/* Tech tags */}
         {project.technologies?.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {project.technologies.slice(0, 3).map(tech => (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 2 }}>
+            {project.technologies.slice(0, 2).map(tech => (
               <span key={tech} style={{
-                fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
-                background: (TECH_COLORS[tech] ?? "#6b7280") + "18",
-                color: TECH_COLORS[tech] ?? "#6b7280",
+                fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
+                background: "#f3f4f6", color: "#6b7280",
               }}>
                 {tech}
               </span>
             ))}
-            {project.technologies.length > 3 && (
-              <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "#f3f4f6", color: "#9ca3af" }}>
-                +{project.technologies.length - 3}
+            {project.technologies.length > 2 && (
+              <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "#f3f4f6", color: "#9ca3af" }}>
+                +{project.technologies.length - 2}
               </span>
             )}
           </div>
@@ -104,21 +111,13 @@ function ProjectCard({ project, onClick }: {
         {/* Footer */}
         <div style={{
           borderTop: "1px solid #f3f4f6", paddingTop: 10, marginTop: "auto",
-          display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "#9ca3af",
+          display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: "#9ca3af",
         }}>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
             <Calendar size={11} /> {project.semester}
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
             <Users size={11} /> {project.team_members?.length ?? 0}
-          </span>
-          <span style={{
-            marginLeft: "auto", fontSize: 11, fontWeight: 700,
-            color: "var(--avatar-theme-color, #6366f1)",
-            background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)",
-            padding: "2px 8px", borderRadius: 4,
-          }}>
-            {project.department}
           </span>
         </div>
       </div>
@@ -153,15 +152,22 @@ export default function ShowcasePage() {
     <button
       type="button" onClick={onClick}
       style={{
-        padding: "5px 14px", borderRadius: 20, fontSize: 12.5,
-        fontWeight: active ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap",
-        border: active ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-        background: active ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-        color: active ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280",
-        transition: "all 0.15s",
+        padding: "6px 16px", borderRadius: 999, fontSize: 12.5,
+        fontWeight: active ? 700 : 600, cursor: "pointer", whiteSpace: "nowrap",
+        border: active ? "1.5px solid transparent" : "1px solid #e5e7eb",
+        background: active ? "var(--avatar-theme-color, #1a1a2e)" : "#fff",
+        color: active ? "#fff" : "#6b7280",
+        boxShadow: active ? "0 2px 8px color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 35%, transparent)" : "none",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#374151"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; } }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-1px)";
+        if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#111827"; e.currentTarget.style.background = "#f9fafb"; }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "translateY(0)";
+        if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.background = "#fff"; }
+      }}
     >
       {label}
     </button>
