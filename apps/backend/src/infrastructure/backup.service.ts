@@ -243,7 +243,20 @@ export async function performBackup(
     const dumpBuffer = await dumpDatabase();
     const s3Key = `backups/${filename}`;
     // System-generated DB dump, not user-uploaded content — skip the malware scan.
-    await uploadToS3(s3Key, dumpBuffer, "application/gzip", { skipScan: true });
+    const uploadResult = await uploadToS3(s3Key, dumpBuffer, "application/gzip", { skipScan: true });
+
+    // uploadToS3 silently falls back to a local-disk queue (retried on the daily
+    // schedule) instead of throwing when S3 is unreachable — fine for uploads
+    // that don't gate anything else, but restoreBackup() trusts status='completed'
+    // as its go/no-go safety check before overwriting the live database, so a
+    // backup that never actually reached S3 must not be reported as completed.
+    // Also must not attempt to replicate bytes that were never actually in the
+    // primary bucket to begin with.
+    if (uploadResult.startsWith("local://")) {
+      throw new Error(
+        "S3 upload unavailable — dump was queued to local disk for automatic retry, not yet safely stored off-host."
+      );
+    }
     const replicated = await replicateBackup(s3Key, dumpBuffer);
 
     const [updated] = await query<BackupRecord>(
