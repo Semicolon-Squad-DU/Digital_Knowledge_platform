@@ -6,14 +6,16 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: { url: "http://localhost/" },
+    },
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     // NFR-016 (frontend half): SRS/SDD target ≥70% coverage; actual coverage
-    // across the whole src tree is under 1% as of 2026-07-18 — only two
-    // components have tests, out of a much larger app/ and components/ tree.
-    // Threshold is set just below current numbers so CI actually gates
-    // regressions instead of doing nothing (the previous state, matching
-    // apps/backend/jest.config.js's NFR-016 fix) — raise these floors
+    // across the whole src tree is ~5.5% as of 2026-07-18 after adding auth
+    // store/interceptor/login/register/events/library tests (up from <1%
+    // with only two components tested). Threshold is set just below current
+    // numbers so CI actually gates regressions — raise these floors
     // incrementally as real coverage improves, working toward 70%.
     coverage: {
       provider: "v8",
@@ -26,10 +28,10 @@ export default defineConfig({
         "src/app/tailwind.generated.css",
       ],
       thresholds: {
-        statements: 0.5,
-        branches: 0.4,
-        functions: 0.4,
-        lines: 0.5,
+        statements: 5,
+        branches: 4,
+        functions: 3,
+        lines: 5,
       },
     },
   },
