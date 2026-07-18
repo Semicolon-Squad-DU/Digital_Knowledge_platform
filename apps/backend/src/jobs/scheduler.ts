@@ -1,7 +1,7 @@
 import cron, { type ScheduledTask } from "node-cron";
 import { query, queryOne } from "../core/db/pool";
 import { config } from "../core/config";
-import { sendEmail, dueDateReminderEmail, weeklyDigestEmail } from "../infrastructure/email.service";
+import { sendEmail, dueDateReminderEmail, weeklyDigestEmail, overdueFineReminderEmail } from "../infrastructure/email.service";
 import { retryQueuedUploads } from "../infrastructure/s3.service";
 import { performBackup, cleanupOldBackups } from "../infrastructure/backup.service";
 import { logger } from "../core/config/logger";
@@ -298,20 +298,37 @@ async function calculateOverdueFines(): Promise<void> {
   const overdueItems = await query<{
     borrow_id: string;
     member_id: string;
+    member_name: string;
+    member_email: string;
     due_date: string;
     book_title: string;
+    due_date_reminders: boolean;
+    in_app_alerts: boolean;
   }>(
-    `SELECT b.id as borrow_id, b.user_id as member_id, b.due_date, ci.title as book_title
+    `SELECT b.id as borrow_id, b.user_id as member_id, u.name as member_name, u.email as member_email,
+            b.due_date, ci.title as book_title,
+            COALESCE(np.due_date_reminders, TRUE) as due_date_reminders,
+            COALESCE(np.in_app_alerts, TRUE) as in_app_alerts
      FROM borrows b
+     JOIN users u ON b.user_id = u.user_id
      JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+     LEFT JOIN notification_preferences np ON np.user_id = b.user_id
      WHERE b.borrow_status = 'overdue'`
   );
 
+  let newlyFined = 0;
   for (const item of overdueItems) {
     const daysOverdue = Math.floor(
       (Date.now() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)
     );
     const fineAmount = Math.max(daysOverdue, 1) * config.library.fineRatePerDay;
+
+    // Detect whether this borrow is being fined for the first time — used
+    // below to alert the member only once, not every night the fine grows.
+    const existingFine = await queryOne<{ fine_id: string }>(
+      "SELECT fine_id FROM fines WHERE borrow_id = $1",
+      [item.borrow_id]
+    );
 
     await query(
       `INSERT INTO fines (member_id, borrow_id, amount, reason)
@@ -319,9 +336,34 @@ async function calculateOverdueFines(): Promise<void> {
        ON CONFLICT (borrow_id) DO UPDATE SET amount = $3, updated_at = NOW()`,
       [item.member_id, item.borrow_id, fineAmount, `Overdue fine for "${item.book_title}"`]
     );
+
+    if (!existingFine) {
+      newlyFined++;
+
+      if (item.in_app_alerts) {
+        await query(
+          `INSERT INTO notifications (user_id, type, title, message, action_url)
+           VALUES ($1, 'overdue_alert', $2, $3, $4)`,
+          [
+            item.member_id,
+            "You've Been Fined",
+            `"${item.book_title}" is overdue — a fine of Tk ${fineAmount.toFixed(2)} has been added to your account.`,
+            "/dashboard",
+          ]
+        ).catch(() => {});
+      }
+
+      if (item.due_date_reminders && item.member_email) {
+        await sendEmail({
+          to: item.member_email,
+          subject: `[DKP] Fine Applied — ${item.book_title}`,
+          html: overdueFineReminderEmail(item.member_name, item.book_title, daysOverdue, fineAmount),
+        }).catch(() => {});
+      }
+    }
   }
 
-  logger.info("Overdue fines calculated", { count: overdueItems.length });
+  logger.info("Overdue fines calculated", { count: overdueItems.length, newly_fined: newlyFined });
 }
 
 // FR-043: one email per user summarizing all in-app notifications they

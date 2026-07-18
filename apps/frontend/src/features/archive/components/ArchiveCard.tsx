@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Download, Eye } from "lucide-react";
 import { ArchiveItem } from "@dkp/shared";
 import { Button } from "@/components/ui/Button";
-import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge, getFileIcon } from "@/lib/utils";
+import { AccessTierBadge } from "@/components/ui/AccessTierBadge";
+import { formatDate, formatFileSize, getStatusBadge, getFileIcon } from "@/lib/utils";
 
 interface ArchiveCardProps {
   item: ArchiveItem;
@@ -10,7 +11,6 @@ interface ArchiveCardProps {
 }
 
 export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
-  const tierBadge   = getAccessTierBadge(item.access_tier);
   const statusBadge = getStatusBadge(item.status);
 
   return (
@@ -38,9 +38,7 @@ export function ArchiveCard({ item, onDownload }: ArchiveCardProps) {
               )}
             </div>
             <div className="flex-shrink-0 flex gap-1">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tierBadge.color}`}>
-                {tierBadge.label}
-              </span>
+              <AccessTierBadge tier={item.access_tier} />
             </div>
           </div>
 
