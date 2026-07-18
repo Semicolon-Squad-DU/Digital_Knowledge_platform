@@ -238,6 +238,14 @@ router.delete(
         throw new AppError(404, "RSVP registration not found");
       }
 
+      // Mirrors the same check on POST /:id/rsvp — a past event's attendance
+      // record shouldn't be cancellable (and promoting a waitlist seat below
+      // would be meaningless for an event that already happened).
+      const eventRes = await client.query(`SELECT scheduled_at FROM events WHERE event_id = $1`, [eventId]);
+      if (eventRes.rows[0] && new Date(eventRes.rows[0].scheduled_at).getTime() < Date.now()) {
+        throw new AppError(400, "This event has already taken place. Registration can no longer be cancelled.");
+      }
+
       // 2. Delete RSVP
       await client.query(
         `DELETE FROM event_rsvps WHERE event_id = $1 AND user_id = $2`,

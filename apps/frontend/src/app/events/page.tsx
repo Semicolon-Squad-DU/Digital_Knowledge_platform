@@ -30,15 +30,12 @@ import {
   Eye,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { EventCalendar } from "@/components/events/EventCalendar";
-import { List, CalendarDays } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function EventsPage() {
   const { user } = useAuthStore();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: events = [], isLoading: eventsLoading } = useEventsList();
-  const [view, setView] = useState<"list" | "calendar">("list");
 
   const { mutateAsync: createEvent } = useCreateEvent();
   const { mutateAsync: rsvpEvent } = useEventRSVP();
@@ -194,47 +191,8 @@ export default function EventsPage() {
         <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
 
-          {/* ── VIEW TOGGLE (FR-063) ── */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#f1f5f9", borderRadius: 9, padding: 3, width: "fit-content" }}>
-            <button
-              onClick={() => setView("list")}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 7, border: "none",
-                background: view === "list" ? "#fff" : "transparent",
-                boxShadow: view === "list" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                fontSize: 12.5, fontWeight: 700, color: view === "list" ? "#0f172a" : "#64748b", cursor: "pointer",
-              }}
-            >
-              <List size={14} /> List
-            </button>
-            <button
-              onClick={() => setView("calendar")}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 7, border: "none",
-                background: view === "calendar" ? "#fff" : "transparent",
-                boxShadow: view === "calendar" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                fontSize: 12.5, fontWeight: 700, color: view === "calendar" ? "#0f172a" : "#64748b", cursor: "pointer",
-              }}
-            >
-              <CalendarDays size={14} /> Calendar
-            </button>
-          </div>
-
-          {view === "calendar" && (
-            <div style={{ marginBottom: 24 }}>
-              <EventCalendar
-                onSelectEvent={(event) => {
-                  setView("list");
-                  requestAnimationFrame(() => {
-                    document.getElementById(`event-card-${event.event_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  });
-                }}
-              />
-            </div>
-          )}
-
           {/* ── EVENT LISTINGS ── */}
-          {view === "calendar" ? null : eventsLoading ? (
+          {eventsLoading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
               <Loader2 className="animate-spin" size={32} color="var(--avatar-theme-color, #2563eb)" />
             </div>
@@ -460,9 +418,9 @@ export default function EventsPage() {
                         {/* Booking a seat is a patron action — staff roles (admin/archivist/librarian)
                             manage the event via RSVPs/Delete above instead of attending through this button. */}
                         {!canCreate && (
-                          !event.has_rsvped && isPastEvent ? (
+                          isPastEvent ? (
                             <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
-                              This event has ended
+                              {event.has_rsvped ? "You attended this event" : "This event has ended"}
                             </span>
                           ) : (
                             <button
