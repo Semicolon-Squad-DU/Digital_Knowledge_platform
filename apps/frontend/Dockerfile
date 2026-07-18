@@ -12,6 +12,15 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY package.json package-lock.json ./
 COPY apps/frontend apps/frontend
 COPY packages/shared packages/shared
+
+# NEXT_PUBLIC_* vars are inlined into the JS bundle at build time, not read at
+# container start — they must be supplied here via --build-arg, not just as
+# runtime environment: on the "environment:" of the frontend service.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+
 RUN npm run build --workspace=apps/frontend
 
 FROM node:22-alpine AS runtime
