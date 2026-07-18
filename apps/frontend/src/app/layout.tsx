@@ -30,7 +30,7 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "DKP — Digital Knowledge Platform",
+  title: "DKP - Digital Knowledge Platform",
   description: "A unified academic knowledge management system for archives, research, student projects, and library catalog.",
 };
 
