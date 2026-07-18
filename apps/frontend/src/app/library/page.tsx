@@ -263,18 +263,32 @@ export default function LibraryPage() {
             <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginBottom: isMobile ? 4 : 0 }}>Category</span>
               <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
-                {CATEGORIES.map(cat => (
-                  <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page: 1 }))}
-                    style={{
-                      padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: params.category === cat.value ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-                      border: params.category === cat.value ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-                      background: params.category === cat.value ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-                      color: params.category === cat.value ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
-                    }}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+                {CATEGORIES.map(cat => {
+                  const active = params.category === cat.value;
+                  return (
+                    <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page: 1 }))}
+                      style={{
+                        padding: "6px 16px", borderRadius: 999, fontSize: 12.5,
+                        fontWeight: active ? 700 : 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+                        border: active ? "1.5px solid transparent" : "1px solid #e5e7eb",
+                        background: active ? "var(--avatar-theme-color, #1a1a2e)" : "#fff",
+                        color: active ? "#fff" : "#6b7280",
+                        boxShadow: active ? "0 2px 8px color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 35%, transparent)" : "none",
+                        transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#111827"; e.currentTarget.style.background = "#f9fafb"; }
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.background = "#fff"; }
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -305,10 +319,21 @@ export default function LibraryPage() {
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 style={{
-                  padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: showAdvanced ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                  border: showAdvanced ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-                  background: showAdvanced ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-                  color: showAdvanced ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
+                  padding: "6px 16px", borderRadius: 999, fontSize: 12.5,
+                  fontWeight: showAdvanced ? 700 : 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                  border: showAdvanced ? "1.5px solid transparent" : "1px solid #e5e7eb",
+                  background: showAdvanced ? "var(--avatar-theme-color, #1a1a2e)" : "#fff",
+                  color: showAdvanced ? "#fff" : "#6b7280",
+                  boxShadow: showAdvanced ? "0 2px 8px color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 35%, transparent)" : "none",
+                  transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  if (!showAdvanced) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#111827"; e.currentTarget.style.background = "#f9fafb"; }
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  if (!showAdvanced) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.background = "#fff"; }
                 }}
               >
                 <Filter size={12} />

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User } from "@dkp/shared";
 import api from "@/lib/api";
+import { clearQueryCache } from "@/lib/queryClient";
 
 interface AuthState {
   user: User | null;
@@ -34,6 +35,12 @@ export const useAuthStore = create<AuthState>()(
           const { access_token, refresh_token, user } = data.data;
           localStorage.setItem("access_token", access_token);
           localStorage.setItem("refresh_token", refresh_token);
+          // Query cache is keyed by resource id, not by "who's asking" — a
+          // page fetched while signed in as one user (e.g. an archivist
+          // viewing a restricted document) would otherwise keep answering
+          // from cache for whoever's logged in next in this tab, tier
+          // checks and all, since react-query has no idea the viewer changed.
+          clearQueryCache();
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
@@ -50,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
+          clearQueryCache();
           set({ user: null, isAuthenticated: false });
         }
       },
@@ -57,15 +65,20 @@ export const useAuthStore = create<AuthState>()(
       fetchMe: async () => {
         try {
           const { data } = await api.get("/auth/me");
+          clearQueryCache();
           set({ user: data.data, isAuthenticated: true });
         } catch {
+          clearQueryCache();
           set({ user: null, isAuthenticated: false });
         }
       },
 
       setUser: (user) => set({ user, isAuthenticated: true }),
 
-      clearSession: () => set({ user: null, isAuthenticated: false }),
+      clearSession: () => {
+        clearQueryCache();
+        set({ user: null, isAuthenticated: false });
+      },
     }),
     {
       name: "dkp-auth",

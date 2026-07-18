@@ -31,8 +31,8 @@ function LoanStatusBadge({ copies }: { copies: number }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center",
-      padding: "2px 8px", borderRadius: 3,
-      fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+      padding: "3px 9px", borderRadius: 6,
+      fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
       background: available ? "#e6f4ea" : "#fde8e8",
       color: available ? "#1e7e34" : "#c81e1e",
     }}>
@@ -59,13 +59,19 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
   };
 
   return (
-    <div style={{
-      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
-      padding: "20px 24px", position: "relative",
-    }}>
+    <div
+      style={{
+        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
+        padding: "20px 24px", position: "relative",
+        boxShadow: "0 1px 2px rgba(17,24,39,0.03)",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 24px rgba(17,24,39,0.08)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(17,24,39,0.03)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+    >
       {/* Top row: badge + type/date + actions */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <AccessTierBadge tier={item.access_tier} />
           <LoanStatusBadge copies={item.available_copies} />
           <span style={{ fontSize: 13, color: "#6b7280" }}>

@@ -201,35 +201,43 @@ export default function SubmitProjectPage() {
 
   return (
     <AppLayout>
-      <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
-        
-        {/* Breadcrumb Row */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
-            <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
-            <span>/</span>
-            <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
-            <span>/</span>
-            <span style={{ color: "#111827", fontWeight: 500 }}>Submit</span>
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            {/* Breadcrumb */}
+            <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#9ca3af", marginBottom: 16 }}>
+              <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
+              <span>/</span>
+              <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
+              <span>/</span>
+              <span style={{ color: "#111827", fontWeight: 600 }}>Submit</span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <GraduationCap size={19} color="var(--avatar-theme-color, #6366f1)" />
+              </div>
+              <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                Submit Project
+              </h1>
+            </div>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              Submit your project for advisor review and showcase publication.
+            </p>
           </div>
         </div>
 
-        {/* Page heading */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{
-            fontSize: 32,
-            fontWeight: 800,
-            color: "#0f1117",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.2,
-            margin: "0 0 6px",
-          }}>
-            Submit Project
-          </h1>
-          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
-            Submit your project for advisor review and showcase publication.
-          </p>
-        </div>
+        <div style={{ padding: "24px 40px", maxWidth: 800, margin: "0 auto" }}>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
 
@@ -237,7 +245,7 @@ export default function SubmitProjectPage() {
           <section style={{
             background: "#fff",
             border: "1px solid #e5e7eb",
-            borderRadius: 12,
+            borderRadius: 14,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
             overflow: "hidden",
@@ -360,7 +368,7 @@ export default function SubmitProjectPage() {
           <section style={{
             background: "#fff",
             border: "1px solid #e5e7eb",
-            borderRadius: 12,
+            borderRadius: 14,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
             overflow: "hidden",
@@ -488,7 +496,7 @@ export default function SubmitProjectPage() {
           <section style={{
             background: "#fff",
             border: "1px solid #e5e7eb",
-            borderRadius: 12,
+            borderRadius: 14,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
             overflow: "hidden",
@@ -602,7 +610,7 @@ export default function SubmitProjectPage() {
           <section style={{
             background: "#fff",
             border: "1px solid #e5e7eb",
-            borderRadius: 12,
+            borderRadius: 14,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
             overflow: "hidden",
@@ -696,7 +704,7 @@ export default function SubmitProjectPage() {
           <section style={{
             background: "#fff",
             border: "1px solid #e5e7eb",
-            borderRadius: 12,
+            borderRadius: 14,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
             overflow: "hidden",
@@ -846,6 +854,7 @@ export default function SubmitProjectPage() {
           </div>
 
         </form>
+        </div>
       </div>
     </AppLayout>
   );

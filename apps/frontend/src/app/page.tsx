@@ -45,7 +45,7 @@ const HOW_IT_WORKS = [
   { step: "03", icon: Rocket,    title: "Contribute", desc: "Land in a workspace built for your role and start exploring." },
 ];
 
-// Animated counter — starts counting only when scrolled into view
+// Animated counter ΓÇö starts counting only when scrolled into view
 function CountUp({ value }: { value: number | null }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [display, setDisplay] = useState(0);
@@ -71,10 +71,10 @@ function CountUp({ value }: { value: number | null }) {
     return () => obs.disconnect();
   }, [value]);
 
-  return <span ref={ref}>{value === null ? "—" : display.toLocaleString()}</span>;
+  return <span ref={ref}>{value === null ? "0" : display.toLocaleString()}</span>;
 }
 
-// Fade-up on scroll — one observer per element, disconnects after firing,
+// Fade-up on scroll ΓÇö one observer per element, disconnects after firing,
 // transform/opacity only so it never causes layout work
 function Reveal({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -298,17 +298,221 @@ export default function HomePage() {
           .home-step-icon { animation: none !important; }
         }
         @media (max-width: 768px) {
-          .home-partner-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .home-footer { grid-template-columns: 1fr 1fr !important; }
-          .home-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .home-explore-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .home-role-grid { grid-template-columns: 1fr !important; }
+          /* ΓöÇΓöÇ Mobile-only layout pass ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+             Desktop grid/box rules are untouched (they live outside this
+             query). On a phone the 2/3/4-column grids from desktop cramped
+             every card down to a tiny tile, so every collection below moves
+             to a single, wider column with bigger padding/radius/gap. */
+          .home-partner-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; }
+          .home-partner-item {
+            padding: 12px 6px !important;
+            border-radius: 10px !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          /* Brand column stays full-width on its own row; Legal + Team sit
+             side by side below it instead of stacking into one long,
+             sparse vertical list. */
+          .home-footer {
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-areas: "brand brand" "legal team" !important;
+            row-gap: 22px !important;
+            column-gap: 20px !important;
+          }
+          .home-footer > div:nth-child(1) { grid-area: brand; }
+          .home-footer > div:nth-child(2) { grid-area: legal; }
+          .home-footer > div:nth-child(3) { grid-area: team; }
+          .home-footer p { margin-bottom: 10px !important; }
+          .home-footer > div:nth-child(1) > div:first-child { margin-bottom: 8px !important; }
+          .home-footer-legal-links { gap: 7px !important; }
+          .home-footer-body { padding: 20px 24px 16px !important; }
+          .home-footer-desc { line-height: 1.55 !important; margin-bottom: 12px !important; }
+          .footer-header-text { font-size: 13.5px !important; }
+          .footer-link-text { font-size: 13.5px !important; }
+          /* 4 stats as a fixed 2x2 grid (not a single stacked column) with the
+             number/label roughly half their desktop size ΓÇö the clamp() min of
+             44px was still rendering huge on a narrow phone. Heading margin
+             and grid gap are also tightened so the whole "Platform in
+             Numbers" block takes up noticeably less vertical space. */
+          .home-stats-heading { margin-bottom: 22px !important; }
+          .home-stats-heading h2 { font-size: 24px !important; }
+          .home-explore-heading { margin-bottom: 22px !important; }
+          .home-explore-heading h2 { font-size: 24px !important; }
+          .home-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px 0 !important; }
+          .home-stat-cell { padding: 4px 10px !important; }
+          .home-stat-value { font-size: 26px !important; margin-bottom: 4px !important; }
+          .home-stat-label { font-size: 10px !important; letter-spacing: 0.06em !important; }
+          .home-stats-grid > div:nth-child(2n+1) { border-left: none !important; }
+          .home-stats-grid > div:nth-child(2n) { border-left: 1px solid rgba(79, 70, 229, 0.14) !important; }
+          .home-stats-grid > div:nth-child(1), .home-stats-grid > div:nth-child(2) { border-top: none !important; }
+          .home-stats-grid > div:nth-child(3), .home-stats-grid > div:nth-child(4) { border-top: 1px solid rgba(79, 70, 229, 0.14) !important; padding-top: 12px !important; }
+          /* 4 explore cards as a 2x2 grid (2 rows) instead of one long
+             stacked column. Padding/icon/text overrides for this card live
+             further below, after the generic .home-card-lift/.home-card-icon
+             rules, so they win the cascade instead of being overridden by
+             those broader selectors. */
+          .home-explore-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .home-role-grid { grid-template-columns: 1fr !important; gap: 18px !important; }
           .home-latest-grid { grid-template-columns: 1fr !important; }
+
+          /* "Three Steps to Join": keep all 3 step icons in a single row
+             (not stacked) ΓÇö shrink the icon, numeral, and copy so all three
+             columns fit side by side on a narrow phone. */
+          .home-steps-grid { gap: 6px !important; }
+          .home-step-cell { padding: 8px 4px !important; }
+          .home-step-number { font-size: 34px !important; margin-bottom: -24px !important; }
+          .home-step-icon { width: 34px !important; height: 34px !important; border-radius: 10px !important; margin-bottom: 10px !important; }
+          .home-step-icon svg { width: 15px !important; height: 15px !important; }
+          .home-step-title { font-size: 12.5px !important; margin-bottom: 4px !important; }
+          .home-step-desc { font-size: 10.5px !important; line-height: 1.4 !important; }
+          .home-getting-started-section { padding: 32px 24px !important; }
+          .home-getting-started-heading { margin-bottom: 20px !important; }
+          .home-getting-started-heading h2 { font-size: 22px !important; }
+
+          /* Role cards (Members, Student Authors, ...): instead of one full
+             role per row, make them a horizontally scrollable strip of
+             Explore-card-sized tiles, swipeable left-to-right, all 6/7
+             visible by scrolling rather than stacked in a tall column. */
+          .home-roles-grid {
+            display: flex !important;
+            grid-template-columns: none !important;
+            overflow-x: auto !important;
+            gap: 12px !important;
+            padding-bottom: 6px !important;
+            margin: 0 -24px !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+            scroll-snap-type: x proximity !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          .home-roles-grid > * {
+            flex: 0 0 auto !important;
+            width: 168px !important;
+            scroll-snap-align: start !important;
+          }
+          .home-roles-grid .home-role-card {
+            padding: 18px 14px !important;
+            gap: 10px !important;
+            border-radius: 16px !important;
+            height: 100% !important;
+          }
+          /* Icon uses the site's avatar theme color (black-ish navy) instead
+             of the flat #0d0d12 it had on desktop. */
+          .home-roles-grid .home-role-icon {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 10px !important;
+            background: var(--avatar-theme-color, #1a1a2e) !important;
+          }
+          /* Icon + title were a side-by-side row sized for a full-width
+             desktop card; in a narrow 168px tile that squeezed the title
+             against the icon and let it wrap oddly. Stack the icon above
+             the title instead, same layout as the Explore cards. */
+          .home-roles-grid .home-role-card > div:first-child {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .home-roles-grid .home-role-card p:first-of-type,
+          .home-roles-grid .home-role-card > div p {
+            font-size: 13.5px !important;
+          }
+          .home-roles-grid .home-role-card p:last-child {
+            font-size: 11.5px !important;
+            line-height: 1.4 !important;
+          }
+
+          .home-card-lift, .home-role-card {
+            padding: 26px 22px !important;
+            border-radius: 20px !important;
+          }
+          .home-card-icon, .home-role-icon {
+            width: 52px !important;
+            height: 52px !important;
+            border-radius: 15px !important;
+          }
+
+          /* Explore cards specifically get a tighter, 2-column-friendly size
+             ΓÇö smaller padding/icon/text than the generic card rule above so
+             the copy still fits comfortably in a narrower box. */
+          .home-explore-card {
+            padding: 18px 14px !important;
+            gap: 10px !important;
+            border-radius: 16px !important;
+          }
+          .home-explore-card .home-card-icon {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 10px !important;
+          }
+          .home-explore-card p:first-of-type { font-size: 13.5px !important; margin-bottom: 3px !important; }
+          .home-explore-card p:last-of-type { font-size: 11.5px !important; line-height: 1.4 !important; }
+          .home-latest-row {
+            padding: 14px 16px !important;
+            border-radius: 14px !important;
+            gap: 12px !important;
+          }
+
+          /* Mobile-only indigo accent pass. The plain white/#fafaf8 sections
+             read as flat and bland on a phone where there's no side-by-side
+             section contrast to break it up, so alternate a soft indigo tint
+             into every other section and give flat role cards a colored edge
+             instead of a hairline. */
+          .home-stats-section {
+            background: linear-gradient(180deg, #eef1ff 0%, #ffffff 55%) !important;
+            padding: 36px 24px !important;
+          }
+          .home-explore-section {
+            background: linear-gradient(180deg, #f5f6ff 0%, #fafaf8 60%) !important;
+            padding: 32px 24px !important;
+          }
+          .home-roles-section {
+            background: linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%) !important;
+            padding: 36px 24px !important;
+          }
+          .home-role-card {
+            background: linear-gradient(160deg, #ffffff 0%, #f1f3ff 100%) !important;
+            border: 1px solid rgba(79, 70, 229, 0.16) !important;
+            box-shadow: 0 4px 14px rgba(67, 56, 202, 0.07) !important;
+          }
+          .home-role-icon {
+            background: linear-gradient(160deg, #4338ca 0%, #1a1a2e 100%) !important;
+          }
+          .home-latest-row {
+            border-color: rgba(79, 70, 229, 0.14) !important;
+            box-shadow: 0 2px 8px rgba(67, 56, 202, 0.05) !important;
+          }
+          .home-latest-icon {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 9px !important;
+            background: var(--avatar-theme-color, #1a1a2e) !important;
+          }
+          .home-latest-icon svg {
+            stroke: #ffffff !important;
+          }
+
+          /* "Fresh From the Platform": same compact section padding and
+             shrunk heading as the stats/explore/roles sections above, plus
+             the two research/archive columns stack full-width instead of
+             sitting side by side (each item's title/date was being crushed
+             into a 2-column half-width row). */
+          .home-latest-section {
+            background: linear-gradient(180deg, #f5f6ff 0%, #fafaf8 60%) !important;
+            padding: 32px 24px !important;
+          }
+          .home-latest-heading { margin-bottom: 20px !important; }
+          .home-latest-heading h2 { font-size: 22px !important; }
+          .home-latest-grid { row-gap: 26px !important; }
+          .home-latest-col-header { margin-bottom: 12px !important; }
+          .home-latest-col-header p { font-size: 13.5px !important; }
+          .home-latest-viewall {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+          }
         }
         @media (max-width: 480px) {
           .home-footer { grid-template-columns: 1fr !important; }
-          .home-stats-grid { grid-template-columns: 1fr !important; }
-          .home-explore-grid { grid-template-columns: 1fr !important; }
         }
       `}} />
 
@@ -317,7 +521,7 @@ export default function HomePage() {
         <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: isMobile ? "relative" : "sticky", top: 0, zIndex: 50, transform: !isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
-            {/* ── MOBILE & DESKTOP: Left brand/group layout ── */}
+            {/* ΓöÇΓöÇ MOBILE & DESKTOP: Left brand/group layout ΓöÇΓöÇ */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {/* Hamburger Button (shown only on mobile) */}
               <button
@@ -338,7 +542,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* ── DESKTOP NAVIGATION: nav links centered between logo and actions ── */}
+            {/* ΓöÇΓöÇ DESKTOP NAVIGATION: nav links centered between logo and actions ΓöÇΓöÇ */}
             <nav className="hidden md:flex" style={{ alignItems: "center", justifyContent: "center", gap: "4px", flex: 1, marginLeft: "20px" }}>
               {[
                 { label: "Archive",  href: "/archive"  },
@@ -543,12 +747,12 @@ export default function HomePage() {
         )}
 
 
-        {/* ── GUEST HERO ── */}
+        {/* ΓöÇΓöÇ GUEST HERO ΓöÇΓöÇ */}
         {!isAuthenticated && (
         <section style={{ background: "#ffffff", padding: "20px 32px 0", display: "flex", flexDirection: "column" }}>
           <div style={{ maxWidth: "1400px", width: "100%", margin: "0 auto", textAlign: "left", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: "4px", position: "relative", zIndex: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: isMobile ? "0px" : "4px", position: "relative", zIndex: 10 }}>
                 {/* First line and scroll down button on the same line */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "10px" }}>
                   <h1 style={{
@@ -558,7 +762,7 @@ export default function HomePage() {
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     display: "inline-block",
-                    lineHeight: 1.1,
+                    lineHeight: isMobile ? 0.95 : 1.1,
                     letterSpacing: "-0.05em",
                     wordSpacing: "0.3em",
                     margin: 0,
@@ -609,10 +813,11 @@ export default function HomePage() {
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   display: "inline-block",
-                  lineHeight: 1.1,
+                  lineHeight: isMobile ? 0.95 : 1.1,
                   letterSpacing: "-0.05em",
                   wordSpacing: "0.3em",
                   margin: 0,
+                  marginTop: isMobile ? "-2px" : "0px",
                   textTransform: "uppercase",
                   wordBreak: "break-word",
                 }}>
@@ -620,7 +825,7 @@ export default function HomePage() {
                 </h1>
               </div>
 
-              <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "24px", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
+              <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: isMobile ? "8px" : "12px", position: "relative", alignItems: "flex-end", overflow: "hidden", zIndex: 0 }}>
                 <div style={{ position: "relative", width: "100%", maxWidth: "1000px", zIndex: 1 }}>
                   <img src="/hero-graphics.png" alt="Platform Graphic" style={{ width: "100%", objectFit: "contain", display: "block", mixBlendMode: "normal", opacity: 1 }} />
                   <div style={{
@@ -641,7 +846,7 @@ export default function HomePage() {
                 <div style={{ position: "absolute", bottom: "2px", left: "-5vw", right: "-5vw", height: "0px", background: "transparent", zIndex: 0 }}></div>
               </div>
 
-              {/* ── TYPEWRITER TEXT ── */}
+              {/* ΓöÇΓöÇ TYPEWRITER TEXT ΓöÇΓöÇ */}
               <div style={{
                 width: "100%",
                 maxWidth: "720px",
@@ -698,9 +903,9 @@ export default function HomePage() {
         </section>
         )}{/* end guest hero */}
 
-        {/* ── AUTH CARD - Sign In & Register (For Guests) ── */}
+        {/* ΓöÇΓöÇ AUTH CARD - Sign In & Register (For Guests) ΓöÇΓöÇ */}
         {!isAuthenticated && (
-          <section style={{ background: "linear-gradient(160deg, #f4f6ff 0%, #ffffff 60%)", padding: "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+          <section style={{ background: "linear-gradient(160deg, #f4f6ff 0%, #ffffff 60%)", padding: isMobile ? "32px 16px" : "72px 32px", borderTop: "1px solid #e5e7eb" }}>
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "36px" }}>
                 <div style={{ textAlign: "center", maxWidth: "560px" }}>
@@ -814,15 +1019,13 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ── LIVE PLATFORM STATS ────────────────────────────────────────────── */}
-        <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        {/* ΓöÇΓöÇ LIVE PLATFORM STATS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+        <section className="home-stats-section" style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
-              <div style={{ textAlign: "center", marginBottom: "52px" }}>
-                <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+              <div className="home-stats-heading" style={{ textAlign: "center", marginBottom: "52px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
                   The Platform in Numbers
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
                 </p>
                 <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
                   A Living Knowledge Base
@@ -837,11 +1040,11 @@ export default function HomePage() {
                 { label: "Student Projects",  value: stats.showcase },
               ].map(({ label, value }, i) => (
                 <Reveal key={label} delay={i * 90}>
-                  <div style={{ padding: "8px 24px", textAlign: "center" }}>
-                    <p style={{ fontSize: "clamp(44px, 6vw, 64px)", fontWeight: 800, color: "#0d0d12", margin: "0 0 8px 0", letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                  <div className="home-stat-cell" style={{ padding: "8px 24px", textAlign: "center" }}>
+                    <p className="home-stat-value" style={{ fontSize: "clamp(44px, 6vw, 64px)", fontWeight: 800, color: "#0d0d12", margin: "0 0 8px 0", letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                       <CountUp value={value} />
                     </p>
-                    <p style={{ fontSize: "12px", color: "#71717a", margin: 0, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</p>
+                    <p className="home-stat-label" style={{ fontSize: "12px", color: "#71717a", margin: 0, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</p>
                   </div>
                 </Reveal>
               ))}
@@ -849,14 +1052,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── EXPLORE THE PLATFORM ───────────────────────────────────────────── */}
-        <section style={{ background: "#fafaf8", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        {/* ΓöÇΓöÇ EXPLORE THE PLATFORM ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+        <section className="home-explore-section" style={{ background: "linear-gradient(180deg, #f5f6ff 0%, #fafaf8 60%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px", marginBottom: "52px" }}>
+              <div className="home-explore-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px", marginBottom: "52px" }}>
                 <div>
-                  <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                    <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+                  <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
                     Explore
                   </p>
                   <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
@@ -890,30 +1092,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── BUILT FOR EVERY ROLE ───────────────────────────────────────────── */}
-        <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        {/* ΓöÇΓöÇ BUILT FOR EVERY ROLE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+        <section className="home-roles-section" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
               <div style={{ textAlign: "center", marginBottom: "52px" }}>
-                <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+                <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
                   Role-Based Workspaces
-                  <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
                 </p>
                 <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: "0 0 14px 0", letterSpacing: "-0.035em", lineHeight: 1.1 }}>
                   Built for Every Role on Campus
                 </h2>
                 <p style={{ fontSize: "16px", color: "#52525b", margin: "0 auto", maxWidth: "540px", lineHeight: 1.65 }}>
-                  Six access levels, each with its own dashboard, permissions, and tools — enforced on every request.
+                  Six access levels, each with its own dashboard, permissions, and tools, enforced on every request.
                 </p>
               </div>
             </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid home-roles-grid">
               {ROLE_CARDS.map(({ icon: Icon, title, desc }, i) => (
                 <Reveal key={title} delay={(i % 3) * 90}>
-                  <div className="home-card-lift" style={{ background: "#fafaf8", border: "1px solid rgba(0, 0, 0, 0.08)", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
+                  <div className="home-card-lift home-role-card" style={{ background: "linear-gradient(160deg, #ffffff 0%, #f1f3ff 100%)", border: "1px solid rgba(79, 70, 229, 0.16)", boxShadow: "0 4px 14px rgba(67, 56, 202, 0.07)", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <div className="home-card-icon" style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div className="home-card-icon home-role-icon" style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Icon size={17} color="#ffffff" />
                       </div>
                       <p style={{ fontSize: "16px", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.015em" }}>{title}</p>
@@ -926,14 +1126,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── FRESH FROM THE PLATFORM ────────────────────────────────────────── */}
+        {/* ΓöÇΓöÇ FRESH FROM THE PLATFORM ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
         {(latestResearch.length > 0 || latestArchive.length > 0) && (
-          <section style={{ background: "#fafaf8", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+          <section className="home-latest-section" style={{ background: "linear-gradient(180deg, #f5f6ff 0%, #fafaf8 60%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
               <Reveal>
-                <div style={{ marginBottom: "52px" }}>
-                  <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                    <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+                <div className="home-latest-heading" style={{ marginBottom: "52px" }}>
+                  <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
                     Fresh From the Platform
                   </p>
                   <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
@@ -947,10 +1146,10 @@ export default function HomePage() {
                   { heading: "New in the Archive", href: "/archive", items: latestArchive.map(a => ({ key: a.item_id, href: `/archive/${a.item_id}`, title: a.title_en, meta: a.category, date: a.created_at, icon: FileText })) },
                 ].map(({ heading, href, items }, col) => (
                   <Reveal key={heading} delay={col * 120} style={{ minWidth: 0, width: "100%" }}>
-                    <div style={{ minWidth: 0, width: "100%" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <div className="home-latest-col" style={{ minWidth: 0, width: "100%" }}>
+                      <div className="home-latest-col-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                         <p style={{ fontSize: "15px", fontWeight: 700, color: "#0d0d12", margin: 0, letterSpacing: "-0.015em" }}>{heading}</p>
-                        <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 600, color: "#0d0d12", textDecoration: "none", borderBottom: "1px solid #0d0d12", paddingBottom: "1px" }}>
+                        <Link href={href} className="home-latest-viewall" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 600, color: "#0d0d12", textDecoration: "none", borderBottom: "1px solid #0d0d12", paddingBottom: "1px" }}>
                           View all <ArrowRight size={12} />
                         </Link>
                       </div>
@@ -962,14 +1161,14 @@ export default function HomePage() {
                             className="home-latest-row"
                             style={{ background: "#ffffff", border: "1px solid rgba(0, 0, 0, 0.08)", borderRadius: "14px", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", textDecoration: "none", boxShadow: "0 1px 2px rgba(0,0,0,.03)" }}
                           >
-                            <div style={{ width: "38px", height: "38px", borderRadius: "11px", background: "#f4f4f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <div className="home-latest-icon" style={{ width: "38px", height: "38px", borderRadius: "11px", background: "#f4f4f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               <Icon size={15} color="#0d0d12" />
                             </div>
                             <div style={{ minWidth: 0, flex: 1 }}>
                               <p style={{ fontSize: "14px", fontWeight: 600, color: "#0d0d12", margin: "0 0 4px 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</p>
                               <p style={{ fontSize: "12px", color: "#71717a", margin: 0, textTransform: "capitalize", display: "flex", alignItems: "center", gap: "6px", fontVariantNumeric: "tabular-nums" }}>
                                 {meta}
-                                {date && <><span>·</span><Calendar size={10} /> {new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</>}
+                                {date && <><span>┬╖</span><Calendar size={10} /> {new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</>}
                               </p>
                             </div>
                             <span className="home-cta-arrow" style={{ display: "inline-flex", flexShrink: 0 }}><ArrowRight size={14} color="#71717a" /></span>
@@ -984,32 +1183,30 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ── HOW IT WORKS (guests) ──────────────────────────────────────────── */}
+        {/* ΓöÇΓöÇ HOW IT WORKS (guests) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
         {!isAuthenticated && (
-          <section style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+          <section className="home-getting-started-section" style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
               <Reveal>
-                <div style={{ textAlign: "center", marginBottom: "52px" }}>
-                  <p style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
-                    <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
+                <div className="home-getting-started-heading" style={{ textAlign: "center", marginBottom: "52px" }}>
+                  <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,13,18,0.55)", margin: "0 0 12px 0" }}>
                     Getting Started
-                    <span style={{ width: "16px", height: "1px", background: "#0d0d12", display: "inline-block" }} />
                   </p>
                   <h2 style={{ fontSize: "clamp(30px, 4.5vw, 44px)", fontWeight: 800, color: "#0d0d12", margin: 0, letterSpacing: "-0.035em", lineHeight: 1.1 }}>
                     Three Steps to Join
                   </h2>
                 </div>
               </Reveal>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid home-steps">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-steps-grid home-steps">
                 {HOW_IT_WORKS.map(({ step, icon: Icon, title, desc }, i) => (
                   <Reveal key={step} delay={i * 140}>
-                    <div style={{ padding: "28px 24px", textAlign: "center", position: "relative" }}>
-                      <p style={{ fontSize: "72px", fontWeight: 800, color: "rgba(13,13,18,0.04)", margin: "0 0 -52px 0", letterSpacing: "-0.05em", userSelect: "none", lineHeight: 1 }}>{step}</p>
+                    <div className="home-step-cell" style={{ padding: "28px 24px", textAlign: "center", position: "relative" }}>
+                      <p className="home-step-number" style={{ fontSize: "72px", fontWeight: 800, color: "rgba(13,13,18,0.04)", margin: "0 0 -52px 0", letterSpacing: "-0.05em", userSelect: "none", lineHeight: 1 }}>{step}</p>
                       <div className="home-step-icon" style={{ width: "48px", height: "48px", borderRadius: "14px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", position: "relative", boxShadow: "0 6px 16px rgba(0,0,0,0.15)", animationDelay: `${i * 0.4}s` }}>
                         <Icon size={20} color="#ffffff" />
                       </div>
-                      <p style={{ fontSize: "17px", fontWeight: 700, color: "#0d0d12", margin: "0 0 8px 0", letterSpacing: "-0.015em" }}>{title}</p>
-                      <p style={{ fontSize: "14px", color: "#52525b", margin: "0 auto", maxWidth: "250px", lineHeight: 1.65 }}>{desc}</p>
+                      <p className="home-step-title" style={{ fontSize: "17px", fontWeight: 700, color: "#0d0d12", margin: "0 0 8px 0", letterSpacing: "-0.015em" }}>{title}</p>
+                      <p className="home-step-desc" style={{ fontSize: "14px", color: "#52525b", margin: "0 auto", maxWidth: "250px", lineHeight: 1.65 }}>{desc}</p>
                     </div>
                   </Reveal>
                 ))}
@@ -1018,7 +1215,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ── PARTNER NETWORK ────────────────────────────────────────────────── */}
+        {/* ΓöÇΓöÇ PARTNER NETWORK ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
         <section id="network-section" style={{ background: "var(--theme-sidebar-gradient)", padding: "80px 32px 72px" }} className="home-partner-section">
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
 
@@ -1070,7 +1267,7 @@ export default function HomePage() {
                   }}
                 >
                   <span style={{
-                    alignSelf: "flex-start",
+                    alignSelf: isMobile ? "center" : "flex-start",
                     padding: "4px 10px",
                     background: "rgba(255,255,255,0.18)",
                     borderRadius: "6px",
@@ -1081,9 +1278,11 @@ export default function HomePage() {
                   }}>
                     {p.name}
                   </span>
-                  <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.78)", margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
-                    {p.full}
-                  </p>
+                  {!isMobile && (
+                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.78)", margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+                      {p.full}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -1091,10 +1290,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
+        {/* ΓöÇΓöÇ FOOTER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
         <footer style={{ background: "#f0f2f5", borderTop: "1px solid #dde0e6", position: "relative" }}>
 
-          {/* Footer body — 4 columns */}
+          {/* Footer body ΓÇö 4 columns */}
           <div style={{
             maxWidth: "1100px",
             margin: "0 auto",
@@ -1102,11 +1301,11 @@ export default function HomePage() {
             display: "grid",
             gridTemplateColumns: "2fr 1fr 1fr",
             gap: "40px",
-          }} className="home-footer">
+          }} className="home-footer home-footer-body">
 
             {/* Brand column */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: isMobile ? "0px" : "14px" }}>
                 <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <GraduationCap size={14} color="#ffffff" />
                 </div>
@@ -1114,24 +1313,24 @@ export default function HomePage() {
                   Digital Knowledge Platform
                 </span>
               </div>
-              <p style={{ fontSize: "13.5px", color: "#4b5563", margin: "0 0 16px 0", lineHeight: 1.7, maxWidth: "280px" }}>
-                A unified academic knowledge system for archives, research, and library resources at the University of Dhaka.
-              </p>
-              <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>
-                {isMobile ? (
-                  <strong style={{ color: "#374151" }}>Semicolon Squad DU</strong>
-                ) : (
-                  <>Built by <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong></>
-                )}
-              </p>
+              {!isMobile && (
+                <>
+                  <p className="home-footer-desc" style={{ fontSize: "13.5px", color: "#4b5563", margin: "0 0 16px 0", lineHeight: 1.7, maxWidth: "280px" }}>
+                    A unified academic knowledge system for archives, research, and library resources at the University of Dhaka.
+                  </p>
+                  <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>
+                    Built by <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong>
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Legal column */}
             <div>
-              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }}>
+              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }} className="footer-header-text">
                 Legal
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
+              <div className="home-footer-legal-links" style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
                 {[
                   { label: "Privacy Policy", href: "/privacy" },
                   { label: "Terms of Service", href: "/terms" },
@@ -1139,6 +1338,7 @@ export default function HomePage() {
                 ].map((l) => (
                   <Link key={l.label} href={l.href}
                     style={{ fontSize: "13.5px", color: "#4b5563", textDecoration: "none", fontWeight: 400, transition: "color 0.18s", lineHeight: 1.6 }}
+                    className="footer-link-text"
                     onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
                     onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
                   >{l.label}</Link>
@@ -1148,10 +1348,10 @@ export default function HomePage() {
 
             {/* Team column */}
             <div>
-              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }}>
+              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }} className="footer-header-text">
                 Team
               </p>
-              <p style={{ fontSize: "13.5px", color: "#1f2937", margin: "0 0 10px 0", fontWeight: 700 }}>Semicolon-Squad-DU</p>
+              <p style={{ fontSize: "13.5px", color: "#1f2937", margin: "0 0 10px 0", fontWeight: 700 }} className="footer-link-text">Semicolon-Squad-DU</p>
             </div>
           </div>
 
@@ -1168,7 +1368,7 @@ export default function HomePage() {
               gap: "16px",
             }}>
               <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                © 2026 Digital Knowledge Platform. All rights reserved.
+                ┬⌐ 2026 Digital Knowledge Platform. All rights reserved.
               </p>
             </div>
           </div>

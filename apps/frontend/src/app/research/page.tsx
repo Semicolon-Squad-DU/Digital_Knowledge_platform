@@ -48,16 +48,19 @@ function ResearchCard({ item, onView }: {
     <div
       onClick={() => onView(item.output_id)}
       style={{
-        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12,
-        padding: 18, cursor: "pointer", transition: "all 0.18s",
+        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
+        padding: 18, cursor: "pointer",
         display: "flex", gap: 14,
+        boxShadow: "0 1px 2px rgba(17,24,39,0.03)",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 24px rgba(17,24,39,0.09)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(17,24,39,0.03)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
     >
       <div style={{
-        width: 44, height: 44, borderRadius: 10, background: typePill.bg,
+        width: 44, height: 44, borderRadius: 11, background: typePill.bg,
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${typePill.color} 18%, transparent)`,
       }}>
         <FlaskConical size={20} color={typePill.color} />
       </div>
@@ -65,7 +68,7 @@ function ResearchCard({ item, onView }: {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
           <span style={{
             display: "inline-block", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-            padding: "2px 8px", borderRadius: 4, background: typePill.bg, color: typePill.color,
+            letterSpacing: "0.04em", padding: "3px 9px", borderRadius: 6, background: typePill.bg, color: typePill.color,
           }}>
             {item.output_type}
           </span>
@@ -105,9 +108,13 @@ function ResearchCard({ item, onView }: {
           rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
           style={{
-            display: "flex", alignItems: "center", gap: 4, fontSize: 12,
-            color: "#1a56db", textDecoration: "none", fontWeight: 600, flexShrink: 0, alignSelf: "flex-start",
+            display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, fontWeight: 700,
+            color: "#1a56db", textDecoration: "none", flexShrink: 0, alignSelf: "flex-start",
+            padding: "5px 10px", borderRadius: 999, background: "#eff6ff",
+            transition: "background 0.15s ease",
           }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#dbeafe")}
+          onMouseLeave={e => (e.currentTarget.style.background = "#eff6ff")}
         >
           DOI <ExternalLink size={11} />
         </a>
@@ -140,15 +147,22 @@ export default function ResearchPage() {
     <button
       type="button" onClick={onClick}
       style={{
-        padding: "5px 14px", borderRadius: 20, fontSize: 12.5,
-        fontWeight: active ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap",
-        border: active ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-        background: active ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-        color: active ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280",
-        transition: "all 0.15s",
+        padding: "6px 16px", borderRadius: 999, fontSize: 12.5,
+        fontWeight: active ? 700 : 600, cursor: "pointer", whiteSpace: "nowrap",
+        border: active ? "1.5px solid transparent" : "1px solid #e5e7eb",
+        background: active ? "var(--avatar-theme-color, #1a1a2e)" : "#fff",
+        color: active ? "#fff" : "#6b7280",
+        boxShadow: active ? "0 2px 8px color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 35%, transparent)" : "none",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#374151"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; } }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-1px)";
+        if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#111827"; e.currentTarget.style.background = "#f9fafb"; }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "translateY(0)";
+        if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.background = "#fff"; }
+      }}
     >
       {label}
     </button>
