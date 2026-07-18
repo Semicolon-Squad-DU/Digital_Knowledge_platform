@@ -191,13 +191,14 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     member_id: string;
     member_name: string;
     member_email: string;
+    catalog_id: string;
     book_title: string;
     due_date: string;
     due_date_reminders: boolean;
     in_app_alerts: boolean;
   }>(
     `SELECT b.id as borrow_id, b.user_id as member_id, u.name as member_name, u.email as member_email,
-            ci.title as book_title, b.due_date,
+            ci.catalog_id, ci.title as book_title, b.due_date,
             COALESCE(np.due_date_reminders, TRUE) as due_date_reminders,
             COALESCE(np.in_app_alerts, TRUE) as in_app_alerts
      FROM borrows b
@@ -220,9 +221,9 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     if (reminder.in_app_alerts) {
       await query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
-         VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
+         VALUES ($1, 'due_date_reminder', $2, $3, $4)
          ON CONFLICT DO NOTHING`,
-        [reminder.member_id, "Book Due in 3 Days", `"${reminder.book_title}" is due on ${reminder.due_date}`]
+        [reminder.member_id, "Book Due in 3 Days", `"${reminder.book_title}" is due on ${reminder.due_date}`, `/library/${reminder.catalog_id}`]
       );
     }
   }
@@ -232,13 +233,14 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     member_id: string;
     member_name: string;
     member_email: string;
+    catalog_id: string;
     book_title: string;
     due_date: string;
     due_date_reminders: boolean;
     in_app_alerts: boolean;
   }>(
     `SELECT b.user_id as member_id, u.name as member_name, u.email as member_email,
-            ci.title as book_title, b.due_date,
+            ci.catalog_id, ci.title as book_title, b.due_date,
             COALESCE(np.due_date_reminders, TRUE) as due_date_reminders,
             COALESCE(np.in_app_alerts, TRUE) as in_app_alerts
      FROM borrows b
@@ -260,9 +262,9 @@ async function checkOverdueAndSendReminders(): Promise<void> {
     if (reminder.in_app_alerts) {
       await query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
-         VALUES ($1, 'due_date_reminder', $2, $3, '/dashboard')
+         VALUES ($1, 'due_date_reminder', $2, $3, $4)
          ON CONFLICT DO NOTHING`,
-        [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`]
+        [reminder.member_id, "Book Due Today", `"${reminder.book_title}" is due today! Please return it to avoid fines.`, `/library/${reminder.catalog_id}`]
       ).catch(() => {});
     }
   }

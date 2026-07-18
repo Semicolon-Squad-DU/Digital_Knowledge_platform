@@ -8,7 +8,13 @@ export class BorrowService {
   /**
    * Issue a resource to a user (checkout).
    */
-  static async issueResource(resource_id: string, user_id: string, executor_id: string, ip_address: string) {
+  static async issueResource(
+    resource_id: string,
+    user_id: string,
+    executor_id: string,
+    ip_address: string,
+    due_date?: string
+  ) {
     return await withTransaction(async (client) => {
       // Lock catalog item
       const [item] = (await client.query(
@@ -48,8 +54,17 @@ export class BorrowService {
         throw new AppError(403, "Outstanding fines exceed limit. Please clear dues first.");
       }
 
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + config.library.loanPeriodDays);
+      let dueDate: Date;
+      if (due_date) {
+        dueDate = new Date(due_date);
+        if (isNaN(dueDate.getTime())) throw new AppError(400, "Invalid due date");
+        if (dueDate <= new Date(new Date().toDateString())) {
+          throw new AppError(400, "Due date must be in the future");
+        }
+      } else {
+        dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + config.library.loanPeriodDays);
+      }
 
       // Create borrow record
       const [borrow] = (await client.query(
@@ -78,7 +93,7 @@ export class BorrowService {
       client.query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
          VALUES ($1, 'due_date_reminder', $2, $3, $4)`,
-        [user_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, "/dashboard"]
+        [user_id, "Book Due Soon", `"${item.title}" is due on ${dueDate.toDateString()}`, `/library/${resource_id}`]
       ).catch(() => {});
 
       sendEmail({
@@ -165,7 +180,7 @@ export class BorrowService {
           await client.query(
             `INSERT INTO notifications (user_id, type, title, message, action_url)
              VALUES ($1, 'hold_available', $2, $3, $4)`,
-            [nextHold.member_id, "Hold Available", `"${borrow.book_title}" is now available`, "/dashboard"]
+            [nextHold.member_id, "Hold Available", `"${borrow.book_title}" is now available`, `/library/${borrow.resource_id}`]
           );
         }
 
