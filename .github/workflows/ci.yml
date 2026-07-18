@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
@@ -81,13 +81,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
 
       - name: Apply schema to test database
         run: npm run -w @dkp/backend db:test:setup
+
+      # db:test:setup only applies init.sql (the base schema) — it does not
+      # replay the incremental migration files in core/db/migrations/, so
+      # anything added by a migration (e.g. access_tier) was invisible to CI
+      # even though it's live on the real (Supabase) database. Apply every
+      # migration in order here, same as a fresh local/prod setup would.
+      - name: Apply migrations to test database
+        run: |
+          for f in $(ls apps/backend/src/core/db/migrations | sort); do
+            echo "Applying migration: $f"
+            npm run -w @dkp/backend db:migrate:file -- "$f"
+          done
+        env:
+          DATABASE_URL: postgresql://dkp_test_user:dkp_test_password@localhost:5433/dkp_test
+          JWT_SECRET: test-jwt-secret
 
       - name: Run integration tests
         run: npm run -w @dkp/backend test:integration
@@ -105,7 +120,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
