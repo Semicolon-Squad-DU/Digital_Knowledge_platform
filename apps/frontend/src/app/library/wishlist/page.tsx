@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Heart, BookOpen, Trash2, BookMarked, ArrowRight, Plus, Calendar, Building2 } from "lucide-react";
+import { Heart, BookOpen, Trash2, BookMarked, ArrowUpRight, Plus, Calendar, Building2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useWishlist, useRemoveFromWishlist, usePlaceHold } from "@/features/library/hooks/useLibrary";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -31,135 +31,124 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
   isHolding: boolean;
 }) {
   const isAvailable = item.available_copies > 0;
+  const statusColor = isAvailable ? "#059669" : "#d97706";
 
   return (
     <div
-      className="group"
       style={{
-        background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)", borderRadius: 14,
-        padding: "18px 20px", display: "flex", alignItems: "center", gap: 18,
-        transition: "all 0.18s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+        position: "relative",
+        background: "#fff", border: "1px solid #eef0f3", borderRadius: 14,
+        padding: "16px 20px 16px 18px", display: "flex", alignItems: "flex-start", gap: 14,
+        boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
+        transition: "box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease",
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-        e.currentTarget.style.borderColor = "var(--color-fg-subtle)";
+        e.currentTarget.style.boxShadow = "0 6px 18px rgba(16,24,40,0.08)";
         e.currentTarget.style.transform = "translateY(-1px)";
+        e.currentTarget.style.borderColor = "#e2e5eb";
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.03)";
-        e.currentTarget.style.borderColor = "var(--color-border-default)";
-        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 1px 2px rgba(16,24,40,0.04)";
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.borderColor = "#eef0f3";
       }}
     >
-      {/* Book spine icon */}
+      {/* Status accent bar */}
+      <span style={{
+        position: "absolute", left: 0, top: 14, bottom: 14, width: 3,
+        borderRadius: 3, background: statusColor,
+      }} />
+
+      {/* Icon */}
       <div style={{
-        width: 52, height: 62, borderRadius: 8, flexShrink: 0,
-        background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+        width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+        background: `color-mix(in srgb, ${statusColor} 14%, #fff)`,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        <BookOpen size={22} color="var(--avatar-theme-color, #6366f1)" strokeWidth={1.75} />
+        <BookOpen size={19} color={statusColor} strokeWidth={2.1} />
       </div>
 
-      {/* Info */}
+      {/* Body */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
           {item.category && (
             <span style={{
               fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
-              padding: "2px 8px", borderRadius: 20,
-              background: "var(--color-canvas-subtle)", color: "var(--color-fg-muted)",
+              padding: "2px 8px", borderRadius: 20, background: "#f3f4f6", color: "#6b7280",
             }}>
               {item.category}
             </span>
           )}
-          <span style={{ fontSize: 11, color: "var(--color-fg-subtle)", display: "flex", alignItems: "center", gap: 4 }}>
-            <Heart size={10} fill="var(--avatar-theme-color, #6366f1)" color="var(--avatar-theme-color, #6366f1)" /> Saved {timeAgo(item.added_at)}
+          <span style={{
+            fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+            padding: "2px 8px", borderRadius: 20,
+            background: `color-mix(in srgb, ${statusColor} 14%, #fff)`, color: statusColor,
+          }}>
+            {isAvailable ? `${item.available_copies} available` : "All on loan"}
           </span>
         </div>
 
         <Link href={`/library/${item.catalog_id}`} style={{ textDecoration: "none" }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 700, color: "var(--color-fg-default)", margin: "0 0 4px", lineHeight: 1.4 }}
-            onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-            onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
-          >
+          <h3 style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", margin: "0 0 3px", lineHeight: 1.35 }}>
             {item.title}
           </h3>
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
-          {item.authors?.length > 0 && (
-            <span style={{ fontSize: 13, color: "var(--color-fg-muted)" }}>
-              {item.authors.slice(0, 2).join(", ")}
-            </span>
-          )}
-          {item.publisher && (
-            <span style={{ fontSize: 12, color: "var(--color-fg-subtle)", display: "flex", alignItems: "center", gap: 3 }}>
-              <Building2 size={11} /> {item.publisher}
-            </span>
-          )}
-          {item.year && (
-            <span style={{ fontSize: 12, color: "var(--color-fg-subtle)", display: "flex", alignItems: "center", gap: 3 }}>
-              <Calendar size={11} /> {item.year}
-            </span>
-          )}
-        </div>
+        <p style={{ fontSize: 13, color: "#5b6371", margin: "0 0 8px", lineHeight: 1.5 }}>
+          {item.authors?.length ? item.authors.slice(0, 2).join(", ") : "Unknown author"}
+          {item.publisher ? ` · ${item.publisher}` : ""}
+          {item.year ? ` · ${item.year}` : ""}
+        </p>
 
-        <span style={{
-          display: "inline-flex", alignItems: "center",
-          padding: "3px 10px", borderRadius: 4,
-          fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em",
-          background: isAvailable ? "var(--color-accent-subtle)" : "var(--color-danger-subtle)",
-          color: isAvailable ? "var(--color-accent-fg)" : "var(--color-danger-fg)",
-        }}>
-          {isAvailable ? `${item.available_copies} available` : "All on loan"}
+        <span style={{ fontSize: 11.5, color: "#9ca3af", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <Heart size={10} fill="#dc2626" color="#dc2626" /> Saved {timeAgo(item.added_at)}
         </span>
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
         {isAvailable ? (
-          <Link href={`/library/${item.catalog_id}`} style={{ textDecoration: "none" }}>
+          <Link href={`/library/${item.catalog_id}`} title="View book">
             <button style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "8px 15px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-              border: "none", background: "var(--theme-gradient-160)", color: "#fff", cursor: "pointer",
-              transition: "opacity 0.15s",
+              width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer",
+              transition: "all 0.15s",
             }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+              onMouseOver={(e) => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
             >
-              <ArrowRight size={13} /> View
+              <ArrowUpRight size={14} />
             </button>
           </Link>
         ) : (
           <button
+            title="Place hold"
             onClick={() => onHold(item.catalog_id)}
             disabled={isHolding}
             style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "8px 15px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-              border: "none", background: "var(--theme-gradient-160)", color: "#fff",
-              cursor: isHolding ? "not-allowed" : "pointer", opacity: isHolding ? 0.6 : 1,
+              width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151",
+              cursor: isHolding ? "not-allowed" : "pointer", opacity: isHolding ? 0.6 : 1, transition: "all 0.15s",
             }}
+            onMouseOver={(e) => { if (!isHolding) { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; } }}
+            onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
           >
-            <BookMarked size={13} /> {isHolding ? "Placing..." : "Place Hold"}
+            <BookMarked size={14} />
           </button>
         )}
         <button
+          title="Remove from wishlist"
           onClick={() => onRemove(item.catalog_id, item.title)}
           disabled={isRemoving}
           style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "8px 15px", borderRadius: 8, border: "1px solid var(--color-border-muted)", background: "var(--color-canvas-default)",
-            cursor: isRemoving ? "not-allowed" : "pointer",
-            color: "var(--color-fg-subtle)", fontSize: 13, fontWeight: 600,
-            opacity: isRemoving ? 0.6 : 1, transition: "all 0.15s",
+            width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
+            borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#9ca3af",
+            cursor: isRemoving ? "not-allowed" : "pointer", opacity: isRemoving ? 0.5 : 1, transition: "all 0.15s",
           }}
-          onMouseEnter={e => { if (!isRemoving) { e.currentTarget.style.color = "var(--color-danger-fg)"; e.currentTarget.style.background = "var(--color-danger-subtle)"; e.currentTarget.style.borderColor = "var(--color-danger-fg)"; } }}
-          onMouseLeave={e => { e.currentTarget.style.color = "var(--color-fg-subtle)"; e.currentTarget.style.background = "var(--color-canvas-default)"; e.currentTarget.style.borderColor = "var(--color-border-muted)"; }}
+          onMouseOver={(e) => { if (!isRemoving) { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; } }}
+          onMouseOut={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
         >
-          <Trash2 size={13} />
-          <span>{isRemoving ? "Removing…" : "Remove"}</span>
+          <Trash2 size={14} />
         </button>
       </div>
     </div>
@@ -200,21 +189,26 @@ export default function WishlistPage() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+      <div style={{ background: "#f7f8fa", minHeight: "100%" }}>
 
         {/* ── Hero banner ─────────────────────────────────────────────────────── */}
         <div style={{
           background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid var(--color-border-default)",
-          padding: "36px 40px 34px",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 28px",
         }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Heart size={19} color="var(--avatar-theme-color, #6366f1)" />
+                <div style={{
+                  width: 38, height: 38, borderRadius: 11,
+                  background: "var(--avatar-theme-color, #1a1a2e)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 4px 10px color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 35%, transparent)",
+                }}>
+                  <Heart size={18} color="#fff" />
                 </div>
-                <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.03em" }}>
                   My Wishlist
                 </h1>
               </div>
@@ -224,7 +218,7 @@ export default function WishlistPage() {
             </div>
             <Link href="/library" style={{
               display: "inline-flex", alignItems: "center", gap: 7,
-              padding: "10px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+              padding: "9px 16px", borderRadius: 9, fontSize: 13, fontWeight: 600,
               color: "#fff", background: "var(--avatar-theme-color, #111827)", textDecoration: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.12)", transition: "opacity 0.15s",
             }}
@@ -236,18 +230,19 @@ export default function WishlistPage() {
           </div>
         </div>
 
-        <div style={{ padding: "28px 32px" }}>
+        <div style={{ padding: "24px 32px 40px", maxWidth: 800, margin: "0 auto" }}>
 
         {/* Loading */}
         {isLoading && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)", borderRadius: 8, padding: "20px 24px", display: "flex", gap: 16, alignItems: "center" }}>
-                <Skeleton className="w-12 h-14 rounded shrink-0" />
+              <div key={i} style={{ background: "#fff", border: "1px solid #eef0f3", borderRadius: 14, padding: "16px 20px", display: "flex", gap: 14, alignItems: "center" }}>
+                <Skeleton className="w-[42px] h-[42px] rounded-xl shrink-0" />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-32" /><Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-64" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
-                <div style={{ display: "flex", gap: 8 }}><Skeleton className="h-9 w-24" /><Skeleton className="w-9 h-9" /></div>
               </div>
             ))}
           </div>
@@ -255,12 +250,16 @@ export default function WishlistPage() {
 
         {/* Empty */}
         {!isLoading && (!wishlist || wishlist.length === 0) && (
-          <div style={{ background: "var(--color-canvas-default)", border: "1px solid var(--color-border-default)", borderRadius: 8, padding: "60px 32px", textAlign: "center" }}>
-            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--color-canvas-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <Heart size={24} color="var(--color-fg-subtle)" />
+          <div style={{ background: "#fff", border: "1px solid #eef0f3", borderRadius: 16, padding: "64px 32px", textAlign: "center" }}>
+            <div style={{
+              width: 60, height: 60, borderRadius: "50%",
+              background: "linear-gradient(135deg, #f4f6ff 0%, #eef1ff 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px",
+            }}>
+              <Heart size={24} color="#9ca3af" />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--color-fg-default)", margin: "0 0 8px" }}>Your wishlist is empty</h3>
-            <p style={{ fontSize: 13, color: "var(--color-fg-muted)", margin: "0 auto 24px", maxWidth: 320 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>Your wishlist is empty</h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 auto 20px", maxWidth: 320 }}>
               Browse the library catalog and click the heart icon to save books for later.
             </p>
             <Link href="/library" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#fff", background: "var(--theme-gradient-160)", textDecoration: "none" }}>
@@ -271,7 +270,7 @@ export default function WishlistPage() {
 
         {/* Items */}
         {!isLoading && wishlist && wishlist.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {wishlist.map((item: WishlistItem) => (
               <WishlistCard key={item.wishlist_id} item={item}
                 onRemove={handleRemove} onHold={handleHold}
