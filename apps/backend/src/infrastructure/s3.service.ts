@@ -220,6 +220,14 @@ export async function getPresignedUrl(
   // left unset for previews like thumbnails and video playback.
   downloadFilename?: string
 ): Promise<string> {
+  // Some rows store a raw external URL instead of an S3 object key (e.g.
+  // legacy/manual entries). Presigning those against S3 fails with an
+  // "invalid object name" error from the storage backend, so just pass
+  // them through unchanged.
+  if (/^https?:\/\//i.test(key)) {
+    return key;
+  }
+
   const command = new GetObjectCommand({
     Bucket: config.s3.bucket,
     Key: key,

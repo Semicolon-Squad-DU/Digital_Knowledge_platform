@@ -150,6 +150,10 @@ router.get("/download-url", authenticate, asyncHandler(async (req: AuthRequest, 
     }
   }
 
+  if (!/^https?:\/\//i.test(key) && !(await fileExistsInS3(key))) {
+    throw new AppError(404, "This document's file is missing from storage");
+  }
+
   const url = await getPresignedUrl(key, 300, download === "true" ? downloadFilename(item.title_en, key) : undefined); // 5 min expiry
   res.json({ success: true, data: { url } });
 }));
@@ -327,6 +331,10 @@ router.get("/:id/download", optionalAuth, asyncHandler(async (req: AuthRequest, 
     if (!accessReq || accessReq.status !== "approved") {
       throw new AppError(403, "Access denied");
     }
+  }
+
+  if (!/^https?:\/\//i.test(item.file_url) && !(await fileExistsInS3(item.file_url))) {
+    throw new AppError(404, "This document's file is missing from storage");
   }
 
   const forceDownload = req.query.download === "true";

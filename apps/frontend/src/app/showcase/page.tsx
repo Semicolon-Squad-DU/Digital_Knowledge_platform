@@ -30,6 +30,8 @@ function ProjectCard({ project, onClick }: {
   };
   onClick: (id: string) => void;
 }) {
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+
   return (
     <div
       onClick={() => onClick(project.project_id)}
@@ -42,11 +44,12 @@ function ProjectCard({ project, onClick }: {
       onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
     >
       {/* Thumbnail */}
-      {project.thumbnail_url ? (
+      {project.thumbnail_url && !thumbnailFailed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={project.thumbnail_url}
           alt=""
+          onError={() => setThumbnailFailed(true)}
           style={{ height: 110, width: "100%", objectFit: "cover", borderBottom: "1px solid #f0f0f8" }}
         />
       ) : (

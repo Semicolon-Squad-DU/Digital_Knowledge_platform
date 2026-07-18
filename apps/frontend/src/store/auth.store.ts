@@ -84,3 +84,24 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// access_token/refresh_token live in plain localStorage keys (not this store's
+// own persisted "dkp-auth" state), written directly by login()/logout()/the
+// lib/api.ts refresh interceptor. This tab's in-memory isAuthenticated/user
+// only ever changes from ITS OWN network calls, so if another tab logs out,
+// logs in as a different account, or rotates the token, this tab keeps
+// rendering its stale state — right up until it happens to fire its own API
+// call, which then goes out with a missing/foreign token, gets a 401, finds
+// no matching refresh token, and silently drops to guest with no explanation
+// (exactly the "logged out with no warning" symptom this fixes). Re-sync as
+// soon as the other tab's write is observed instead of waiting to fail.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== "access_token") return;
+    if (e.newValue) {
+      void useAuthStore.getState().fetchMe();
+    } else {
+      useAuthStore.getState().clearSession();
+    }
+  });
+}
