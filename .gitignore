@@ -32,3 +32,7 @@ apps/frontend/src/app/tailwind.generated.css
 
 # Vendored local-dev-only pg_dump/psql binaries (see apps/backend/vendor/README.md)
 apps/backend/vendor/pgsql-bin/
+
+# Local secret dumps — never commit
+access-key.txt
+*access-key*
