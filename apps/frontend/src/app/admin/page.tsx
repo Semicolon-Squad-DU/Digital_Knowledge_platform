@@ -207,16 +207,16 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
       {/* Analytics Dashboards & Trends - responsive */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 20, marginBottom: 28 }}>
         {/* Upload and Download Trends (Sleek Visual SVG Chart) */}
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "20px 24px", boxShadow: "0 1px 2px rgba(17,24,39,0.03)" }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Engagement & Transfer Trends</h3>
           <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 20px" }}>Monthly comparisons of resource uploads vs. downloads</p>
-          
+
           <div style={{ position: "relative", height: 180, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 10px 20px", borderBottom: "1px solid #f3f4f6" }}>
             {/* Background grids */}
             <div style={{ position: "absolute", left: 0, right: 0, top: 20, borderTop: "1px dashed #f3f4f6" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 70, borderTop: "1px dashed #f3f4f6" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 120, borderTop: "1px dashed #f3f4f6" }} />
-            
+
             {/* Columns */}
             {(() => {
               const trends = adminStats?.monthlyTrends ?? [];
@@ -224,8 +224,14 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
               return trends.map(item => (
                 <div key={item.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1 }}>
                   <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
-                    <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${Math.min(100, (item.uploads / maxValue) * 100)}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
-                    <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${Math.min(100, (item.downloads / maxValue) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+                    <div
+                      title={`Uploads: ${item.uploads}`}
+                      style={{ width: 14, height: `${Math.max(item.uploads > 0 ? 3 : 0, (item.uploads / maxValue) * 100)}%`, background: "#bae6fd", borderRadius: "4px 4px 0 0", transition: "height 0.3s ease" }}
+                    />
+                    <div
+                      title={`Downloads: ${item.downloads}`}
+                      style={{ width: 14, height: `${Math.max(item.downloads > 0 ? 3 : 0, (item.downloads / maxValue) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "4px 4px 0 0", boxShadow: "0 2px 6px color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)", transition: "height 0.3s ease" }}
+                    />
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{item.month}</span>
                 </div>
@@ -235,21 +241,21 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
 
           <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "flex-end" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: "#bae6fd" }} />
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: "#bae6fd" }} />
               <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Uploads</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: "var(--avatar-theme-color)" }} />
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: "var(--avatar-theme-color)" }} />
               <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Downloads</span>
             </div>
           </div>
         </div>
 
         {/* Resource Usage & Distribution */}
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "20px 24px", boxShadow: "0 1px 2px rgba(17,24,39,0.03)" }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>Resource Usage Metrics</h3>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {[
               {
                 label: "Archive Items",
@@ -271,12 +277,15 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
               },
             ].map(res => (
               <div key={res.label}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", marginBottom: 6, gap: isMobile ? 4 : 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", marginBottom: 7, gap: isMobile ? 4 : 0 }}>
                   <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#374151", flex: isMobile ? 1 : "auto" }}>{res.label}</span>
-                  <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, whiteSpace: "nowrap" }}>{res.count}</span>
+                  <span style={{
+                    fontSize: 10.5, color: res.color, fontWeight: 700, whiteSpace: "nowrap",
+                    background: `color-mix(in srgb, ${res.color} 12%, transparent)`, padding: "2px 8px", borderRadius: 999,
+                  }}>{res.count}</span>
                 </div>
-                <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.max(3, res.pct)}%`, background: res.color, borderRadius: 3 }} />
+                <div style={{ height: 7, background: "#f3f4f6", borderRadius: 999, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.max(3, res.pct)}%`, background: res.color, borderRadius: 999, transition: "width 0.4s ease" }} />
                 </div>
               </div>
             ))}
@@ -285,7 +294,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
       </div>
 
       {/* Most Accessed Resources — FR-051: top 10 by download count, past 30 days */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px", marginBottom: 28 }}>
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "20px 24px", marginBottom: 28, boxShadow: "0 1px 2px rgba(17,24,39,0.03)" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Most Accessed Resources</h3>
         <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>Top 10 archive items by download count over the past 30 days</p>
 
@@ -294,17 +303,31 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
         ) : !mostAccessed || mostAccessed.length === 0 ? (
           <p style={{ fontSize: 12, color: "#9ca3af" }}>No downloads recorded in the past 30 days.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {(() => {
               const maxDownloads = Math.max(1, ...mostAccessed.map(i => i.download_count));
               return mostAccessed.map((item, i) => (
-                <div key={item.item_id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
-                  <span style={{ fontSize: 12.5, color: "#374151", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
-                  <div style={{ width: 100, height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                    <div style={{ height: "100%", width: `${Math.max(4, (item.download_count / maxDownloads) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: 3 }} />
+                <div
+                  key={item.item_id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "9px 8px", borderRadius: 8,
+                    borderBottom: i < mostAccessed.length - 1 ? "1px solid #f9fafb" : "none",
+                    transition: "background 0.12s ease",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#fafafa")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span style={{
+                    width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, color: "#fff",
+                    background: "var(--avatar-theme-color)",
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 12.5, color: "#374151", fontWeight: 500, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
+                  <div style={{ width: 100, height: 6, background: "#f3f4f6", borderRadius: 999, overflow: "hidden", flexShrink: 0 }}>
+                    <div style={{ height: "100%", width: `${Math.max(4, (item.download_count / maxDownloads) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: 999, transition: "width 0.4s ease" }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", width: 28, textAlign: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{item.download_count}</span>
                 </div>
               ));
             })()}
@@ -319,11 +342,23 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
           { icon: ClipboardList, label: "Audit Logs", desc: "Browse and export immutable activity records", tab: "audit", color: "#7c3aed" },
           { icon: Settings, label: "System Config", desc: "Manage session, password, and platform settings", tab: "config", color: "#0891b2" },
         ].map(item => (
-          <div key={item.tab} onClick={() => setActiveTab(item.tab)} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: isMobile ? "16px" : "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
+          <div
+            key={item.tab}
+            onClick={() => setActiveTab(item.tab)}
+            style={{
+              background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
+              padding: isMobile ? "16px" : "20px", cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(17,24,39,0.03)",
+              transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 24px rgba(17,24,39,0.09)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(17,24,39,0.03)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
           >
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: item.color, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 11, background: item.color,
+              display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12,
+              boxShadow: `0 4px 12px color-mix(in srgb, ${item.color} 35%, transparent)`,
+            }}>
               <item.icon size={18} color="#fff" />
             </div>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>{item.label}</p>
@@ -333,27 +368,39 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
       </div>
 
       {/* Pending access requests */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "20px 24px", boxShadow: "0 1px 2px rgba(17,24,39,0.03)" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
           <Lock size={14} color="var(--avatar-theme-color)" /> Pending Access Requests
         </h3>
         {!pendingRequests || pendingRequests.length === 0 ? (
-          <div style={{ padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-            <Lock size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
-            <p style={{ margin: 0, fontSize: 13 }}>No pending access requests</p>
+          <div style={{ padding: "40px 20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+              <Lock size={22} color="#9ca3af" />
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: "#9ca3af" }}>No pending access requests</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {pendingRequests.map((req: any) => (
-              <div key={req.request_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 20px", display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 16 }}>
+              <div
+                key={req.request_id}
+                style={{
+                  background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12,
+                  padding: "16px 20px", display: "flex", flexDirection: isMobile ? "column" : "row",
+                  justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 16,
+                  transition: "border-color 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
+              >
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#111827" }}>
-                    Request by: <span style={{ color: "#2563eb" }}>{req.user_name}</span> ({req.user_email})
+                    Request by: <span style={{ color: "var(--avatar-theme-color, #2563eb)" }}>{req.user_name}</span> ({req.user_email})
                   </p>
                   <p style={{ margin: "4px 0 0", fontSize: 13, color: "#374151" }}>
                     Document: <strong>{req.item_title}</strong>
                   </p>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280", fontStyle: "italic", background: "#fff", padding: "8px 12px", borderRadius: 6, borderLeft: "3px solid #2563eb" }}>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280", fontStyle: "italic", background: "#fff", padding: "8px 12px", borderRadius: 8, borderLeft: "3px solid var(--avatar-theme-color, #2563eb)" }}>
                     &ldquo;{req.reason}&rdquo;
                   </p>
                 </div>
@@ -361,20 +408,26 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                   <button
                     onClick={() => handleApprove(req.request_id)}
                     style={{
-                      padding: "8px 14px", borderRadius: 6, border: "none",
+                      padding: "8px 14px", borderRadius: 8, border: "none",
                       background: "#111827", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
+                      display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto",
+                      transition: "transform 0.15s ease, box-shadow 0.15s ease",
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.18)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                   >
                     <Check size={12} /> Approve
                   </button>
                   <button
                     onClick={() => setDenyRequestId(req.request_id)}
                     style={{
-                      padding: "8px 14px", borderRadius: 6, border: "none",
+                      padding: "8px 14px", borderRadius: 8, border: "none",
                       background: "#dc2626", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
+                      display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto",
+                      transition: "transform 0.15s ease, box-shadow 0.15s ease",
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 10px rgba(220,38,38,0.3)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                   >
                     <X size={12} /> Deny
                   </button>
