@@ -324,6 +324,12 @@ router.post(
       [user.user_id, req.ip || null]
     ).catch((err) => logger.warn("Failed to record login audit log", { error: err.message }));
 
+    // NFR-006: a fresh login must never be treated as already-idle by
+    // auth.middleware's inactivity check — reset the clock at issuance,
+    // not just on the first subsequent authenticated request.
+    await query("UPDATE users SET last_active_at = NOW() WHERE user_id = $1", [user.user_id])
+      .catch((err) => logger.warn("Failed to reset last_active_at on login", { error: err.message }));
+
     logger.info("User logged in", { user_id: user.user_id });
     res.json({ success: true, data: { ...tokens, user: safeUser } });
   })
@@ -367,6 +373,14 @@ router.post("/refresh", asyncHandler(async (req: Request, res: Response) => {
 
   // Revoke old token
   await query("DELETE FROM refresh_tokens WHERE token_hash = $1", [tokenHash]);
+
+  // NFR-006: a silent refresh only ever fires from lib/api.ts's 401
+  // interceptor, which only runs in response to a real API call the
+  // frontend made on the user's behalf — that's itself a genuine activity
+  // signal, so it resets the inactivity clock the same way a direct
+  // authenticated request does via auth.middleware.
+  await query("UPDATE users SET last_active_at = NOW() WHERE user_id = $1", [payload.user_id])
+    .catch(() => {});
 
   res.json({ success: true, data: tokens });
 }));
@@ -809,6 +823,10 @@ router.post(
       "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'LOGIN', 'user', $1, $2)",
       [user!.user_id, req.ip || null]
     ).catch((err) => logger.warn("Failed to record login audit log", { error: err.message }));
+
+    // NFR-006: see the matching comment in POST /login.
+    await query("UPDATE users SET last_active_at = NOW() WHERE user_id = $1", [user!.user_id])
+      .catch((err) => logger.warn("Failed to reset last_active_at on login", { error: err.message }));
 
     logger.info("OAuth Login Successful", { user_id: user!.user_id, email, provider });
     res.json({ success: true, data: { ...tokens, user } });

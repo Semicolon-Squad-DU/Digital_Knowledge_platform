@@ -106,6 +106,9 @@ export async function uploadToS3(
         Key: key,
         Body: body,
         ContentType: contentType,
+        // NFR-009: explicit encryption at rest for uploaded files, rather
+        // than relying implicitly on the bucket's default settings.
+        ServerSideEncryption: "AES256",
       })
     );
     logger.debug("File uploaded to S3", { key });
@@ -162,6 +165,7 @@ export async function retryQueuedUploads(): Promise<void> {
           Key: meta.key,
           Body: body,
           ContentType: meta.contentType,
+          ServerSideEncryption: "AES256",
         })
       );
 
