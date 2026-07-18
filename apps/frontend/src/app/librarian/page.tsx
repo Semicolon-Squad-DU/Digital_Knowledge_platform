@@ -690,7 +690,7 @@ export default function LibrarianDashboardPage() {
     { label: "Fines (Tk)",    value: (stats?.total_fines_amount ?? 0).toFixed(0), icon: Banknote, iconClass: "bg-orange-50 text-orange-600" },
   ];
 
-  if (!ready || !["librarian", "admin"].includes(user?.role ?? "")) {
+  if (!ready || user?.role !== "librarian") {
     if (ready) router.push("/");
     return null;
   }

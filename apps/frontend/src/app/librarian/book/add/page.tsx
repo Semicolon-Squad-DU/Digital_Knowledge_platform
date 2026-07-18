@@ -117,7 +117,7 @@ export default function AddBookPage() {
   };
 
   // Guard
-  if (!ready || !["librarian", "admin"].includes(user?.role ?? "")) {
+  if (!ready || user?.role !== "librarian") {
     if (ready) router.push("/");
     return null;
   }

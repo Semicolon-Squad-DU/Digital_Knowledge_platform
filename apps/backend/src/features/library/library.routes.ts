@@ -798,7 +798,7 @@ router.post(
 router.get(
   "/catalog/access-requests/pending",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     const requests = await query(
       `SELECT car.*, u.name as user_name, u.email as user_email, ci.title as book_title
@@ -816,7 +816,7 @@ router.get(
 router.patch(
   "/catalog/access-requests/:id/review",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
     if (!["approved", "denied"].includes(status)) {
@@ -947,13 +947,14 @@ router.post(
       [req.user!.user_id, req.params.id, reason]
     );
 
-    // Notify all librarians and admins about the new access request
+    // Notify librarians only — access-request review is a librarian-desk
+    // operation, not something admin manages (see the /librarian route guard).
     const requester = await queryOne<{ name: string }>(
       "SELECT name FROM users WHERE user_id = $1",
       [req.user!.user_id]
     );
     const staff = await query<{ user_id: string }>(
-      "SELECT user_id FROM users WHERE role IN ('librarian', 'admin')"
+      "SELECT user_id FROM users WHERE role = 'librarian'"
     );
     for (const person of staff) {
       await query(
