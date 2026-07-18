@@ -3,7 +3,7 @@ import { query, queryOne } from "../core/db/pool";
 import { config } from "../core/config";
 import { sendEmail, dueDateReminderEmail, weeklyDigestEmail } from "../infrastructure/email.service";
 import { retryQueuedUploads } from "../infrastructure/s3.service";
-import { performBackup } from "../infrastructure/backup.service";
+import { performBackup, cleanupOldBackups } from "../infrastructure/backup.service";
 import { logger } from "../core/config/logger";
 
 // ---------------------------------------------------------------------------
@@ -114,6 +114,17 @@ export async function startScheduler(): Promise<void> {
   cron.schedule("0 7 * * 1", async () => {
     logger.info("Running weekly notification digest");
     await withRetry("sendWeeklyDigests", sendWeeklyDigests);
+  });
+
+  // Daily at 3 AM: NFR-013 backup retention — delete completed backups older
+  // than config.backupRetentionDays (30 by default) from the DB + S3 (+
+  // replica bucket, if configured). Runs at a quiet hour distinct from the
+  // default 9 AM backup time so cleanup never races a fresh backup.
+  cron.schedule("0 3 * * *", async () => {
+    logger.info("Running backup retention cleanup");
+    await withRetry("cleanupOldBackups", async () => {
+      await cleanupOldBackups();
+    });
   });
 
   await loadBackupSchedule();

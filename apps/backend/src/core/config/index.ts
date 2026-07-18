@@ -56,6 +56,24 @@ export const config = {
     capacityGB: parseInt(process.env.S3_CAPACITY_GB || "50", 10),
   },
 
+  // NFR-013: optional second-zone replication target for database backups
+  // (minimum 2-zone storage replication). Deliberately unset by default —
+  // this project only has one S3-compatible bucket provisioned. When a
+  // second bucket/region is provisioned and these env vars are set,
+  // backup.service.ts copies every completed backup there too; until then,
+  // replicateBackup() is a documented no-op rather than something faked.
+  s3Replica: {
+    enabled: Boolean(process.env.S3_REPLICA_BUCKET_NAME),
+    endpoint: process.env.S3_REPLICA_ENDPOINT || process.env.S3_ENDPOINT || "http://localhost:9000",
+    accessKey: process.env.S3_REPLICA_ACCESS_KEY || process.env.S3_ACCESS_KEY || "dkp_minio_user",
+    secretKey: process.env.S3_REPLICA_SECRET_KEY || process.env.S3_SECRET_KEY || "dkp_minio_password",
+    bucket: process.env.S3_REPLICA_BUCKET_NAME || "",
+    region: process.env.S3_REPLICA_REGION || "us-west-2",
+    forcePathStyle: process.env.S3_REPLICA_FORCE_PATH_STYLE === "true",
+  },
+
+  backupRetentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || "30", 10),
+
   email: {
     host: process.env.SMTP_HOST || "localhost",
     port: parseInt(process.env.SMTP_PORT || "1025", 10),

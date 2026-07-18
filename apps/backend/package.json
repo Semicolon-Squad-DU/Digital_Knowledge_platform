@@ -6,6 +6,7 @@
     "build": "tsc",
     "start": "node dist/apps/backend/src/server.js",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "test:integration": "jest -c jest.integration.config.js --runInBand --forceExit",
     "lint": "eslint src --ext .ts",
     "db:migrate": "node -r tsx/cjs src/core/db/migrate.ts",

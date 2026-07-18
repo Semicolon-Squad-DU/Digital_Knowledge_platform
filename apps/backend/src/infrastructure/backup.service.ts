@@ -3,11 +3,64 @@ import { existsSync } from "fs";
 import { dirname, join, parse } from "path";
 import { Readable } from "stream";
 import zlib from "zlib";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { config } from "../core/config";
 import { logger } from "../core/config/logger";
 import { query, queryOne } from "../core/db/pool";
-import { s3Client, uploadToS3, getPresignedUrl } from "./s3.service";
+import { s3Client, uploadToS3, deleteFromS3, getPresignedUrl } from "./s3.service";
+
+// Lazily constructed only when s3Replica.enabled — no point creating a
+// second S3 client (and requiring valid-looking credentials) when there's
+// nothing configured to replicate to.
+let replicaClient: S3Client | null = null;
+function getReplicaClient(): S3Client {
+  if (!replicaClient) {
+    replicaClient = new S3Client({
+      endpoint: config.s3Replica.endpoint,
+      region: config.s3Replica.region,
+      credentials: {
+        accessKeyId: config.s3Replica.accessKey,
+        secretAccessKey: config.s3Replica.secretKey,
+      },
+      forcePathStyle: config.s3Replica.forcePathStyle,
+    });
+  }
+  return replicaClient;
+}
+
+// NFR-013 (2-zone storage replication): copies a completed backup's bytes
+// to a second, independently-configured S3-compatible bucket — normally a
+// different region/provider than the primary bucket. A no-op when
+// S3_REPLICA_BUCKET_NAME isn't set, which is the current state of this
+// deployment (only one bucket is provisioned); the moment a second bucket
+// is provisioned and configured, this starts actually replicating without
+// any other code change. Failure here does not fail the backup itself —
+// the primary copy in the main bucket already succeeded — but is logged
+// loudly since a silent replication failure defeats the point of having one.
+async function replicateBackup(s3Key: string, body: Buffer): Promise<boolean> {
+  if (!config.s3Replica.enabled) return false;
+
+  try {
+    await getReplicaClient().send(
+      new PutObjectCommand({
+        Bucket: config.s3Replica.bucket,
+        Key: s3Key,
+        Body: body,
+        ContentType: "application/gzip",
+        ServerSideEncryption: "AES256",
+      })
+    );
+    logger.info("Backup replicated to second-zone bucket", { key: s3Key, bucket: config.s3Replica.bucket });
+    return true;
+  } catch (err) {
+    logger.error("Backup replication to second-zone bucket failed", {
+      key: s3Key,
+      bucket: config.s3Replica.bucket,
+      error: (err as Error).message,
+    });
+    return false;
+  }
+}
 
 // Docker/production images install postgresql client tools onto PATH (see
 // apps/backend/Dockerfile). Local Windows dev machines usually don't have
@@ -58,6 +111,7 @@ export interface BackupRecord {
   triggered_by: "scheduled" | "manual";
   triggered_by_user: string | null;
   error_message: string | null;
+  replicated: boolean;
   started_at: string;
   completed_at: string | null;
   created_at: string;
@@ -70,10 +124,61 @@ function timestampSlug(d = new Date()): string {
 export async function listBackups(limit = 50): Promise<BackupRecord[]> {
   return query<BackupRecord>(
     `SELECT backup_id, filename, s3_key, size_bytes, status, triggered_by,
-            triggered_by_user, error_message, started_at, completed_at, created_at
+            triggered_by_user, error_message, replicated, started_at, completed_at, created_at
      FROM backups ORDER BY created_at DESC LIMIT $1`,
     [limit]
   );
+}
+
+// NFR-013 (30-day retention): deletes completed backups (DB row + S3 object,
+// and the replica object too if replication is enabled) older than
+// config.backupRetentionDays. Runs daily from the scheduler. A backup that's
+// still 'running' or that just 'failed' is left alone regardless of age —
+// only rows with a completed_at older than the window are eligible, so a
+// stuck/slow backup can never be swept up mid-flight.
+export async function cleanupOldBackups(): Promise<{ deleted: number; errors: number }> {
+  const expired = await query<{ backup_id: string; s3_key: string | null; filename: string }>(
+    `SELECT backup_id, s3_key, filename FROM backups
+     WHERE status = 'completed' AND completed_at < NOW() - ($1 || ' days')::interval`,
+    [config.backupRetentionDays]
+  );
+
+  let deleted = 0;
+  let errors = 0;
+
+  for (const backup of expired) {
+    try {
+      if (backup.s3_key) {
+        await deleteFromS3(backup.s3_key).catch((err) => {
+          logger.warn("Failed to delete expired backup from primary bucket", {
+            backupId: backup.backup_id,
+            error: (err as Error).message,
+          });
+        });
+        if (config.s3Replica.enabled) {
+          await getReplicaClient()
+            .send(new DeleteObjectCommand({ Bucket: config.s3Replica.bucket, Key: backup.s3_key }))
+            .catch((err) => {
+              logger.warn("Failed to delete expired backup from replica bucket", {
+                backupId: backup.backup_id,
+                error: (err as Error).message,
+              });
+            });
+        }
+      }
+      await query("DELETE FROM backups WHERE backup_id = $1", [backup.backup_id]);
+      deleted++;
+    } catch (err) {
+      errors++;
+      logger.error("Failed to clean up expired backup", { backupId: backup.backup_id, error: (err as Error).message });
+    }
+  }
+
+  if (deleted > 0 || errors > 0) {
+    logger.info("Backup retention cleanup finished", { deleted, errors, retentionDays: config.backupRetentionDays });
+  }
+
+  return { deleted, errors };
 }
 
 export async function getBackup(id: string): Promise<BackupRecord | null> {
@@ -139,13 +244,14 @@ export async function performBackup(
     const s3Key = `backups/${filename}`;
     // System-generated DB dump, not user-uploaded content — skip the malware scan.
     await uploadToS3(s3Key, dumpBuffer, "application/gzip", { skipScan: true });
+    const replicated = await replicateBackup(s3Key, dumpBuffer);
 
     const [updated] = await query<BackupRecord>(
-      `UPDATE backups SET status = 'completed', s3_key = $1, size_bytes = $2, completed_at = NOW()
-       WHERE backup_id = $3 RETURNING *`,
-      [s3Key, dumpBuffer.length, record.backup_id]
+      `UPDATE backups SET status = 'completed', s3_key = $1, size_bytes = $2, completed_at = NOW(), replicated = $3
+       WHERE backup_id = $4 RETURNING *`,
+      [s3Key, dumpBuffer.length, replicated, record.backup_id]
     );
-    logger.info("Backup completed", { backupId: record.backup_id, filename, size: dumpBuffer.length });
+    logger.info("Backup completed", { backupId: record.backup_id, filename, size: dumpBuffer.length, replicated });
     return updated;
   } catch (err) {
     const message = (err as Error).message;
@@ -212,6 +318,22 @@ export interface RestoreResult {
   preRestoreBackup: BackupRecord;
 }
 
+// NFR-013 (automated failover) — honest scope note, not an implementation:
+// this project runs a single primary Postgres instance (Supabase, one
+// region). There is no standby/replica database to fail over to, so
+// "automated failover" cannot be built in application code — failover is a
+// property of database infrastructure (e.g. a hot/warm standby with
+// replication + a health-checked promotion mechanism), not something a
+// Node.js service can create on top of a single-instance DB it doesn't
+// control the topology of. What this file *does* provide, and what's
+// realistic at this project's infrastructure tier, is fast recovery from a
+// point-in-time backup: restoreBackup() below is a manual, admin-triggered
+// restore (with an automatic pre-restore safety backup) rather than an
+// automatic failover trigger. Standing up real automated failover would be a
+// DevOps/infrastructure decision (e.g. upgrading to a Supabase tier with a
+// read replica, or a self-managed Patroni/pg_auto_failover cluster) — it is
+// out of scope for this codebase until that infrastructure exists.
+//
 // Restores a completed backup into the live database. Always takes a fresh
 // "safety" backup first and aborts (without touching the live DB) if that
 // safety backup does not complete successfully.

@@ -41,8 +41,8 @@ jobs:
       - name: Lint
         run: npm run -w @dkp/backend lint
 
-      - name: Test
-        run: npm run -w @dkp/backend test
+      - name: Test (with coverage gate — NFR-016)
+        run: npm run -w @dkp/backend test:coverage
 
       - name: Build
         run: npm run -w @dkp/backend build

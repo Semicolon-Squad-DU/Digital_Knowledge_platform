@@ -450,6 +450,7 @@ CREATE TABLE IF NOT EXISTS backups (
   triggered_by VARCHAR(20) NOT NULL CHECK (triggered_by IN ('scheduled', 'manual')),
   triggered_by_user UUID REFERENCES users(user_id) ON DELETE SET NULL,
   error_message TEXT,
+  replicated BOOLEAN NOT NULL DEFAULT FALSE,
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
