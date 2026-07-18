@@ -245,6 +245,26 @@ export function useOverdueTransactions() {
   });
 }
 
+export function useOnLoanTransactions() {
+  return useQuery({
+    queryKey: ["library", "on-loan"],
+    queryFn: async () => {
+      const { data } = await api.get("/library/on-loan");
+      return data.data;
+    },
+  });
+}
+
+export function useDueSoonTransactions() {
+  return useQuery({
+    queryKey: ["library", "due-soon"],
+    queryFn: async () => {
+      const { data } = await api.get("/library/due-soon");
+      return data.data;
+    },
+  });
+}
+
 export function useAdjustFine() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -292,8 +312,10 @@ export function useMarkFinePaid() {
 
 export function useNotifyOverdue() {
   return useMutation({
-    mutationFn: async (transaction_id: string) => {
-      const { data } = await api.post(`/library/overdue/${transaction_id}/notify`);
+    mutationFn: async (payload: { transaction_id: string; message?: string }) => {
+      const { data } = await api.post(`/library/overdue/${payload.transaction_id}/notify`, {
+        message: payload.message,
+      });
       return data;
     },
   });

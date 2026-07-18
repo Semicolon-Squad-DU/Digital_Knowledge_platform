@@ -17,7 +17,7 @@ test.describe("Public catalog search (guest, no auth) — TC-TXX-012", () => {
 
     const cardHeading = page.getByRole("heading", { name: fixtures.publicBookTitle });
     await expect(cardHeading).toBeVisible();
-    await expect(page.getByText("OPEN ACCESS").first()).toBeVisible();
+    await expect(page.getByText("PUBLIC").first()).toBeVisible();
   });
 
   test("redirects to login when a guest tries to reserve a book, instead of borrowing directly", async ({ page }) => {
