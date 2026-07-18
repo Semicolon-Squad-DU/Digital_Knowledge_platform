@@ -183,7 +183,7 @@ function LoginForm() {
   };
 
   return (
-    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
       {/* ── Nav ── */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>

@@ -246,7 +246,7 @@ export default function RegisterPage() {
   /* ── OTP step ── */
   if (step === "verify") {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8f9fa" }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)" }}>
         <div style={{ background: "#fff", borderRadius: "14px", padding: "40px 36px", maxWidth: "420px", width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb" }}>
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
             <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -289,7 +289,7 @@ export default function RegisterPage() {
   /* ── Pending approval step (researcher) ── */
   if (step === "pending") {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8f9fa" }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)" }}>
         <div style={{ background: "#fff", borderRadius: "14px", padding: "40px 36px", maxWidth: "440px", width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb", textAlign: "center" }}>
           <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
             <span style={{ fontSize: "24px" }}>⏳</span>
@@ -308,7 +308,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8f9fa" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)" }}>
       <style dangerouslySetInnerHTML={{ __html: `
         input[type="radio"]    { accent-color: var(--avatar-theme-color, #111827) !important; cursor: pointer; }
         input[type="checkbox"] { accent-color: var(--avatar-theme-color, #111827) !important; }

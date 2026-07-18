@@ -58,11 +58,10 @@ function ResearchCard({ item, onView }: {
       onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(17,24,39,0.03)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
     >
       <div style={{
-        width: 44, height: 44, borderRadius: 11, background: typePill.bg,
+        width: 44, height: 44, borderRadius: 11, background: "var(--avatar-theme-color, #111827)",
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${typePill.color} 18%, transparent)`,
       }}>
-        <FlaskConical size={20} color={typePill.color} />
+        <FlaskConical size={20} color="#ffffff" />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>

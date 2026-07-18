@@ -210,15 +210,6 @@ export default function SubmitProjectPage() {
           padding: "36px 40px 34px",
         }}>
           <div style={{ maxWidth: 800, margin: "0 auto" }}>
-            {/* Breadcrumb */}
-            <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#9ca3af", marginBottom: 16 }}>
-              <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
-              <span>/</span>
-              <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
-              <span>/</span>
-              <span style={{ color: "#111827", fontWeight: 600 }}>Submit</span>
-            </div>
-
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
               <div style={{
                 width: 38, height: 38, borderRadius: 10,

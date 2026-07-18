@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Heart, BookMarked, Pencil, Trash2,
-  FileText, Download, Share2, FileJson, ArrowLeft,
+  FileText, Download, Share2, FileJson,
   Lock, Clock, XCircle, LogIn,
 } from "lucide-react";
 import {
@@ -285,18 +285,8 @@ export default function LibraryItemPage() {
 
     return (
       <AppLayout>
-        <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              border: "none", background: "none", color: "#6b7280",
-              fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 20,
-            }}
-          >
-            <ArrowLeft size={14} /> Back to Library
-          </button>
-
+        <div style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)", minHeight: "100vh", padding: "80px 32px 28px", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+        <div style={{ maxWidth: "800px", width: "100%", margin: "0 auto" }}>
           <div style={{
             background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16,
             boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
@@ -331,25 +321,23 @@ export default function LibraryItemPage() {
               {!isAuthenticated ? (
                 <div style={{
                   maxWidth: 500, margin: "0 auto", background: "#f9fafb", border: "1px solid #e5e7eb",
-                  borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, textAlign: "left",
+                  borderRadius: 12, padding: "20px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center",
                 }}>
-                  <LogIn size={36} color="#374151" style={{ flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>Sign in to request access</h4>
-                    <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 12px", lineHeight: 1.4 }}>
-                      This book requires an account. Sign in and you&apos;ll be able to submit an access request.
-                    </p>
-                    <Link
-                      href={`/login?redirect=${encodeURIComponent(`/library/${itemId}`)}`}
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px",
-                        borderRadius: 8, background: "var(--theme-gradient-160)", color: "#fff",
-                        fontSize: 13, fontWeight: 600, textDecoration: "none",
-                      }}
-                    >
-                      Sign In
-                    </Link>
-                  </div>
+                  <LogIn size={36} color="#374151" />
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>Sign in to request access</h4>
+                  <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 12px", lineHeight: 1.4 }}>
+                    This book requires an account. Sign in and you&apos;ll be able to submit an access request.
+                  </p>
+                  <Link
+                    href={`/login?redirect=${encodeURIComponent(`/library/${itemId}`)}`}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px",
+                      borderRadius: 8, background: "var(--theme-gradient-160)", color: "#fff",
+                      fontSize: 13, fontWeight: 600, textDecoration: "none",
+                    }}
+                  >
+                    Sign In
+                  </Link>
                 </div>
               ) : !statusText ? (
                 <form onSubmit={handleRequestAccess} style={{
@@ -456,6 +444,7 @@ export default function LibraryItemPage() {
               )}
             </div>
           </div>
+        </div>
         </div>
       </AppLayout>
     );

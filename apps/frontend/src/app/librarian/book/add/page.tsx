@@ -6,15 +6,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDropzone } from "react-dropzone";
-import { BookMarked, Loader2, ArrowLeft, Upload, FileText, X } from "lucide-react";
+import { BookMarked, Loader2, Upload, FileText, X } from "lucide-react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { useCreateCatalogItem } from "@/features/library/hooks/useLibrary";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { cn, formatFileSize } from "@/lib/utils";
+import { formatFileSize } from "@/lib/utils";
 
 const CATEGORIES = [
   "General", "Textbook", "Reference", "Novel", "Non-Fiction", "Science", "Technology",
@@ -30,6 +28,9 @@ const ACCESS_TIERS = [
   { value: "staff",      label: "Staff — researchers, librarians, admins" },
   { value: "restricted", label: "Restricted — approval required" },
 ];
+
+const MAX_PDF_MB = 20;
+const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024;
 
 const schema = z.object({
   title:          z.string().min(1, "Title is required"),
@@ -78,7 +79,7 @@ export default function AddBookPage() {
     onDrop,
     accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
-    maxSize: 20 * 1024 * 1024,
+    maxSize: MAX_PDF_BYTES,
     multiple: false,
   });
 
@@ -124,25 +125,57 @@ export default function AddBookPage() {
 
   return (
     <AppLayout>
-      <div className="page-container py-8 max-w-3xl">
-        <PageHeader
-          title={<span className="font-extrabold text-[var(--avatar-theme-color,#1a1a2e)]">Add Book to Catalog</span>}
-          subtitle="Fill in the book details to expand the library database catalog"
-          breadcrumb={[
-            { label: "Home", href: "/" },
-            { label: "Librarian", href: "/librarian" },
-            { label: "Add Book" },
-          ]}
-        />
+      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+
+        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "36px 40px 34px",
+        }}>
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <BookMarked size={19} color="var(--avatar-theme-color, #6366f1)" />
+              </div>
+              <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
+                Add Book to Catalog
+              </h1>
+            </div>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              Fill in the book details to expand the library database catalog.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ padding: "24px 40px", maxWidth: 800, margin: "0 auto" }}>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
 
-          {/* ── Section 1: Book Information ─────────────────── */}
-          <section className="gh-box">
-            <div className="gh-box-header">
-              <h3 className="font-semibold text-[var(--color-fg-default)] text-sm">Book Details</h3>
+          {/* ── Book Details ─────────────────────────────────── */}
+          <section style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 14,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            marginBottom: 24,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              padding: "16px 20px",
+              background: "#f9fafb",
+              borderBottom: "1px solid #e5e7eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Book Details</h2>
             </div>
-            <div className="gh-box-body space-y-4">
+            <div style={{ padding: 20 }} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Book Title"
@@ -177,12 +210,26 @@ export default function AddBookPage() {
             </div>
           </section>
 
-          {/* ── Section 2: Publishing & Inventory ─────────────── */}
-          <section className="gh-box">
-            <div className="gh-box-header">
-              <h3 className="font-semibold text-[var(--color-fg-default)] text-sm">Publishing & Location Details</h3>
+          {/* ── Publishing & Location Details ─────────────── */}
+          <section style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 14,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            marginBottom: 24,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              padding: "16px 20px",
+              background: "#f9fafb",
+              borderBottom: "1px solid #e5e7eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Publishing & Location Details</h2>
             </div>
-            <div className="gh-box-body space-y-4">
+            <div style={{ padding: 20 }} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Publisher"
@@ -241,72 +288,181 @@ export default function AddBookPage() {
             </div>
           </section>
 
-          {/* ── Section 3: PDF Document (Optional) ─────────────── */}
-          <section className="gh-box">
-            <div className="gh-box-header">
-              <h3 className="font-semibold text-[var(--color-fg-default)] text-sm flex items-center gap-2">
-                <Upload size={16} /> Book Document / PDF (Optional)
-              </h3>
+          {/* ── Book Document / PDF ─────────────────────────────── */}
+          <section style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 14,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            marginBottom: 24,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              padding: "16px 20px",
+              background: "#f9fafb",
+              borderBottom: "1px solid #e5e7eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+                Book Document / PDF
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
+              </h2>
             </div>
-            <div className="gh-box-body space-y-4">
-              <div
-                {...getRootProps()}
-                className={cn(
-                  "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all",
-                  isDragActive
-                    ? "border-[var(--avatar-theme-color,#3b82f6)] bg-blue-50/20"
-                    : pdfFile
-                    ? "border-emerald-500 bg-emerald-50/10"
-                    : "border-slate-300 bg-slate-50 hover:bg-slate-100"
-                )}
-              >
-                <input {...getInputProps()} disabled={isAddingBook} />
-                {pdfFile ? (
-                  <div className="flex items-center gap-3.5 p-1">
-                    <FileText size={28} className="text-emerald-500" />
-                    <div className="text-left min-w-0 flex-1">
-                      <p className="font-bold text-sm text-slate-800 truncate">{pdfFile.name}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{formatFileSize(pdfFile.size)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setPdfFile(null); }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <X size={15} />
-                    </button>
+            <div style={{ padding: 20 }}>
+              {pdfFile ? (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 16px",
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  background: "#f9fafb",
+                }}>
+                  <FileText size={20} color="var(--avatar-theme-color, #2563eb)" style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {pdfFile.name}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                      {formatFileSize(pdfFile.size)}
+                    </p>
                   </div>
-                ) : (
-                  <div>
-                    <Upload size={32} className="mx-auto mb-3 text-slate-400" />
-                    <p className="font-semibold text-sm text-slate-700">Drag & drop PDF here, or click to browse</p>
-                    <p className="text-xs text-slate-400 mt-1">Accepts PDF file up to 20 MB</p>
-                  </div>
-                )}
-              </div>
-
-              {pdfError && (
-                <p className="text-xs text-red-600 font-medium">{pdfError}</p>
+                  <button
+                    type="button"
+                    onClick={() => setPdfFile(null)}
+                    style={{
+                      padding: 4,
+                      borderRadius: 4,
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      color: "#6b7280",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#fee2e2";
+                      e.currentTarget.style.color = "#dc2626";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#6b7280";
+                    }}
+                    aria-label="Remove file"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  {...getRootProps()}
+                  style={{
+                    border: "2px dashed #d1d5db",
+                    borderRadius: 8,
+                    padding: "32px 20px",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    background: isDragActive ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 8%, transparent)" : "#fff",
+                    borderColor: isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#d1d5db",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isDragActive) {
+                      e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)";
+                      e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)";
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isDragActive) {
+                      e.currentTarget.style.borderColor = "#d1d5db";
+                      e.currentTarget.style.background = "#fff";
+                    }
+                  }}
+                >
+                  <input {...getInputProps()} disabled={isAddingBook} aria-label="Upload book PDF" />
+                  <Upload
+                    size={24}
+                    color={isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#6b7280"}
+                    style={{ margin: "0 auto 12px" }}
+                  />
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", margin: 0 }}>
+                    {isDragActive ? "Drop your PDF here" : "Drag & drop your book PDF"}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
+                    or <span style={{ color: "var(--avatar-theme-color, #2563eb)", fontWeight: 500 }}>browse to upload</span> · PDF only · max {MAX_PDF_MB} MB
+                  </p>
+                </div>
               )}
+              {pdfError && <p className="form-error mt-2">{pdfError}</p>}
             </div>
           </section>
 
-          {/* ── Actions ───────────────────────────────────── */}
-          <div className="flex items-center justify-between mt-8">
+          {/* ── Actions ────────────────────────────────────── */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 24 }}>
             <button
               type="button"
               onClick={() => router.push("/librarian")}
-              className="px-5 py-2.5 rounded-lg font-semibold text-sm border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
               disabled={isAddingBook}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 18px",
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                cursor: isAddingBook ? "not-allowed" : "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#6b7280",
+                transition: "all 0.2s",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "#f9fafb";
+                e.currentTarget.style.borderColor = "#d1d5db";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.borderColor = "#e5e7eb";
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isAddingBook}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm text-white transition-all shadow-md"
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 18px",
                 background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                border: "none",
+                borderRadius: 8,
+                cursor: isAddingBook ? "not-allowed" : "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#fff",
+                opacity: isAddingBook ? 0.7 : 1,
+                boxShadow: "0 4px 12px rgba(26, 26, 46, 0.2)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                if (!isAddingBook) {
+                  e.currentTarget.style.filter = "brightness(1.15)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isAddingBook) {
+                  e.currentTarget.style.filter = "none";
+                  e.currentTarget.style.transform = "none";
+                }
               }}
             >
               {isAddingBook ? (
@@ -324,6 +480,7 @@ export default function AddBookPage() {
           </div>
 
         </form>
+        </div>
       </div>
     </AppLayout>
   );

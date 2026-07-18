@@ -199,11 +199,6 @@ export default function UploadResearchPage() {
         <PageHeader
           title={<span className="font-extrabold text-[var(--avatar-theme-color,#1a1a2e)]">Upload Research Output</span>}
           subtitle="Submit your research for DKP repository"
-          breadcrumb={[
-            { label: "Home", href: "/" },
-            { label: "Research", href: "/research" },
-            { label: "Upload" },
-          ]}
         />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
