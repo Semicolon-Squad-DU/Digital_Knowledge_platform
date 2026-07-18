@@ -6,7 +6,7 @@ import { parsePagination } from "../../core/utils/pagination";
 import { uploadSingle, uploadCatalogImport } from "../../core/middleware/upload.middleware";
 import { parseCatalogFile, validateImportRows, CatalogImportRow, exportCatalogToCsv, exportCatalogToXlsx } from "./catalog-import.service";
 import { searchCatalog, indexCatalogItem, removeCatalogItemFromIndex } from "../../infrastructure/elasticsearch.service";
-import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
+import { uploadToS3, getPresignedUrl, generateS3Key, fileExistsInS3 } from "../../infrastructure/s3.service";
 import { config } from "../../core/config";
 import { BorrowService } from "./borrow.service";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail, overdueFineReminderEmail } from "../../infrastructure/email.service";
@@ -1240,6 +1240,10 @@ router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req: A
     if (!approved) {
       throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
     }
+  }
+
+  if (!/^https?:\/\//i.test(item.document_url) && !(await fileExistsInS3(item.document_url))) {
+    throw new AppError(404, "This document's file is missing from storage");
   }
 
   const forceDownload = req.query.download === "true";

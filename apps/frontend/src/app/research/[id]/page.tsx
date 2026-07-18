@@ -181,14 +181,23 @@ function CitationBlock({
 // ---------------------------------------------------------------------------
 function PdfPreview({ outputId }: { outputId: string }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     api.get(`/research/${outputId}/download-url`)
       .then(({ data }) => { if (!cancelled) setUrl(data.data.url); })
-      .catch(() => { if (!cancelled) setUrl(null); });
+      .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
   }, [outputId]);
+
+  if (failed) {
+    return (
+      <div className="rounded-xl border border-[var(--color-border-default)] flex items-center justify-center" style={{ height: "520px" }}>
+        <p className="text-sm text-[var(--color-fg-muted)]">This document is currently unavailable.</p>
+      </div>
+    );
+  }
 
   if (!url) {
     return (
@@ -329,17 +338,6 @@ export default function ResearchDetailPage() {
             <BookOpen size={15} className="mt-0.5 flex-shrink-0 text-[var(--color-accent-fg)]" />
             <p className="text-sm text-[var(--color-fg-default)]">
               {output.authors?.map((a: { name: string }) => a.name).join(", ")}
-              {(output as { uploader_name?: string }).uploader_name && (
-                <>
-                  {" "}
-                  <Link
-                    href={`/research/authors/${output.uploaded_by}`}
-                    className="text-xs font-semibold text-[var(--color-accent-fg)] hover:underline ml-1"
-                  >
-                    (View {(output as { uploader_name?: string }).uploader_name}&apos;s author profile)
-                  </Link>
-                </>
-              )}
             </p>
           </div>
 

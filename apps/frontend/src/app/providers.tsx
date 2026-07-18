@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { useState, useEffect } from "react";
+import { setQueryClientRef } from "@/lib/queryClient";
 
 const THEME_MAP: Record<string, { primary: string; gradient135: string; gradient160: string; sidebar: string }> = {
   "#1a1a2e": {
@@ -50,6 +51,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
+
+  useEffect(() => {
+    setQueryClientRef(queryClient);
+  }, [queryClient]);
 
   useEffect(() => {
     const updateTheme = () => {

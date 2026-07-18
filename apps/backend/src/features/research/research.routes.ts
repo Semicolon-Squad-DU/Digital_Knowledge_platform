@@ -4,7 +4,7 @@ import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { parsePagination } from "../../core/utils/pagination";
 import { uploadSingle } from "../../core/middleware/upload.middleware";
-import { uploadToS3, getPresignedUrl, generateS3Key } from "../../infrastructure/s3.service";
+import { uploadToS3, getPresignedUrl, generateS3Key, fileExistsInS3 } from "../../infrastructure/s3.service";
 import { logger } from "../../core/config/logger";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 import { AccessTier } from "@dkp/shared";
@@ -258,6 +258,14 @@ router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthReque
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
   if (!allowedTiers.includes(output.access_tier)) {
     throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
+  }
+
+  // Rows can reference a key that was never actually uploaded (or was later
+  // deleted) — presigning alone doesn't fail for those, so callers would get
+  // a URL that 404s with a raw S3 "NoSuchKey" body. Check existence first
+  // and fail cleanly instead.
+  if (!/^https?:\/\//i.test(output.file_url) && !(await fileExistsInS3(output.file_url))) {
+    throw new AppError(404, "This document's file is missing from storage");
   }
 
   const forceDownload = req.query.download === "true";

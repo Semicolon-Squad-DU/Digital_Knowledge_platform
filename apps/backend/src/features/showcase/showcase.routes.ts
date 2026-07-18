@@ -4,7 +4,7 @@ import { authenticate, requireRole, optionalAuth, AuthRequest } from "../../core
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { parsePagination } from "../../core/utils/pagination";
 import { uploadShowcaseFiles } from "../../core/middleware/upload.middleware";
-import { uploadToS3, generateS3Key, getPresignedUrl } from "../../infrastructure/s3.service";
+import { uploadToS3, generateS3Key, getPresignedUrl, fileExistsInS3 } from "../../infrastructure/s3.service";
 import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
 import { validateBody, z } from "../../core/middleware/validate.middleware";
@@ -173,6 +173,10 @@ router.get("/:id/download-url", authenticate, asyncHandler(async (req: AuthReque
   );
   if (!project || !project.report_url) throw new AppError(404, "File not found");
 
+  if (!/^https?:\/\//i.test(project.report_url) && !(await fileExistsInS3(project.report_url))) {
+    throw new AppError(404, "This document's file is missing from storage");
+  }
+
   const forceDownload = req.query.download === "true";
   const url = await getPresignedUrl(project.report_url, 900, forceDownload ? downloadFilename(project.title, project.report_url) : undefined);
   res.json({ success: true, data: { url } });
@@ -185,6 +189,10 @@ router.get("/:id/video-url", authenticate, asyncHandler(async (req: AuthRequest,
     [req.params.id]
   );
   if (!project || !project.video_url) throw new AppError(404, "Video not found");
+
+  if (!/^https?:\/\//i.test(project.video_url) && !(await fileExistsInS3(project.video_url))) {
+    throw new AppError(404, "This video file is missing from storage");
+  }
 
   const url = await getPresignedUrl(project.video_url);
   res.json({ success: true, data: { url } });
