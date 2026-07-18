@@ -18,6 +18,13 @@ import { validateBody, z } from "../../core/middleware/validate.middleware";
 
 const router = Router();
 
+// Builds a human-readable download filename from a title, keeping the
+// original file's extension (S3 keys are UUID-named, e.g. catalog/<uuid>.pdf).
+function downloadFilename(title: string, key: string): string {
+  const ext = key.includes(".") ? key.slice(key.lastIndexOf(".")) : "";
+  return `${title}${ext}`;
+}
+
 const VALID_ACCESS_TIERS: AccessTier[] = ["public", "member", "staff", "restricted"];
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
@@ -157,13 +164,14 @@ router.get(
   requireRole("librarian"),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     const [stats] = await query<{
-      on_loan: string; overdue: string; returns_today: string; holds_pending: string;
+      on_loan: string; overdue: string; returns_today: string; holds_pending: string; due_soon: string;
     }>(
       `SELECT
          (SELECT COUNT(*) FROM borrows WHERE borrow_status = 'active') as on_loan,
          (SELECT COUNT(*) FROM borrows WHERE borrow_status = 'overdue') as overdue,
          (SELECT COUNT(*) FROM borrows WHERE return_date = CURRENT_DATE) as returns_today,
-         (SELECT COUNT(*) FROM hold_requests WHERE status = 'pending') as holds_pending`
+         (SELECT COUNT(*) FROM hold_requests WHERE status = 'pending') as holds_pending,
+         (SELECT COUNT(*) FROM borrows WHERE borrow_status = 'active' AND due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '3 days') as due_soon`
     );
 
     const [fineStats] = await query<{ total_fines: string; pending_count: string }>(
@@ -183,6 +191,7 @@ router.get(
       data: {
         on_loan: parseInt(stats.on_loan), overdue: parseInt(stats.overdue),
         returns_today: parseInt(stats.returns_today), holds_pending: parseInt(stats.holds_pending),
+        due_soon: parseInt(stats.due_soon),
         fines_pending: parseInt(fineStats.pending_count),
         total_fines_amount: parseFloat(fineStats.total_fines),
         recent_transactions: recentTransactions,
@@ -303,6 +312,89 @@ router.get(
       logger.error("Error fetching overdue transactions", { error: err });
       throw err;
     }
+  })
+);
+
+// GET /api/library/on-loan — every currently active (not overdue) loan
+// across all members, so a librarian can see who has what checked out
+// instead of only the last 10 mixed-status rows on the Overview tab.
+router.get(
+  "/on-loan",
+  authenticate,
+  requireRole("librarian"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const onLoan = await query<{
+      transaction_id: string;
+      member_id: string;
+      member_name: string;
+      member_email: string;
+      catalog_id: string;
+      title: string;
+      isbn: string;
+      issue_date: string;
+      due_date: string;
+      renewal_count: number;
+    }>(
+      `SELECT
+         b.id as transaction_id,
+         b.user_id as member_id,
+         u.name as member_name,
+         u.email as member_email,
+         ci.catalog_id,
+         ci.title,
+         ci.isbn,
+         b.issue_date,
+         b.due_date,
+         b.renewal_count
+       FROM borrows b
+       JOIN users u ON b.user_id = u.user_id
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       WHERE b.borrow_status = 'active'
+       ORDER BY b.due_date ASC`
+    );
+
+    res.json({ success: true, data: onLoan });
+  })
+);
+
+// GET /api/library/due-soon — active loans due within the next 3 days (not
+// yet overdue), so a librarian can proactively follow up before a fine hits
+// rather than only reacting once something is already late.
+router.get(
+  "/due-soon",
+  authenticate,
+  requireRole("librarian"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const dueSoon = await query<{
+      transaction_id: string;
+      member_id: string;
+      member_name: string;
+      member_email: string;
+      catalog_id: string;
+      title: string;
+      isbn: string;
+      due_date: string;
+      days_until_due: number;
+    }>(
+      `SELECT
+         b.id as transaction_id,
+         b.user_id as member_id,
+         u.name as member_name,
+         u.email as member_email,
+         ci.catalog_id,
+         ci.title,
+         ci.isbn,
+         b.due_date,
+         CAST(b.due_date - CURRENT_DATE AS INTEGER) as days_until_due
+       FROM borrows b
+       JOIN users u ON b.user_id = u.user_id
+       JOIN catalog_items ci ON b.resource_id = ci.catalog_id
+       WHERE b.borrow_status = 'active'
+         AND b.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '3 days'
+       ORDER BY days_until_due ASC`
+    );
+
+    res.json({ success: true, data: dueSoon });
   })
 );
 
@@ -694,17 +786,27 @@ router.patch(
   })
 );
 
-// POST /api/library/overdue/:transaction_id/notify — send an overdue reminder email to the member
+// POST /api/library/overdue/:transaction_id/notify — librarian-triggered
+// reminder to the member. Works for both already-overdue items and items
+// that are merely due soon (days_overdue <= 0), picking the matching email
+// template for each case. Always posts an in-app notification regardless of
+// whether the member has an email on file, and accepts an optional
+// free-text note from the librarian appended to both channels.
 router.post(
   "/overdue/:transaction_id/notify",
   authenticate,
   requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { message } = req.body as { message?: string };
+    const note = typeof message === "string" ? message.trim() : "";
+
     const row = await queryOne<{
-      member_name: string; member_email: string; title: string;
+      member_id: string; member_name: string; member_email: string;
+      title: string; catalog_id: string; due_date: string;
       days_overdue: number; fine_amount: string;
     }>(
-      `SELECT u.name as member_name, u.email as member_email, ci.title,
+      `SELECT u.user_id as member_id, u.name as member_name, u.email as member_email,
+              ci.title, ci.catalog_id, b.due_date,
               CAST(CURRENT_DATE - b.due_date AS INTEGER) as days_overdue,
               COALESCE(b.fine_amount, 0) as fine_amount
        FROM borrows b
@@ -714,13 +816,36 @@ router.post(
       [req.params.transaction_id]
     );
     if (!row) throw new AppError(404, "Transaction not found");
-    if (!row.member_email) throw new AppError(400, "Member has no email on file");
 
-    await sendEmail({
-      to: row.member_email,
-      subject: `[DKP] Overdue Reminder — ${row.title}`,
-      html: overdueFineReminderEmail(row.member_name, row.title, row.days_overdue, parseFloat(row.fine_amount)),
-    });
+    const isOverdue = row.days_overdue > 0;
+    const noteBlock = note
+      ? `<div style="margin-top:16px;padding:16px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa;"><strong>Note from the librarian:</strong><p style="margin:8px 0 0;color:#374151;">${note}</p></div>`
+      : "";
+
+    if (row.member_email) {
+      const html = isOverdue
+        ? overdueFineReminderEmail(row.member_name, row.title, row.days_overdue, parseFloat(row.fine_amount))
+        : dueDateReminderEmail(row.member_name, row.title, row.due_date, -row.days_overdue);
+
+      await sendEmail({
+        to: row.member_email,
+        subject: isOverdue ? `[DKP] Overdue Reminder — ${row.title}` : `[DKP] Reminder — ${row.title}`,
+        html: html + noteBlock,
+      });
+    }
+
+    const inAppMessage = [
+      isOverdue
+        ? `"${row.title}" is ${row.days_overdue} day(s) overdue — please return it as soon as possible.`
+        : `"${row.title}" is due soon (${row.due_date}). A librarian sent you a reminder.`,
+      note ? `Note: "${note}"` : null,
+    ].filter(Boolean).join(" ");
+
+    await query(
+      `INSERT INTO notifications (user_id, type, title, message, action_url)
+       VALUES ($1, 'overdue_alert', $2, $3, $4)`,
+      [row.member_id, isOverdue ? "Overdue Reminder" : "Upcoming Due Date", inAppMessage, `/library/${row.catalog_id}`]
+    );
 
     res.json({ success: true, message: "Reminder sent" });
   })
@@ -1027,7 +1152,7 @@ router.post(
     for (const person of staff) {
       await query(
         `INSERT INTO notifications (user_id, type, title, message, action_url)
-         VALUES ($1, 'pending_approval', 'New Book Access Request', $2, '/librarian')`,
+         VALUES ($1, 'pending_approval', 'New Book Access Request', $2, '/librarian?tab=access-requests')`,
         [person.user_id, `${requester?.name ?? "A user"} has requested access to "${book.title}".`]
       );
     }
@@ -1098,8 +1223,8 @@ router.post(
 
 // GET /api/library/catalog/:id/download-url
 router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const item = await queryOne<{ document_url: string | null; access_tier: AccessTier }>(
-    "SELECT document_url, access_tier FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
+  const item = await queryOne<{ document_url: string | null; access_tier: AccessTier; title: string }>(
+    "SELECT document_url, access_tier, title FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
     [req.params.id]
   );
   if (!item || !item.document_url) throw new AppError(404, "No document attached to this catalog item");
@@ -1117,7 +1242,8 @@ router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req: A
     }
   }
 
-  const url = await getPresignedUrl(item.document_url);
+  const forceDownload = req.query.download === "true";
+  const url = await getPresignedUrl(item.document_url, 900, forceDownload ? downloadFilename(item.title, item.document_url) : undefined);
   res.json({ success: true, data: { url } });
 }));
 

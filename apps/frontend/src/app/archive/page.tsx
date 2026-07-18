@@ -113,7 +113,14 @@ export default function ArchivePage() {
     if (!isAuthenticated) { toast.error("Please sign in to download documents."); return; }
     try {
       const url = await download(id);
-      window.open(url, "_blank");
+      // Content-Disposition: attachment is already set on this URL, so a
+      // click-through anchor downloads it in place — window.open would spawn
+      // an extra (empty) tab alongside the download.
+      const link = document.createElement("a");
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch {
       toast.error("Download failed or access denied");
     }

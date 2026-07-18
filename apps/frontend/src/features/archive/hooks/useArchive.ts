@@ -153,7 +153,7 @@ export function useUploadArchiveVersion() {
 export function useDownloadArchiveItem() {
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await api.get(`/archive/${id}/download`);
+      const { data } = await api.get(`/archive/${id}/download?download=true`);
       return data.data.url as string;
     },
   });

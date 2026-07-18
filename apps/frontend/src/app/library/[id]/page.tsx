@@ -265,8 +265,15 @@ export default function LibraryItemPage() {
   const handleDownloadPdf = async () => {
     if (!item?.document_url) return;
     try {
-      const { data } = await api.get(`/library/catalog/${itemId}/download-url`);
-      window.open(data.data.url, "_blank");
+      const { data } = await api.get(`/library/catalog/${itemId}/download-url?download=true`);
+      // The presigned URL already sets Content-Disposition: attachment, so a
+      // click-through anchor downloads it in place — window.open would spawn
+      // an extra (empty) tab alongside the download.
+      const link = document.createElement("a");
+      link.href = data.data.url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch {
       toast.error("Could not open document. Please try again.");
     }
@@ -976,7 +983,43 @@ export default function LibraryItemPage() {
           </div>
         )}
 
-        {!isLoading && !item && (
+        {/* A request that never got a response (server down/restarting, network
+            drop) is not the same fact as the backend saying "no such row" —
+            conflating them told users a real book had been deleted. */}
+        {!isLoading && !item && error && !(error as { response?: unknown }).response && (
+          <div style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            padding: "48px 24px",
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          }}>
+            <p style={{ fontSize: 16, fontWeight: 600, color: "#111827", margin: 0 }}>Couldn&apos;t load this book</p>
+            <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4, marginBottom: 16 }}>
+              We couldn&apos;t reach the server. Check your connection and try again.
+            </p>
+            <button
+              onClick={() => refetch()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                cursor: "pointer",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !item && (!error || (error as { response?: unknown }).response) && (
           <div style={{
             background: "#fff",
             border: "1px solid #e5e7eb",

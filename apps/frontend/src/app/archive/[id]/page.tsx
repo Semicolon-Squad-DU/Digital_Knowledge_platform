@@ -8,7 +8,8 @@ import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestA
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Modal";
-import { formatDate, formatFileSize, getAccessTierBadge, getStatusBadge } from "@/lib/utils";
+import { formatDate, formatFileSize, getStatusBadge } from "@/lib/utils";
+import { AccessTierBadge } from "@/components/ui/AccessTierBadge";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth.store";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
@@ -55,7 +56,14 @@ export default function ArchiveItemPage() {
   const handleDownload = async () => {
     try {
       const url = await download(itemId);
-      window.open(url, "_blank");
+      // Content-Disposition: attachment is already set on this URL, so a
+      // click-through anchor downloads it in place — window.open would spawn
+      // an extra (empty) tab alongside the download.
+      const link = document.createElement("a");
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch {
       toast.error("Download failed or access denied");
     }
@@ -111,59 +119,26 @@ export default function ArchiveItemPage() {
               background: "#fff",
               border: "1px solid #e5e7eb",
               borderRadius: 16,
-              boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
               overflow: "hidden",
             }}
           >
-            {/* Red Alert Header Accent */}
-            <div style={{ height: 6, background: "linear-gradient(90deg, #dc2626 0%, #ef4444 100%)" }} />
-
-            <div style={{ padding: 32, textAlign: "center" }}>
-              {/* Lock Visual Icon */}
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  background: "#fef2f2",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 16px",
-                  border: "1px solid #fee2e2",
-                }}
-              >
-                <Lock size={24} color="#dc2626" />
+            <div style={{ padding: "28px 32px", textAlign: "center" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+                <Lock size={12} color="#b91c1c" />
+                <AccessTierBadge tier="restricted" />
               </div>
 
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                  background: "#fde8e8",
-                  color: "#c81e1e",
-                  marginBottom: 12,
-                }}
-              >
-                Restricted Document
-              </span>
-
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: "0 0 8px", lineHeight: 1.3 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: "0 0 6px", lineHeight: 1.3 }}>
                 {restrictedData.title_en}
               </h1>
               {restrictedData.title_bn && (
-                <p style={{ fontSize: 15, color: "#4b5563", marginTop: 4, marginBottom: 8 }}>
+                <p style={{ fontSize: 14, color: "#4b5563", marginTop: 2, marginBottom: 6 }}>
                   {restrictedData.title_bn}
                 </p>
               )}
-              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 auto 24px", maxWidth: 500 }}>
-                This resource belongs to the institutional restricted archive tier. You do not have permissions to download or view this file directly.
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 auto 24px", maxWidth: 460, lineHeight: 1.5 }}>
+                This document is restricted. Sign in and request access to view or download it.
               </p>
 
               {/* Status Logic */}
@@ -413,18 +388,36 @@ export default function ArchiveItemPage() {
     );
   }
 
+  // A request that never got a response (server down/restarting, network
+  // drop) is not the same fact as the backend saying "no such row" —
+  // conflating them told users a real item had been deleted.
+  const isNetworkFailure = !!error && !(error as { response?: unknown }).response;
+
   // ─────────── Not Found Fallback ───────────
   if (!item) {
     return (
       <AppLayout>
         <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto", textAlign: "center" }}>
-          <p style={{ fontSize: 15, color: "#6b7280" }}>Archive item not found.</p>
+          <p style={{ fontSize: 15, color: "#6b7280" }}>
+            {isNetworkFailure ? "We couldn't reach the server. Check your connection and try again." : "Archive item not found."}
+          </p>
+          {isNetworkFailure && (
+            <button
+              onClick={() => refetch()}
+              style={{
+                marginTop: 16, display: "inline-flex", alignItems: "center",
+                padding: "8px 16px", borderRadius: 8, border: "1px solid #e5e7eb",
+                background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer",
+              }}
+            >
+              Retry
+            </button>
+          )}
         </div>
       </AppLayout>
     );
   }
 
-  const tier = getAccessTierBadge(item.access_tier);
   const status = getStatusBadge(item.status);
 
   // ─────────── Normal Details Render ───────────
@@ -473,12 +466,8 @@ export default function ArchiveItemPage() {
                 </p>
               )}
             </div>
-            <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${tier.color}`}
-              >
-                {tier.label}
-              </span>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap", alignItems: "center" }}>
+              <AccessTierBadge tier={item.access_tier} />
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${status.color}`}
               >
