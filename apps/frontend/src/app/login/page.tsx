@@ -8,9 +8,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { GraduationCap, LogIn, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Library, X } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { Input } from "@/components/ui/Input";
+import { C, SERIF, SANS } from "@/components/design/dkpTheme";
 import api from "@/lib/api";
 
 const ROLES = [
@@ -52,17 +52,14 @@ function LoginForm() {
   const redirectParam = searchParams.get("redirect");
   const { login, setUser } = useAuthStore();
 
-  const [error,             setError]             = useState("");
-  // googleProfile is fetched client-side purely to show "Continue as X" in the
-  // role picker below — it is NOT trusted for the actual sign-in. The raw
-  // access token (googleAccessToken) is what gets sent to the backend, which
-  // independently re-verifies it with Google before creating any session.
-  const [googleProfile,     setGoogleProfile]     = useState<{ email: string; name: string; sub: string } | null>(null);
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [googleProfile, setGoogleProfile] = useState<{ email: string; name: string; sub: string } | null>(null);
   const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
-  const [selectedRole,      setSelectedRole]      = useState<RoleValue>("member");
-  const [showRoleModal,     setShowRoleModal]     = useState(false);
-  const [roleError,         setRoleError]         = useState("");
-  const [isSubmittingRole,  setIsSubmittingRole]  = useState(false);
+  const [selectedRole, setSelectedRole] = useState<RoleValue>("member");
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleError, setRoleError] = useState("");
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<FormData>({ resolver: zodResolver(schema) });
@@ -80,12 +77,6 @@ function LoginForm() {
     }
   };
 
-  // Tries a plain sign-in first — no role attached. The backend logs a returning
-  // account straight in with whatever role it already has; it only comes back with
-  // requiresRole when this Google account genuinely has no DKP account yet, at which
-  // point (and only then) we ask which role to create it as. Never send `role` for
-  // an account that might already exist — a returning user picking the wrong option
-  // in the role picker used to silently fire off a "role switch" request to admins.
   const attemptOAuthLogin = async (accessToken: string, role?: RoleValue) => {
     const res = await api.post("/auth/oauth-login", {
       accessToken, provider: "google",
@@ -108,15 +99,11 @@ function LoginForm() {
       toast.error("Google Sign-In is not configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local");
       return;
     }
-    if (typeof window !== "undefined" && (window as { google?: { accounts?: { oauth2?: { initTokenClient: (config: object) => { requestAccessToken: () => void } } } } }).google) {
+    if (typeof window !== "undefined" && (window as any).google) {
       try {
         const client = (window as any).google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-          // Fires when Google's popup itself fails to open/complete — e.g. the
-          // browser blocked it, which is common on mobile Safari/Chrome unless
-          // popups are explicitly allowed for this site. Without this, a blocked
-          // popup used to fail silently with no feedback at all.
           error_callback: (err: any) => {
             if (err?.type === "popup_failed_to_open" || err?.type === "popup_closed") {
               toast.error("Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.");
@@ -131,7 +118,6 @@ function LoginForm() {
                 const data = await attemptOAuthLogin(tokenResponse.access_token);
                 toast.dismiss(t);
                 if (data.requiresRole) {
-                  // Brand-new Google account — collect a role before creating it.
                   setGoogleProfile({ email: data.email, name: data.name, sub: "" });
                   setGoogleAccessToken(tokenResponse.access_token);
                   setSelectedRole("member");
@@ -173,271 +159,214 @@ function LoginForm() {
     }
   };
 
-  const inputBase: React.CSSProperties = {
-    display: "block", width: "100%", padding: "10px 12px",
-    // Must stay >= 16px — iOS Safari auto-zooms the viewport on focus for any
-    // input under 16px, which makes typing look broken on phones.
-    fontSize: "16px", color: "#111827", background: "#ffffff",
-    border: "1.5px solid #e5e7eb", borderRadius: "8px",
-    outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
-  };
+  const inputStyle = (hasError?: boolean): React.CSSProperties => ({
+    width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 16,
+    color: C.ink, background: C.white, border: `1.5px solid ${hasError ? "#ef4444" : C.lineStrong}`,
+    borderRadius: 8, outline: "none", fontFamily: SANS,
+  });
 
   return (
-    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", fontFamily: SANS, background: C.white }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 900px) {
+          .dkp-auth-panel { display: none !important; }
+          .dkp-auth-form { padding: 32px 20px !important; }
+        }
+      `}} />
 
-      {/* ── Nav ── */}
-      <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <GraduationCap size={13} color="#ffffff" />
-            </div>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
-          </Link>
-          <Link href="/register"
-            style={{ fontSize: "13px", fontWeight: 600, color: "#4b5563", textDecoration: "none", transition: "color 0.2s" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#4b5563")}
-          >
-            Create account
+      {/* Left brand panel */}
+      <aside
+        className="dkp-auth-panel"
+        style={{
+          flex: "1 1 50%", position: "relative", minHeight: "100vh",
+          background: C.ink, color: C.white, overflow: "hidden",
+          display: "flex", flexDirection: "column", justifyContent: "space-between",
+          padding: "40px clamp(28px, 4vw, 56px)",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/auth-login-panel.png"
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }}
+        />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(26,26,46,0.72) 0%, rgba(26,26,46,0.88) 100%)" }} />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.9)", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
+            <ArrowLeft size={16} /> Back to Platform
           </Link>
         </div>
-      </header>
 
-      {/* ── Main ── */}
-      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 16px" }}>
-        <div style={{ width: "100%", maxWidth: "420px" }}>
-
-          {/* Card */}
-          <div style={{
-            background: "#ffffff", borderRadius: "16px",
-            border: "1px solid #e5e7eb", padding: "40px 36px 32px",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 440, paddingBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <Library size={22} />
+            <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700 }}>DU DKP</span>
+          </div>
+          <h1 style={{
+            fontFamily: SERIF, fontSize: "clamp(32px, 4vw, 44px)", fontWeight: 700,
+            margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-0.02em",
           }}>
-            {/* Heading */}
-            <div style={{ marginBottom: "28px" }}>
-              <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", letterSpacing: "-0.025em", lineHeight: 1.15, margin: "0 0 6px 0" }}>
-                Sign In
-              </h1>
-              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                Access your academic collections and research.
-              </p>
+            DU Digital<br />Knowledge Platform
+          </h1>
+          <p style={{ fontSize: 16, lineHeight: 1.65, color: "rgba(255,255,255,0.82)", margin: 0 }}>
+            Access the premier institutional repository for research, archives, and scholarly communication at the University of Dhaka.
+          </p>
+        </div>
+      </aside>
+
+      {/* Right form */}
+      <main className="dkp-auth-form" style={{ flex: "1 1 50%", display: "flex", alignItems: "center", justifyContent: "center", padding: "48px clamp(20px, 5vw, 64px)", background: C.white }}>
+        <div style={{ width: "100%", maxWidth: 420 }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 3.5vw, 36px)", fontWeight: 700, color: C.ink, margin: "0 0 28px" }}>
+            Sign In
+          </h2>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              padding: "13px 16px", fontSize: 14, fontWeight: 700, background: C.white, color: C.accent,
+              border: `1.5px solid ${C.lineStrong}`, borderRadius: 8, cursor: "pointer", marginBottom: 22,
+            }}
+          >
+            <GoogleIcon /> Continue with Google
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 22 }}>
+            <div style={{ flex: 1, height: 1, background: C.lineStrong }} />
+            <span style={{ padding: "0 14px", fontSize: 12, fontWeight: 600, color: C.body, letterSpacing: "0.06em", textTransform: "uppercase" }}>or</span>
+            <div style={{ flex: 1, height: 1, background: C.lineStrong }} />
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="login-email" style={{ display: "block", fontSize: 13, fontWeight: 600, color: C.ink, marginBottom: 8 }}>
+                Institutional Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                autoComplete="email"
+                placeholder="user@du.ac.bd"
+                aria-invalid={!!errors.email}
+                style={inputStyle(!!errors.email)}
+                {...register("email")}
+              />
+              {errors.email && <p style={{ fontSize: 12, color: "#ef4444", marginTop: 6 }} role="alert">{errors.email.message}</p>}
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
-              {/* Email */}
-              <div style={{ marginBottom: "16px" }}>
-                <label htmlFor="login-email" style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>
-                  Email address
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  autoComplete="email"
-                  aria-invalid={!!errors.email}
-                  style={{ ...inputBase, borderColor: errors.email ? "#ef4444" : "#e5e7eb" }}
-                  onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #111827)"; }}
-                  {...register("email", {
-                    onBlur: e => { e.currentTarget.style.borderColor = errors.email ? "#ef4444" : "#e5e7eb"; }
-                  })}
-                />
-                {errors.email && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }} role="alert">{errors.email.message}</p>}
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <label htmlFor="login-password" style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Password</label>
+                <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: C.accent, textDecoration: "none" }}>
+                  Forgot Password?
+                </Link>
               </div>
-
-              {/* Password */}
-              <div style={{ marginBottom: "20px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <label htmlFor="login-password" style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>
-                    Password
-                  </label>
-                  <Link href="/forgot-password" style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none" }}
-                    onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-                    onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
+              <div style={{ position: "relative" }}>
+                <input
                   id="login-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   placeholder="••••••••"
                   aria-invalid={!!errors.password}
+                  style={{ ...inputStyle(!!errors.password), paddingRight: 44 }}
                   {...register("password")}
-                  error={errors.password?.message}
-                  className="w-full"
                 />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((v) => !v)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.body, display: "flex", padding: 0 }}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-
-              {/* Error */}
-              {error && (
-                <div style={{ marginBottom: "16px", padding: "10px 12px", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#dc2626" }} role="alert">
-                  {error}
-                </div>
-              )}
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
-                  padding: "12px 16px", fontSize: "13.5px", fontWeight: 700,
-                  background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
-                  border: "none", borderRadius: "8px",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.7 : 1,
-                  transition: "opacity 0.2s",
-                }}
-                onMouseEnter={e => { if (!isSubmitting) e.currentTarget.style.opacity = "0.87"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = isSubmitting ? "0.7" : "1"; }}
-              >
-                {isSubmitting ? (
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                ) : <LogIn size={15} strokeWidth={2.5} />}
-                Sign In
-              </button>
-            </form>
-
-            {/* OR */}
-            <div style={{ display: "flex", alignItems: "center", margin: "20px 0" }}>
-              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-              <span style={{ padding: "0 12px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af" }}>or</span>
-              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+              {errors.password && <p style={{ fontSize: 12, color: "#ef4444", marginTop: 6 }} role="alert">{errors.password.message}</p>}
             </div>
 
-            {/* Google */}
-            <button
-              type="button"
-              style={{
-                width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                padding: "11px 16px", fontSize: "13.5px", fontWeight: 600,
-                background: "#ffffff", color: "#374151",
-                border: "1.5px solid #e5e7eb", borderRadius: "8px",
-                cursor: "pointer", transition: "border-color 0.2s, background 0.2s",
-              }}
-              onClick={handleGoogleSignIn}
-              onMouseEnter={e => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
+            {error && (
+              <div style={{ marginBottom: 16, padding: "10px 12px", fontSize: 13, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#dc2626" }} role="alert">
+                {error}
+              </div>
+            )}
 
-            {/* Divider + Register link */}
-            <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 18px" }} />
-            <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
-              New to the platform?{" "}
-              <Link href="/register" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
-                onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-                onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
-              >
-                Create an account
-              </Link>
-            </p>
-          </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                width: "100%", padding: "14px 16px", fontSize: 15, fontWeight: 700,
+                background: C.ink, color: C.white, border: "none", borderRadius: 8,
+                cursor: isSubmitting ? "not-allowed" : "pointer", opacity: isSubmitting ? 0.7 : 1,
+              }}
+            >
+              {isSubmitting ? "Signing in…" : "Sign In"}
+            </button>
+          </form>
+
+          <p style={{ textAlign: "center", fontSize: 14, color: C.body, margin: "24px 0 0" }}>
+            New to the platform?{" "}
+            <Link href="/register" style={{ fontWeight: 700, color: C.accent, textDecoration: "none" }}>
+              Create an Account
+            </Link>
+          </p>
         </div>
       </main>
 
-      {/* ── Footer ── */}
-      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform</p>
-          <div style={{ display: "flex", gap: "16px" }}>
-            {[{ l: "Privacy", h: "/privacy" }, { l: "Terms", h: "/terms" }, { l: "Contact", h: "/contact" }].map(x => (
-              <Link key={x.l} href={x.h} style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#111827")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
-              >{x.l}</Link>
-            ))}
-          </div>
-        </div>
-      </footer>
-
-      {/* ── Role Selection Modal for Google Sign-In ── */}
       {showRoleModal && googleProfile && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", width: "100%", maxWidth: "480px", maxHeight: "90vh", overflow: "auto", padding: "32px" }}>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(26,26,46,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+          <div style={{ background: C.white, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto", padding: 28 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
               <div>
-                <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#111827", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>Select Your Role</h2>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Choose how you&apos;ll use the platform</p>
+                <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: C.ink, margin: "0 0 4px" }}>Select Your Role</h2>
+                <p style={{ fontSize: 13, color: C.body, margin: 0 }}>Choose how you&apos;ll use the platform</p>
               </div>
               <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setGoogleAccessToken(null); setRoleError(""); }}
-                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px", color: "#9ca3af" }}>
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2, color: C.body }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px" }}>
-              <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 3px 0" }}>Signing in as</p>
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0 }}>{googleProfile.name} · {googleProfile.email}</p>
+            <div style={{ background: C.chip, border: `1px solid ${C.lineStrong}`, borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
+              <p style={{ fontSize: 11, color: C.body, margin: "0 0 3px" }}>Signing in as</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: C.ink, margin: 0 }}>{googleProfile.name} · {googleProfile.email}</p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-              {ROLES.map(role => (
-                <button key={role.value} onClick={() => setSelectedRole(role.value)}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
+              {ROLES.map((role) => (
+                <button key={role.value} type="button" onClick={() => setSelectedRole(role.value)}
                   style={{
-                    padding: "12px 14px", textAlign: "left", cursor: "pointer", borderRadius: "10px",
-                    border: `1.5px solid ${selectedRole === role.value ? "var(--avatar-theme-color, #111827)" : "#e5e7eb"}`,
-                    background: selectedRole === role.value ? "#f8f9fa" : "#ffffff",
-                    transition: "all 0.15s",
-                  }}
-                  onMouseOver={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #111827)"; }}
-                  onMouseOut={e => { e.currentTarget.style.borderColor = selectedRole === role.value ? "var(--avatar-theme-color, #111827)" : "#e5e7eb"; }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div>
-                      <p style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827", margin: "0 0 2px 0" }}>{role.label}</p>
-                      <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>{role.desc}</p>
-                    </div>
-                    <div style={{
-                      width: "18px", height: "18px", borderRadius: "50%", flexShrink: 0,
-                      border: `2px solid ${selectedRole === role.value ? "var(--avatar-theme-color, #111827)" : "#d1d5db"}`,
-                      background: selectedRole === role.value ? "var(--avatar-theme-color, #111827)" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {selectedRole === role.value && (
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                          <path d="M2 5L4.5 7.5L8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
+                    padding: "12px 14px", textAlign: "left", cursor: "pointer", borderRadius: 10,
+                    border: `1.5px solid ${selectedRole === role.value ? C.ink : C.lineStrong}`,
+                    background: selectedRole === role.value ? C.chip : C.white,
+                  }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: C.ink, margin: "0 0 2px" }}>{role.label}</p>
+                  <p style={{ fontSize: 12, color: C.body, margin: 0 }}>{role.desc}</p>
                 </button>
               ))}
             </div>
 
             {roleError && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "12px 14px", marginBottom: "16px" }}>
-                <p style={{ fontSize: "12px", color: "#dc2626", margin: 0, lineHeight: 1.5 }}>{roleError}</p>
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 14px", marginBottom: 14 }}>
+                <p style={{ fontSize: 12, color: "#dc2626", margin: 0 }}>{roleError}</p>
               </div>
             )}
 
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setGoogleAccessToken(null); setRoleError(""); }} disabled={isSubmittingRole}
-                style={{ flex: 1, padding: "10px 16px", fontSize: "13px", fontWeight: 600, background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", cursor: isSubmittingRole ? "not-allowed" : "pointer" }}>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" onClick={() => { setShowRoleModal(false); setGoogleProfile(null); setGoogleAccessToken(null); setRoleError(""); }} disabled={isSubmittingRole}
+                style={{ flex: 1, padding: "11px 16px", fontSize: 13, fontWeight: 600, background: C.chip, color: C.ink, border: "none", borderRadius: 8, cursor: "pointer" }}>
                 Cancel
               </button>
-              <button onClick={handleRoleConfirm} disabled={isSubmittingRole}
-                style={{ flex: 1, padding: "10px 16px", fontSize: "13px", fontWeight: 700, background: "var(--avatar-theme-color, #111827)", color: "#ffffff", border: "none", borderRadius: "8px", cursor: isSubmittingRole ? "not-allowed" : "pointer", opacity: isSubmittingRole ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                {isSubmittingRole ? (
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                ) : "Continue"}
+              <button type="button" onClick={handleRoleConfirm} disabled={isSubmittingRole}
+                style={{ flex: 1, padding: "11px 16px", fontSize: 13, fontWeight: 700, background: C.ink, color: C.white, border: "none", borderRadius: 8, cursor: isSubmittingRole ? "not-allowed" : "pointer", opacity: isSubmittingRole ? 0.7 : 1 }}>
+                {isSubmittingRole ? "Continuing…" : "Continue"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* afterInteractive (not lazyOnload) — on a slow mobile connection the SDK
-          could still be loading by the time someone taps "Sign in with Google",
-          which used to just fail silently with "SDK is still loading." */}
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </div>
   );
@@ -446,8 +375,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f8f9fa" }}>
-        <div style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Loading…</div>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg, fontFamily: SANS, color: C.body }}>
+        Loading…
       </div>
     }>
       <LoginForm />
