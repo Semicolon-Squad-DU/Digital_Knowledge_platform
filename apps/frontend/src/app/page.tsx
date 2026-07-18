@@ -107,9 +107,7 @@ export default function HomePage() {
   const [line2Text, setLine2Text] = useState("");
   const [authPhase, setAuthPhase] = useState<"line1" | "line2" | "done">("line1");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const lastScrollY = useRef(0);
 
   // Live platform data for the stats strip and latest-content section
   const [stats, setStats] = useState<{ archive: number | null; research: number | null; showcase: number | null; catalog: number | null }>({
@@ -231,21 +229,33 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      if (currentY > lastScrollY.current && currentY > 64) {
-        setHeaderVisible(false);
-      } else {
-        setHeaderVisible(true);
-      }
-      lastScrollY.current = currentY;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const handleCloseSidebar = () => setSidebarOpen(false);
+
+  // Lock background scroll while the mobile menu is open — iOS Safari lets touch
+  // scrolls propagate through a fixed overlay even with an ancestor's
+  // overflow:hidden, so pin the body with position:fixed instead and restore
+  // the exact scroll offset on close so the page doesn't jump.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const scrollY = window.scrollY;
+    const body = document.body.style;
+    const original = { position: body.position, top: body.top, left: body.left, right: body.right, width: body.width, overflow: body.overflow };
+    body.position = "fixed";
+    body.top = `-${scrollY}px`;
+    body.left = "0";
+    body.right = "0";
+    body.width = "100%";
+    body.overflow = "hidden";
+    return () => {
+      body.position = original.position;
+      body.top = original.top;
+      body.left = original.left;
+      body.right = original.right;
+      body.width = original.width;
+      body.overflow = original.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [sidebarOpen]);
 
   return (
     <>
@@ -516,9 +526,9 @@ export default function HomePage() {
         }
       `}} />
 
-      <div style={{ background: "#f8f9fa", minHeight: "100vh" }}>
+      <div style={{ background: "#f8f9fa", minHeight: "100vh", paddingTop: 49 }}>
 
-        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: isMobile ? "relative" : "sticky", top: 0, zIndex: 50, transform: !isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
+        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "fixed", top: 0, left: 0, right: 0, zIndex: 50 }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
             {/* ΓöÇΓöÇ MOBILE & DESKTOP: Left brand/group layout ΓöÇΓöÇ */}
@@ -601,6 +611,7 @@ export default function HomePage() {
               width: "80%",
               height: "100%",
               backgroundImage: "linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e) 0%, #111116 100%)",
+              opacity: 0.85,
               color: "#ffffff",
               zIndex: 200,
               display: "flex",

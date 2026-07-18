@@ -255,7 +255,7 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
   return (
     <>
       {/* Top bar */}
-      <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
+      <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "fixed", top: 0, left: 0, right: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
           {isMobile ? (
             /* MOBILE: Hamburger and Logo both on left */
@@ -481,7 +481,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
     return (
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f0f2f5" }}>
         <GuestTopNav pathname={pathname} isMobile={isMobile} menuOpen={open} setMenuOpen={setOpen} />
-        <main key={pathname} className="dkp-page-enter" style={{ flex: 1 }}>
+        <main key={pathname} className="dkp-page-enter" style={{ flex: 1, paddingTop: 48 }}>
           {children}
         </main>
       </div>
