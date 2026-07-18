@@ -209,3 +209,79 @@ describe("DELETE /api/library/holds/:id", () => {
     expect(res.status).toBe(409);
   });
 });
+
+describe("Zod validation on library body-taking routes", () => {
+  it("rejects POST /wishlist with a non-string catalog_id", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .post("/api/library/wishlist")
+      .set("Authorization", `Bearer ${tokenFor("u1", "member")}`)
+      .send({ catalog_id: 12345 });
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it("rejects POST /renew with a missing transaction_id", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .post("/api/library/renew")
+      .set("Authorization", `Bearer ${tokenFor("u1", "member")}`)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects PATCH /fines/:id/adjust with a zero amount", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .patch("/api/library/fines/f1/adjust")
+      .set("Authorization", `Bearer ${tokenFor("u1", "librarian")}`)
+      .send({ amount: 0, reason: "test" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects PATCH /fines/:id/adjust with a blank reason", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .patch("/api/library/fines/f1/adjust")
+      .set("Authorization", `Bearer ${tokenFor("u1", "librarian")}`)
+      .send({ amount: 5, reason: "   " });
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts PATCH /fines/:id/adjust with a valid amount and reason", async () => {
+    mockActiveSession();
+    mockedQueryOne.mockResolvedValueOnce({ fine_id: "f1", amount: 5, reason: "Damaged cover" });
+    const res = await request(app)
+      .patch("/api/library/fines/f1/adjust")
+      .set("Authorization", `Bearer ${tokenFor("u1", "librarian")}`)
+      .send({ amount: 5, reason: "Damaged cover" });
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects POST /issue with neither catalog_id nor barcode", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .post("/api/library/issue")
+      .set("Authorization", `Bearer ${tokenFor("u1", "librarian")}`)
+      .send({ member_id: "u2" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects PATCH /catalog/access-requests/:id/review with an invalid status", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .patch("/api/library/catalog/access-requests/r1/review")
+      .set("Authorization", `Bearer ${tokenFor("u1", "librarian")}`)
+      .send({ status: "maybe" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects POST /catalog/import/commit with an empty rows array", async () => {
+    mockActiveSession();
+    const res = await request(app)
+      .post("/api/library/catalog/import/commit")
+      .set("Authorization", `Bearer ${tokenFor("u1", "librarian")}`)
+      .send({ rows: [] });
+    expect(res.status).toBe(400);
+  });
+});
