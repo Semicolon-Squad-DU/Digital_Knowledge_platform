@@ -7,8 +7,40 @@ import { uploadShowcaseFiles } from "../../core/middleware/upload.middleware";
 import { uploadToS3, generateS3Key, getPresignedUrl } from "../../infrastructure/s3.service";
 import { sendEmail, projectApprovalEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
+import { validateBody, z } from "../../core/middleware/validate.middleware";
 
 const router = Router();
+
+// ── Zod schemas ────────────────────────────────────────────────────────────────
+// POST / and PATCH /:id arrive as multipart form fields (via uploadShowcaseFiles)
+// — team_members/technologies are JSON-encoded array strings, matching the
+// manual JSON.parse already done further down in each handler.
+const showcaseCreateSchema = z.object({
+  title: z.string().trim().min(1, "title, abstract, advisor_id, semester, department are required"),
+  abstract: z.string().trim().min(1, "title, abstract, advisor_id, semester, department are required"),
+  advisor_id: z.string().trim().min(1, "title, abstract, advisor_id, semester, department are required"),
+  semester: z.string().trim().min(1, "title, abstract, advisor_id, semester, department are required"),
+  department: z.string().trim().min(1, "title, abstract, advisor_id, semester, department are required"),
+  source_code_url: z.string().trim().optional(),
+  team_members: z.string().optional(),
+  technologies: z.string().optional(),
+});
+
+const showcaseUpdateSchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  abstract: z.string().trim().min(1).optional(),
+  advisor_id: z.string().trim().min(1).optional(),
+  semester: z.string().trim().min(1).optional(),
+  department: z.string().trim().min(1).optional(),
+  source_code_url: z.string().trim().optional(),
+  team_members: z.string().optional(),
+  technologies: z.string().optional(),
+});
+
+const showcaseReviewSchema = z.object({
+  action: z.enum(["approve", "request_changes"], { errorMap: () => ({ message: "action must be 'approve' or 'request_changes'" }) }),
+  comments: z.string().optional(),
+});
 
 // GET /api/showcase
 router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -156,23 +188,20 @@ router.post(
   authenticate,
   requireRole("student_author", "admin"),
   uploadShowcaseFiles,
+  validateBody(showcaseCreateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const body = req.body as Record<string, unknown>;
+    const body = req.body as z.infer<typeof showcaseCreateSchema>;
     const files = req.files as { file?: Express.Multer.File[]; video?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
     const reportFile = files?.file?.[0];
     const videoFile = files?.video?.[0];
     const thumbnailFile = files?.thumbnail?.[0];
 
-    const title          = body.title as string;
-    const abstract       = body.abstract as string;
-    const advisor_id     = body.advisor_id as string;
-    const semester       = body.semester as string;
-    const department     = body.department as string;
-    const source_code_url = body.source_code_url as string | undefined;
-
-    if (!title || !abstract || !advisor_id || !semester || !department) {
-      throw new AppError(400, "title, abstract, advisor_id, semester, department are required");
-    }
+    const title          = body.title;
+    const abstract       = body.abstract;
+    const advisor_id     = body.advisor_id;
+    const semester       = body.semester;
+    const department     = body.department;
+    const source_code_url = body.source_code_url;
 
     // Safely parse JSON fields — multer sends them as strings
     let team_members: unknown[] = [];
@@ -256,8 +285,9 @@ router.patch(
   "/:id/review",
   authenticate,
   requireRole("researcher", "admin"),
+  validateBody(showcaseReviewSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { action, comments } = req.body as { action: "approve" | "request_changes"; comments?: string };
+    const { action, comments } = req.body as z.infer<typeof showcaseReviewSchema>;
 
     const project = await queryOne<{
       project_id: string; title: string; advisor_id: string; submitted_by: string; status: string;
@@ -349,9 +379,10 @@ router.patch(
   authenticate,
   requireRole("student_author", "admin"),
   uploadShowcaseFiles,
+  validateBody(showcaseUpdateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const body = req.body as Record<string, unknown>;
+    const body = req.body as z.infer<typeof showcaseUpdateSchema>;
     const files = req.files as { file?: Express.Multer.File[]; video?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] } | undefined;
     const reportFile = files?.file?.[0];
     const videoFile = files?.video?.[0];
@@ -376,12 +407,12 @@ router.patch(
     }
 
     // 2. Parse fields
-    const title = body.title as string | undefined;
-    const abstract = body.abstract as string | undefined;
-    const advisor_id = body.advisor_id as string | undefined;
-    const semester = body.semester as string | undefined;
-    const department = body.department as string | undefined;
-    const source_code_url = body.source_code_url as string | undefined;
+    const title = body.title;
+    const abstract = body.abstract;
+    const advisor_id = body.advisor_id;
+    const semester = body.semester;
+    const department = body.department;
+    const source_code_url = body.source_code_url;
 
     let team_members: unknown[] | undefined;
     let technologies: string[] | undefined;

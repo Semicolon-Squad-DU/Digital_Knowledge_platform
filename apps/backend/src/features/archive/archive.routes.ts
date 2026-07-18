@@ -11,8 +11,66 @@ import { AccessTier } from "@dkp/shared";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 import { getArchiveTransitionRule } from "../../core/archive-lifecycle";
 import { createArchiveItemRecord } from "./archive-create.service";
+import { validateBody, z } from "../../core/middleware/validate.middleware";
 
 const router = Router();
+
+const VALID_ARCHIVE_STATUSES = ["draft", "review", "published", "archived"] as const;
+
+// ── Zod schemas ────────────────────────────────────────────────────────────────
+// Upload routes (/upload, /upload/finalize) arrive as multipart form fields (via
+// upload.middleware) or a plain JSON body with the same shape — either way,
+// authors/tags/custom_metadata are JSON-encoded strings, not real
+// arrays/objects, all the way down into createArchiveItemRecord.
+const uploadMetadataSchema = z.object({
+  title_en: z.string().trim().min(1, "English title is required"),
+  title_bn: z.string().trim().optional(),
+  description: z.string().optional(),
+  authors: z.string().optional(),
+  category: z.string().trim().optional(),
+  language: z.string().trim().optional(),
+  access_tier: z.string().trim().optional(),
+  status: z.string().trim().optional(),
+  tags: z.string().optional(),
+  custom_metadata: z.string().optional(),
+});
+
+const uploadFinalizeSchema = uploadMetadataSchema.extend({
+  file_key: z.string().min(1, "file_key, file_type, and file_size are required"),
+  file_type: z.string().min(1, "file_key, file_type, and file_size are required"),
+  file_size: z.string().min(1, "file_key, file_type, and file_size are required"),
+});
+
+const patchMetadataSchema = z.object({
+  title_en: z.string().trim().min(1).optional(),
+  title_bn: z.string().trim().optional(),
+  description: z.string().optional(),
+  authors: z.array(z.string()).optional(),
+  category: z.string().trim().optional(),
+  access_tier: z.string().trim().optional(),
+  tags: z.array(z.string()).optional(),
+  custom_metadata: z.record(z.any()).optional(),
+});
+
+const statusChangeSchema = z.object({
+  status: z.enum(VALID_ARCHIVE_STATUSES, { errorMap: () => ({ message: "Invalid status" }) }),
+});
+
+const accessRequestReviewSchema = z.object({
+  status: z.enum(["approved", "denied"], { errorMap: () => ({ message: "Invalid status (must be approved or denied)" }) }),
+  rejection_message: z.string().optional(),
+});
+
+const accessRequestCreateSchema = z.object({
+  reason: z.string().trim().min(1, "Reason is required"),
+});
+
+const bulkMetadataSchema = z.object({
+  ids: z.array(z.string()).min(1, "ids array is required"),
+  category: z.string().trim().optional(),
+  access_tier: z.string().trim().optional(),
+  tags: z.array(z.string()).optional(),
+});
 
 // GET /api/archive/search
 router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -119,11 +177,9 @@ router.patch(
   "/access-requests/:id/review",
   authenticate,
   requireRole("archivist", "admin"),
+  validateBody(accessRequestReviewSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
-    if (!["approved", "denied"].includes(status)) {
-      throw new AppError(400, "Invalid status (must be approved or denied)");
-    }
+    const { status, rejection_message } = req.body as z.infer<typeof accessRequestReviewSchema>;
 
     const request = await queryOne<{ user_id: string; item_id: string; status: string }>(
       "SELECT * FROM access_requests WHERE request_id = $1",
@@ -280,13 +336,12 @@ router.post(
   requireRole("archivist", "admin"),
   checkUploadQuota,
   uploadSingle,
+  validateBody(uploadMetadataSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.file) throw new AppError(400, "No file provided");
 
     const { title_en, title_bn, description, authors, category, language, access_tier, status, tags, custom_metadata } =
-      req.body as Record<string, string>;
-
-    if (!title_en) throw new AppError(400, "English title is required");
+      req.body as z.infer<typeof uploadMetadataSchema>;
 
     const key = generateS3Key("archive", req.file.originalname, req.file.mimetype);
     await uploadToS3(key, req.file.buffer, req.file.mimetype);
@@ -308,16 +363,12 @@ router.post(
   "/upload/finalize",
   authenticate,
   requireRole("archivist", "admin"),
+  validateBody(uploadFinalizeSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const {
       file_key, file_type, file_size,
       title_en, title_bn, description, authors, category, language, access_tier, status, tags, custom_metadata,
-    } = req.body as Record<string, string>;
-
-    if (!title_en) throw new AppError(400, "English title is required");
-    if (!file_key || !file_type || !file_size) {
-      throw new AppError(400, "file_key, file_type, and file_size are required");
-    }
+    } = req.body as z.infer<typeof uploadFinalizeSchema>;
 
     const exists = await fileExistsInS3(file_key);
     if (!exists) throw new AppError(404, "Uploaded file not found in storage — the tus upload may not have finished");
@@ -376,13 +427,10 @@ router.patch(
   "/:id",
   authenticate,
   requireRole("archivist", "admin"),
+  validateBody(patchMetadataSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { title_en, title_bn, description, authors, category, access_tier, tags: tagIds, custom_metadata } =
-      req.body as {
-        title_en?: string; title_bn?: string; description?: string;
-        authors?: string[]; category?: string; access_tier?: string; tags?: string[];
-        custom_metadata?: Record<string, any>;
-      };
+      req.body as z.infer<typeof patchMetadataSchema>;
 
     const item = await queryOne<{ item_id: string }>(
       "SELECT item_id FROM archive_items WHERE item_id = $1",
@@ -503,10 +551,9 @@ router.patch(
   "/:id/status",
   authenticate,
   requireRole("archivist", "librarian", "admin"),
+  validateBody(statusChangeSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { status } = req.body as { status: string };
-    const validStatuses = ["draft", "review", "published", "archived"];
-    if (!validStatuses.includes(status)) throw new AppError(400, "Invalid status");
+    const { status } = req.body as z.infer<typeof statusChangeSchema>;
 
     const item = await queryOne<{ item_id: string; status: string; file_url: string; version: number }>(
       "SELECT item_id, status, file_url, version FROM archive_items WHERE item_id = $1",
@@ -565,9 +612,9 @@ router.get(
 router.post(
   "/:id/access-request",
   authenticate,
+  validateBody(accessRequestCreateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { reason } = req.body as { reason: string };
-    if (!reason?.trim()) throw new AppError(400, "Reason is required");
+    const { reason } = req.body as z.infer<typeof accessRequestCreateSchema>;
 
     const item = await queryOne<{ item_id: string; access_tier: AccessTier; title_en: string }>(
       "SELECT item_id, access_tier, title_en FROM archive_items WHERE item_id = $1 AND status = 'published'",
@@ -678,17 +725,9 @@ router.patch(
   "/bulk-metadata",
   authenticate,
   requireRole("archivist", "admin"),
+  validateBody(bulkMetadataSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { ids, category, access_tier, tags } = req.body as {
-      ids: string[];
-      category?: string;
-      access_tier?: string;
-      tags?: string[];
-    };
-
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      throw new AppError(400, "ids array is required");
-    }
+    const { ids, category, access_tier, tags } = req.body as z.infer<typeof bulkMetadataSchema>;
 
     const updated = await withTransaction(async (client) => {
       const updates: string[] = [];

@@ -10,8 +10,48 @@ import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 import { AccessTier } from "@dkp/shared";
 import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 import { indexResearchOutput, searchResearch } from "../../infrastructure/elasticsearch.service";
+import { validateBody, z } from "../../core/middleware/validate.middleware";
 
 const router = Router();
+
+// ── Zod schemas ────────────────────────────────────────────────────────────────
+const labCreateSchema = z.object({
+  name: z.string().trim().min(1, "Lab name is required"),
+  description: z.string().optional(),
+});
+
+// POST / arrives as multipart form fields (via upload.middleware) — authors/
+// keywords are JSON-encoded array strings, matching the manual JSON.parse
+// already done further down in the handler.
+const researchCreateSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  abstract: z.string().optional(),
+  doi: z.string().trim().optional(),
+  output_type: z.string().trim().optional(),
+  lab_id: z.string().trim().optional(),
+  published_date: z.string().optional(),
+  journal_name: z.string().trim().optional(),
+  access_tier: z.string().trim().optional(),
+  authors: z.string().optional(),
+  keywords: z.string().optional(),
+});
+
+// PATCH /:id is a plain JSON body — every field is optional since only
+// provided fields get updated (see the dynamic SET-clause building below).
+const researchUpdateSchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  abstract: z.string().optional(),
+  authors: z.union([z.string(), z.array(z.any())]).optional(),
+  keywords: z.union([z.string(), z.array(z.string())]).optional(),
+  doi: z.string().trim().optional(),
+  output_type: z.string().trim().optional(),
+  lab_id: z.string().trim().optional(),
+  published_date: z.string().optional(),
+  journal_name: z.string().trim().optional(),
+  volume: z.string().trim().optional(),
+  issue: z.string().trim().optional(),
+  pages: z.string().trim().optional(),
+});
 
 /** Fetches a research output joined with its uploader/lab names — the same
  *  shape GET /:id returns — so Elasticsearch documents carry everything a
@@ -72,9 +112,9 @@ router.post(
   "/labs",
   authenticate,
   requireRole("researcher", "admin"),
+  validateBody(labCreateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { name, description } = req.body as { name: string; description?: string };
-    if (!name) throw new AppError(400, "Lab name is required");
+    const { name, description } = req.body as z.infer<typeof labCreateSchema>;
 
     const lab = await queryOne(
       "INSERT INTO labs (name, description, head_researcher_id) VALUES ($1,$2,$3) RETURNING *",
@@ -280,6 +320,7 @@ router.patch(
   "/:id",
   authenticate,
   requireRole("researcher", "admin"),
+  validateBody(researchUpdateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const existing = await queryOne<{
       output_id: string;
@@ -296,7 +337,7 @@ router.patch(
       title, abstract, authors, keywords,
       doi, output_type, lab_id,
       published_date, journal_name, volume, issue, pages,
-    } = req.body as Record<string, string>;
+    } = req.body as z.infer<typeof researchUpdateSchema>;
 
     // Build SET clause dynamically — only update provided fields
     const updates: string[] = [];
@@ -348,11 +389,10 @@ router.post(
   authenticate,
   requireRole("researcher", "admin"),
   uploadSingle,
+  validateBody(researchCreateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const body = req.body as Record<string, string>;
+    const body = req.body as z.infer<typeof researchCreateSchema>;
     const { title, abstract, doi, output_type, lab_id, published_date, journal_name } = body;
-
-    if (!title) throw new AppError(400, "Title is required");
 
     // Defaults to "public" like the DB column, but a researcher may only choose a tier
     // they themselves can see — otherwise they could restrict a doc above their own

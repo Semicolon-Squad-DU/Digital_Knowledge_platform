@@ -14,10 +14,92 @@ import { logger } from "../../core/config/logger";
 import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
 import { AccessTier } from "@dkp/shared";
 import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
+import { validateBody, z } from "../../core/middleware/validate.middleware";
 
 const router = Router();
 
 const VALID_ACCESS_TIERS: AccessTier[] = ["public", "member", "staff", "restricted"];
+
+// ── Zod schemas ────────────────────────────────────────────────────────────────
+const wishlistAddSchema = z.object({
+  catalog_id: z.string().min(1, "catalog_id is required"),
+});
+
+const holdCreateSchema = z.object({
+  catalog_id: z.string().min(1, "catalog_id is required"),
+});
+
+const issueSchema = z.object({
+  member_id: z.string().min(1, "member_id is required"),
+  catalog_id: z.string().min(1).optional(),
+  barcode: z.string().min(1).optional(),
+  due_date: z.string().min(1).optional(),
+}).refine((data) => data.catalog_id || data.barcode, {
+  message: "catalog_id or barcode required",
+  path: ["catalog_id"],
+});
+
+const returnSchema = z.object({
+  transaction_id: z.string().min(1).optional(),
+  barcode: z.string().min(1).optional(),
+  member_id: z.string().min(1).optional(),
+});
+
+const renewSchema = z.object({
+  transaction_id: z.string().min(1, "transaction_id is required"),
+});
+
+const fineAdjustSchema = z.object({
+  amount: z.coerce.number({ invalid_type_error: "Amount is required" })
+    .gt(0, "Amount must be greater than 0 — use Waive to clear a fine entirely"),
+  reason: z.string().trim().min(1, "Reason is required"),
+});
+
+const catalogImportCommitSchema = z.object({
+  rows: z.array(z.record(z.any())).min(1, "rows array is required").max(2000, "Import is limited to 2000 rows per commit"),
+});
+
+const accessRequestReviewSchema = z.object({
+  status: z.enum(["approved", "denied"], { errorMap: () => ({ message: "Invalid status (must be approved or denied)" }) }),
+  rejection_message: z.string().optional(),
+});
+
+const accessRequestCreateSchema = z.object({
+  reason: z.string().trim().min(1, "Reason is required"),
+});
+
+// Catalog create/update arrive as multipart form fields (via upload.middleware),
+// so every field is a string; `authors` is a JSON-encoded array string rather
+// than a real array. Coerce accordingly instead of assuming JSON body types.
+const catalogCreateSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  isbn: z.string().trim().optional(),
+  authors: z.string().optional(),
+  publisher: z.string().trim().optional(),
+  edition: z.string().trim().optional(),
+  year: z.string().optional(),
+  category: z.string().trim().optional(),
+  total_copies: z.coerce.number({ invalid_type_error: "At least 1 copy required" }).int().min(1, "At least 1 copy required"),
+  shelf_location: z.string().trim().optional(),
+  description: z.string().trim().optional(),
+  barcode: z.string().trim().optional(),
+  access_tier: z.enum(VALID_ACCESS_TIERS as [AccessTier, ...AccessTier[]]).optional(),
+});
+
+const catalogUpdateSchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  isbn: z.string().trim().optional(),
+  authors: z.array(z.string()).optional(),
+  publisher: z.string().trim().optional(),
+  edition: z.string().trim().optional(),
+  year: z.coerce.number().int().optional(),
+  category: z.string().trim().optional(),
+  total_copies: z.coerce.number().int().min(0).optional(),
+  shelf_location: z.string().trim().optional(),
+  description: z.string().trim().optional(),
+  barcode: z.string().trim().optional(),
+  access_tier: z.enum(VALID_ACCESS_TIERS as [AccessTier, ...AccessTier[]]).optional(),
+});
 
 // GET /api/library/catalog/search
 router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -258,8 +340,8 @@ router.get("/wishlist", authenticate, asyncHandler(async (req: AuthRequest, res:
 }));
 
 // POST /api/library/wishlist
-router.post("/wishlist", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { catalog_id } = req.body as { catalog_id: string };
+router.post("/wishlist", authenticate, validateBody(wishlistAddSchema), asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { catalog_id } = req.body as z.infer<typeof wishlistAddSchema>;
   const item = await queryOne(
     "INSERT INTO wishlists (member_id, catalog_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *",
     [req.user!.user_id, catalog_id]
@@ -277,9 +359,8 @@ router.delete("/wishlist/:catalog_id", authenticate, asyncHandler(async (req: Au
 }));
 
 // POST /api/library/holds
-router.post("/holds", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { catalog_id } = req.body as { catalog_id: string };
-  if (!catalog_id) throw new AppError(400, "catalog_id required");
+router.post("/holds", authenticate, validateBody(holdCreateSchema), asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { catalog_id } = req.body as z.infer<typeof holdCreateSchema>;
 
   const existing = await queryOne(
     "SELECT hold_id FROM hold_requests WHERE catalog_id = $1 AND member_id = $2 AND status IN ('pending','available')",
@@ -387,12 +468,11 @@ router.post(
   "/issue",
   authenticate,
   requireRole("librarian"),
+  validateBody(issueSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { member_id } = req.body as { member_id: string };
-    let { catalog_id } = req.body as { catalog_id?: string };
-    const { barcode, due_date } = req.body as { barcode?: string; due_date?: string };
-    if (!member_id) throw new AppError(400, "member_id required");
-    if (!catalog_id && !barcode) throw new AppError(400, "catalog_id or barcode required");
+    const { member_id } = req.body as z.infer<typeof issueSchema>;
+    let { catalog_id } = req.body as z.infer<typeof issueSchema>;
+    const { barcode, due_date } = req.body as z.infer<typeof issueSchema>;
 
     if (!catalog_id && barcode) {
       const catalogItem = await queryOne<{ catalog_id: string }>(
@@ -434,12 +514,9 @@ router.post(
   "/return",
   authenticate,
   requireRole("librarian"),
+  validateBody(returnSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { transaction_id, barcode, member_id } = req.body as {
-      transaction_id?: string;
-      barcode?: string;
-      member_id?: string;
-    };
+    const { transaction_id, barcode, member_id } = req.body as z.infer<typeof returnSchema>;
 
     let resolvedTransactionId = transaction_id;
 
@@ -491,9 +568,9 @@ router.post(
 router.post(
   "/renew",
   authenticate,
+  validateBody(renewSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { transaction_id } = req.body as { transaction_id: string };
-    if (!transaction_id) throw new AppError(400, "transaction_id required");
+    const { transaction_id } = req.body as z.infer<typeof renewSchema>;
 
     const isStaff = req.user!.role === "librarian";
     const result = await BorrowService.renewResource(transaction_id, req.user!.user_id, isStaff, req.user!.user_id, req.ip || "");
@@ -654,27 +731,16 @@ router.patch(
   "/fines/:fine_id/adjust",
   authenticate,
   requireRole("librarian"),
+  validateBody(fineAdjustSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { amount, reason } = req.body as { amount: number; reason: string };
-
-    if (amount === undefined || amount === null) {
-      throw new AppError(400, "Amount is required");
-    }
-
-    if (amount <= 0) {
-      throw new AppError(400, "Amount must be greater than 0 — use Waive to clear a fine entirely");
-    }
-
-    if (!reason || typeof reason !== "string" || !reason.trim()) {
-      throw new AppError(400, "Reason is required");
-    }
+    const { amount, reason } = req.body as z.infer<typeof fineAdjustSchema>;
 
     const fine = await queryOne(
       `UPDATE fines
        SET amount = $1, reason = $2, updated_at = CURRENT_TIMESTAMP
        WHERE fine_id = $3
        RETURNING *`,
-      [amount, reason.trim(), req.params.fine_id]
+      [amount, reason, req.params.fine_id]
     );
 
     if (!fine) throw new AppError(404, "Fine not found");
@@ -752,10 +818,9 @@ router.post(
   "/catalog/import/commit",
   authenticate,
   requireRole("librarian"),
+  validateBody(catalogImportCommitSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { rows } = req.body as { rows: CatalogImportRow[] };
-    if (!Array.isArray(rows) || rows.length === 0) throw new AppError(400, "rows array is required");
-    if (rows.length > 2000) throw new AppError(400, "Import is limited to 2000 rows per commit");
 
     let imported = 0;
     const failures: { title: string; error: string }[] = [];
@@ -820,11 +885,9 @@ router.patch(
   "/catalog/access-requests/:id/review",
   authenticate,
   requireRole("librarian"),
+  validateBody(accessRequestReviewSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
-    if (!["approved", "denied"].includes(status)) {
-      throw new AppError(400, "Invalid status (must be approved or denied)");
-    }
+    const { status, rejection_message } = req.body as z.infer<typeof accessRequestReviewSchema>;
 
     const request = await queryOne<{ user_id: string; catalog_id: string; status: string }>(
       "SELECT * FROM catalog_access_requests WHERE request_id = $1",
@@ -931,9 +994,9 @@ router.get("/catalog/:id", optionalAuth, asyncHandler(async (req: AuthRequest, r
 router.post(
   "/catalog/:id/access-request",
   authenticate,
+  validateBody(accessRequestCreateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { reason } = req.body as { reason: string };
-    if (!reason?.trim()) throw new AppError(400, "Reason is required");
+    const { reason } = req.body as z.infer<typeof accessRequestCreateSchema>;
 
     const book = await queryOne<{ catalog_id: string; access_tier: AccessTier; title: string }>(
       "SELECT catalog_id, access_tier, title FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
@@ -979,24 +1042,19 @@ router.post(
   authenticate,
   requireRole("librarian"),
   uploadSingle,
+  validateBody(catalogCreateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { title, isbn, publisher, edition, year, category, total_copies, shelf_location, description, barcode } =
-      req.body as Record<string, string>;
-    const rawAuthors = req.body.authors;
-    const authors = Array.isArray(rawAuthors) ? rawAuthors : rawAuthors ? JSON.parse(rawAuthors) : [];
-    const totalCopies = parseInt(total_copies as unknown as string, 10);
-
-    if (!title) throw new AppError(400, "Title is required");
-    if (!totalCopies || totalCopies < 1) throw new AppError(400, "At least 1 copy required");
+      req.body as z.infer<typeof catalogCreateSchema>;
+    const rawAuthors = req.body.authors as string | undefined;
+    const authors = rawAuthors ? JSON.parse(rawAuthors) : [];
+    const totalCopies = total_copies;
 
     // Librarians and admins (the only roles that can reach this route) may set any
     // tier including "restricted" — same authority archivists have over archive
     // items. This is a creator privilege, distinct from ALLOWED_TIERS_BY_ROLE
     // below, which governs what a *viewer* can see without an approved request.
-    const requestedTier = (req.body.access_tier as AccessTier) || "public";
-    if (!VALID_ACCESS_TIERS.includes(requestedTier)) {
-      throw new AppError(400, `Invalid access tier "${requestedTier}"`);
-    }
+    const requestedTier: AccessTier = req.body.access_tier ?? "public";
 
     if (isbn) {
       const duplicate = await queryOne("SELECT catalog_id FROM catalog_items WHERE isbn = $1", [isbn]);
@@ -1068,6 +1126,7 @@ router.put(
   "/catalog/:id",
   authenticate,
   requireRole("librarian"),
+  validateBody(catalogUpdateSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const existing = await queryOne(
       "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
@@ -1076,7 +1135,7 @@ router.put(
     if (!existing) throw new AppError(404, "Catalog item not found");
 
     const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode, access_tier } =
-      req.body as Record<string, unknown>;
+      req.body as z.infer<typeof catalogUpdateSchema>;
 
     // Changing total_copies must keep available_copies in lockstep (copies_check
     // constraint requires available_copies <= total_copies) — the number of
@@ -1085,20 +1144,14 @@ router.put(
     if (total_copies !== undefined && total_copies !== null) {
       const onLoan = (existing as { total_copies: number; available_copies: number }).total_copies -
         (existing as { total_copies: number; available_copies: number }).available_copies;
-      if ((total_copies as number) < onLoan) {
+      if (total_copies < onLoan) {
         throw new AppError(400, `Cannot set total copies below ${onLoan} — that many are currently on loan`);
       }
-      newAvailableCopies = (total_copies as number) - onLoan;
+      newAvailableCopies = total_copies - onLoan;
     }
     const newAvailabilityStatus = newAvailableCopies !== undefined
       ? (newAvailableCopies === 0 ? "on_loan" : "available")
       : undefined;
-
-    // Same creator-privilege reasoning as POST /catalog above — the librarian
-    // editing this item may set any tier, including "restricted".
-    if (access_tier !== undefined && access_tier !== null && !VALID_ACCESS_TIERS.includes(access_tier as AccessTier)) {
-      throw new AppError(400, `Invalid access tier "${access_tier}"`);
-    }
 
     const item = await queryOne(
       `UPDATE catalog_items SET
