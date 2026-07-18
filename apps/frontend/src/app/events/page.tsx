@@ -15,6 +15,7 @@ import {
   fetchEventMaterialsUrl,
   AcademicEvent,
 } from "@/hooks/useEvents";
+import { isEventPast, getRsvpControlState } from "./rsvpState";
 import {
   Calendar,
   MapPin,
@@ -128,8 +129,12 @@ export default function EventsPage() {
       return;
     }
 
-    if (!event.has_rsvped && new Date(event.scheduled_at).getTime() < Date.now()) {
-      toast.error("This event has already taken place. RSVP is closed.");
+    if (isEventPast(event.scheduled_at)) {
+      toast.error(
+        event.has_rsvped
+          ? "This event has already taken place. Registration can no longer be cancelled."
+          : "This event has already taken place. RSVP is closed."
+      );
       return;
     }
 
@@ -226,7 +231,8 @@ export default function EventsPage() {
                 });
 
                 const isSoldOut = event.available_seats <= 0;
-                const isPastEvent = new Date(event.scheduled_at).getTime() < Date.now();
+                const isPastEvent = isEventPast(event.scheduled_at);
+                const rsvpState = getRsvpControlState(event);
 
                 return (
                   <div
@@ -418,9 +424,9 @@ export default function EventsPage() {
                         {/* Booking a seat is a patron action — staff roles (admin/archivist/librarian)
                             manage the event via RSVPs/Delete above instead of attending through this button. */}
                         {!canCreate && (
-                          isPastEvent ? (
+                          rsvpState === "ended-attended" || rsvpState === "ended-not-attended" ? (
                             <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
-                              {event.has_rsvped ? "You attended this event" : "This event has ended"}
+                              {rsvpState === "ended-attended" ? "You attended this event" : "This event has ended"}
                             </span>
                           ) : (
                             <button
@@ -440,19 +446,19 @@ export default function EventsPage() {
                                 borderRadius: "6px",
                                 cursor: rsvpLoading === event.event_id ? "not-allowed" : "pointer",
                                 transition: "all 0.2s",
-                                border: event.has_rsvped
+                                border: rsvpState === "cancel"
                                   ? "1px solid #d1d5db"
-                                  : isSoldOut
+                                  : rsvpState === "waitlist"
                                     ? "1px solid #fde68a"
                                     : "none",
-                                background: event.has_rsvped
+                                background: rsvpState === "cancel"
                                   ? "#ffffff"
-                                  : isSoldOut
+                                  : rsvpState === "waitlist"
                                     ? "#fffbeb"
                                     : "var(--theme-gradient-160)",
-                                color: event.has_rsvped
+                                color: rsvpState === "cancel"
                                   ? "#475569"
-                                  : isSoldOut
+                                  : rsvpState === "waitlist"
                                     ? "#b45309"
                                     : "#ffffff",
                                 opacity: rsvpLoading === event.event_id ? 0.6 : 1,
@@ -461,12 +467,12 @@ export default function EventsPage() {
                             >
                               {rsvpLoading === event.event_id ? (
                                 <Loader2 size={13} className="animate-spin" />
-                              ) : event.has_rsvped ? (
+                              ) : rsvpState === "cancel" ? (
                                 <>
                                   <XCircle size={13} />
                                   Cancel Registration
                                 </>
-                              ) : isSoldOut ? (
+                              ) : rsvpState === "waitlist" ? (
                                 <>
                                   <Users size={13} />
                                   Join Waitlist
