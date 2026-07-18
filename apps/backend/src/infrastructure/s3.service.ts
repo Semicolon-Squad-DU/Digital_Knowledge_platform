@@ -6,6 +6,8 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+import https from "https";
 import { config } from "../core/config";
 import { logger } from "../core/config/logger";
 import { v4 as uuidv4 } from "uuid";
@@ -15,6 +17,16 @@ import fsPromises from "fs/promises";
 import { scanBuffer } from "./antivirus.service";
 import { validateFileSignature } from "../core/utils/file-signature";
 
+// requestHandler: TLS 1.3 against Supabase Storage's Cloudflare-fronted
+// endpoint fails a mid-session renegotiation on this Node/OpenSSL build
+// (curl/schannel handle it fine; Node's https.Agent doesn't) — pinning the
+// agent to TLS 1.2 avoids the renegotiation path entirely and keeps the
+// SDK's normal NodeHttpHandler (stream-based response parsing) intact.
+// Tried swapping to FetchHttpHandler first, which dodges the TLS issue but
+// breaks response-body parsing for empty/204 responses (DeleteObject,
+// HeadObject) with "stream.pipe is not a function" — TLS-1.2 pinning is the
+// fix that doesn't trade one bug for another. MinIO (local dev) is
+// unaffected either way since it isn't behind Cloudflare.
 export const s3Client = new S3Client({
   endpoint: config.s3.endpoint,
   region: config.s3.region,
@@ -23,6 +35,9 @@ export const s3Client = new S3Client({
     secretAccessKey: config.s3.secretKey,
   },
   forcePathStyle: config.s3.forcePathStyle,
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({ maxVersion: "TLSv1.2", minVersion: "TLSv1.2" }),
+  }),
 });
 
 export const ALLOWED_MIME_TYPES = new Set([

@@ -31,7 +31,7 @@ function generateOtp(): string {
 // SSO federation. Closing this gap for real requires the university to stand
 // up and publish a SAML/OIDC IdP — an institutional/DevOps decision, not
 // something addressable from this codebase alone.
-function isDomainAllowed(email: string): boolean {
+export function isDomainAllowed(email: string): boolean {
   if (config.auth.allowedDomains.length === 0) return true;
   const domain = email.split("@")[1]?.toLowerCase();
   return config.auth.allowedDomains.some(d => domain === d || domain?.endsWith("." + d));

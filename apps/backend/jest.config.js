@@ -12,11 +12,13 @@ module.exports = {
   },
   clearMocks: true,
   // NFR-016: SRS/SDD target ≥70% coverage; actual coverage across the whole
-  // src tree is ~7% as of 2026-07-18 (unit tests only cover a handful of
-  // pure-logic modules — routes, jobs, and infrastructure are largely
-  // untested). Threshold is set just below current numbers so CI actually
-  // gates regressions instead of doing nothing (the previous state) — raise
-  // these floors incrementally as real coverage improves, working toward 70%.
+  // src tree is ~8.4% as of 2026-07-18 (unit tests cover the pure-logic
+  // modules — file-signature, pagination, the auth domain-allowlist gate,
+  // csv, isbn, fine-calculator — routes, jobs, and infrastructure are
+  // largely untested). Threshold is set just below current numbers so CI
+  // actually gates regressions instead of doing nothing (the previous
+  // state) — raise these floors incrementally as real coverage improves,
+  // working toward 70%.
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/**/__tests__/**",
@@ -27,10 +29,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      statements: 6,
-      branches: 5,
-      functions: 4,
-      lines: 6,
+      statements: 8,
+      branches: 7,
+      functions: 8,
+      lines: 8,
     },
   },
 };

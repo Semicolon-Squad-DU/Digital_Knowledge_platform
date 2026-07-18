@@ -4,6 +4,8 @@ import { dirname, join, parse } from "path";
 import { Readable } from "stream";
 import zlib from "zlib";
 import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+import https from "https";
 import { config } from "../core/config";
 import { logger } from "../core/config/logger";
 import { query, queryOne } from "../core/db/pool";
@@ -23,6 +25,12 @@ function getReplicaClient(): S3Client {
         secretAccessKey: config.s3Replica.secretKey,
       },
       forcePathStyle: config.s3Replica.forcePathStyle,
+      // See the matching comment in s3.service.ts — pin to TLS 1.2 to avoid
+      // a renegotiation-handshake failure against Cloudflare-fronted
+      // S3-compatible endpoints (e.g. Supabase Storage) on this platform.
+      requestHandler: new NodeHttpHandler({
+        httpsAgent: new https.Agent({ maxVersion: "TLSv1.2", minVersion: "TLSv1.2" }),
+      }),
     });
   }
   return replicaClient;
