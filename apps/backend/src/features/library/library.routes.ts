@@ -27,7 +27,10 @@ router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest
   const { page: pageNum, limit: limitNum } = parsePagination(page ?? "1", limit ?? "20");
 
   const role = req.user?.role ?? "guest";
-  let allowedTiers = ["librarian", "admin"].includes(role)
+  // Only librarians manage the catalog, so only they bypass tier filtering
+  // entirely — admin has its own separate oversight view (/admin/catalog/documents)
+  // rather than a blanket bypass here.
+  let allowedTiers = role === "librarian"
     ? VALID_ACCESS_TIERS
     : (ALLOWED_TIERS_BY_ROLE[role] ?? ["public"]);
   // Any signed-in user can *see* a restricted book in search results (so they
@@ -69,7 +72,7 @@ router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest
 router.get(
   "/dashboard",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     const [stats] = await query<{
       on_loan: string; overdue: string; returns_today: string; holds_pending: string;
@@ -106,12 +109,12 @@ router.get(
   })
 );
 
-// GET /api/library/reports/circulation — date-ranged transaction report for librarians/admins.
+// GET /api/library/reports/circulation — date-ranged transaction report for librarians.
 // Returns JSON; the frontend renders CSV/PDF exports client-side from this data.
 router.get(
   "/reports/circulation",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { from, to, status } = req.query as Record<string, string>;
     const fromDate = from || "1900-01-01";
@@ -170,7 +173,7 @@ router.get(
 router.get(
   "/overdue",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     try {
       const overdueTransactions = await query<{
@@ -225,7 +228,7 @@ router.get(
 router.get(
   "/holds/pending",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     const holds = await query(
       `SELECT h.hold_id, h.catalog_id, h.member_id, h.request_date, h.status,
@@ -297,7 +300,7 @@ router.post("/holds", authenticate, asyncHandler(async (req: AuthRequest, res: R
   res.status(201).json({ success: true, data: { ...hold, queue_position: parseInt(count) } });
 }));
 
-// DELETE /api/library/holds/:id — cancel a hold (owner or librarian/admin)
+// DELETE /api/library/holds/:id — cancel a hold (owner or librarian)
 router.delete("/holds/:id", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
   const hold = await queryOne<{ hold_id: string; member_id: string; status: string }>(
     "SELECT hold_id, member_id, status FROM hold_requests WHERE hold_id = $1",
@@ -305,7 +308,7 @@ router.delete("/holds/:id", authenticate, asyncHandler(async (req: AuthRequest, 
   );
   if (!hold) throw new AppError(404, "Hold not found");
 
-  if (!["librarian", "admin"].includes(req.user!.role) && req.user!.user_id !== hold.member_id) {
+  if (req.user!.role !== "librarian" && req.user!.user_id !== hold.member_id) {
     throw new AppError(403, "Access denied");
   }
   if (!["pending", "available"].includes(hold.status)) {
@@ -322,7 +325,7 @@ router.delete("/holds/:id", authenticate, asyncHandler(async (req: AuthRequest, 
 router.post(
   "/holds/:id/fulfill",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const hold = await queryOne<{ hold_id: string; catalog_id: string; member_id: string; status: string; request_date: string }>(
       "SELECT hold_id, catalog_id, member_id, status, request_date FROM hold_requests WHERE hold_id = $1",
@@ -368,7 +371,7 @@ router.post(
 router.get(
   "/catalog/lookup/:barcode",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const item = await queryOne(
       "SELECT catalog_id, title, authors, isbn, barcode, available_copies, total_copies, cover_url FROM catalog_items WHERE barcode = $1 AND deleted_at IS NULL",
@@ -383,7 +386,7 @@ router.get(
 router.post(
   "/issue",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { member_id } = req.body as { member_id: string };
     let { catalog_id } = req.body as { catalog_id?: string };
@@ -430,7 +433,7 @@ router.post(
 router.post(
   "/return",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { transaction_id, barcode, member_id } = req.body as {
       transaction_id?: string;
@@ -484,7 +487,7 @@ router.post(
   })
 );
 
-// POST /api/library/renew — member self-service or librarian/admin on a member's behalf
+// POST /api/library/renew — member self-service or librarian on a member's behalf
 router.post(
   "/renew",
   authenticate,
@@ -492,7 +495,7 @@ router.post(
     const { transaction_id } = req.body as { transaction_id: string };
     if (!transaction_id) throw new AppError(400, "transaction_id required");
 
-    const isStaff = ["librarian", "admin"].includes(req.user!.role);
+    const isStaff = req.user!.role === "librarian";
     const result = await BorrowService.renewResource(transaction_id, req.user!.user_id, isStaff, req.user!.user_id, req.ip || "");
 
     const updated = {
@@ -512,7 +515,7 @@ router.get(
   "/member/:id/history",
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (!["librarian", "admin"].includes(req.user!.role) && req.user!.user_id !== req.params.id) {
+    if (req.user!.role !== "librarian" && req.user!.user_id !== req.params.id) {
       throw new AppError(403, "Access denied");
     }
 
@@ -534,7 +537,7 @@ router.get(
   "/member/:id/holds",
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    if (!["librarian", "admin"].includes(req.user!.role) && req.user!.user_id !== req.params.id) {
+    if (req.user!.role !== "librarian" && req.user!.user_id !== req.params.id) {
       throw new AppError(403, "Access denied");
     }
 
@@ -553,8 +556,8 @@ router.get(
 
 // GET /api/library/fines/:member_id
 router.get("/fines/:member_id", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
-  // Only library staff may view other members' fines
-  const isStaff = ["librarian", "admin"].includes(req.user!.role);
+  // Only the librarian may view other members' fines
+  const isStaff = req.user!.role === "librarian";
   if (!isStaff && req.user!.user_id !== req.params.member_id) {
     throw new AppError(403, "Access denied");
   }
@@ -581,7 +584,7 @@ router.get("/fines/:member_id", authenticate, asyncHandler(async (req: AuthReque
 router.patch(
   "/fines/:fine_id/waive",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const fine = await queryOne(
       "UPDATE fines SET status = 'waived' WHERE fine_id = $1 RETURNING *",
@@ -596,7 +599,7 @@ router.patch(
 router.patch(
   "/fines/:fine_id/pay",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const fine = await queryOne(
       "UPDATE fines SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE fine_id = $1 RETURNING *",
@@ -618,7 +621,7 @@ router.patch(
 router.post(
   "/overdue/:transaction_id/notify",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const row = await queryOne<{
       member_name: string; member_email: string; title: string;
@@ -650,7 +653,7 @@ router.post(
 router.patch(
   "/fines/:fine_id/adjust",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { amount, reason } = req.body as { amount: number; reason: string };
 
@@ -692,7 +695,7 @@ router.patch(
 router.get(
   "/catalog/export",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const format = (req.query.format as string) === "xlsx" ? "xlsx" : "csv";
     const filename = `dkp-catalog-${new Date().toISOString().slice(0, 10)}.${format}`;
@@ -716,7 +719,7 @@ router.get(
 router.post(
   "/catalog/import/preview",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   uploadCatalogImport,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.file) throw new AppError(400, "A CSV or Excel file is required");
@@ -748,7 +751,7 @@ router.post(
 router.post(
   "/catalog/import/commit",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { rows } = req.body as { rows: CatalogImportRow[] };
     if (!Array.isArray(rows) || rows.length === 0) throw new AppError(400, "rows array is required");
@@ -870,12 +873,14 @@ router.get("/catalog/:id", optionalAuth, asyncHandler(async (req: AuthRequest, r
 
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
-  // Librarians/admins manage the catalog directly (including setting a book to
+  // Librarians manage the catalog directly (including setting a book to
   // "restricted" — see POST/PUT /catalog above), so they must always be able to
   // view what they manage, the same way archivists always see restricted archive
-  // items. ALLOWED_TIERS_BY_ROLE is shared with Archive/Research and deliberately
-  // left untouched here rather than widening it platform-wide.
-  const isCatalogStaff = ["librarian", "admin"].includes(role);
+  // items. Admin is deliberately excluded — same reasoning as the access-request
+  // routes above, admin has its own oversight view rather than a blanket bypass.
+  // ALLOWED_TIERS_BY_ROLE is shared with Archive/Research and deliberately left
+  // untouched here rather than widening it platform-wide.
+  const isCatalogStaff = role === "librarian";
   if (!isCatalogStaff && !allowedTiers.includes(existing.access_tier)) {
     if (req.user) {
       const accessReq = await queryOne<{ request_id: string; status: string; rejection_message: string | null }>(
@@ -972,7 +977,7 @@ router.post(
 router.post(
   "/catalog",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   uploadSingle,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { title, isbn, publisher, edition, year, category, total_copies, shelf_location, description, barcode } =
@@ -1043,7 +1048,7 @@ router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req: A
 
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
-  const isCatalogStaff = ["librarian", "admin"].includes(role);
+  const isCatalogStaff = role === "librarian";
   if (!isCatalogStaff && !allowedTiers.includes(item.access_tier)) {
     const approved = req.user && await queryOne(
       `SELECT request_id FROM catalog_access_requests WHERE user_id = $1 AND catalog_id = $2 AND status = 'approved'`,
@@ -1062,7 +1067,7 @@ router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req: A
 router.put(
   "/catalog/:id",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const existing = await queryOne(
       "SELECT * FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
@@ -1089,7 +1094,7 @@ router.put(
       ? (newAvailableCopies === 0 ? "on_loan" : "available")
       : undefined;
 
-    // Same creator-privilege reasoning as POST /catalog above — any librarian/admin
+    // Same creator-privilege reasoning as POST /catalog above — the librarian
     // editing this item may set any tier, including "restricted".
     if (access_tier !== undefined && access_tier !== null && !VALID_ACCESS_TIERS.includes(access_tier as AccessTier)) {
       throw new AppError(400, `Invalid access tier "${access_tier}"`);
@@ -1120,7 +1125,7 @@ router.put(
 router.delete(
   "/catalog/:id",
   authenticate,
-  requireRole("librarian", "admin"),
+  requireRole("librarian"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     await query("UPDATE catalog_items SET deleted_at = NOW() WHERE catalog_id = $1", [req.params.id]);
     void removeCatalogItemFromIndex(req.params.id);
