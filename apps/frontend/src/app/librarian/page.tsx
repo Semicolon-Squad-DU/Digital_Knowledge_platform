@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign, Download, ChevronDown } from "lucide-react";
+import { BookOpen, AlertTriangle, RotateCcw, Clock, Banknote, Plus, RefreshCw, Edit2, X, BookMarked, Search, CheckCircle, User, ScanLine, FileSpreadsheet, Bell, DollarSign, Download, ChevronDown, Lock, Check } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useFulfillHold, useExportCatalog } from "@/features/library/hooks/useLibrary";
+import { useLibrarianDashboard, useIssueBook, useReturnBook, useOverdueTransactions, useAdjustFine, useWaiveFine, useMarkFinePaid, useNotifyOverdue, useCreateCatalogItem, useCatalogLookupByBarcode, useHoldsPending, useCancelHold, useFulfillHold, useExportCatalog, usePendingCatalogAccessRequests, useReviewCatalogAccessRequest } from "@/features/library/hooks/useLibrary";
 import { BarcodeScannerModal } from "@/components/library/BarcodeScannerModal";
 import { ImportCatalogModal } from "@/components/library/ImportCatalogModal";
 import { CirculationReportPanel } from "@/components/library/CirculationReportPanel";
@@ -25,10 +25,16 @@ import toast from "react-hot-toast";
 // ---------------------------------------------------------------------------
 // Issue Book Form — searchable member + book
 // ---------------------------------------------------------------------------
+function defaultDueDate(loanDays = 14) {
+  const d = new Date();
+  d.setDate(d.getDate() + loanDays);
+  return d.toISOString().slice(0, 10);
+}
+
 function IssueBookForm({
   onIssue, isIssuing, onCancel,
 }: {
-  onIssue: (payload: { catalog_id?: string; barcode?: string; member_id: string }) => Promise<void>;
+  onIssue: (payload: { catalog_id?: string; barcode?: string; member_id: string; due_date?: string }) => Promise<void>;
   isIssuing: boolean;
   onCancel: () => void;
 }) {
@@ -55,9 +61,9 @@ function IssueBookForm({
     });
   };
 
-  const loanDays = 14;
-  const dueDate  = new Date();
-  dueDate.setDate(dueDate.getDate() + loanDays);
+  const [dueDate, setDueDate] = useState(defaultDueDate());
+  const minDueDate = new Date();
+  minDueDate.setDate(minDueDate.getDate() + 1);
 
   const searchMembers = async (q: string) => {
     if (!q.trim()) { setMembers([]); return; }
@@ -80,14 +86,15 @@ function IssueBookForm({
   };
 
   const handleSubmit = async () => {
+    if (!dueDate) { toast.error("Please choose a due date"); return; }
     if (mode === "search") {
       if (!selectedMember) { toast.error("Please select a member"); return; }
       if (!selectedBook)   { toast.error("Please select a book");   return; }
-      await onIssue({ catalog_id: selectedBook.catalog_id, member_id: selectedMember.user_id });
+      await onIssue({ catalog_id: selectedBook.catalog_id, member_id: selectedMember.user_id, due_date: dueDate });
     } else {
       if (!barcode.trim()) { toast.error("Please enter a book barcode"); return; }
       if (!memberId.trim()) { toast.error("Please enter a member ID or email"); return; }
-      await onIssue({ barcode: barcode.trim(), member_id: memberId.trim() });
+      await onIssue({ barcode: barcode.trim(), member_id: memberId.trim(), due_date: dueDate });
     }
   };
 
@@ -261,6 +268,17 @@ function IssueBookForm({
         </div>
       )}
 
+      {/* Due Date */}
+      <Input
+        label="Due Date"
+        type="date"
+        value={dueDate}
+        onChange={(e) => setDueDate(e.target.value)}
+        min={minDueDate.toISOString().slice(0, 10)}
+        required
+        hint="Defaults to the standard 14-day loan period — change it for a different return date."
+      />
+
       {/* Summary */}
       {((mode === "search" && selectedMember && selectedBook) || (mode === "manual" && barcode && memberId)) && (
         <div className="p-4 rounded-xl bg-[var(--color-accent-subtle)] border border-[var(--color-accent-fg)] space-y-1.5 text-sm">
@@ -274,7 +292,10 @@ function IssueBookForm({
             {mode === "search" ? selectedBook?.title : barcode}
           </p>
           <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Issue Date:</span> {new Date().toDateString()}</p>
-          <p className="text-[var(--color-fg-default)]"><span className="text-[var(--color-fg-muted)]">Due Date:</span> {dueDate.toDateString()} ({loanDays} days)</p>
+          <p className="text-[var(--color-fg-default)]">
+            <span className="text-[var(--color-fg-muted)]">Due Date:</span>{" "}
+            {dueDate ? new Date(dueDate + "T00:00:00").toDateString() : "—"}
+          </p>
         </div>
       )}
 
@@ -425,7 +446,7 @@ function ReturnBookForm({
   );
 }
 
-type Tab = "overview" | "overdue" | "holds" | "reports";
+type Tab = "overview" | "overdue" | "holds" | "access-requests" | "reports";
 
 export default function LibrarianDashboardPage() {
   const router = useRouter();
@@ -444,6 +465,36 @@ export default function LibrarianDashboardPage() {
   const { mutateAsync: fulfillHold } = useFulfillHold();
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
   const [fulfillingHoldId, setFulfillingHoldId] = useState<string | null>(null);
+
+  const { data: accessRequestsData, isLoading: accessRequestsLoading, refetch: refetchAccessRequests } = usePendingCatalogAccessRequests();
+  const { mutateAsync: reviewAccessRequest, isPending: isReviewingAccessRequest } = useReviewCatalogAccessRequest();
+  const [denyRequestId, setDenyRequestId] = useState<string | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState("");
+
+  const handleApproveAccessRequest = async (requestId: string) => {
+    try {
+      await reviewAccessRequest({ requestId, status: "approved" });
+      toast.success("Access request approved");
+      refetchAccessRequests();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to approve request");
+    }
+  };
+
+  const handleDenyAccessRequest = async () => {
+    if (!denyRequestId) return;
+    try {
+      await reviewAccessRequest({ requestId: denyRequestId, status: "denied", rejection_message: rejectionMessage.trim() || undefined });
+      toast.success("Access request denied");
+      setDenyRequestId(null);
+      setRejectionMessage("");
+      refetchAccessRequests();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to deny request");
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [issueModal, setIssueModal] = useState(false);
@@ -810,6 +861,16 @@ export default function LibrarianDashboardPage() {
           Holds{holdsData?.length ? ` (${holdsData.length})` : ""}
         </button>
         <button
+          onClick={() => setActiveTab("access-requests")}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === "access-requests"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Access Requests{accessRequestsData?.length ? ` (${accessRequestsData.length})` : ""}
+        </button>
+        <button
           onClick={() => setActiveTab("reports")}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === "reports"
@@ -1148,6 +1209,94 @@ export default function LibrarianDashboardPage() {
         </Card>
       )}
 
+      {/* Access Requests Tab */}
+      {activeTab === "access-requests" && (
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <CardTitle>Pending Book Access Requests</CardTitle>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table" aria-label="Pending book access requests">
+              <thead>
+                <tr>
+                  <th>Requested</th>
+                  <th>Member</th>
+                  <th>Book</th>
+                  <th>Reason</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accessRequestsLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} cols={5} />)
+                ) : !accessRequestsData?.length ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={<Lock size={22} />}
+                        title="No pending access requests"
+                        description="Requests to view restricted books will show up here."
+                        className="py-8"
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  accessRequestsData.map((req: {
+                    request_id: string;
+                    created_at: string;
+                    user_name: string;
+                    user_email: string;
+                    book_title: string;
+                    reason: string;
+                  }) => (
+                    <tr key={req.request_id}>
+                      <td className="text-slate-500 text-xs">{formatDate(req.created_at)}</td>
+                      <td>
+                        <p className="font-medium text-slate-900">{req.user_name}</p>
+                        <p className="text-xs text-slate-500">{req.user_email}</p>
+                      </td>
+                      <td className="max-w-xs">
+                        <span className="line-clamp-1 text-slate-700">{req.book_title}</span>
+                      </td>
+                      <td className="max-w-xs">
+                        <span className="line-clamp-2 text-slate-600 text-xs italic">&ldquo;{req.reason}&rdquo;</span>
+                      </td>
+                      <td className="text-sm flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApproveAccessRequest(req.request_id)}
+                          loading={isReviewingAccessRequest}
+                          icon={<Check size={13} />}
+                          style={{
+                            background: "var(--theme-sidebar-gradient)",
+                            color: "#ffffff",
+                            border: "none",
+                          }}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setDenyRequestId(req.request_id); setRejectionMessage(""); }}
+                          icon={<X size={13} />}
+                          style={{
+                            borderColor: "#dc2626",
+                            color: "#dc2626",
+                          }}
+                        >
+                          Deny
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
       {/* Reports Tab */}
       {activeTab === "reports" && <CirculationReportPanel />}
 
@@ -1168,7 +1317,7 @@ export default function LibrarianDashboardPage() {
               toast.error("Please provide either a catalog ID or barcode");
               return;
             }
-            await issueBook(payload as { catalog_id: string; member_id: string });
+            await issueBook(payload as { catalog_id: string; member_id: string; due_date?: string });
             toast.success("Book issued successfully! Member notified via email.");
             setIssueModal(false);
             refetch();
@@ -1264,6 +1413,51 @@ export default function LibrarianDashboardPage() {
               }}
             >
               Adjust Fine
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Deny Access Request Modal */}
+      <Modal
+        isOpen={!!denyRequestId}
+        onClose={() => { setDenyRequestId(null); setRejectionMessage(""); }}
+        title="Deny Access Request"
+        description="Optionally explain why this request is being denied — the member will see this reason."
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-900 mb-1">Reason (optional)</label>
+            <textarea
+              value={rejectionMessage}
+              onChange={(e) => setRejectionMessage(e.target.value)}
+              placeholder="e.g. Restricted to faculty and graduate researchers only..."
+              rows={3}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setDenyRequestId(null); setRejectionMessage(""); }}
+              style={{
+                borderColor: "var(--avatar-theme-color, #1a1a2e)",
+                color: "var(--avatar-theme-color, #1a1a2e)",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDenyAccessRequest}
+              loading={isReviewingAccessRequest}
+              style={{
+                background: "#dc2626",
+                color: "#ffffff",
+                border: "none",
+              }}
+            >
+              Deny Request
             </Button>
           </div>
         </div>
