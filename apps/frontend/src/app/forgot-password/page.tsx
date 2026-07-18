@@ -92,7 +92,7 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
       {/* ── Nav ── */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50 }}>
@@ -181,16 +181,6 @@ function ForgotPasswordForm() {
                 </button>
               </form>
 
-              {/* Divider + Back link */}
-              <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 18px" }} />
-              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
-                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
-                >
-                  Back to Sign In
-                </Link>
-              </p>
             </>
           ) : (
             <>
@@ -298,17 +288,6 @@ function ForgotPasswordForm() {
                   {isResending ? "Sending..." : "Send again"}
                 </button>
               </p>
-
-              {/* Divider + Back link */}
-              <div style={{ height: "1px", background: "#e5e7eb", margin: "24px 0 18px" }} />
-              <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
-                <Link href="/login" style={{ fontWeight: 700, color: "#111827", textDecoration: "none" }}
-                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
-                >
-                  Back to Sign In
-                </Link>
-              </p>
             </>
           )}
           </div>
@@ -336,7 +315,7 @@ function ForgotPasswordForm() {
 export default function ForgotPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f8f9fa" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)" }}>
         <div style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Loading…</div>
       </div>
     }>

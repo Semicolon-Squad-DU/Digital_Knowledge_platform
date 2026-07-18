@@ -450,13 +450,30 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
 
   // Lock background scroll while the mobile drawer is open — iOS Safari lets touch
   // scrolls propagate through a fixed overlay even when an ancestor has
-  // overflow:hidden, so the home page behind the menu could still be dragged.
+  // overflow:hidden, so overflow:hidden alone isn't enough; pinning the body
+  // with position:fixed is what actually stops it from being dragged, and we
+  // restore the exact scroll offset on close so the page doesn't jump.
   // Only the drawer's own nav list (flex:1, overflowY:auto) should move.
   useEffect(() => {
     if (!open) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = original; };
+    const scrollY = window.scrollY;
+    const body = document.body.style;
+    const original = { position: body.position, top: body.top, left: body.left, right: body.right, width: body.width, overflow: body.overflow };
+    body.position = "fixed";
+    body.top = `-${scrollY}px`;
+    body.left = "0";
+    body.right = "0";
+    body.width = "100%";
+    body.overflow = "hidden";
+    return () => {
+      body.position = original.position;
+      body.top = original.top;
+      body.left = original.left;
+      body.right = original.right;
+      body.width = original.width;
+      body.overflow = original.overflow;
+      window.scrollTo(0, scrollY);
+    };
   }, [open]);
 
   /* ── GUEST LAYOUT: full-width with top navbar ── */
@@ -544,7 +561,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100%", overflow: "hidden" }}>
         <header style={{
           height: 64, background: "#fff", borderBottom: "1px solid #e5e7eb",
-          display: "flex", alignItems: "center", padding: "0 20px", gap: 10,
+          display: "flex", alignItems: "center", padding: isMobile ? "0 12px" : "0 20px", gap: 10,
           flexShrink: 0, zIndex: 30,
         }}>
           {isMobile && (

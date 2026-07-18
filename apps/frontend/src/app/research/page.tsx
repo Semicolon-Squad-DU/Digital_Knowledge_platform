@@ -175,7 +175,7 @@ export default function ResearchPage() {
         <div style={{
           background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
           borderBottom: "1px solid #e5e7eb",
-          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
+          padding: isMobile ? "14px 18px 13px" : "36px 40px 34px",
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22, flexWrap: isMobile ? "wrap" : "nowrap", gap: isMobile ? 12 : 0 }}>
             <div>
