@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
@@ -1020,7 +1020,7 @@ export default function HomePage() {
         )}
 
         {/* ΓöÇΓöÇ LIVE PLATFORM STATS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
-        <section className="home-stats-section" style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        <section className="home-stats-section" style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
               <div className="home-stats-heading" style={{ textAlign: "center", marginBottom: "52px" }}>
@@ -1053,7 +1053,7 @@ export default function HomePage() {
         </section>
 
         {/* ΓöÇΓöÇ EXPLORE THE PLATFORM ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
-        <section className="home-explore-section" style={{ background: "#fafaf8", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        <section className="home-explore-section" style={{ background: "linear-gradient(180deg, #f5f6ff 0%, #fafaf8 60%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
               <div className="home-explore-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px", marginBottom: "52px" }}>
@@ -1093,7 +1093,7 @@ export default function HomePage() {
         </section>
 
         {/* ΓöÇΓöÇ BUILT FOR EVERY ROLE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
-        <section className="home-roles-section" style={{ background: "#ffffff", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        <section className="home-roles-section" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
               <div style={{ textAlign: "center", marginBottom: "52px" }}>
@@ -1111,7 +1111,7 @@ export default function HomePage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }} className="home-role-grid home-roles-grid">
               {ROLE_CARDS.map(({ icon: Icon, title, desc }, i) => (
                 <Reveal key={title} delay={(i % 3) * 90}>
-                  <div className="home-card-lift home-role-card" style={{ background: "#fafaf8", border: "1px solid rgba(0, 0, 0, 0.08)", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
+                  <div className="home-card-lift home-role-card" style={{ background: "linear-gradient(160deg, #ffffff 0%, #f1f3ff 100%)", border: "1px solid rgba(79, 70, 229, 0.16)", boxShadow: "0 4px 14px rgba(67, 56, 202, 0.07)", borderRadius: "18px", padding: "30px 28px", display: "flex", flexDirection: "column", gap: "14px", cursor: "default", height: "100%", boxSizing: "border-box" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <div className="home-card-icon home-role-icon" style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#0d0d12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Icon size={17} color="#ffffff" />
@@ -1128,7 +1128,7 @@ export default function HomePage() {
 
         {/* ΓöÇΓöÇ FRESH FROM THE PLATFORM ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
         {(latestResearch.length > 0 || latestArchive.length > 0) && (
-          <section className="home-latest-section" style={{ background: "#fafaf8", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+          <section className="home-latest-section" style={{ background: "linear-gradient(180deg, #f5f6ff 0%, #fafaf8 60%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
               <Reveal>
                 <div className="home-latest-heading" style={{ marginBottom: "52px" }}>
