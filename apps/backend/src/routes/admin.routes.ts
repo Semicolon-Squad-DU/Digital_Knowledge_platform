@@ -18,6 +18,7 @@ import {
   restoreBackup,
 } from "../infrastructure/backup.service";
 import { applyBackupSchedule } from "../jobs/scheduler";
+import { cached } from "../infrastructure/cache.service";
 
 const router = Router();
 
@@ -1193,45 +1194,49 @@ router.get(
   authenticate,
   requireRole("admin", "librarian", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const [topQueries, zeroResultQueries, languageBreakdown] = await Promise.all([
-      query(
-        `SELECT query_text, COUNT(*)::int as search_count,
-                (query_text ~ $1) as is_bangla
-         FROM search_queries
-         GROUP BY query_text
-         ORDER BY search_count DESC
-         LIMIT 20`,
-        [BANGLA_REGEX]
-      ),
-      query(
-        `SELECT query_text, COUNT(*)::int as search_count,
-                (query_text ~ $1) as is_bangla
-         FROM search_queries
-         WHERE results_count = 0
-         GROUP BY query_text
-         ORDER BY search_count DESC
-         LIMIT 20`,
-        [BANGLA_REGEX]
-      ),
-      query<{ is_bangla: boolean; count: string }>(
-        `SELECT (query_text ~ $1) as is_bangla, COUNT(*)::int as count
-         FROM search_queries
-         GROUP BY is_bangla`,
-        [BANGLA_REGEX]
-      ),
-    ]);
+    // Performance NFR: this is 3 aggregate scans over search_queries on every
+    // load — cache for 5 minutes, short enough that admins never see stale
+    // data for long, long enough to absorb repeated dashboard refreshes.
+    const data = await cached("analytics:search", 300, async () => {
+      const [topQueries, zeroResultQueries, languageBreakdown] = await Promise.all([
+        query(
+          `SELECT query_text, COUNT(*)::int as search_count,
+                  (query_text ~ $1) as is_bangla
+           FROM search_queries
+           GROUP BY query_text
+           ORDER BY search_count DESC
+           LIMIT 20`,
+          [BANGLA_REGEX]
+        ),
+        query(
+          `SELECT query_text, COUNT(*)::int as search_count,
+                  (query_text ~ $1) as is_bangla
+           FROM search_queries
+           WHERE results_count = 0
+           GROUP BY query_text
+           ORDER BY search_count DESC
+           LIMIT 20`,
+          [BANGLA_REGEX]
+        ),
+        query<{ is_bangla: boolean; count: string }>(
+          `SELECT (query_text ~ $1) as is_bangla, COUNT(*)::int as count
+           FROM search_queries
+           GROUP BY is_bangla`,
+          [BANGLA_REGEX]
+        ),
+      ]);
 
-    const bangla = languageBreakdown.find(r => r.is_bangla)?.count ?? 0;
-    const english = languageBreakdown.find(r => !r.is_bangla)?.count ?? 0;
+      const bangla = languageBreakdown.find(r => r.is_bangla)?.count ?? 0;
+      const english = languageBreakdown.find(r => !r.is_bangla)?.count ?? 0;
 
-    res.json({
-      success: true,
-      data: {
+      return {
         top_queries: topQueries,
         zero_result_queries: zeroResultQueries,
         language_breakdown: { bangla: Number(bangla), english: Number(english) },
-      },
+      };
     });
+
+    res.json({ success: true, data });
   })
 );
 
@@ -1244,49 +1249,52 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const days = Math.min(Math.max(parseInt((req.query.days as string) || "30", 10) || 30, 1), 365);
 
-    const [uploads, downloads, searches] = await Promise.all([
-      // Uploads: new items created across all three content modules, unioned
-      // and grouped by day — this counts real content creation, not audit
-      // log rows, so it's accurate even for modules that don't log CREATE.
-      query<{ day: string; count: string }>(
-        `SELECT day::date::text as day, COUNT(*)::int as count FROM (
-           SELECT created_at as day FROM archive_items WHERE created_at >= NOW() - ($1 || ' days')::interval
-           UNION ALL
-           SELECT created_at FROM research_outputs WHERE created_at >= NOW() - ($1 || ' days')::interval
-           UNION ALL
-           SELECT created_at FROM student_projects WHERE created_at >= NOW() - ($1 || ' days')::interval
-         ) uploads
-         GROUP BY day::date
-         ORDER BY day::date`,
-        [days]
-      ),
-      query<{ day: string; count: string }>(
-        `SELECT timestamp::date::text as day, COUNT(*)::int as count
-         FROM audit_logs
-         WHERE action = 'DOWNLOAD' AND timestamp >= NOW() - ($1 || ' days')::interval
-         GROUP BY timestamp::date
-         ORDER BY timestamp::date`,
-        [days]
-      ),
-      query<{ day: string; count: string }>(
-        `SELECT created_at::date::text as day, COUNT(*)::int as count
-         FROM search_queries
-         WHERE created_at >= NOW() - ($1 || ' days')::interval
-         GROUP BY created_at::date
-         ORDER BY created_at::date`,
-        [days]
-      ),
-    ]);
+    // Performance NFR: 3 UNION/GROUP BY scans per load; cache per distinct
+    // `days` window since the result shape depends on it.
+    const data = await cached(`analytics:usage:${days}`, 300, async () => {
+      const [uploads, downloads, searches] = await Promise.all([
+        // Uploads: new items created across all three content modules, unioned
+        // and grouped by day — this counts real content creation, not audit
+        // log rows, so it's accurate even for modules that don't log CREATE.
+        query<{ day: string; count: string }>(
+          `SELECT day::date::text as day, COUNT(*)::int as count FROM (
+             SELECT created_at as day FROM archive_items WHERE created_at >= NOW() - ($1 || ' days')::interval
+             UNION ALL
+             SELECT created_at FROM research_outputs WHERE created_at >= NOW() - ($1 || ' days')::interval
+             UNION ALL
+             SELECT created_at FROM student_projects WHERE created_at >= NOW() - ($1 || ' days')::interval
+           ) uploads
+           GROUP BY day::date
+           ORDER BY day::date`,
+          [days]
+        ),
+        query<{ day: string; count: string }>(
+          `SELECT timestamp::date::text as day, COUNT(*)::int as count
+           FROM audit_logs
+           WHERE action = 'DOWNLOAD' AND timestamp >= NOW() - ($1 || ' days')::interval
+           GROUP BY timestamp::date
+           ORDER BY timestamp::date`,
+          [days]
+        ),
+        query<{ day: string; count: string }>(
+          `SELECT created_at::date::text as day, COUNT(*)::int as count
+           FROM search_queries
+           WHERE created_at >= NOW() - ($1 || ' days')::interval
+           GROUP BY created_at::date
+           ORDER BY created_at::date`,
+          [days]
+        ),
+      ]);
 
-    res.json({
-      success: true,
-      data: {
+      return {
         days,
         uploads: uploads.map(r => ({ date: r.day, count: Number(r.count) })),
         downloads: downloads.map(r => ({ date: r.day, count: Number(r.count) })),
         searches: searches.map(r => ({ date: r.day, count: Number(r.count) })),
-      },
+      };
     });
+
+    res.json({ success: true, data });
   })
 );
 
@@ -1297,15 +1305,17 @@ router.get(
   authenticate,
   requireRole("admin", "librarian", "archivist"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const topArchiveItems = await query(
-      `SELECT ai.item_id, ai.title_en as title, COUNT(*)::int as download_count
-       FROM audit_logs al
-       JOIN archive_items ai ON ai.item_id = al.entity_id
-       WHERE al.action = 'DOWNLOAD' AND al.entity_type = 'archive_item'
-         AND al.timestamp >= NOW() - INTERVAL '30 days'
-       GROUP BY ai.item_id, ai.title_en
-       ORDER BY download_count DESC
-       LIMIT 10`
+    const topArchiveItems = await cached("analytics:most-accessed", 300, () =>
+      query(
+        `SELECT ai.item_id, ai.title_en as title, COUNT(*)::int as download_count
+         FROM audit_logs al
+         JOIN archive_items ai ON ai.item_id = al.entity_id
+         WHERE al.action = 'DOWNLOAD' AND al.entity_type = 'archive_item'
+           AND al.timestamp >= NOW() - INTERVAL '30 days'
+         GROUP BY ai.item_id, ai.title_en
+         ORDER BY download_count DESC
+         LIMIT 10`
+      )
     );
 
     res.json({ success: true, data: topArchiveItems });
@@ -1324,55 +1334,58 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const days = Math.min(Math.max(parseInt((req.query.days as string) || "30", 10) || 30, 1), 365);
 
-    const [[activeResult], [newResult], [returningResult]] = await Promise.all([
-      query<{ count: string }>(
-        `SELECT COUNT(DISTINCT user_id)::int as count FROM audit_logs
-         WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval`,
-        [days]
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(*)::int as count FROM users
-         WHERE created_at >= NOW() - ($1 || ' days')::interval AND deleted_at IS NULL`,
-        [days]
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(DISTINCT al.user_id)::int as count
-         FROM audit_logs al
-         WHERE al.action = 'LOGIN'
-           AND al.timestamp >= NOW() - ($1 || ' days')::interval
-           AND EXISTS (
-             SELECT 1 FROM audit_logs prior
-             WHERE prior.user_id = al.user_id AND prior.action = 'LOGIN'
-               AND prior.timestamp < NOW() - ($1 || ' days')::interval
-           )`,
-        [days]
-      ),
-    ]);
+    // Performance NFR: 4 scans over audit_logs/users per load, including a
+    // correlated EXISTS subquery — cache per distinct `days` window.
+    const data = await cached(`analytics:engagement:${days}`, 300, async () => {
+      const [[activeResult], [newResult], [returningResult]] = await Promise.all([
+        query<{ count: string }>(
+          `SELECT COUNT(DISTINCT user_id)::int as count FROM audit_logs
+           WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval`,
+          [days]
+        ),
+        query<{ count: string }>(
+          `SELECT COUNT(*)::int as count FROM users
+           WHERE created_at >= NOW() - ($1 || ' days')::interval AND deleted_at IS NULL`,
+          [days]
+        ),
+        query<{ count: string }>(
+          `SELECT COUNT(DISTINCT al.user_id)::int as count
+           FROM audit_logs al
+           WHERE al.action = 'LOGIN'
+             AND al.timestamp >= NOW() - ($1 || ' days')::interval
+             AND EXISTS (
+               SELECT 1 FROM audit_logs prior
+               WHERE prior.user_id = al.user_id AND prior.action = 'LOGIN'
+                 AND prior.timestamp < NOW() - ($1 || ' days')::interval
+             )`,
+          [days]
+        ),
+      ]);
 
-    const activeUsers = Number(activeResult.count);
-    const returningUsers = Number(returningResult.count);
+      const activeUsers = Number(activeResult.count);
+      const returningUsers = Number(returningResult.count);
 
-    // Daily active-user trend for the same window, one point per day.
-    const dailyActive = await query<{ day: string; count: string }>(
-      `SELECT timestamp::date::text as day, COUNT(DISTINCT user_id)::int as count
-       FROM audit_logs
-       WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval
-       GROUP BY timestamp::date
-       ORDER BY timestamp::date`,
-      [days]
-    );
+      // Daily active-user trend for the same window, one point per day.
+      const dailyActive = await query<{ day: string; count: string }>(
+        `SELECT timestamp::date::text as day, COUNT(DISTINCT user_id)::int as count
+         FROM audit_logs
+         WHERE action = 'LOGIN' AND timestamp >= NOW() - ($1 || ' days')::interval
+         GROUP BY timestamp::date
+         ORDER BY timestamp::date`,
+        [days]
+      );
 
-    res.json({
-      success: true,
-      data: {
+      return {
         days,
         active_users: activeUsers,
         new_registrations: Number(newResult.count),
         returning_users: returningUsers,
         returning_rate: activeUsers > 0 ? Math.round((returningUsers / activeUsers) * 1000) / 10 : 0,
         daily_active: dailyActive.map(r => ({ date: r.day, count: Number(r.count) })),
-      },
+      };
     });
+
+    res.json({ success: true, data });
   })
 );
 

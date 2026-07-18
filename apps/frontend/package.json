@@ -8,7 +8,8 @@
     "build": "tailwindcss -c tailwind.config.js -i ./src/app/globals.css -o ./src/app/tailwind.generated.css && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@dkp/shared": "*",
@@ -40,11 +41,12 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/jspdf": "^1.3.3",
-    "@types/qrcode": "^1.5.6",
     "@types/node": "^20.11.30",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18.2.73",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.35",

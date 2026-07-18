@@ -15,6 +15,22 @@ function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// FR-045 (institutional SSO) — scope note, not an implementation gap to code
+// around: "institutional SSO" means federating against the university's own
+// identity provider (a SAML 2.0 or OIDC endpoint that authenticates DU
+// students/staff with their institutional credentials). No such IdP is
+// reachable by this project — University of Dhaka does not expose one for
+// student projects to integrate against, and there is no test tenant to
+// verify a real SAML/OIDC SP implementation against. Writing SAML assertion
+// handling with nothing real on the other end would be unverifiable code, not
+// a genuine integration — the same reasoning as the automated-failover note
+// in backup.service.ts. What this project does instead, and what's honest at
+// this infrastructure tier: domain-restricted self-service registration
+// (isDomainAllowed below) plus Google OAuth (oauth-login), which together
+// approximate "only institutional members can get in" without claiming true
+// SSO federation. Closing this gap for real requires the university to stand
+// up and publish a SAML/OIDC IdP — an institutional/DevOps decision, not
+// something addressable from this codebase alone.
 function isDomainAllowed(email: string): boolean {
   if (config.auth.allowedDomains.length === 0) return true;
   const domain = email.split("@")[1]?.toLowerCase();
@@ -680,8 +696,8 @@ router.post(
 router.post(
   "/oauth-login",
   [
-    // provider is intentionally restricted to "google" — there is no real
-    // institutional SSO integration yet, so accepting a provider we can't
+    // provider is intentionally restricted to "google" — see the FR-045 note
+    // above isDomainAllowed() for why. Accepting a provider we can't
     // independently verify would defeat the point of this endpoint.
     body("provider").equals("google").withMessage("Unsupported OAuth provider"),
     body("accessToken").trim().notEmpty().withMessage("Google access token is required"),
