@@ -101,15 +101,22 @@ export default function ArchivePage() {
       type="button"
       onClick={onClick}
       style={{
-        padding: "5px 14px", borderRadius: 20, fontSize: 12.5,
-        fontWeight: active ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-        border: active ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-        background: active ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-        color: active ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280",
-        transition: "all 0.15s",
+        padding: "6px 16px", borderRadius: 999, fontSize: 12.5,
+        fontWeight: active ? 700 : 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+        border: active ? "1.5px solid transparent" : "1px solid #e5e7eb",
+        background: active ? "var(--avatar-theme-color, #1a1a2e)" : "#fff",
+        color: active ? "#fff" : "#6b7280",
+        boxShadow: active ? "0 2px 8px color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 35%, transparent)" : "none",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#374151"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#e5e7eb";  e.currentTarget.style.color = "#6b7280"; } }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-1px)";
+        if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#111827"; e.currentTarget.style.background = "#f9fafb"; }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "translateY(0)";
+        if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.background = "#fff"; }
+      }}
     >
       {label}
     </button>

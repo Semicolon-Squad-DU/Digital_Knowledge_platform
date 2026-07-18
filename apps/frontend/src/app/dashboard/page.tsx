@@ -93,10 +93,16 @@ function StatCard({ label, value, sub, subIcon, subColor, loading, icon: CardIco
 }) {
   const SubIcon = subIcon;
   return (
-    <div style={{
-      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
-      padding: "20px 22px", position: "relative", overflow: "hidden",
-    }}>
+    <div
+      className="dash-stat-card"
+      style={{
+        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
+        padding: "20px 22px", position: "relative", overflow: "hidden",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(17,24,39,0.07)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+    >
       {accent && (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent, borderRadius: "14px 14px 0 0" }} />
       )}
@@ -118,7 +124,7 @@ function StatCard({ label, value, sub, subIcon, subColor, loading, icon: CardIco
               </div>
             )}
           </div>
-          <p style={{ fontSize: 34, fontWeight: 800, color: "#111827", lineHeight: 1, margin: "0 0 10px" }}>
+          <p style={{ fontSize: 34, fontWeight: 800, color: "#111827", lineHeight: 1, margin: "0 0 10px", fontVariantNumeric: "tabular-nums" }}>
             {value}
           </p>
           {sub && (
@@ -240,10 +246,20 @@ export default function DashboardPage() {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
                     padding: "10px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600,
-                    textDecoration: "none", transition: "all 0.15s",
+                    textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s, background 0.15s",
                     ...(primary
                       ? { background: "var(--avatar-theme-color, #111827)", color: "#fff", border: "1px solid transparent", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }
                       : { background: "#fff", color: "#374151", border: "1px solid #d1d5db" }),
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    if (primary) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.18)";
+                    else e.currentTarget.style.background = "#f9fafb";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    if (primary) e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)";
+                    else e.currentTarget.style.background = "#fff";
                   }}
                 >
                   <Icon size={14} /> {label}
@@ -351,22 +367,22 @@ export default function DashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 290px", gap: 18, marginBottom: 18 }}>
 
             {/* Recent Activity */}
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 2px rgba(17,24,39,0.03)" }}>
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 20px", borderBottom: "1px solid #f3f4f6",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "color-mix(in srgb, var(--avatar-theme-color, #111827) 8%, transparent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Activity size={15} color="var(--avatar-theme-color, #111827)" />
                   </div>
                   <h2 style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", margin: 0 }}>Recent Activity</h2>
                 </div>
                 <Link
                   href="/dashboard/activity"
-                  style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+                  style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 6, transition: "background 0.15s, color 0.15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.color = "var(--avatar-theme-color, #111827)"; e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.background = "transparent"; }}
                 >
                   View all <ArrowRight size={12} />
                 </Link>
@@ -396,7 +412,7 @@ export default function DashboardPage() {
                 feed.map((entry, i) => (
                   <div
                     key={entry.id}
-                    style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 20px", borderBottom: i < feed.length - 1 ? "1px solid #f9fafb" : "none", transition: "background 0.1s" }}
+                    style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 20px", borderBottom: i < feed.length - 1 ? "1px solid rgba(17,24,39,0.08)" : "none", transition: "background 0.1s" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#fafafa")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
@@ -418,8 +434,14 @@ export default function DashboardPage() {
             {/* Right: Feature cards */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Library card */}
-              <div style={{ flex: 1, borderRadius: 14, overflow: "hidden", position: "relative", background: "#0f172a", minHeight: 185, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 20 }}>
+              <div
+                className="dash-feature-card"
+                style={{ flex: 1, borderRadius: 14, overflow: "hidden", position: "relative", background: "#0f172a", minHeight: 185, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 20, transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 14px 28px rgba(15,23,42,0.28)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+              >
                 <div style={{ position: "absolute", inset: 0, background: "var(--theme-gradient-160)", opacity: 0.85 }} />
+                <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
                 <div style={{ position: "relative", zIndex: 1 }}>
                   <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(255,255,255,0.45)", margin: "0 0 5px" }}>Quick Access</p>
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: "0 0 5px" }}>Library Catalog</h3>
@@ -438,8 +460,14 @@ export default function DashboardPage() {
               </div>
 
               {/* Archive card */}
-              <div style={{ flex: 1, borderRadius: 14, overflow: "hidden", position: "relative", background: "#1e293b", minHeight: 185, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 20 }}>
+              <div
+                className="dash-feature-card"
+                style={{ flex: 1, borderRadius: 14, overflow: "hidden", position: "relative", background: "#1e293b", minHeight: 185, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 20, transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 14px 28px rgba(30,41,59,0.28)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+              >
                 <div style={{ position: "absolute", inset: 0, background: "var(--theme-gradient-160)", opacity: 0.7 }} />
+                <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
                 <div style={{ position: "relative", zIndex: 1 }}>
                   <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(255,255,255,0.45)", margin: "0 0 5px" }}>Quick Access</p>
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: "0 0 5px" }}>Digital Archive</h3>
@@ -460,7 +488,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ── System status bar ── */}
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)" }}>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", boxShadow: "0 1px 2px rgba(17,24,39,0.03)" }}>
             {[
               {
                 icon: HardDrive, iconBg: "#eff6ff", iconColor: "#3b82f6",
