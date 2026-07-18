@@ -65,12 +65,20 @@ app.use(
 );
 
 // ── Rate limiting ─────────────────────────────────────────────
+// These limits are per-IP, and every request from this dev machine — every
+// tab, every background poll, every manual curl/script test — shares the
+// same IP. That blows through production-sized budgets in minutes during
+// active testing (e.g. rapid login/logout across test accounts), locking
+// out the very person testing the app. Only enforce in production, where
+// requests actually come from distinct real clients (isProduction declared
+// above, next to the CORS origin allowlist that makes the same distinction).
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests, please try again later" },
+  skip: () => !isProduction,
 });
 
 const authLimiter = rateLimit({
@@ -79,6 +87,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many auth attempts" },
+  skip: () => !isProduction,
 });
 
 app.use(limiter);

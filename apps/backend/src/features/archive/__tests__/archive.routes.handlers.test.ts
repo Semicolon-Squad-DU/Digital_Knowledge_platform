@@ -24,7 +24,7 @@ jest.mock("../archive-create.service", () => ({
 }));
 
 import { query, queryOne } from "../../../core/db/pool";
-import { getPresignedUrl } from "../../../infrastructure/s3.service";
+import { getPresignedUrl, fileExistsInS3 } from "../../../infrastructure/s3.service";
 import { searchArchive } from "../../../infrastructure/elasticsearch.service";
 import archiveRoutes from "../archive.routes";
 import { errorHandler, notFound } from "../../../core/middleware/error.middleware";
@@ -32,6 +32,7 @@ import { errorHandler, notFound } from "../../../core/middleware/error.middlewar
 const mockedQuery = query as jest.Mock;
 const mockedQueryOne = queryOne as jest.Mock;
 const mockedGetPresignedUrl = getPresignedUrl as jest.Mock;
+const mockedFileExistsInS3 = fileExistsInS3 as jest.Mock;
 const mockedSearchArchive = searchArchive as jest.Mock;
 
 const app = express();
@@ -54,8 +55,12 @@ beforeEach(() => {
   mockedQuery.mockReset();
   mockedQueryOne.mockReset();
   mockedGetPresignedUrl.mockReset();
+  mockedFileExistsInS3.mockReset();
   mockedSearchArchive.mockReset();
   mockedQuery.mockResolvedValue([]);
+  // Default to "file is present" — tests that specifically cover the
+  // missing-file/NoSuchKey path override this per-call.
+  mockedFileExistsInS3.mockResolvedValue(true);
 });
 
 describe("GET /api/archive/meta/tags", () => {
