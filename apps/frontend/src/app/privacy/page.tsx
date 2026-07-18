@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { GraduationCap, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS, pagePad, cardStyle, btnPrimary, RADIUS } from "@/components/design/dkpTheme";
 
 const SECTIONS = [
   {
@@ -36,123 +38,77 @@ const SECTIONS = [
   },
 ];
 
-const NAV_LINKS = [
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
-  { label: "Contact", href: "/contact" },
-];
-
 export default function PrivacyPage() {
   return (
-    <div style={{ background: "#f8f9fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <style>{`
-        .legal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-        @media (max-width: 600px) { .legal-grid { grid-template-columns: 1fr; } }
-      `}</style>
+    <CollectionShell>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .dkp-legal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        @media (max-width: 600px) { .dkp-legal-grid { grid-template-columns: 1fr; } }
+      `}} />
 
-      {/* Minimal Nav */}
-      <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <GraduationCap size={13} color="#ffffff" />
+      <section style={{ background: C.band, borderBottom: `1px solid ${C.lineStrong}`, padding: "clamp(40px, 6vw, 64px) clamp(16px, 4vw, 64px)", textAlign: "center" }}>
+        <p style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: C.accent, margin: "0 0 12px" }}>
+          Legal
+        </p>
+        <h1 style={{ fontFamily: SERIF, fontSize: "clamp(32px, 5vw, 44px)", fontWeight: 700, color: C.ink, letterSpacing: "-0.02em", lineHeight: 1.15, margin: "0 0 12px" }}>
+          Privacy Policy
+        </h1>
+        <p style={{ fontFamily: SANS, fontSize: 15, color: C.body, margin: 0 }}>
+          Last updated <strong style={{ color: C.ink }}>May 28, 2026</strong> · Digital Knowledge Platform
+        </p>
+      </section>
+
+      <div style={{ ...pagePad, maxWidth: 900 }}>
+        <div className="dkp-legal-grid">
+          {SECTIONS.map((s) => (
+            <div key={s.num} style={{ ...cardStyle, padding: "22px 20px" }}>
+              <span style={{
+                display: "inline-block",
+                padding: "3px 10px",
+                borderRadius: RADIUS.full,
+                background: C.ink,
+                color: C.white,
+                fontSize: 11,
+                fontWeight: 800,
+                fontFamily: SANS,
+                letterSpacing: "0.05em",
+                marginBottom: 12,
+              }}>
+                {s.num}
+              </span>
+              <h2 style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 600, color: C.ink, margin: "0 0 8px" }}>
+                {s.title}
+              </h2>
+              <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, lineHeight: 1.65, margin: 0 }}>
+                {s.body}
+              </p>
             </div>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.01em" }}>DKP</span>
-          </Link>
-          <nav style={{ display: "flex", gap: "4px" }}>
-            {NAV_LINKS.map(l => (
-              <Link key={l.href} href={l.href}
-                style={{ padding: "5px 12px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
-              >{l.label}</Link>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main style={{ flex: 1 }}>
-        {/* Hero */}
-        <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)", borderBottom: "1px solid #e5e7eb", padding: "52px 32px 44px", textAlign: "center" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--avatar-theme-color, #111827)", opacity: 0.65, margin: "0 0 12px 0" }}>
-            Legal
-          </p>
-          <h1 style={{ fontSize: "clamp(1.9rem, 5vw, 2.75rem)", fontWeight: 800, color: "#0f1117", letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 14px 0" }}>
-            Privacy Policy
-          </h1>
-          <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
-            Last updated <strong style={{ color: "#374151" }}>May 28, 2026</strong> · Digital Knowledge Platform
-          </p>
+          ))}
         </div>
 
-        {/* Section cards */}
-        <div style={{ maxWidth: "860px", margin: "0 auto", padding: "48px 32px 64px" }}>
-          <div className="legal-grid">
-            {SECTIONS.map(s => (
-              <div
-                key={s.num}
-                style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e5e7eb", padding: "22px 20px", transition: "box-shadow 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.07)")}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-              >
-                <span style={{
-                  display: "inline-block", padding: "2px 10px", borderRadius: "100px",
-                  background: "var(--avatar-theme-color, #111827)", color: "#ffffff",
-                  fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "12px",
-                }}>
-                  {s.num}
-                </span>
-                <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 8px 0" }}>{s.title}</h2>
-                <p style={{ fontSize: "13px", color: "#555e6d", lineHeight: 1.65, margin: 0 }}>{s.body}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Contact CTA */}
-          <div style={{
-            marginTop: "14px", background: "#ffffff", borderRadius: "14px",
-            border: "1px solid #e5e7eb", padding: "22px 24px",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap",
-          }}>
-            <div>
-              <h2 style={{ fontSize: "14.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px 0" }}>Questions about your privacy?</h2>
-              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>The Semicolon-Squad-DU team is happy to help.</p>
-            </div>
-            <Link
-              href="/contact"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                padding: "9px 18px", fontSize: "13px", fontWeight: 600,
-                color: "#ffffff", background: "var(--avatar-theme-color, #111827)",
-                borderRadius: "8px", textDecoration: "none", flexShrink: 0, transition: "opacity 0.2s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.82")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
-            >
-              Contact Us <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer style={{ borderTop: "1px solid #e5e7eb", background: "#ffffff" }}>
         <div style={{
-          maxWidth: "860px", margin: "0 auto", padding: "16px 32px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px",
+          ...cardStyle,
+          marginTop: 16,
+          padding: "22px 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
         }}>
-          <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>© 2026 Digital Knowledge Platform · Semicolon-Squad-DU</p>
-          <div style={{ display: "flex", gap: "16px" }}>
-            {NAV_LINKS.map(l => (
-              <Link key={l.href} href={l.href}
-                style={{ fontSize: "12px", color: "#6b7280", textDecoration: "none", transition: "color 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
-              >{l.label}</Link>
-            ))}
+          <div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 600, color: C.ink, margin: "0 0 4px" }}>
+              Questions about your privacy?
+            </h2>
+            <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, margin: 0 }}>
+              The Semicolon-Squad-DU team is happy to help.
+            </p>
           </div>
+          <Link href="/contact" style={{ ...btnPrimary, textDecoration: "none", flexShrink: 0 }}>
+            Contact Us <ArrowRight size={14} />
+          </Link>
         </div>
-      </footer>
-    </div>
+      </div>
+    </CollectionShell>
   );
 }

@@ -82,7 +82,7 @@ function ArrivalCard({
   const tone =
     status.tone === "ok" ? { dot: "#0D47A1", bg: "#e1e8fd", color: C.accent }
       : status.tone === "accent" ? { dot: "#0D47A1", bg: "#e1e8fd", color: C.accent }
-        : { dot: "#9ca3af", bg: "#f3f4f6", color: "#6b7280" };
+        : { dot: "#78767d", bg: "#f1f3ff", color: "#555f6d" };
 
   return (
     <article

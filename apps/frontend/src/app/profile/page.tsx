@@ -480,7 +480,7 @@ export default function ProfilePage() {
       onClick={disabled ? undefined : onChange}
       style={{
         width: 42, height: 24, borderRadius: 12, cursor: disabled ? "not-allowed" : "pointer", flexShrink: 0,
-        background: checked ? "var(--avatar-theme-color, #1a56db)" : "#d1d5db",
+        background: checked ? "var(--avatar-theme-color, #0D47A1)" : "#c8c5cd",
         position: "relative", transition: "background 0.2s",
         opacity: disabled ? 0.5 : 1,
       }}
@@ -493,27 +493,27 @@ export default function ProfilePage() {
     </div>
   );
 
-  const InfoRow = ({ icon: Icon, label, value, color = "#6b7280", bg = "#f3f4f6" }: { icon: React.ElementType; label: string; value: string; color?: string; bg?: string }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: "1px solid #f3f4f6" }}>
+  const InfoRow = ({ icon: Icon, label, value, color = "#555f6d", bg = "#f1f3ff" }: { icon: React.ElementType; label: string; value: string; color?: string; bg?: string }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: "1px solid #f1f3ff" }}>
       <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <Icon size={15} color={color} />
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
-        <p style={{ fontSize: 14, color: "#111827", margin: "2px 0 0", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+        <p style={{ fontSize: 11, color: "#78767d", margin: 0, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+        <p style={{ fontSize: 14, color: "#141b2b", margin: "2px 0 0", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
       </div>
     </div>
   );
 
   const SectionCard = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", ...style }}>
+    <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 14, overflow: "hidden", ...style }}>
       {children}
     </div>
   );
 
   const SectionHead = ({ title, action }: { title: string; action?: React.ReactNode }) => (
-    <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", margin: 0 }}>{title}</p>
+    <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f3ff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: "#141b2b", margin: 0 }}>{title}</p>
       {action}
     </div>
   );
@@ -547,7 +547,7 @@ export default function ProfilePage() {
                 {profilePic ? (
                   <img src={profilePic} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ fontSize: isMobile ? 34 : 40, fontWeight: 800, color: "#111827", userSelect: "none" }}>
+                  <span style={{ fontSize: isMobile ? 34 : 40, fontWeight: 800, color: "#141b2b", userSelect: "none" }}>
                     {user.name?.[0]?.toUpperCase()}
                   </span>
                 )}
@@ -564,9 +564,9 @@ export default function ProfilePage() {
                   background: "#fff", border: "2px solid rgba(255,255,255,0.5)",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
                   cursor: savingAvatar ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#374151", opacity: savingAvatar ? 0.6 : 1,
+                  color: "#47464c", opacity: savingAvatar ? 0.6 : 1,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f1f3ff")}
                 onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
               >
                 <Camera size={14} />
@@ -627,9 +627,9 @@ export default function ProfilePage() {
           </div>
 
           {/* Quick stats row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid #f3f4f6" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid #f1f3ff" }}>
             {[
-              { label: "Borrowed", value: activeLoans.length, icon: BookOpen, color: "#2563eb", anchor: "#library-activity" },
+              { label: "Borrowed", value: activeLoans.length, icon: BookOpen, color: "#0D47A1", anchor: "#library-activity" },
               { label: "History", value: returnedLoans.length, icon: HistoryIcon, color: "#7c3aed", anchor: "#library-activity" },
               { label: "Wishlist", value: (wishlist as any[])?.length ?? 0, icon: Heart, color: "#dc2626", anchor: "#library-activity" },
             ].map(({ label, value, icon: Icon, color, anchor }, i) => (
@@ -637,16 +637,16 @@ export default function ProfilePage() {
                 key={label}
                 href={anchor}
                 style={{
-                  padding: "16px 0", textAlign: "center", borderRight: i < 2 ? "1px solid #f3f4f6" : "none",
+                  padding: "16px 0", textAlign: "center", borderRight: i < 2 ? "1px solid #f1f3ff" : "none",
                   textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
                   cursor: "pointer", transition: "background 0.15s",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f9f9ff")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <Icon size={15} color={color} strokeWidth={2.3} />
-                <p style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0, lineHeight: 1 }}>{value}</p>
-                <p style={{ fontSize: 11, color: "#6b7280", margin: 0, fontWeight: 500 }}>{label}</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: "#141b2b", margin: 0, lineHeight: 1 }}>{value}</p>
+                <p style={{ fontSize: 11, color: "#555f6d", margin: 0, fontWeight: 500 }}>{label}</p>
               </a>
             ))}
           </div>
@@ -656,7 +656,7 @@ export default function ProfilePage() {
         <SectionCard style={{ marginBottom: 16 }}>
           <SectionHead title="Personal Info" />
           <div style={{ padding: "0 20px" }}>
-            <InfoRow icon={User} label="Full Name" value={user.name} color="#2563eb" bg="#eff6ff" />
+            <InfoRow icon={User} label="Full Name" value={user.name} color="#0D47A1" bg="#eff6ff" />
             <InfoRow icon={Mail} label="Email" value={user.email} color="#7c3aed" bg="#faf5ff" />
             <InfoRow icon={Building2} label="Department" value={user.department || "Computer Science & Engineering"} color="#0891b2" bg="#ecfeff" />
             <InfoRow icon={Shield} label="Role" value={user.role?.replace(/_/g, " ") ?? "Member"} color="#d97706" bg="#fffbeb" />
@@ -688,8 +688,8 @@ export default function ProfilePage() {
                   <Shield size={15} color="#4f46e5" />
                 </div>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Request Role Change</p>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Ask an admin to switch your account to a different role</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Request Role Change</p>
+                  <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>Ask an admin to switch your account to a different role</p>
                 </div>
               </button>
             )}
@@ -703,7 +703,7 @@ export default function ProfilePage() {
             action={
               <button
                 onClick={() => { setIsEditingBio(!isEditingBio); setTempBio(bio); }}
-                style={{ fontSize: 12, fontWeight: 600, color: "var(--avatar-theme-color, #1a56db)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                style={{ fontSize: 12, fontWeight: 600, color: "var(--avatar-theme-color, #0D47A1)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
               >
                 {isEditingBio ? "Cancel" : "Edit"}
               </button>
@@ -717,10 +717,10 @@ export default function ProfilePage() {
                   onChange={e => setTempBio(e.target.value)}
                   maxLength={180}
                   rows={3}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box", color: "#111827" }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #c8c5cd", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box", color: "#141b2b" }}
                 />
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button onClick={handleSaveBio} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #111827)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  <button onClick={handleSaveBio} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "var(--avatar-theme-color, #141b2b)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                     Save
                   </button>
                 </div>
@@ -759,22 +759,22 @@ export default function ProfilePage() {
             {/* Currently Borrowed */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
-                <BookOpen size={13} color="#2563eb" />
-                <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <BookOpen size={13} color="#0D47A1" />
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#47464c", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Currently Borrowed{activeLoans.length > 0 ? ` (${activeLoans.length})` : ""}
                 </p>
               </div>
               {histLoading ? (
-                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Loading…</p>
+                <p style={{ fontSize: 12, color: "#78767d", margin: 0 }}>Loading…</p>
               ) : activeLoans.length === 0 ? (
-                <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No books currently borrowed.</p>
+                <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>No books currently borrowed.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {activeLoans.map((loan: any) => {
                     const overdue = loan.status === "overdue" || new Date(loan.due_date) < new Date();
                     return (
-                      <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #eef0f3" }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{loan.title}</p>
+                      <div key={loan.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#f9f9ff", borderRadius: 10, border: "1px solid #f1f3ff" }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{loan.title}</p>
                         <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: overdue ? "#fee2e2" : "#dcfce7", color: overdue ? "#991b1b" : "#166534", flexShrink: 0 }}>
                           {overdue ? "Overdue" : "Active"}
                         </span>
@@ -790,20 +790,20 @@ export default function ProfilePage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                   <Heart size={13} color="#dc2626" />
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#47464c", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     Wishlist{(wishlist as any[])?.length ? ` (${(wishlist as any[]).length})` : ""}
                   </p>
                 </div>
                 {(wishlist as any[])?.length > 0 && (
-                  <Link href="/library/wishlist" style={{ fontSize: 11.5, fontWeight: 600, color: "var(--avatar-theme-color, #1a56db)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                  <Link href="/library/wishlist" style={{ fontSize: 11.5, fontWeight: 600, color: "var(--avatar-theme-color, #0D47A1)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3 }}>
                     View all <ArrowUpRight size={11} />
                   </Link>
                 )}
               </div>
               {wishlistLoading ? (
-                <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Loading…</p>
+                <p style={{ fontSize: 12, color: "#78767d", margin: 0 }}>Loading…</p>
               ) : !(wishlist as any[])?.length ? (
-                <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Nothing saved yet — browse the library and tap the heart on a book.</p>
+                <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>Nothing saved yet — browse the library and tap the heart on a book.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {(wishlist as any[]).slice(0, 5).map((item: any) => (
@@ -812,14 +812,14 @@ export default function ProfilePage() {
                       href={`/library/${item.catalog_id}`}
                       style={{
                         display: "flex", justifyContent: "space-between", alignItems: "center",
-                        padding: "10px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #eef0f3",
+                        padding: "10px 12px", background: "#f9f9ff", borderRadius: 10, border: "1px solid #f1f3ff",
                         textDecoration: "none", transition: "background 0.15s",
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "#f9fafb")}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#f1f3ff")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "#f9f9ff")}
                     >
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{item.title}</p>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: item.available_copies > 0 ? "#dcfce7" : "#f3f4f6", color: item.available_copies > 0 ? "#166534" : "#6b7280", flexShrink: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, paddingRight: 10 }}>{item.title}</p>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: item.available_copies > 0 ? "#dcfce7" : "#f1f3ff", color: item.available_copies > 0 ? "#166534" : "#555f6d", flexShrink: 0 }}>
                         {item.available_copies > 0 ? "Available" : "On Loan"}
                       </span>
                     </Link>
@@ -841,10 +841,10 @@ export default function ProfilePage() {
               { key: "weeklyDigests" as const, label: "Weekly digest", desc: "Weekly summary email" },
               { key: "appAlerts" as const, label: "In-app alerts", desc: "Pop-up notifications in the portal" },
             ].map(({ key, label, desc }) => (
-              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid #f3f4f6" }}>
+              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid #f1f3ff" }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>{label}</p>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>{desc}</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>{label}</p>
+                  <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>{desc}</p>
                 </div>
                 <Toggle checked={notificationPrefs[key]} onChange={() => handleTogglePref(key)} disabled={prefsLoading} />
               </div>
@@ -858,34 +858,34 @@ export default function ProfilePage() {
           <div style={{ padding: "8px 20px" }}>
             <button
               onClick={() => setShowPasswordModal(true)}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid #f3f4f6", textAlign: "left" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 0", background: "none", border: "none", cursor: "pointer", borderBottom: "1px solid #f1f3ff", textAlign: "left" }}
             >
               <div style={{ width: 36, height: 36, borderRadius: 9, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <KeyRound size={15} color="#2563eb" />
+                <KeyRound size={15} color="#0D47A1" />
               </div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Change Password</p>
-                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Update your sign-in credentials</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Change Password</p>
+                <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>Update your sign-in credentials</p>
               </div>
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f3f4f6" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #f1f3ff" }}>
               <div style={{ width: 36, height: 36, borderRadius: 9, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Download size={15} color="#16a34a" />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Download My Data</p>
-                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Export your account data</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Download My Data</p>
+                <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>Export your account data</p>
               </div>
               <button
                 onClick={handleExportJSON}
-                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, fontWeight: 600, color: "#47464c", cursor: "pointer" }}
               >
                 JSON
               </button>
               <button
                 onClick={handleExportData}
-                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, fontWeight: 600, color: "#47464c", cursor: "pointer" }}
               >
                 PDF
               </button>
@@ -900,26 +900,26 @@ export default function ProfilePage() {
                   <Activity size={15} color="#7c3aed" />
                 </div>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Recent Activity</p>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Uploads, submissions, borrows, and comments</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Recent Activity</p>
+                  <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>Uploads, submissions, borrows, and comments</p>
                 </div>
               </div>
-              {showActivityLog ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
+              {showActivityLog ? <ChevronUp size={16} color="#555f6d" /> : <ChevronDown size={16} color="#555f6d" />}
             </button>
 
             {showActivityLog && (
               <div style={{ paddingBottom: 12 }}>
                 {activityLoading ? (
-                  <p style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>Loading…</p>
+                  <p style={{ fontSize: 12, color: "#78767d", padding: "8px 0" }}>Loading…</p>
                 ) : !activityLog || activityLog.length === 0 ? (
-                  <p style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>No activity yet.</p>
+                  <p style={{ fontSize: 12, color: "#78767d", padding: "8px 0" }}>No activity yet.</p>
                 ) : (
                   activityLog.map((entry, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #f3f4f6", gap: 12 }}>
-                      <p style={{ fontSize: 13, color: "#374151", margin: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #f1f3ff", gap: 12 }}>
+                      <p style={{ fontSize: 13, color: "#47464c", margin: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {ACTIVITY_LABELS[entry.entry_type] ?? entry.entry_type}: {entry.title}
                       </p>
-                      <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, flexShrink: 0 }}>
+                      <p style={{ fontSize: 11, color: "#78767d", margin: 0, flexShrink: 0 }}>
                         {new Date(entry.happened_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -936,8 +936,8 @@ export default function ProfilePage() {
           <div style={{ padding: "16px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Deactivate Account</p>
-                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>Sign out and disable log-in. Your data is kept; an admin can reactivate it.</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Deactivate Account</p>
+                <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>Sign out and disable log-in. Your data is kept; an admin can reactivate it.</p>
               </div>
               <button
                 onClick={handleDeactivateAccount}
@@ -978,7 +978,7 @@ export default function ProfilePage() {
           <div style={{
             background: "#ffffff",
             borderRadius: "12px",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             padding: "28px 32px",
             width: "100%",
             maxWidth: "400px",
@@ -988,22 +988,22 @@ export default function ProfilePage() {
             <h3 style={{
               fontSize: "18px",
               fontWeight: 800,
-              color: "#111827",
+              color: "#141b2b",
               margin: "0 0 6px",
               letterSpacing: "-0.01em",
               display: "flex",
               alignItems: "center",
               gap: 8
             }}>
-              <KeyRound size={20} color="#1a56db" /> Change Password
+              <KeyRound size={20} color="#0D47A1" /> Change Password
             </h3>
-            <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 20px" }}>
+            <p style={{ fontSize: "12px", color: "#555f6d", margin: "0 0 20px" }}>
               Securely update your portal access credentials.
             </p>
 
             <form onSubmit={handleChangePasswordSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151" }}>Current Password</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#47464c" }}>Current Password</label>
                 <input
                   type="password"
                   placeholder="••••••••"
@@ -1012,7 +1012,7 @@ export default function ProfilePage() {
                   style={{
                     padding: "10px 12px",
                     borderRadius: "6px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     fontSize: "16px",
                     outline: "none"
                   }}
@@ -1020,7 +1020,7 @@ export default function ProfilePage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151" }}>New Password</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#47464c" }}>New Password</label>
                 <input
                   type="password"
                   placeholder="••••••••"
@@ -1029,18 +1029,18 @@ export default function ProfilePage() {
                   style={{
                     padding: "10px 12px",
                     borderRadius: "6px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     fontSize: "16px",
                     outline: "none"
                   }}
                 />
-                <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0 }}>
+                <p style={{ fontSize: "11px", color: "#78767d", margin: 0 }}>
                   8+ characters with uppercase, lowercase, digit, and special character (@$!%*?&)
                 </p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151" }}>Confirm New Password</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#47464c" }}>Confirm New Password</label>
                 <input
                   type="password"
                   placeholder="••••••••"
@@ -1049,7 +1049,7 @@ export default function ProfilePage() {
                   style={{
                     padding: "10px 12px",
                     borderRadius: "6px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     fontSize: "16px",
                     outline: "none"
                   }}
@@ -1063,9 +1063,9 @@ export default function ProfilePage() {
                   style={{
                     padding: "8px 16px",
                     borderRadius: "6px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     background: "#ffffff",
-                    color: "#374151",
+                    color: "#47464c",
                     fontSize: "12px",
                     fontWeight: 600,
                     cursor: "pointer"
@@ -1104,24 +1104,24 @@ export default function ProfilePage() {
           display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
         }}>
           <div style={{
-            background: "#ffffff", borderRadius: "12px", border: "1px solid #e5e7eb",
+            background: "#ffffff", borderRadius: "12px", border: "1px solid #c8c5cd",
             padding: "28px 32px", width: "100%", maxWidth: "400px",
             boxShadow: "0 10px 25px rgba(0,0,0,0.15)", boxSizing: "border-box",
           }}>
-            <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#111827", margin: "0 0 6px", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}>
-              <Shield size={20} color="#1a56db" /> Request Role Change
+            <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#141b2b", margin: "0 0 6px", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}>
+              <Shield size={20} color="#0D47A1" /> Request Role Change
             </h3>
-            <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 20px" }}>
-              Your current role is <strong style={{ color: "#374151" }}>{roleLabel(user.role)}</strong>. Choosing a new role sends a request to the admin team — you keep your current access until it&apos;s approved.
+            <p style={{ fontSize: "12px", color: "#555f6d", margin: "0 0 20px" }}>
+              Your current role is <strong style={{ color: "#47464c" }}>{roleLabel(user.role)}</strong>. Choosing a new role sends a request to the admin team — you keep your current access until it&apos;s approved.
             </p>
 
             <form onSubmit={handleRoleRequestSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#374151" }}>New Role</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#47464c" }}>New Role</label>
                 <select
                   value={selectedRole}
                   onChange={e => setSelectedRole(e.target.value)}
-                  style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "16px", outline: "none", color: "#111827", background: "#fff" }}
+                  style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #c8c5cd", fontSize: "16px", outline: "none", color: "#141b2b", background: "#fff" }}
                 >
                   <option value="">-- Select a role --</option>
                   {ROLE_OPTIONS.filter(r => r.value !== user.role).map(r => (
@@ -1134,7 +1134,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowRoleModal(false)}
-                  style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#ffffff", color: "#374151", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                  style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #c8c5cd", background: "#ffffff", color: "#47464c", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
                 >
                   Cancel
                 </button>

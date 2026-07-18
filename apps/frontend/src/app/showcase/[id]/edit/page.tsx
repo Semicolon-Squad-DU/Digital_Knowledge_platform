@@ -177,9 +177,9 @@ export default function EditProjectPage() {
     return (
       <AppLayout>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
-          <GraduationCap size={40} style={{ margin: "0 auto 16px", color: "#6b7280" }} />
-          <p style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Access Restricted</p>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
+          <GraduationCap size={40} style={{ margin: "0 auto 16px", color: "#555f6d" }} />
+          <p style={{ fontSize: 18, fontWeight: 600, color: "#141b2b", margin: 0 }}>Access Restricted</p>
+          <p style={{ fontSize: 13, color: "#555f6d", marginTop: 6 }}>
             You can only edit your own project submissions.
           </p>
         </div>
@@ -192,9 +192,9 @@ export default function EditProjectPage() {
     return (
       <AppLayout>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
-          <GraduationCap size={40} style={{ margin: "0 auto 16px", color: "#6b7280" }} />
-          <p style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Editing Locked</p>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
+          <GraduationCap size={40} style={{ margin: "0 auto 16px", color: "#555f6d" }} />
+          <p style={{ fontSize: 18, fontWeight: 600, color: "#141b2b", margin: 0 }}>Editing Locked</p>
+          <p style={{ fontSize: 13, color: "#555f6d", marginTop: 6 }}>
             This project has already been approved and published. It can no longer be edited.
           </p>
         </div>
@@ -207,7 +207,7 @@ export default function EditProjectPage() {
       <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
         
         {/* Breadcrumb */}
-        <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#555f6d", marginBottom: 12 }}>
           <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
           <span>/</span>
           <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
@@ -223,7 +223,7 @@ export default function EditProjectPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", color: "#6b7280", padding: 0 }}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", color: "#555f6d", padding: 0 }}
             >
               <ArrowLeft size={16} />
             </button>
@@ -231,7 +231,7 @@ export default function EditProjectPage() {
               Edit Project Submission
             </h1>
           </div>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: "#555f6d", marginTop: 4 }}>
             Update your project details and re-submit for advisor approval.
           </p>
           {project?.advisor_comments && (
@@ -254,7 +254,7 @@ export default function EditProjectPage() {
           {/* ── Basic Info ─────────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -262,13 +262,13 @@ export default function EditProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Project Details</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Project Details</h2>
             </div>
             <div style={{ padding: 20 }} className="space-y-4">
               <Input
@@ -329,7 +329,7 @@ export default function EditProjectPage() {
           {/* ── Team Members ───────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -337,15 +337,15 @@ export default function EditProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                 Team Members
-                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#555f6d", marginLeft: 6 }}>
                   ({fields.length})
                 </span>
               </h2>
@@ -358,21 +358,21 @@ export default function EditProjectPage() {
                   gap: 6,
                   padding: "6px 12px",
                   background: "#fff",
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #c8c5cd",
                   borderRadius: 8,
                   cursor: "pointer",
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#374151",
+                  color: "#47464c",
                   transition: "all 0.2s",
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#f9fafb";
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.background = "#f9f9ff";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.background = "#fff";
-                  e.currentTarget.style.borderColor = "#e5e7eb";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                 }}
               >
                 <Plus size={13} /> Add Member
@@ -388,14 +388,14 @@ export default function EditProjectPage() {
                   style={{
                     position: "relative",
                     borderRadius: 8,
-                    border: "1px solid #e5e7eb",
+                    border: "1px solid #c8c5cd",
                     padding: 16,
-                    background: "#f9fafb",
+                    background: "#f9f9ff",
                     marginBottom: idx === fields.length - 1 ? 0 : 16,
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px", textTransform: "uppercase" }}>
                       Member {idx + 1}
                     </span>
                     {fields.length > 1 && (
@@ -456,7 +456,7 @@ export default function EditProjectPage() {
           {/* ── PDF Upload ─────────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -464,15 +464,15 @@ export default function EditProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                 Project Report
-                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#555f6d", marginLeft: 6 }}>(optional)</span>
               </h2>
             </div>
             <div style={{ padding: 20 }}>
@@ -483,7 +483,7 @@ export default function EditProjectPage() {
                   gap: 12,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #c8c5cd",
                   background: "#f0fdf4",
                   marginBottom: 16,
                 }}>
@@ -492,7 +492,7 @@ export default function EditProjectPage() {
                     <p style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", margin: 0 }}>
                       Active Project Report PDF Loaded
                     </p>
-                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                    <p style={{ fontSize: 11, color: "#555f6d", margin: "2px 0 0" }}>
                       You can drop a new PDF below to replace this file.
                     </p>
                   </div>
@@ -505,15 +505,15 @@ export default function EditProjectPage() {
                   gap: 12,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  border: "1px solid #e5e7eb",
-                  background: "#f9fafb",
+                  border: "1px solid #c8c5cd",
+                  background: "#f9f9ff",
                 }}>
                   <FileText size={20} color="var(--avatar-theme-color)" style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {pdfFile.name}
                     </p>
-                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                    <p style={{ fontSize: 11, color: "#555f6d", margin: "2px 0 0" }}>
                       {formatFileSize(pdfFile.size)}
                     </p>
                   </div>
@@ -529,7 +529,7 @@ export default function EditProjectPage() {
                       border: "none",
                       background: "transparent",
                       cursor: "pointer",
-                      color: "#6b7280",
+                      color: "#555f6d",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -541,7 +541,7 @@ export default function EditProjectPage() {
                     }}
                     onMouseOut={(e) => {
                       e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#6b7280";
+                      e.currentTarget.style.color = "#555f6d";
                     }}
                     aria-label="Remove file"
                   >
@@ -552,24 +552,24 @@ export default function EditProjectPage() {
                 <div
                   {...getRootProps()}
                   style={{
-                    border: "2px dashed #d1d5db",
+                    border: "2px dashed #c8c5cd",
                     borderRadius: 8,
                     padding: "32px 20px",
                     textAlign: "center",
                     cursor: "pointer",
                     background: isDragActive ? "#eff6ff" : "#fff",
-                    borderColor: isDragActive ? "var(--avatar-theme-color)" : "#d1d5db",
+                    borderColor: isDragActive ? "var(--avatar-theme-color)" : "#c8c5cd",
                     transition: "all 0.2s",
                   }}
                   onMouseOver={(e) => {
                     if (!isDragActive) {
                       e.currentTarget.style.borderColor = "var(--avatar-theme-color)";
-                      e.currentTarget.style.background = "#f9fafb";
+                      e.currentTarget.style.background = "#f9f9ff";
                     }
                   }}
                   onMouseOut={(e) => {
                     if (!isDragActive) {
-                      e.currentTarget.style.borderColor = "#d1d5db";
+                      e.currentTarget.style.borderColor = "#c8c5cd";
                       e.currentTarget.style.background = "#fff";
                     }
                   }}
@@ -577,13 +577,13 @@ export default function EditProjectPage() {
                   <input {...getInputProps()} aria-label="Upload PDF report" />
                   <Upload
                     size={24}
-                    color={isDragActive ? "var(--avatar-theme-color)" : "#6b7280"}
+                    color={isDragActive ? "var(--avatar-theme-color)" : "#555f6d"}
                     style={{ margin: "0 auto 12px" }}
                   />
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", margin: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                     {isDragActive ? "Drop your PDF here" : "Drag & drop your report PDF"}
                   </p>
-                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
+                  <p style={{ fontSize: 12, color: "#555f6d", marginTop: 4, marginBottom: 0 }}>
                     or <span style={{ color: "var(--avatar-theme-color)", fontWeight: 500 }}>browse to upload</span> · PDF only · max {MAX_PDF_MB} MB
                   </p>
                 </div>
@@ -603,21 +603,21 @@ export default function EditProjectPage() {
                 gap: 6,
                 padding: "10px 18px",
                 background: "#fff",
-                border: "1px solid #e5e7eb",
+                border: "1px solid #c8c5cd",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#6b7280",
+                color: "#555f6d",
                 transition: "all 0.2s",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "#f9fafb";
-                e.currentTarget.style.borderColor = "#d1d5db";
+                e.currentTarget.style.background = "#f9f9ff";
+                e.currentTarget.style.borderColor = "#c8c5cd";
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.borderColor = "#e5e7eb";
+                e.currentTarget.style.borderColor = "#c8c5cd";
               }}
             >
               Cancel

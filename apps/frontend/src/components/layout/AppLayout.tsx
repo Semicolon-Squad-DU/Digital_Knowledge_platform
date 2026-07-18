@@ -221,10 +221,11 @@ function NavList({ pathname, isAuthenticated, role, onNav }: { pathname: string;
 // ── Sidebar (desktop) styles ──────────────────────────────────────────────────
 const SIDEBAR_STYLE: React.CSSProperties = {
   width: 224, flexShrink: 0,
-  background: "var(--theme-sidebar-gradient)",
+  /* Modern Academic: solid University Blue instead of multi-hue gradient */
+  background: "linear-gradient(180deg, #1A1A2E 0%, #12121f 100%)",
   borderRight: "none",
   borderRadius: "0",
-  boxShadow: "4px 0 28px rgba(0,0,0,0.18)",
+  boxShadow: "4px 0 28px rgba(26,26,46,0.18)",
   display: "flex", flexDirection: "column",
   height: "100%", overflowY: "auto", overflowX: "hidden",
 };
@@ -241,10 +242,10 @@ const GUEST_NAV = [
 function GuestBrand() {
   return (
     <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-      <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #141b2b)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <GraduationCap size={16} color="#ffffff" />
       </div>
-      <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+      <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #141b2b)", letterSpacing: "-0.02em" }}>DKP</span>
     </Link>
   );
 }
@@ -255,7 +256,7 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
   return (
     <>
       {/* Top bar */}
-      <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
+      <header style={{ background: "#eaecef", borderBottom: "1px solid #c8c5cd", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
           {isMobile ? (
             /* MOBILE: Hamburger and Logo both on left */
@@ -263,7 +264,7 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
               <button
                 onClick={() => setMenuOpen(true)}
                 aria-label="Open menu"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827", marginLeft: "-8px" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#141b2b", marginLeft: "-8px" }}
               >
                 <Menu size={22} />
               </button>
@@ -280,16 +281,16 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
                     <Link
                       key={href}
                       href={href}
-                      style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: active ? "#d1d5db" : "transparent" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = active ? "#d1d5db" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
+                      style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s", background: active ? "#c8c5cd" : "transparent" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#c8c5cd"; e.currentTarget.style.color = "#141b2b"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = active ? "#c8c5cd" : "transparent"; e.currentTarget.style.color = "#4b5563"; }}
                     >{label}</Link>
                   );
                 })}
               </nav>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #d1d5db", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}>Sign In</Link>
-                <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", letterSpacing: "0.01em" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>Register</Link>
+                <Link href="/login" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "8px", border: "1.5px solid #c8c5cd", background: "transparent", letterSpacing: "0.01em", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = "#c8c5cd"; e.currentTarget.style.color = "#141b2b"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}>Sign In</Link>
+                <Link href="/register" style={{ padding: "7px 16px", fontSize: "13px", fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "8px", background: "var(--avatar-theme-color, #141b2b)", letterSpacing: "0.01em" }} onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>Register</Link>
               </div>
             </>
           )}
@@ -339,7 +340,7 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
 
             {/* User Info Header (Guest Mode) */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-              <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+              <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #141b2b)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
                 <GraduationCap size={32} />
               </div>
               <div>
@@ -412,7 +413,7 @@ function GuestTopNav({ pathname, isMobile, menuOpen, setMenuOpen }: {
                     padding: "10.5px",
                     fontSize: "13.5px",
                     fontWeight: 700,
-                    color: "#111827",
+                    color: "#141b2b",
                     background: "#ffffff",
                     borderRadius: "8px",
                     textDecoration: "none",
@@ -462,7 +463,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
   /* ── GUEST LAYOUT: full-width with top navbar ── */
   if (!isAuthenticated) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f0f2f5" }}>
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f9f9ff" }}>
         <GuestTopNav pathname={pathname} isMobile={isMobile} menuOpen={open} setMenuOpen={setOpen} />
         <main key={pathname} className="dkp-page-enter" style={{ flex: 1 }}>
           {children}
@@ -473,7 +474,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
 
   /* ── AUTHENTICATED LAYOUT: sidebar + topbar ── */
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#f0f2f5" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#f9f9ff" }}>
 
       {/* DESKTOP SIDEBAR */}
       {!isMobile && (
@@ -507,10 +508,10 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             {user && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
                 <Link href="/profile" onClick={closeDrawer} style={{ position: "relative", textDecoration: "none", display: "block", cursor: "pointer" }}>
-                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #141b2b)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
                     {user?.name?.[0]?.toUpperCase() ?? "U"}
                   </div>
-                  <div style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderRadius: "50%", background: "var(--avatar-theme-color, #111827)", border: "2px solid #111116", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
+                  <div style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderRadius: "50%", background: "var(--avatar-theme-color, #141b2b)", border: "2px solid #111116", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
                     <Camera size={11} color="#ffffff" strokeWidth={2.5} />
                   </div>
                 </Link>
@@ -543,7 +544,7 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
       {/* MAIN CONTENT AREA */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100%", overflow: "hidden" }}>
         <header style={{
-          height: 64, background: "#fff", borderBottom: "1px solid #e5e7eb",
+          height: 64, background: "#fff", borderBottom: "1px solid #c8c5cd",
           display: "flex", alignItems: "center", padding: "0 20px", gap: 10,
           flexShrink: 0, zIndex: 30,
         }}>
@@ -551,9 +552,9 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             <button
               onClick={() => setOpen(!open)}
               aria-label="Open navigation"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, flexShrink: 0, background: "#f3f4f6", border: "none", borderRadius: 8, cursor: "pointer", color: "#374151" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
-              onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, flexShrink: 0, background: "#f1f3ff", border: "none", borderRadius: 8, cursor: "pointer", color: "#47464c" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#c8c5cd")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#f1f3ff")}
             >
               <Menu size={20} />
             </button>
@@ -566,10 +567,10 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             <Link
               href="/notifications"
               style={{ position: "relative", width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+              onMouseEnter={e => (e.currentTarget.style.background = "#f1f3ff")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <Bell size={18} color="#6b7280" />
+              <Bell size={18} color="#555f6d" />
               {unreadCount > 0 && (
                 <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
               )}
@@ -577,10 +578,10 @@ export function AppLayout({ children, topbarSearch, topbarActions }: AppLayoutPr
             <Link
               href="/library/wishlist"
               style={{ width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+              onMouseEnter={e => (e.currentTarget.style.background = "#f1f3ff")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <Heart size={18} color="#6b7280" />
+              <Heart size={18} color="#555f6d" />
             </Link>
             <Link href="/profile" style={{ textDecoration: "none", marginLeft: 2 }}>
               <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>

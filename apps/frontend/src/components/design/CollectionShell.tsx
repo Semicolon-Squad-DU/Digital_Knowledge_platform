@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Library, Search, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
-import { C, SERIF, SANS, NAV_LINKS } from "./dkpTheme";
+import { C, SERIF, SANS, NAV_LINKS, FOOTER_LINKS } from "./dkpTheme";
 
 export function CollectionShell({
   children,
@@ -13,8 +13,8 @@ export function CollectionShell({
   navSearch,
 }: {
   children: React.ReactNode;
-  /** Which collection nav link is active */
-  active: "Archive" | "Library" | "Research" | "Showcase";
+  /** Which collection nav link is active — omit for legal/utility pages */
+  active?: "Archive" | "Library" | "Research" | "Showcase" | null;
   /** Optional inline search shown in the desktop nav (Archive/Library designs) */
   navSearch?: React.ReactNode;
 }) {
@@ -152,12 +152,7 @@ export function CollectionShell({
             © {new Date().getFullYear()} University of Dhaka. All rights reserved.
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-            {[
-              { label: "Contact", href: "/contact" },
-              { label: "Privacy Policy", href: "/privacy" },
-              { label: "Terms of Service", href: "/terms" },
-              { label: "About", href: "/about" },
-            ].map((l) => (
+            {FOOTER_LINKS.map((l) => (
               <Link key={l.href} href={l.href} style={{ fontSize: 13, fontWeight: 600, color: C.body, textDecoration: "none" }}>
                 {l.label}
               </Link>

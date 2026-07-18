@@ -49,14 +49,14 @@ const PILL: Record<string, { bg: string; color: string }> = {
   published:    { bg: "#e6f4ea", color: "#1e7e34" },
   active:       { bg: "#e6f4ea", color: "#1e7e34" },
   approved:     { bg: "#e6f4ea", color: "#1e7e34" },
-  pending:      { bg: "#e8f0fe", color: "#1a56db" },
-  pending_review:{ bg: "#e8f0fe", color: "#1a56db" },
-  review:       { bg: "#e8f0fe", color: "#1a56db" },
+  pending:      { bg: "#e8f0fe", color: "#0D47A1" },
+  pending_review:{ bg: "#e8f0fe", color: "#0D47A1" },
+  review:       { bg: "#e8f0fe", color: "#0D47A1" },
   suspended:    { bg: "#fde8e8", color: "#c81e1e" },
   overdue:      { bg: "#fde8e8", color: "#c81e1e" },
-  inactive:     { bg: "#f3f4f6", color: "#6b7280" },
-  draft:        { bg: "#f3f4f6", color: "#6b7280" },
-  returned:     { bg: "#f3f4f6", color: "#6b7280" },
+  inactive:     { bg: "#f1f3ff", color: "#555f6d" },
+  draft:        { bg: "#f1f3ff", color: "#555f6d" },
+  returned:     { bg: "#f1f3ff", color: "#555f6d" },
 };
 
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -66,7 +66,7 @@ const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   researcher:     { bg: "#d1fae5", color: "#065f46" },
   student_author: { bg: "#fce7f3", color: "#9d174d" },
   member:         { bg: "#f0f9ff", color: "#0369a1" },
-  guest:          { bg: "#f3f4f6", color: "#6b7280" },
+  guest:          { bg: "#f1f3ff", color: "#555f6d" },
 };
 
 const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
@@ -75,7 +75,7 @@ const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
   DELETE:        { bg: "#fde8e8", color: "#c81e1e" },
   ACCESS:        { bg: "#f0f9ff", color: "#0369a1" },
   LOGIN:         { bg: "#ede9fe", color: "#5b21b6" },
-  LOGOUT:        { bg: "#f3f4f6", color: "#6b7280" },
+  LOGOUT:        { bg: "#f1f3ff", color: "#555f6d" },
   DOWNLOAD:      { bg: "#fef3c7", color: "#92400e" },
   STATUS_CHANGE: { bg: "#fce7f3", color: "#9d174d" },
 };
@@ -100,14 +100,14 @@ function StatCard({ label, value, sub, icon: Icon, accent = "var(--avatar-theme-
   icon: React.ElementType; accent?: string;
 }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 18px", display: "flex", alignItems: "flex-start", gap: 14 }}>
+    <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "20px 18px", display: "flex", alignItems: "flex-start", gap: 14 }}>
       <div style={{ width: 44, height: 44, borderRadius: 8, background: accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <Icon size={20} color="#fff" />
       </div>
       <div>
-        <p style={{ fontSize: 11, color: "#6b7280", fontWeight: 700, margin: 0, letterSpacing: "0.5px", textTransform: "uppercase" }}>{label}</p>
-        <p style={{ fontSize: 26, fontWeight: 800, color: "#111827", margin: "4px 0 0" }}>{value}</p>
-        {sub && <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>{sub}</p>}
+        <p style={{ fontSize: 11, color: "#555f6d", fontWeight: 700, margin: 0, letterSpacing: "0.5px", textTransform: "uppercase" }}>{label}</p>
+        <p style={{ fontSize: 26, fontWeight: 800, color: "#141b2b", margin: "4px 0 0" }}>{value}</p>
+        {sub && <p style={{ fontSize: 11, color: "#78767d", margin: "2px 0 0" }}>{sub}</p>}
       </div>
     </div>
   );
@@ -117,8 +117,8 @@ function SectionHeader({ title, desc, action }: { title: string; desc?: string; 
   return (
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
       <div>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111827", margin: 0 }}>{title}</h2>
-        {desc && <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0" }}>{desc}</p>}
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: "#141b2b", margin: 0 }}>{title}</h2>
+        {desc && <p style={{ fontSize: 13, color: "#555f6d", margin: "4px 0 0" }}>{desc}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>
@@ -127,15 +127,15 @@ function SectionHeader({ title, desc, action }: { title: string; desc?: string; 
 
 function TableHeader({ cols }: { cols: string[] }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length}, 1fr)`, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length}, 1fr)`, background: "#f9f9ff", borderBottom: "1px solid #c8c5cd", padding: "12px 20px", gap: 12 }}>
       {cols.map(c => (
-        <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>{c}</div>
+        <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px", textTransform: "uppercase" }}>{c}</div>
       ))}
     </div>
   );
 }
 
-function ActionBtn({ icon: Icon, label, color = "#374151", bg = "#f3f4f6", onClick }: {
+function ActionBtn({ icon: Icon, label, color = "#47464c", bg = "#f1f3ff", onClick }: {
   icon: React.ElementType; label: string; color?: string; bg?: string; onClick?: () => void;
 }) {
   return (
@@ -207,15 +207,15 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
       {/* Analytics Dashboards & Trends - responsive */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 20, marginBottom: 28 }}>
         {/* Upload and Download Trends (Sleek Visual SVG Chart) */}
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Engagement & Transfer Trends</h3>
-          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 20px" }}>Monthly comparisons of resource uploads vs. downloads</p>
+        <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "20px 24px" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: "0 0 4px" }}>Engagement & Transfer Trends</h3>
+          <p style={{ fontSize: 12, color: "#555f6d", margin: "0 0 20px" }}>Monthly comparisons of resource uploads vs. downloads</p>
           
-          <div style={{ position: "relative", height: 180, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 10px 20px", borderBottom: "1px solid #f3f4f6" }}>
+          <div style={{ position: "relative", height: 180, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 10px 20px", borderBottom: "1px solid #f1f3ff" }}>
             {/* Background grids */}
-            <div style={{ position: "absolute", left: 0, right: 0, top: 20, borderTop: "1px dashed #f3f4f6" }} />
-            <div style={{ position: "absolute", left: 0, right: 0, top: 70, borderTop: "1px dashed #f3f4f6" }} />
-            <div style={{ position: "absolute", left: 0, right: 0, top: 120, borderTop: "1px dashed #f3f4f6" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: 20, borderTop: "1px dashed #f1f3ff" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: 70, borderTop: "1px dashed #f1f3ff" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: 120, borderTop: "1px dashed #f1f3ff" }} />
             
             {/* Columns */}
             {(() => {
@@ -227,7 +227,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                     <div title={`Uploads: ${item.uploads}`} style={{ width: 14, height: `${Math.min(100, (item.uploads / maxValue) * 100)}%`, background: "#bae6fd", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
                     <div title={`Downloads: ${item.downloads}`} style={{ width: 14, height: `${Math.min(100, (item.downloads / maxValue) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{item.month}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#78767d" }}>{item.month}</span>
                 </div>
               ));
             })()}
@@ -236,18 +236,18 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
           <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "flex-end" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 10, height: 10, borderRadius: 2, background: "#bae6fd" }} />
-              <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Uploads</span>
+              <span style={{ fontSize: 11, color: "#555f6d", fontWeight: 600 }}>Uploads</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 10, height: 10, borderRadius: 2, background: "var(--avatar-theme-color)" }} />
-              <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Downloads</span>
+              <span style={{ fontSize: 11, color: "#555f6d", fontWeight: 600 }}>Downloads</span>
             </div>
           </div>
         </div>
 
         {/* Resource Usage & Distribution */}
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>Resource Usage Metrics</h3>
+        <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "20px 24px" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: "0 0 16px" }}>Resource Usage Metrics</h3>
           
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
@@ -272,10 +272,10 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
             ].map(res => (
               <div key={res.label}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", marginBottom: 6, gap: isMobile ? 4 : 0 }}>
-                  <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#374151", flex: isMobile ? 1 : "auto" }}>{res.label}</span>
-                  <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, whiteSpace: "nowrap" }}>{res.count}</span>
+                  <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#47464c", flex: isMobile ? 1 : "auto" }}>{res.label}</span>
+                  <span style={{ fontSize: 10, color: "#78767d", fontWeight: 600, whiteSpace: "nowrap" }}>{res.count}</span>
                 </div>
-                <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ height: 6, background: "#f1f3ff", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${Math.max(3, res.pct)}%`, background: res.color, borderRadius: 3 }} />
                 </div>
               </div>
@@ -285,26 +285,26 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
       </div>
 
       {/* Most Accessed Resources — FR-051: top 10 by download count, past 30 days */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px", marginBottom: 28 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>Most Accessed Resources</h3>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>Top 10 archive items by download count over the past 30 days</p>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "20px 24px", marginBottom: 28 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: "0 0 4px" }}>Most Accessed Resources</h3>
+        <p style={{ fontSize: 12, color: "#555f6d", margin: "0 0 16px" }}>Top 10 archive items by download count over the past 30 days</p>
 
         {mostAccessedLoading ? (
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+          <p style={{ fontSize: 12, color: "#78767d" }}>Loading…</p>
         ) : !mostAccessed || mostAccessed.length === 0 ? (
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>No downloads recorded in the past 30 days.</p>
+          <p style={{ fontSize: 12, color: "#78767d" }}>No downloads recorded in the past 30 days.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(() => {
               const maxDownloads = Math.max(1, ...mostAccessed.map(i => i.download_count));
               return mostAccessed.map((item, i) => (
                 <div key={item.item_id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
-                  <span style={{ fontSize: 12.5, color: "#374151", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
-                  <div style={{ width: 100, height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#78767d", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
+                  <span style={{ fontSize: 12.5, color: "#47464c", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
+                  <div style={{ width: 100, height: 6, background: "#f1f3ff", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
                     <div style={{ height: "100%", width: `${Math.max(4, (item.download_count / maxDownloads) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: 3 }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#141b2b", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
                 </div>
               ));
             })()}
@@ -319,41 +319,41 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
           { icon: ClipboardList, label: "Audit Logs", desc: "Browse and export immutable activity records", tab: "audit", color: "#7c3aed" },
           { icon: Settings, label: "System Config", desc: "Manage session, password, and platform settings", tab: "config", color: "#0891b2" },
         ].map(item => (
-          <div key={item.tab} onClick={() => setActiveTab(item.tab)} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: isMobile ? "16px" : "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
+          <div key={item.tab} onClick={() => setActiveTab(item.tab)} style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: isMobile ? "16px" : "20px", cursor: "pointer", transition: "box-shadow 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
           >
             <div style={{ width: 40, height: 40, borderRadius: 8, background: item.color, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
               <item.icon size={18} color="#fff" />
             </div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>{item.label}</p>
-            <p style={{ fontSize: 12, color: "#6b7280", margin: 0, lineHeight: 1.5 }}>{item.desc}</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: "0 0 4px" }}>{item.label}</p>
+            <p style={{ fontSize: 12, color: "#555f6d", margin: 0, lineHeight: 1.5 }}>{item.desc}</p>
           </div>
         ))}
       </div>
 
       {/* Pending access requests */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "20px 24px" }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
           <Lock size={14} color="var(--avatar-theme-color)" /> Pending Access Requests
         </h3>
         {!pendingRequests || pendingRequests.length === 0 ? (
-          <div style={{ padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-            <Lock size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
+          <div style={{ padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#78767d" }}>
+            <Lock size={28} color="#c8c5cd" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No pending access requests</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {pendingRequests.map((req: any) => (
-              <div key={req.request_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 20px", display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 16 }}>
+              <div key={req.request_id} style={{ background: "#f9f9ff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "16px 20px", display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 16 }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#111827" }}>
-                    Request by: <span style={{ color: "#2563eb" }}>{req.user_name}</span> ({req.user_email})
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#141b2b" }}>
+                    Request by: <span style={{ color: "#0D47A1" }}>{req.user_name}</span> ({req.user_email})
                   </p>
-                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "#374151" }}>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "#47464c" }}>
                     Document: <strong>{req.item_title}</strong>
                   </p>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280", fontStyle: "italic", background: "#fff", padding: "8px 12px", borderRadius: 6, borderLeft: "3px solid #2563eb" }}>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#555f6d", fontStyle: "italic", background: "#fff", padding: "8px 12px", borderRadius: 6, borderLeft: "3px solid #0D47A1" }}>
                     &ldquo;{req.reason}&rdquo;
                   </p>
                 </div>
@@ -362,7 +362,7 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
                     onClick={() => handleApprove(req.request_id)}
                     style={{
                       padding: "8px 14px", borderRadius: 6, border: "none",
-                      background: "#111827", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      background: "#141b2b", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 4, flex: isMobile ? 1 : "auto"
                     }}
                   >
@@ -390,21 +390,21 @@ function OverviewTab({ adminStats, statsLoading, setActiveTab }: { adminStats: a
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
           <form onSubmit={handleDenySubmit} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Deny Access Request</h3>
-              <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#141b2b" }}>Deny Access Request</h3>
+              <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555f6d" }}><X size={18} /></button>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Explanation / Rejection Message</label>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Explanation / Rejection Message</label>
               <textarea
                 required
                 value={rejectionMessage}
                 onChange={e => setRejectionMessage(e.target.value)}
                 placeholder="Please enter a reason or rejection message explaining why access is denied..."
-                style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
+                style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
               />
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setDenyRequestId(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button type="button" onClick={() => setDenyRequestId(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#47464c", cursor: "pointer" }}>Cancel</button>
               <button type="submit" disabled={submittingDeny} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                 {submittingDeny ? "Submitting..." : "Deny Access"}
               </button>
@@ -531,7 +531,7 @@ function UsersTab() {
         desc="View, edit roles, and control account status for all registered users."
         action={
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, flexDirection: isMobile ? "column" : "row", width: isMobile ? "100%" : "auto" }}>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>{usersData?.total || 0} total users</span>
+            <span style={{ fontSize: 12, color: "#555f6d" }}>{usersData?.total || 0} total users</span>
             <button
               onClick={() => setCreateUserModal(true)}
               style={{
@@ -567,16 +567,16 @@ function UsersTab() {
             return (
             <div key={u.user_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</span>
-                <span style={{ fontSize: 12, color: "#6b7280" }}>{u.email}</span>
-                {u.department && <span style={{ fontSize: 12, color: "#9ca3af" }}>· {u.department}</span>}
-                <Pill label={targetRole} bg={ROLE_COLORS[targetRole]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[targetRole]?.color ?? "#6b7280"} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#141b2b" }}>{u.name}</span>
+                <span style={{ fontSize: 12, color: "#555f6d" }}>{u.email}</span>
+                {u.department && <span style={{ fontSize: 12, color: "#78767d" }}>· {u.department}</span>}
+                <Pill label={targetRole} bg={ROLE_COLORS[targetRole]?.bg ?? "#f1f3ff"} color={ROLE_COLORS[targetRole]?.color ?? "#555f6d"} />
                 {u.requested_role && (
-                  <span style={{ fontSize: 11, color: "#9ca3af" }}>(switching from {u.role.replace("_", " ")})</span>
+                  <span style={{ fontSize: 11, color: "#78767d" }}>(switching from {u.role.replace("_", " ")})</span>
                 )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => handleApproveUser(u, true)} style={{ padding: "6px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => handleApproveUser(u, true)} style={{ padding: "6px 14px", background: "#141b2b", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   Approve
                 </button>
                 <button onClick={() => handleApproveUser(u, false)} style={{ padding: "6px 14px", background: "#fde8e8", color: "#dc2626", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
@@ -591,20 +591,20 @@ function UsersTab() {
 
       {/* Filters - responsive */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
-        <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
-          <Search size={13} color="#9ca3af" />
+        <div style={{ flex: 1, minWidth: isMobile ? "100%" : 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "9px 12px" }}>
+          <Search size={13} color="#78767d" />
           <input type="text" placeholder="Search by name or email…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#111827", width: "100%" }} />
+            style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#141b2b", width: "100%" }} />
         </div>
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, color: "#47464c", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Roles</option>
           {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
             <option key={r} value={r}>{r.replace("_"," ")}</option>
           ))}
         </select>
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, color: "#47464c", outline: "none", cursor: "pointer", flex: isMobile ? 1 : undefined, minWidth: isMobile ? "100%" : "auto" }}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
           <option value="pending_approval">Pending Approval</option>
@@ -615,11 +615,11 @@ function UsersTab() {
       </div>
 
       {/* Table/Card layout - responsive */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: isMobile ? "visible" : "hidden" }}>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 10, overflow: isMobile ? "visible" : "hidden" }}>
         {!isMobile && (
-          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr", gap: 12, background: "#f9f9ff", borderBottom: "1px solid #c8c5cd", padding: "12px 20px" }}>
             {["USER","EMAIL","ROLE","STATUS","JOINED","ACTIONS"].map(c => (
-              <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
+              <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px" }}>{c}</div>
             ))}
           </div>
         )}
@@ -631,29 +631,29 @@ function UsersTab() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: "40px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-            <Users size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
+          <div style={{ padding: "40px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#78767d" }}>
+            <Users size={28} color="#c8c5cd" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No users match your filters</p>
           </div>
         ) : isMobile ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
             {filtered.map((u: any) => (
-              <div key={u.user_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div key={u.user_id} style={{ background: "#f9f9ff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
                   <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--avatar-theme-color)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                     {(u.name || "U")[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#111827", wordBreak: "break-word" }}>{u.name}</p>
-                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>{u.department || "No Department"}</p>
-                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#141b2b", wordBreak: "break-word" }}>{u.name}</p>
+                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "#78767d" }}>{u.department || "No Department"}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555f6d", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[u.role]?.color ?? "#6b7280"} />
-                  <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f3f4f6"} color={PILL[u.membership_status]?.color ?? "#6b7280"} />
+                  <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f1f3ff"} color={ROLE_COLORS[u.role]?.color ?? "#555f6d"} />
+                  <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f1f3ff"} color={PILL[u.membership_status]?.color ?? "#555f6d"} />
                 </div>
-                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>Joined: {new Date(u.created_at).toLocaleDateString()}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#78767d" }}>Joined: {new Date(u.created_at).toLocaleDateString()}</p>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                   <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
                   <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
@@ -667,10 +667,10 @@ function UsersTab() {
             <div key={u.user_id} style={{
               display: "grid", gridTemplateColumns: "1.8fr 2fr 1.1fr 0.9fr 0.9fr 2.3fr",
               gap: 12, alignItems: "center", padding: "14px 20px",
-              borderBottom: i < filtered.length - 1 ? "1px solid #f3f4f6" : "none",
+              borderBottom: i < filtered.length - 1 ? "1px solid #f1f3ff" : "none",
               transition: "background 0.1s",
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#f9f9ff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -678,14 +678,14 @@ function UsersTab() {
                   {(u.name || "U")[0].toUpperCase()}
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827" }}>{u.name}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{u.department || "No Department"}</p>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#141b2b" }}>{u.name}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#78767d" }}>{u.department || "No Department"}</p>
                 </div>
               </div>
-              <p style={{ margin: 0, fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
-              <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f3f4f6"} color={ROLE_COLORS[u.role]?.color ?? "#6b7280"} />
-              <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f3f4f6"} color={PILL[u.membership_status]?.color ?? "#6b7280"} />
-              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{new Date(u.created_at).toLocaleDateString()}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#555f6d", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</p>
+              <Pill label={u.role} bg={ROLE_COLORS[u.role]?.bg ?? "#f1f3ff"} color={ROLE_COLORS[u.role]?.color ?? "#555f6d"} />
+              <Pill label={u.membership_status} bg={PILL[u.membership_status]?.bg ?? "#f1f3ff"} color={PILL[u.membership_status]?.color ?? "#555f6d"} />
+              <p style={{ margin: 0, fontSize: 12, color: "#78767d" }}>{new Date(u.created_at).toLocaleDateString()}</p>
               <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
                 <ActionBtn icon={Pencil} label="Edit" bg="#f0f9ff" color="#0369a1" onClick={() => setEditUser(u)} />
                 <ActionBtn icon={u.membership_status === "suspended" ? UserCheck : Ban} label={u.membership_status === "suspended" ? "Activate" : "Suspend"} bg={u.membership_status === "suspended" ? "#d1fae5" : "#fde8e8"} color={u.membership_status === "suspended" ? "#065f46" : "#c81e1e"} onClick={() => toggleStatus(u)} />
@@ -698,12 +698,12 @@ function UsersTab() {
 
       {/* Pagination */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 16 }}>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>Showing {filtered.length} of {usersData?.total || 0} users</p>
+        <p style={{ fontSize: 12, color: "#555f6d", margin: 0 }}>Showing {filtered.length} of {usersData?.total || 0} users</p>
         <div style={{ display: "flex", gap: 6 }}>
           <button
             disabled={page === 1}
             onClick={() => setPage(p => Math.max(1, p - 1))}
-            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: page === 1 ? 0.5 : 1 }}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, color: "#47464c", cursor: "pointer", opacity: page === 1 ? 0.5 : 1 }}
           >
             <ChevronLeft size={13} />
           </button>
@@ -711,7 +711,7 @@ function UsersTab() {
           <button
             disabled={filtered.length < 10}
             onClick={() => setPage(p => p + 1)}
-            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: filtered.length < 10 ? 0.5 : 1 }}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, color: "#47464c", cursor: "pointer", opacity: filtered.length < 10 ? 0.5 : 1 }}
           >
             <ChevronRight size={13} />
           </button>
@@ -723,35 +723,35 @@ function UsersTab() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
           <form onSubmit={handleCreateUser} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Create New User Account</h3>
-              <button type="button" onClick={() => setCreateUserModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#141b2b" }}>Create New User Account</h3>
+              <button type="button" onClick={() => setCreateUserModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555f6d" }}><X size={18} /></button>
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
-              <input name="name" required type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
+              <input name="name" required type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
-              <input name="email" required type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
+              <input name="email" required type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Password</label>
-              <input name="password" required type="password" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Password</label>
+              <input name="password" required type="password" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
-              <input name="department" type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
+              <input name="department" type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
-              <select name="role" defaultValue="member" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
+              <select name="role" defaultValue="member" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", background: "#fff" }}>
                 {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
               </select>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setCreateUserModal(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button type="button" onClick={() => setCreateUserModal(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#47464c", cursor: "pointer" }}>Cancel</button>
               <button type="submit" disabled={createMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                 {createMutation.isPending ? "Creating..." : "Create User"}
               </button>
@@ -765,39 +765,39 @@ function UsersTab() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
           <form onSubmit={handleUpdateUser} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Edit User Profile</h3>
-              <button type="button" onClick={() => setEditUser(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#141b2b" }}>Edit User Profile</h3>
+              <button type="button" onClick={() => setEditUser(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555f6d" }}><X size={18} /></button>
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
-              <input name="name" required defaultValue={editUser.name} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Full Name</label>
+              <input name="name" required defaultValue={editUser.name} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
-              <input name="email" required defaultValue={editUser.email} type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Email Address</label>
+              <input name="email" required defaultValue={editUser.email} type="email" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
-              <input name="department" defaultValue={editUser.department} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Department</label>
+              <input name="department" defaultValue={editUser.department} type="text" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
-              <select name="role" defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Role</label>
+              <select name="role" defaultValue={editUser.role} style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", background: "#fff" }}>
                 {["member","student_author","researcher","archivist","librarian","admin"].map(r => (
                   <option key={r} value={r}>{r.replace("_"," ")}</option>
                 ))}
               </select>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Status</label>
-              <select name="membership_status" defaultValue={editUser.membership_status} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Status</label>
+              <select name="membership_status" defaultValue={editUser.membership_status} style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", background: "#fff" }}>
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setEditUser(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button type="button" onClick={() => setEditUser(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#47464c", cursor: "pointer" }}>Cancel</button>
               <button type="submit" disabled={updateMutation.isPending} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                 {updateMutation.isPending ? "Saving..." : "Save Changes"}
               </button>
@@ -814,27 +814,27 @@ function UsersTab() {
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#fde8e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Trash2 size={18} color="#dc2626" />
               </div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Delete User Account</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#141b2b" }}>Delete User Account</h3>
             </div>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16, lineHeight: 1.6 }}>
-              You are about to delete <strong style={{ color: "#111827" }}>{deleteModal.name}</strong>. This action is <strong style={{ color: "#dc2626" }}>irreversible</strong>. Choose a deletion mode:
+            <p style={{ fontSize: 13, color: "#555f6d", marginBottom: 16, lineHeight: 1.6 }}>
+              You are about to delete <strong style={{ color: "#141b2b" }}>{deleteModal.name}</strong>. This action is <strong style={{ color: "#dc2626" }}>irreversible</strong>. Choose a deletion mode:
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
               {[
                 { mode: "anonymize", label: "Anonymize (GDPR)", desc: "Removes personal data, preserves transaction history", color: "#d97706" },
                 { mode: "hard_delete", label: "Hard Delete", desc: "Permanently removes the user record", color: "#dc2626" },
               ].map((opt, oidx) => (
-                <label key={opt.mode} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer" }}>
+                <label key={opt.mode} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", border: "1px solid #c8c5cd", borderRadius: 8, cursor: "pointer" }}>
                   <input type="radio" name="deleteMode" id={`delmode-${opt.mode}`} defaultChecked={oidx === 0} style={{ marginTop: 2 }} />
                   <div>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: opt.color }}>{opt.label}</p>
-                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>{opt.desc}</p>
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "#555f6d" }}>{opt.desc}</p>
                   </div>
                 </label>
               ))}
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={() => setDeleteModal(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+              <button onClick={() => setDeleteModal(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#47464c", cursor: "pointer" }}>Cancel</button>
               <button onClick={() => {
                 const isHard = (document.getElementById("delmode-hard_delete") as HTMLInputElement)?.checked;
                 handleDeleteUser(isHard ? "hard_delete" : "anonymize");
@@ -913,20 +913,20 @@ function AuditTab() {
 
       {/* Filters */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px" }}>
-          <Search size={13} color="#9ca3af" />
+        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "9px 12px" }}>
+          <Search size={13} color="#78767d" />
           <input type="text" placeholder="Filter by user ID or name…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#111827", width: "100%" }} />
+            style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#141b2b", width: "100%" }} />
         </div>
         <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, color: "#47464c", outline: "none", cursor: "pointer" }}>
           <option value="all">All Actions</option>
           {["CREATE","UPDATE","DELETE","ACCESS","LOGIN","LOGOUT","DOWNLOAD","STATUS_CHANGE","BACKUP","RESTORE","APPROVE_USER","REJECT_USER"].map(a => (
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
         <select value={entityFilter} onChange={e => { setEntityFilter(e.target.value); setPage(1); }}
-          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, color: "#374151", outline: "none", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, color: "#47464c", outline: "none", cursor: "pointer" }}>
           <option value="all">All Entity Types</option>
           {["user","archive_item","backup","backup_schedule","system_config","borrow","fine","catalog_import"].map(t => (
             <option key={t} value={t}>{t.replace(/_/g," ")}</option>
@@ -935,10 +935,10 @@ function AuditTab() {
       </div>
 
       {/* Table */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr 1.2fr 1.2fr 0.6fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr 1.2fr 1.2fr 0.6fr", gap: 12, background: "#f9f9ff", borderBottom: "1px solid #c8c5cd", padding: "12px 20px" }}>
           {["TIMESTAMP","USER","ACTION","ENTITY TYPE","ENTITY ID","DETAILS"].map(c => (
-            <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
+            <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px" }}>{c}</div>
           ))}
         </div>
 
@@ -949,41 +949,41 @@ function AuditTab() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : logs.length === 0 ? (
-          <div style={{ padding: "40px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-            <ClipboardList size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
+          <div style={{ padding: "40px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#78767d" }}>
+            <ClipboardList size={28} color="#c8c5cd" style={{ marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: 13 }}>No audit log entries match your filters</p>
           </div>
         ) : logs.map((log: any, i: number) => {
-          const ac = ACTION_COLORS[log.action] ?? { bg: "#f3f4f6", color: "#6b7280" };
+          const ac = ACTION_COLORS[log.action] ?? { bg: "#f1f3ff", color: "#555f6d" };
           const isExpanded = expanded === log.log_id;
           return (
             <div key={log.log_id}>
               <div style={{
                 display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr 1.2fr 1.2fr 0.6fr",
                 gap: 12, alignItems: "center", padding: "13px 20px",
-                borderBottom: "1px solid #f3f4f6", transition: "background 0.1s",
+                borderBottom: "1px solid #f1f3ff", transition: "background 0.1s",
               }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f9f9ff"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
-                <p style={{ margin: 0, fontSize: 12, color: "#374151", fontFamily: "monospace" }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#47464c", fontFamily: "monospace" }}>
                   {new Date(log.timestamp).toLocaleString()}
                 </p>
                 <div>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#111827" }}>{log.user_name || "System"}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontFamily: "monospace" }}>{log.user_id || "N/A"}</p>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#141b2b" }}>{log.user_name || "System"}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#78767d", fontFamily: "monospace" }}>{log.user_id || "N/A"}</p>
                 </div>
                 <Pill label={log.action} bg={ac.bg} color={ac.color} />
-                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{(log.entity_type || "").replace("_"," ")}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.entity_id || "N/A"}</p>
-                <button onClick={() => setExpanded(isExpanded ? null : log.log_id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#555f6d" }}>{(log.entity_type || "").replace("_"," ")}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#78767d", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.entity_id || "N/A"}</p>
+                <button onClick={() => setExpanded(isExpanded ? null : log.log_id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555f6d", display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600 }}>
                   <Eye size={12} /> {isExpanded ? "Hide" : "View"}
                 </button>
               </div>
               {isExpanded && (
-                <div style={{ padding: "12px 20px 16px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                  <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>Details (JSON)</p>
-                  <pre style={{ margin: 0, fontSize: 12, color: "#374151", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6, padding: "10px 14px", overflow: "auto" }}>
+                <div style={{ padding: "12px 20px 16px", background: "#f9f9ff", borderBottom: "1px solid #c8c5cd" }}>
+                  <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#555f6d", textTransform: "uppercase", letterSpacing: "0.5px" }}>Details (JSON)</p>
+                  <pre style={{ margin: 0, fontSize: 12, color: "#47464c", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 6, padding: "10px 14px", overflow: "auto" }}>
                     {JSON.stringify(log.details, null, 2)}
                   </pre>
                 </div>
@@ -995,12 +995,12 @@ function AuditTab() {
 
       {/* Pagination */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>Showing {logs.length} of {total} entries</p>
+        <p style={{ fontSize: 12, color: "#555f6d", margin: 0 }}>Showing {logs.length} of {total} entries</p>
         <div style={{ display: "flex", gap: 6 }}>
           <button
             disabled={page === 1}
             onClick={() => setPage(p => Math.max(1, p - 1))}
-            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: page === 1 ? 0.5 : 1 }}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, color: "#47464c", cursor: "pointer", opacity: page === 1 ? 0.5 : 1 }}
           >
             <ChevronLeft size={13} />
           </button>
@@ -1008,7 +1008,7 @@ function AuditTab() {
           <button
             disabled={logs.length < 10}
             onClick={() => setPage(p => p + 1)}
-            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer", opacity: logs.length < 10 ? 0.5 : 1 }}
+            style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, color: "#47464c", cursor: "pointer", opacity: logs.length < 10 ? 0.5 : 1 }}
           >
             <ChevronRight size={13} />
           </button>
@@ -1058,18 +1058,18 @@ function ConfigTab() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
           {currentConfigs.map((item: any) => (
-            <div key={item.key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: isMobile ? "14px 16px" : "18px 20px" }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+            <div key={item.key} style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 10, padding: isMobile ? "14px 16px" : "18px 20px" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
                 {item.key.replace(/_/g, " ")}
               </label>
-              <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 10px", lineHeight: 1.5 }}>{item.description}</p>
+              <p style={{ fontSize: 12, color: "#78767d", margin: "0 0 10px", lineHeight: 1.5 }}>{item.description}</p>
               {item.value === "true" || item.value === "false" || config[item.key] === "true" || config[item.key] === "false" ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     onClick={() => setConfig(prev => ({ ...prev, [item.key]: prev[item.key] === "true" ? "false" : "true" }))}
                     style={{
                       width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-                      background: config[item.key] === "true" ? "var(--avatar-theme-color)" : "#d1d5db",
+                      background: config[item.key] === "true" ? "var(--avatar-theme-color)" : "#c8c5cd",
                       position: "relative", transition: "background 0.2s",
                     }}
                   >
@@ -1079,7 +1079,7 @@ function ConfigTab() {
                       transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                     }} />
                   </button>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: config[item.key] === "true" ? "#065f46" : "#6b7280" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: config[item.key] === "true" ? "#065f46" : "#555f6d" }}>
                     {config[item.key] === "true" ? "Enabled" : "Disabled"}
                   </span>
                 </div>
@@ -1088,9 +1088,9 @@ function ConfigTab() {
                   type="text"
                   value={config[item.key] ?? item.value}
                   onChange={e => setConfig(prev => ({ ...prev, [item.key]: e.target.value }))}
-                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }}
                   onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#c8c5cd"; }}
                 />
               )}
             </div>
@@ -1111,7 +1111,7 @@ function ConfigTab() {
 // ── Tab: Backups ──────────────────────────────────────────────────────────────
 const BACKUP_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   completed: { bg: "#d1fae5", color: "#065f46" },
-  running:   { bg: "#e8f0fe", color: "#1a56db" },
+  running:   { bg: "#e8f0fe", color: "#0D47A1" },
   failed:    { bg: "#fde8e8", color: "#c81e1e" },
 };
 
@@ -1204,73 +1204,73 @@ function BackupsTab() {
       />
 
       {/* Schedule config */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "20px 24px", marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 14px", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 10, padding: "20px 24px", marginBottom: 20 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: "0 0 14px", display: "flex", alignItems: "center", gap: 8 }}>
           <Calendar size={14} color="var(--avatar-theme-color)" /> Backup Schedule
         </h3>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Cron Expression</label>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Cron Expression</label>
             <input type="text" value={cronInput} onChange={e => setCronInput(e.target.value)} placeholder="e.g. 0 9 * * *"
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }}
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }}
               onFocus={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#d1d5db"; }} />
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
+              onBlur={e => { e.currentTarget.style.borderColor = "#c8c5cd"; }} />
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: "#78767d" }}>
               {schedule ? `Active: ${schedule.enabled ? schedule.cronExpression : "disabled"}` : "Loading current schedule…"}
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 20 }}>
-            <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>Enabled</span>
+            <span style={{ fontSize: 12, color: "#47464c", fontWeight: 600 }}>Enabled</span>
             <div
               onClick={() => setEnabledInput(v => !v)}
-              style={{ width: 44, height: 24, borderRadius: 12, background: enabledInput ? "var(--avatar-theme-color)" : "#d1d5db", position: "relative", cursor: "pointer", transition: "background 0.15s" }}
+              style={{ width: 44, height: 24, borderRadius: 12, background: enabledInput ? "var(--avatar-theme-color)" : "#c8c5cd", position: "relative", cursor: "pointer", transition: "background 0.15s" }}
             >
               <span style={{ position: "absolute", top: 3, left: enabledInput ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.15s" }} />
             </div>
           </div>
-          <button onClick={handleUpdateSchedule} disabled={updateScheduleMutation.isPending} style={{ padding: "9px 16px", borderRadius: 6, border: "none", background: "#111827", fontSize: 13, fontWeight: 600, color: "#fff", cursor: updateScheduleMutation.isPending ? "not-allowed" : "pointer", marginBottom: 20, opacity: updateScheduleMutation.isPending ? 0.7 : 1 }}>
+          <button onClick={handleUpdateSchedule} disabled={updateScheduleMutation.isPending} style={{ padding: "9px 16px", borderRadius: 6, border: "none", background: "#141b2b", fontSize: 13, fontWeight: 600, color: "#fff", cursor: updateScheduleMutation.isPending ? "not-allowed" : "pointer", marginBottom: 20, opacity: updateScheduleMutation.isPending ? 0.7 : 1 }}>
             {updateScheduleMutation.isPending ? "Updating…" : "Update Schedule"}
           </button>
         </div>
       </div>
 
       {/* Backup list */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1.5fr 1fr 1fr", gap: 12, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "12px 20px" }}>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1.5fr 1fr 1fr", gap: 12, background: "#f9f9ff", borderBottom: "1px solid #c8c5cd", padding: "12px 20px" }}>
           {["FILENAME","SIZE","CREATED AT","STATUS","ACTIONS"].map(c => (
-            <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>{c}</div>
+            <div key={c} style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px" }}>{c}</div>
           ))}
         </div>
         {isLoading && (
           <div style={{ padding: 20 }}><Skeleton className="h-[60px] w-full" /></div>
         )}
         {!isLoading && backups.length === 0 && (
-          <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+          <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#78767d" }}>
             No backups yet — click &quot;Generate Backup Now&quot; to create one.
           </div>
         )}
         {backups.map((b, i) => {
-          const style = BACKUP_STATUS_STYLE[b.status] ?? { bg: "#f3f4f6", color: "#6b7280" };
+          const style = BACKUP_STATUS_STYLE[b.status] ?? { bg: "#f1f3ff", color: "#555f6d" };
           return (
             <div key={b.backup_id} style={{
               display: "grid", gridTemplateColumns: "3fr 1fr 1.5fr 1fr 1fr",
               gap: 12, alignItems: "center", padding: "14px 20px",
-              borderBottom: i < backups.length - 1 ? "1px solid #f3f4f6" : "none",
+              borderBottom: i < backups.length - 1 ? "1px solid #f1f3ff" : "none",
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#f9f9ff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Database size={14} color="#9ca3af" />
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#374151", fontFamily: "monospace" }}>{b.filename}</p>
+                  <Database size={14} color="#78767d" />
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#47464c", fontFamily: "monospace" }}>{b.filename}</p>
                 </div>
                 {b.status === "failed" && b.error_message && (
                   <p style={{ margin: "3px 0 0 22px", fontSize: 11, color: "#c81e1e" }}>{b.error_message}</p>
                 )}
               </div>
-              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{formatBytes(b.size_bytes)}</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{new Date(b.created_at).toLocaleString()}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#555f6d" }}>{formatBytes(b.size_bytes)}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#555f6d" }}>{new Date(b.created_at).toLocaleString()}</p>
               <Pill label={b.status} bg={style.bg} color={style.color} />
               <div style={{ display: "flex", gap: 4 }}>
                 <ActionBtn icon={Download} label="Download" bg="#f0f9ff" color="#0369a1"
@@ -1288,11 +1288,11 @@ function BackupsTab() {
       {/* Restore confirmation modal */}
       {restoreTarget && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: 460, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #c8c5cd", padding: 24, width: "100%", maxWidth: 460, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#141b2b", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 8 }}>
               <AlertCircle size={16} color="#c81e1e" /> Restore Database
             </h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 12px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: "#555f6d", margin: "0 0 12px", lineHeight: 1.5 }}>
               This will overwrite the live database with the contents of <strong>{restoreTarget.filename}</strong>. A fresh safety backup will be taken first, but this action cannot be undone quickly. Type the filename below to confirm.
             </p>
             <input
@@ -1300,10 +1300,10 @@ function BackupsTab() {
               value={confirmFilename}
               onChange={e => setConfirmFilename(e.target.value)}
               placeholder={restoreTarget.filename}
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 16, fontFamily: "monospace" }}
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box", marginBottom: 16, fontFamily: "monospace" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button onClick={() => { setRestoreTarget(null); setConfirmFilename(""); }} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
+              <button onClick={() => { setRestoreTarget(null); setConfirmFilename(""); }} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
               <button
                 onClick={handleConfirmRestore}
                 disabled={confirmFilename !== restoreTarget.filename || restoreMutation.isPending}
@@ -1430,26 +1430,26 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
       {/* Slack Webhook Modal */}
       {slackOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "16px" }}>
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: isMobile ? "24px 20px" : "24px", width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Configure Slack Notifications</h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.4 }}>Set the Slack Webhook URL to stream real-time platform system health alerts directly to your channels.</p>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #c8c5cd", padding: isMobile ? "24px 20px" : "24px", width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#141b2b", margin: "0 0 8px" }}>Configure Slack Notifications</h3>
+            <p style={{ fontSize: 13, color: "#555f6d", margin: "0 0 20px", lineHeight: 1.4 }}>Set the Slack Webhook URL to stream real-time platform system health alerts directly to your channels.</p>
             <form onSubmit={(e) => {
               e.preventDefault();
               localStorage.setItem("slack_webhook", slackWebhook);
               setSlackOpen(false);
               toast.success("Slack Webhook URL saved successfully!");
             }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#374151", marginBottom: 6 }}>Slack Webhook URL</label>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#47464c", marginBottom: 6 }}>Slack Webhook URL</label>
               <input
                 required
                 type="url"
                 placeholder="https://hooks.slack.com/services/..."
                 value={slackWebhook}
                 onChange={(e) => setSlackWebhook(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button type="button" onClick={() => setSlackOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={() => setSlackOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
                 <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Webhook</button>
               </div>
             </form>
@@ -1460,26 +1460,26 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
       {/* Email Recipient Modal */}
       {emailOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "16px" }}>
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: isMobile ? "24px 20px" : "24px", width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 8px" }}>Configure Email Alerts</h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px", lineHeight: 1.4 }}>Set the administrative email recipient address for high-priority infrastructure downtime alerts.</p>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #c8c5cd", padding: isMobile ? "24px 20px" : "24px", width: "100%", maxWidth: 450, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", textAlign: "left", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#141b2b", margin: "0 0 8px" }}>Configure Email Alerts</h3>
+            <p style={{ fontSize: 13, color: "#555f6d", margin: "0 0 20px", lineHeight: 1.4 }}>Set the administrative email recipient address for high-priority infrastructure downtime alerts.</p>
             <form onSubmit={(e) => {
               e.preventDefault();
               localStorage.setItem("email_recipient", emailRecipient);
               setEmailOpen(false);
               toast.success("Alert email recipient configured successfully!");
             }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#374151", marginBottom: 6 }}>Administrator Email Address</label>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#47464c", marginBottom: 6 }}>Administrator Email Address</label>
               <input
                 required
                 type="email"
                 placeholder="admin@dkp-institutional.org"
                 value={emailRecipient}
                 onChange={(e) => setEmailRecipient(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box", marginBottom: 20 }}
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button type="button" onClick={() => setEmailOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={() => setEmailOpen(false)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>Cancel</button>
                 <button type="submit" style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Config</button>
               </div>
             </form>
@@ -1488,13 +1488,13 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
       )}
 
       {/* Health status bar */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 10, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: isDegraded ? "#dc2626" : "#16a34a", boxShadow: isDegraded ? "0 0 0 3px #fecaca" : "0 0 0 3px #d1fae5" }} />
         <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#141b2b" }}>
             {isDegraded ? "System Degraded" : "System Operational"}
           </p>
-          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
+          <p style={{ margin: 0, fontSize: 12, color: "#555f6d" }}>
             {isDegraded ? "One or more core components are failing" : "All services healthy · Real-time monitoring active"}
           </p>
         </div>
@@ -1509,7 +1509,7 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
             return (
               <div key={s.label} style={{ textAlign: "center" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: ok ? "#16a34a" : "#dc2626", margin: "0 auto 4px" }} />
-                <p style={{ margin: 0, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{s.label}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#555f6d", fontWeight: 600 }}>{s.label}</p>
               </div>
             );
           })}
@@ -1523,25 +1523,25 @@ function AlertsTab({ readAlertIds, onDismiss }: { readAlertIds: string[]; onDism
           const IconComp = alert.type === "error_spike" ? Zap : alert.type === "downtime" ? Server : Bell;
           return (
             <div key={alert.id} style={{
-              background: alert.read ? "#fafafa" : style.bg,
-              border: `1px solid ${alert.read ? "#e5e7eb" : style.border}`,
+              background: alert.read ? "#f9f9ff" : style.bg,
+              border: `1px solid ${alert.read ? "#c8c5cd" : style.border}`,
               borderRadius: 10, padding: "16px 20px",
               display: "flex", alignItems: "flex-start", gap: 14,
               opacity: alert.read ? 0.6 : 1, transition: "opacity 0.2s",
             }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: alert.read ? "#e5e7eb" : style.bg, border: `1px solid ${alert.read ? "#d1d5db" : style.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <IconComp size={16} color={alert.read ? "#9ca3af" : style.icon} />
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: alert.read ? "#c8c5cd" : style.bg, border: `1px solid ${alert.read ? "#c8c5cd" : style.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <IconComp size={16} color={alert.read ? "#78767d" : style.icon} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: alert.read ? "#6b7280" : style.color }}>{alert.title}</p>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: alert.read ? "#555f6d" : style.color }}>{alert.title}</p>
                   {!alert.read && <span style={{ fontSize: 10, fontWeight: 700, background: style.icon, color: "#fff", padding: "2px 6px", borderRadius: 4 }}>NEW</span>}
                 </div>
-                <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>{alert.message}</p>
-                <p style={{ margin: "6px 0 0", fontSize: 11, color: "#9ca3af" }}>{new Date(alert.timestamp).toLocaleString()}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#555f6d", lineHeight: 1.5 }}>{alert.message}</p>
+                <p style={{ margin: "6px 0 0", fontSize: 11, color: "#78767d" }}>{new Date(alert.timestamp).toLocaleString()}</p>
               </div>
               {!alert.read && (
-                <button onClick={() => dismiss(alert.id)} style={{ padding: "5px 10px", borderRadius: 5, border: "1px solid #e5e7eb", background: "#fff", fontSize: 11, fontWeight: 600, color: "#374151", cursor: "pointer", flexShrink: 0 }}>
+                <button onClick={() => dismiss(alert.id)} style={{ padding: "5px 10px", borderRadius: 5, border: "1px solid #c8c5cd", background: "#fff", fontSize: 11, fontWeight: 600, color: "#47464c", cursor: "pointer", flexShrink: 0 }}>
                   Dismiss
                 </button>
               )}
@@ -1602,15 +1602,15 @@ function AnnouncementsTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div ref={formRef} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px" }}>
+      <div ref={formRef} style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "28px 32px" }}>
         <SectionHeader
           title={editingId ? "Edit & Resend Announcement" : "Broadcast Announcement"}
           desc="Send a platform-wide alert or targeted notification via email and in-app message."
         />
         <form onSubmit={handleBroadcast} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600 }}>
           <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
-            <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", background: "#fff" }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Target Audience</label>
+            <select value={targetRole} onChange={e => setTargetRole(e.target.value)} style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", background: "#fff" }}>
               <option value="all">All Registered Users</option>
               {ANNOUNCEMENT_ROLES.map(r => (
                 <option key={r} value={r}>{r.replace("_"," ")}</option>
@@ -1618,16 +1618,16 @@ function AnnouncementsTab() {
             </select>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box" }} />
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Announcement Title</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Scheduled System Upgrade" style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box" }} />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
-            <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Message Body</label>
+            <textarea rows={6} value={body} onChange={e => setBody(e.target.value)} required placeholder="Write your message here..." style={{ width: "100%", padding: "9px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
             {editingId && (
-              <button type="button" onClick={handleCancelEdit} style={{ padding: "10px 20px", borderRadius: 7, border: "1px solid #d1d5db", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>
+              <button type="button" onClick={handleCancelEdit} style={{ padding: "10px 20px", borderRadius: 7, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#4b5563", cursor: "pointer" }}>
                 Cancel
               </button>
             )}
@@ -1639,30 +1639,30 @@ function AnnouncementsTab() {
       </div>
 
       {/* Sent announcement history */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ padding: "18px 24px", borderBottom: "1px solid #f3f4f6" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>Sent Announcements</h3>
+      <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "18px 24px", borderBottom: "1px solid #f1f3ff" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: 0 }}>Sent Announcements</h3>
         </div>
         {historyLoading ? (
           <div style={{ padding: 20 }}><Skeleton className="h-[80px] w-full" /></div>
         ) : announcements.length === 0 ? (
-          <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+          <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "#78767d" }}>
             No announcements sent yet.
           </div>
         ) : (
           announcements.map((a, i) => (
-            <div key={a.announcement_id} style={{ padding: "16px 24px", borderBottom: i < announcements.length - 1 ? "1px solid #f9fafb" : "none", display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+            <div key={a.announcement_id} style={{ padding: "16px 24px", borderBottom: i < announcements.length - 1 ? "1px solid #f9f9ff" : "none", display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: isMobile ? "wrap" : "nowrap" }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                  <p style={{ fontSize: 13.5, fontWeight: 700, color: "#111827", margin: 0 }}>{a.title}</p>
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: "#141b2b", margin: 0 }}>{a.title}</p>
                   <Pill label={a.target_role ?? "all"} bg="#f0f9ff" color="#0369a1" />
                 </div>
-                <p style={{ fontSize: 12.5, color: "#6b7280", margin: "0 0 6px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{a.body}</p>
-                <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>
+                <p style={{ fontSize: 12.5, color: "#555f6d", margin: "0 0 6px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{a.body}</p>
+                <p style={{ fontSize: 11, color: "#78767d", margin: 0 }}>
                   Sent {new Date(a.created_at).toLocaleString()}{a.created_by_name ? ` by ${a.created_by_name}` : ""}
                 </p>
               </div>
-              <ActionBtn icon={Pencil} label="Edit & Resend" bg="#f3f4f6" color="#374151" onClick={() => handleEdit(a)} />
+              <ActionBtn icon={Pencil} label="Edit & Resend" bg="#f1f3ff" color="#47464c" onClick={() => handleEdit(a)} />
             </div>
           ))
         )}
@@ -1695,16 +1695,16 @@ function AnalyticsTab() {
   };
 
   const Card = ({ title, desc, metric, children }: { title: string; desc: string; metric: "usage" | "most-accessed" | "engagement" | "search"; children: React.ReactNode }) => (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px", marginBottom: 20 }}>
+    <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: "20px 24px", marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4, gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>{title}</h3>
-          <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>{desc}</p>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: 0 }}>{title}</h3>
+          <p style={{ fontSize: 12, color: "#555f6d", margin: "2px 0 0" }}>{desc}</p>
         </div>
         <button
           onClick={() => handleExport(metric)}
           disabled={exporting === metric}
-          style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", fontSize: 12, fontWeight: 600, color: "#374151", cursor: exporting === metric ? "wait" : "pointer", flexShrink: 0 }}
+          style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, fontWeight: 600, color: "#47464c", cursor: exporting === metric ? "wait" : "pointer", flexShrink: 0 }}
         >
           <Download size={12} /> CSV
         </button>
@@ -1719,7 +1719,7 @@ function AnalyticsTab() {
         title="Analytics"
         desc="Platform-wide usage statistics, engagement metrics, and search insights."
         action={
-          <select value={days} onChange={e => setDays(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13, fontWeight: 600, color: "#374151", background: "#fff", cursor: "pointer" }}>
+          <select value={days} onChange={e => setDays(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c8c5cd", fontSize: 13, fontWeight: 600, color: "#47464c", background: "#fff", cursor: "pointer" }}>
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>
             <option value={90}>Last 90 days</option>
@@ -1737,7 +1737,7 @@ function AnalyticsTab() {
       {/* Usage time-series */}
       <Card title="Usage Over Time" desc={`Daily uploads, downloads, and searches — last ${days} days`} metric="usage">
         {usageLoading ? (
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+          <p style={{ fontSize: 12, color: "#78767d" }}>Loading…</p>
         ) : (
           (() => {
             const dates = [...new Set([
@@ -1745,7 +1745,7 @@ function AnalyticsTab() {
               ...(usage?.downloads ?? []).map(r => r.date),
               ...(usage?.searches ?? []).map(r => r.date),
             ])].sort();
-            if (dates.length === 0) return <p style={{ fontSize: 12, color: "#9ca3af" }}>No activity recorded in this window.</p>;
+            if (dates.length === 0) return <p style={{ fontSize: 12, color: "#78767d" }}>No activity recorded in this window.</p>;
             const uploadsMap = new Map((usage?.uploads ?? []).map(r => [r.date, r.count]));
             const downloadsMap = new Map((usage?.downloads ?? []).map(r => [r.date, r.count]));
             const searchesMap = new Map((usage?.searches ?? []).map(r => [r.date, r.count]));
@@ -1760,7 +1760,7 @@ function AnalyticsTab() {
                         <div title={`Downloads: ${downloadsMap.get(date) ?? 0}`} style={{ width: 6, height: `${Math.max(2, ((downloadsMap.get(date) ?? 0) / maxValue) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: "2px 2px 0 0" }} />
                         <div title={`Searches: ${searchesMap.get(date) ?? 0}`} style={{ width: 6, height: `${Math.max(2, ((searchesMap.get(date) ?? 0) / maxValue) * 100)}%`, background: "#16a34a", borderRadius: "2px 2px 0 0" }} />
                       </div>
-                      <span style={{ fontSize: 9, color: "#9ca3af", writingMode: "vertical-rl", transform: "rotate(180deg)" }}>{date.slice(5)}</span>
+                      <span style={{ fontSize: 9, color: "#78767d", writingMode: "vertical-rl", transform: "rotate(180deg)" }}>{date.slice(5)}</span>
                     </div>
                   ))}
                 </div>
@@ -1768,7 +1768,7 @@ function AnalyticsTab() {
                   {[["Uploads", "#0284c7"], ["Downloads", "var(--avatar-theme-color)"], ["Searches", "#16a34a"]].map(([label, color]) => (
                     <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: color }} />
-                      <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{label}</span>
+                      <span style={{ fontSize: 11, color: "#555f6d", fontWeight: 600 }}>{label}</span>
                     </div>
                   ))}
                 </div>
@@ -1781,21 +1781,21 @@ function AnalyticsTab() {
       {/* Most accessed */}
       <Card title="Most Accessed Resources" desc="Top 10 archive items by download count, past 30 days" metric="most-accessed">
         {mostAccessedLoading ? (
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+          <p style={{ fontSize: 12, color: "#78767d" }}>Loading…</p>
         ) : !mostAccessed || mostAccessed.length === 0 ? (
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>No downloads recorded in the past 30 days.</p>
+          <p style={{ fontSize: 12, color: "#78767d" }}>No downloads recorded in the past 30 days.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(() => {
               const maxDownloads = Math.max(1, ...mostAccessed.map(i => i.download_count));
               return mostAccessed.map((item, i) => (
                 <div key={item.item_id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
-                  <span style={{ fontSize: 12.5, color: "#374151", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
-                  <div style={{ width: 100, height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                  <span style={{ width: 18, fontSize: 11, fontWeight: 700, color: "#78767d", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
+                  <span style={{ fontSize: 12.5, color: "#47464c", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
+                  <div style={{ width: 100, height: 6, background: "#f1f3ff", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
                     <div style={{ height: "100%", width: `${Math.max(4, (item.download_count / maxDownloads) * 100)}%`, background: "var(--avatar-theme-color)", borderRadius: 3 }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#141b2b", width: 28, textAlign: "right", flexShrink: 0 }}>{item.download_count}</span>
                 </div>
               ));
             })()}
@@ -1806,47 +1806,47 @@ function AnalyticsTab() {
       {/* Search analytics */}
       <Card title="Search Analytics" desc="Top search terms and zero-result queries, by language" metric="search">
         {searchLoading ? (
-          <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</p>
+          <p style={{ fontSize: 12, color: "#78767d" }}>Loading…</p>
         ) : (
           <>
             <div style={{ display: "flex", gap: 16, marginBottom: 18 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Bangla queries:</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{search?.language_breakdown.bangla ?? 0}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#555f6d" }}>Bangla queries:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#141b2b" }}>{search?.language_breakdown.bangla ?? 0}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>English queries:</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{search?.language_breakdown.english ?? 0}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#555f6d" }}>English queries:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#141b2b" }}>{search?.language_breakdown.english ?? 0}</span>
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
               <div>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>Top Search Terms</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#78767d", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>Top Search Terms</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {(search?.top_queries ?? []).slice(0, 10).map(q => (
                     <div key={q.query_text} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 12.5, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {q.query_text} {q.is_bangla && <span style={{ fontSize: 10, color: "#9ca3af" }}>(bn)</span>}
+                      <span style={{ fontSize: 12.5, color: "#47464c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.query_text} {q.is_bangla && <span style={{ fontSize: 10, color: "#78767d" }}>(bn)</span>}
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>{q.search_count}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", flexShrink: 0 }}>{q.search_count}</span>
                     </div>
                   ))}
-                  {(!search?.top_queries || search.top_queries.length === 0) && <p style={{ fontSize: 12, color: "#9ca3af" }}>No searches yet.</p>}
+                  {(!search?.top_queries || search.top_queries.length === 0) && <p style={{ fontSize: 12, color: "#78767d" }}>No searches yet.</p>}
                 </div>
               </div>
               <div>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>Zero-Result Queries</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#78767d", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>Zero-Result Queries</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {(search?.zero_result_queries ?? []).slice(0, 10).map(q => (
                     <div key={q.query_text} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 12.5, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {q.query_text} {q.is_bangla && <span style={{ fontSize: 10, color: "#9ca3af" }}>(bn)</span>}
+                      <span style={{ fontSize: 12.5, color: "#47464c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.query_text} {q.is_bangla && <span style={{ fontSize: 10, color: "#78767d" }}>(bn)</span>}
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", flexShrink: 0 }}>{q.search_count}</span>
                     </div>
                   ))}
-                  {(!search?.zero_result_queries || search.zero_result_queries.length === 0) && <p style={{ fontSize: 12, color: "#9ca3af" }}>None — every search returned results.</p>}
+                  {(!search?.zero_result_queries || search.zero_result_queries.length === 0) && <p style={{ fontSize: 12, color: "#78767d" }}>None — every search returned results.</p>}
                 </div>
               </div>
             </div>
@@ -1858,16 +1858,16 @@ function AnalyticsTab() {
       <Card title="Engagement Data" desc="Active users, new registrations, and returning-user counts" metric="engagement">
         <div style={{ display: "flex", gap: 24 }}>
           <div>
-            <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>{engagement?.active_users ?? 0}</p>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>Active users</p>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#141b2b", margin: 0 }}>{engagement?.active_users ?? 0}</p>
+            <p style={{ fontSize: 11, color: "#78767d", margin: "2px 0 0" }}>Active users</p>
           </div>
           <div>
-            <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>{engagement?.new_registrations ?? 0}</p>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>New registrations</p>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#141b2b", margin: 0 }}>{engagement?.new_registrations ?? 0}</p>
+            <p style={{ fontSize: 11, color: "#78767d", margin: "2px 0 0" }}>New registrations</p>
           </div>
           <div>
-            <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>{engagement?.returning_users ?? 0}</p>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>Returning users</p>
+            <p style={{ fontSize: 20, fontWeight: 800, color: "#141b2b", margin: 0 }}>{engagement?.returning_users ?? 0}</p>
+            <p style={{ fontSize: 11, color: "#78767d", margin: "2px 0 0" }}>Returning users</p>
           </div>
         </div>
       </Card>
@@ -2005,10 +2005,10 @@ function AdminPageInner() {
 
     return (
       <AppLayout>
-        <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+        <div style={{ background: "#f9f9ff", minHeight: "100%" }}>
 
           {/* Hero banner */}
-          <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)", borderBottom: "1px solid #e5e7eb", padding: isMobile ? "24px 18px 20px" : "32px 40px 28px" }}>
+          <div style={{ background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)", borderBottom: "1px solid #c8c5cd", padding: isMobile ? "24px 18px 20px" : "32px 40px 28px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #1a1a2e) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <ShieldCheck size={19} color="var(--avatar-theme-color, #1a1a2e)" />
@@ -2017,7 +2017,7 @@ function AdminPageInner() {
                 Administration
               </h1>
             </div>
-            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0, paddingLeft: 48 }}>
+            <p style={{ fontSize: 13, color: "#78767d", margin: 0, paddingLeft: 48 }}>
               Monitor platform activity, manage users &amp; configure system settings.
             </p>
           </div>
@@ -2025,7 +2025,7 @@ function AdminPageInner() {
         <div style={{ padding: isMobile ? "16px" : isTablet ? "20px 24px" : "24px 40px", maxWidth: isMobile ? "100%" : "1600px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
 
           {/* Tab bar - scrollable on mobile */}
-          <div style={{ display: "flex", gap: isMobile ? 0 : 2, borderBottom: "2px solid #e5e7eb", marginBottom: isMobile ? 20 : 28, overflowX: isMobile ? "auto" : "visible", overflowY: "hidden", scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ display: "flex", gap: isMobile ? 0 : 2, borderBottom: "2px solid #c8c5cd", marginBottom: isMobile ? 20 : 28, overflowX: isMobile ? "auto" : "visible", overflowY: "hidden", scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}>
             {TABS.map(tab => {
               const active = activeTab === tab.id;
               return (
@@ -2033,12 +2033,12 @@ function AdminPageInner() {
                   display: "flex", alignItems: "center", gap: isMobile ? 4 : 6,
                   padding: isMobile ? "8px 10px" : "10px 16px", border: "none", background: "transparent",
                   fontSize: isMobile ? 12 : 13, fontWeight: active ? 700 : 500,
-                  color: active ? "var(--avatar-theme-color)" : "#6b7280",
+                  color: active ? "var(--avatar-theme-color)" : "#555f6d",
                   cursor: "pointer", borderBottom: active ? "2px solid var(--avatar-theme-color)" : "2px solid transparent",
                   marginBottom: -2, transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
                 }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#374151"; }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#6b7280"; }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#47464c"; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#555f6d"; }}
                 >
                   <tab.icon size={isMobile ? 12 : 14} />
                   {!isMobile && tab.label}
@@ -2094,12 +2094,12 @@ function AdminPageInner() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+      <div style={{ background: "#f9f9ff", minHeight: "100%" }}>
 
         {/* Hero banner */}
         <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
+          borderBottom: "1px solid #c8c5cd",
           padding: isMobile ? "24px 18px 20px" : "32px 40px 28px",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -2110,7 +2110,7 @@ function AdminPageInner() {
               {roleTitle}
             </h1>
           </div>
-          <p style={{ fontSize: 13, color: "#9ca3af", margin: 0, paddingLeft: 48 }}>
+          <p style={{ fontSize: 13, color: "#78767d", margin: 0, paddingLeft: 48 }}>
             {roleDescription}
           </p>
         </div>
@@ -2152,56 +2152,56 @@ function AdminPageInner() {
 
         {/* Search & Filter Bar */}
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, marginBottom: 20, justifyContent: "space-between", flexWrap: isMobile ? "wrap" : "nowrap" }}>
-          <div style={{ flex: 1, minWidth: isMobile ? "100%" : "auto", display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 12px" }}>
-            <Search size={14} color="#9ca3af" />
+          <div style={{ flex: 1, minWidth: isMobile ? "100%" : "auto", display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "10px 12px" }}>
+            <Search size={14} color="#78767d" />
             <input type="text" placeholder={isMobile ? "Search..." : "Search by title, author, or DOI..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#1f2937", width: "100%" }} />
+              style={{ background: "transparent", border: "none", outline: "none", fontSize: 16, color: "#141b2b", width: "100%" }} />
           </div>
           <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-            style={{ padding: "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 16, fontWeight: 600, color: "#374151", outline: "none", cursor: "pointer", minWidth: isMobile ? "auto" : "140px" }}>
+            style={{ padding: "10px 12px", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, fontSize: 16, fontWeight: 600, color: "#47464c", outline: "none", cursor: "pointer", minWidth: isMobile ? "auto" : "140px" }}>
             <option value="all">All Statuses</option>
             {isLibraryStudent ? (<><option value="active">Active Borrowed</option><option value="overdue">Overdue Books</option><option value="returned">Returned Books</option><option value="pending">Pending Hold</option><option value="available">Available Hold</option></>) : (<><option value="published">Published</option><option value="pending_review">Pending Review</option><option value="changes_requested">Changes Requested</option><option value="draft">Draft</option></>)}
           </select>
           <button onClick={() => { setFilterStatus("all"); setSearchQuery(""); setCurrentPage(1); }}
-            style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 6, padding: isMobile ? "10px 8px" : "10px 14px", background: (filterStatus !== "all" || searchQuery) ? "var(--avatar-theme-color)" : "#fff", border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", fontSize: isMobile ? 11 : 13, fontWeight: 600, color: (filterStatus !== "all" || searchQuery) ? "#fff" : "#6b7280", whiteSpace: "nowrap" }}>
+            style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 6, padding: isMobile ? "10px 8px" : "10px 14px", background: (filterStatus !== "all" || searchQuery) ? "var(--avatar-theme-color)" : "#fff", border: (filterStatus !== "all" || searchQuery) ? "none" : "1px solid #c8c5cd", borderRadius: 8, cursor: "pointer", fontSize: isMobile ? 11 : 13, fontWeight: 600, color: (filterStatus !== "all" || searchQuery) ? "#fff" : "#555f6d", whiteSpace: "nowrap" }}>
             <Filter size={14} />{!isMobile && ((filterStatus !== "all" || searchQuery) ? "Clear" : "Filter")}
           </button>
-          <button onClick={handleRefresh} style={{ width: isMobile ? 36 : "auto", height: 36, padding: isMobile ? 0 : "10px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 0 : 6, fontSize: isMobile ? 11 : 13, fontWeight: isMobile ? 600 : 500, color: "#6b7280" }}>
-            <RefreshCw size={14} color="#6b7280" />
+          <button onClick={handleRefresh} style={{ width: isMobile ? 36 : "auto", height: 36, padding: isMobile ? 0 : "10px 12px", background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 0 : 6, fontSize: isMobile ? 11 : 13, fontWeight: isMobile ? 600 : 500, color: "#555f6d" }}>
+            <RefreshCw size={14} color="#555f6d" />
             {!isMobile && "Refresh"}
           </button>
         </div>
 
         {/* Access Requests (archivist) */}
         {isArchivistOrAdmin && pendingRequests && pendingRequests.length > 0 && (
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
-              <Lock size={15} color="#6b7280" />
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1f2937", margin: 0 }}>Restricted Document Access Requests</h3>
+          <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #c8c5cd", display: "flex", alignItems: "center", gap: 8 }}>
+              <Lock size={15} color="#555f6d" />
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: 0 }}>Restricted Document Access Requests</h3>
               <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: PILL.pending.bg, color: PILL.pending.color }}>{pendingRequests.length}</span>
             </div>
             <div>
               {pendingRequests.map((req: any, i: number) => (
-                <div key={req.request_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: "16px 20px", borderBottom: i === pendingRequests.length - 1 ? "none" : "1px solid #f3f4f6" }}>
+                <div key={req.request_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: "16px 20px", borderBottom: i === pendingRequests.length - 1 ? "none" : "1px solid #f1f3ff" }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "50%", background: ROLE_COLORS.member.bg, color: ROLE_COLORS.member.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
                       {(req.user_name || "?").charAt(0).toUpperCase()}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#1f2937" }}>
-                        {req.user_name} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({req.user_email})</span>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#141b2b" }}>
+                        {req.user_name} <span style={{ fontWeight: 400, color: "#78767d" }}>({req.user_email})</span>
                       </p>
-                      <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b7280" }}>
-                        requested access to <span style={{ fontWeight: 600, color: "#374151" }}>{req.item_title}</span>
+                      <p style={{ margin: "3px 0 0", fontSize: 12, color: "#555f6d" }}>
+                        requested access to <span style={{ fontWeight: 600, color: "#47464c" }}>{req.item_title}</span>
                       </p>
-                      <p style={{ margin: "6px 0 0", fontSize: 12, color: "#6b7280", fontStyle: "italic", background: "#f9fafb", padding: "6px 10px", borderRadius: 6, border: "1px solid #f3f4f6" }}>
+                      <p style={{ margin: "6px 0 0", fontSize: 12, color: "#555f6d", fontStyle: "italic", background: "#f9f9ff", padding: "6px 10px", borderRadius: 6, border: "1px solid #f1f3ff" }}>
                         &ldquo;{req.reason}&rdquo;
                       </p>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                     <button onClick={async () => { try { await reviewRequest({ requestId: req.request_id, status: "approved" }); toast.success("Approved!"); refetchRequests(); } catch (err: any) { toast.error(err?.response?.data?.message || "Failed to approve"); } }}
-                      style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#111827", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                      style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#141b2b", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                       <Check size={12} /> Approve
                     </button>
                     <button onClick={() => setDenyRequestId(req.request_id)}
@@ -2220,21 +2220,21 @@ function AdminPageInner() {
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
             <form onSubmit={handleDenySubmit} style={{ background: "#fff", borderRadius: 12, padding: isMobile ? "24px 20px" : "28px 32px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>Deny Access Request</h3>
-                <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}><X size={18} /></button>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#141b2b" }}>Deny Access Request</h3>
+                <button type="button" onClick={() => setDenyRequestId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555f6d" }}><X size={18} /></button>
               </div>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Explanation / Rejection Message</label>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#47464c", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Explanation / Rejection Message</label>
                 <textarea
                   required
                   value={rejectionMessage}
                   onChange={e => setRejectionMessage(e.target.value)}
                   placeholder="Please enter a reason or rejection message explaining why access is denied..."
-                  style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
+                  style={{ width: "100%", height: 120, padding: "10px 12px", border: "1px solid #c8c5cd", borderRadius: 6, fontSize: 16, color: "#141b2b", outline: "none", boxSizing: "border-box", resize: "none", fontFamily: "inherit" }}
                 />
               </div>
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                <button type="button" onClick={() => setDenyRequestId(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={() => setDenyRequestId(null)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 13, fontWeight: 600, color: "#47464c", cursor: "pointer" }}>Cancel</button>
                 <button type="submit" disabled={submittingDeny} style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                   {submittingDeny ? "Submitting..." : "Deny Access"}
                 </button>
@@ -2255,7 +2255,7 @@ function AdminPageInner() {
             </span>
             <select
               id="bulk-category"
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 16, outline: "none", color: "#111827" }}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #c8c5cd", fontSize: 16, outline: "none", color: "#141b2b" }}
             >
               <option value="">-- Change Category --</option>
               <option value="General">General</option>
@@ -2265,7 +2265,7 @@ function AdminPageInner() {
             </select>
             <select
               id="bulk-access"
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 16, outline: "none", color: "#111827" }}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #c8c5cd", fontSize: 16, outline: "none", color: "#141b2b" }}
             >
               <option value="">-- Change Access Tier --</option>
               <option value="public">Public</option>
@@ -2314,12 +2314,12 @@ function AdminPageInner() {
         )}
 
         {/* Table */}
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8, overflow: "hidden" }}>
           {docsLoading ? (
             <div style={{ padding: "32px 24px" }}>{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 mb-3" />)}</div>
           ) : isStudentAuthor ? (
             !mySubmissions?.items || mySubmissions.items.length === 0 ? (
-              <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}>
+              <div style={{ padding: "40px 24px", textAlign: "center", color: "#555f6d" }}>
                 <p>No showcase submissions yet</p>
               </div>
             ) : (
@@ -2330,11 +2330,11 @@ function AdminPageInner() {
                   .map((project: any) => {
                     const statusStyle = PILL[project.status] || PILL.draft;
                     return (
-                      <div key={project.project_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div key={project.project_id} style={{ background: "#f9f9ff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 8 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                           <div>
-                            <p style={{ margin: 0, fontWeight: 600, color: "#1f2937", fontSize: 14 }}>{project.title}</p>
-                            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>
+                            <p style={{ margin: 0, fontWeight: 600, color: "#141b2b", fontSize: 14 }}>{project.title}</p>
+                            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555f6d" }}>
                               {project.department} &middot; {project.semester} &middot; Advisor: {project.advisor_name ?? "Unassigned"}
                             </p>
                           </div>
@@ -2347,7 +2347,7 @@ function AdminPageInner() {
                             <strong>Advisor feedback:</strong> {project.advisor_comments}
                           </div>
                         )}
-                        <a href={`/showcase/${project.project_id}`} style={{ fontSize: 12, color: "var(--avatar-theme-color, #2563eb)", fontWeight: 600, textDecoration: "none" }}>
+                        <a href={`/showcase/${project.project_id}`} style={{ fontSize: 12, color: "var(--avatar-theme-color, #0D47A1)", fontWeight: 600, textDecoration: "none" }}>
                           View submission →
                         </a>
                       </div>
@@ -2357,83 +2357,83 @@ function AdminPageInner() {
             )
           ) : isLibraryStudent ? (
             !filteredCombinedItems || filteredCombinedItems.length === 0 ? (
-              <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}><p>No borrowed or reserved books found</p></div>
+              <div style={{ padding: "40px 24px", textAlign: "center", color: "#555f6d" }}><p>No borrowed or reserved books found</p></div>
             ) : isMobile ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
                 {filteredCombinedItems.map((item: any) => {
                   const isHold = "hold_id" in item;
-                  let pillStyle = { bg: "#f3f4f6", color: "#6b7280" };
+                  let pillStyle = { bg: "#f1f3ff", color: "#555f6d" };
                   if (item.status === "active") pillStyle = { bg: "#e6f4ea", color: "#1e7e34" };
                   else if (item.status === "overdue") pillStyle = { bg: "#fde8e8", color: "#c81e1e" };
-                  else if (item.status === "pending") pillStyle = { bg: "#e8f0fe", color: "#1a56db" };
+                  else if (item.status === "pending") pillStyle = { bg: "#e8f0fe", color: "#0D47A1" };
                   else if (item.status === "available") pillStyle = { bg: "#e6f4ea", color: "#1e7e34" };
                   const durationText = isHold ? `Reserved on ${new Date(item.request_date).toLocaleDateString()}` : item.status === "returned" && item.return_date ? `Issued: ${new Date(item.issue_date).toLocaleDateString()} | Returned: ${new Date(item.return_date).toLocaleDateString()}` : `Issued: ${new Date(item.issue_date).toLocaleDateString()} | Due: ${new Date(item.due_date).toLocaleDateString()}`;
                   return (
-                    <div key={isHold ? item.hold_id : item.transaction_id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div key={isHold ? item.hold_id : item.transaction_id} style={{ background: "#f9f9ff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
                       <div>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#1f2937", fontSize: 14 }}>{item.title}</p>
-                        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>{Array.isArray(item.authors) ? item.authors.join(", ") : item.authors ?? "Unknown"}</p>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#141b2b", fontSize: 14 }}>{item.title}</p>
+                        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555f6d" }}>{Array.isArray(item.authors) ? item.authors.join(", ") : item.authors ?? "Unknown"}</p>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
                         <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", background: pillStyle.bg, color: pillStyle.color }}>{item.status}</span>
                         <span style={{ fontWeight: 500, color: "#4b5563", fontSize: 12 }}>{isHold ? "Reservation" : "Borrow"}</span>
                       </div>
-                      <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>{durationText}</div>
-                      <div style={{ textAlign: "right", fontWeight: 700, color: item.status === "overdue" ? "#dc2626" : "#6b7280", fontSize: 13 }}>{item.status === "overdue" ? "100 TK fine" : "No fine"}</div>
+                      <div style={{ fontSize: 12, color: "#555f6d", lineHeight: 1.5 }}>{durationText}</div>
+                      <div style={{ textAlign: "right", fontWeight: 700, color: item.status === "overdue" ? "#dc2626" : "#555f6d", fontSize: 13 }}>{item.status === "overdue" ? "100 TK fine" : "No fine"}</div>
                     </div>
                   );
                 })}
               </div>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 2fr 1fr", gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 2fr 1fr", gap: 16, background: "#f9f9ff", borderBottom: "1px solid #c8c5cd", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px" }}>
                   {["BOOK TITLE / DETAILS","TRANSACTION TYPE","STATUS","TIME DURATION","FINE AMOUNT"].map(c => <div key={c}>{c}</div>)}
                 </div>
                 {filteredCombinedItems.map((item: any) => {
                   const isHold = "hold_id" in item;
-                  let pillStyle = { bg: "#f3f4f6", color: "#6b7280" };
+                  let pillStyle = { bg: "#f1f3ff", color: "#555f6d" };
                   if (item.status === "active") pillStyle = { bg: "#e6f4ea", color: "#1e7e34" };
                   else if (item.status === "overdue") pillStyle = { bg: "#fde8e8", color: "#c81e1e" };
-                  else if (item.status === "pending") pillStyle = { bg: "#e8f0fe", color: "#1a56db" };
+                  else if (item.status === "pending") pillStyle = { bg: "#e8f0fe", color: "#0D47A1" };
                   else if (item.status === "available") pillStyle = { bg: "#e6f4ea", color: "#1e7e34" };
                   const durationText = isHold ? `Reserved on ${new Date(item.request_date).toLocaleDateString()}` : item.status === "returned" && item.return_date ? `Issued: ${new Date(item.issue_date).toLocaleDateString()} | Returned: ${new Date(item.return_date).toLocaleDateString()}` : `Issued: ${new Date(item.issue_date).toLocaleDateString()} | Due: ${new Date(item.due_date).toLocaleDateString()}`;
                   return (
-                    <div key={isHold ? item.hold_id : item.transaction_id} style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 2fr 1fr", gap: 16, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb", fontSize: 13 }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-                      <div><p style={{ margin: 0, fontWeight: 600, color: "#1f2937" }}>{item.title}</p><p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>{Array.isArray(item.authors) ? item.authors.join(", ") : item.authors ?? "Unknown"}</p></div>
+                    <div key={isHold ? item.hold_id : item.transaction_id} style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 2fr 1fr", gap: 16, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #c8c5cd", fontSize: 13 }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#f9f9ff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                      <div><p style={{ margin: 0, fontWeight: 600, color: "#141b2b" }}>{item.title}</p><p style={{ margin: "4px 0 0", fontSize: 12, color: "#555f6d" }}>{Array.isArray(item.authors) ? item.authors.join(", ") : item.authors ?? "Unknown"}</p></div>
                       <div style={{ fontWeight: 500, color: "#4b5563" }}>{isHold ? "Reservation" : "Borrow"}</div>
                       <div><span style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", background: pillStyle.bg, color: pillStyle.color }}>{item.status}</span></div>
-                      <div style={{ color: "#374151", fontWeight: 500 }}>{durationText}</div>
-                      <div style={{ textAlign: "right", fontWeight: 700, color: item.status === "overdue" ? "#dc2626" : "#6b7280" }}>{item.status === "overdue" ? "100 TK" : "—"}</div>
+                      <div style={{ color: "#47464c", fontWeight: 500 }}>{durationText}</div>
+                      <div style={{ textAlign: "right", fontWeight: 700, color: item.status === "overdue" ? "#dc2626" : "#555f6d" }}>{item.status === "overdue" ? "100 TK" : "—"}</div>
                     </div>
                   );
                 })}
               </>
             )
           ) : !documentsData?.items || documentsData.items.length === 0 ? (
-            <div style={{ padding: "40px 24px", textAlign: "center", color: "#6b7280" }}><p>No documents found</p></div>
+            <div style={{ padding: "40px 24px", textAlign: "center", color: "#555f6d" }}><p>No documents found</p></div>
           ) : isMobile ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px" }}>
               {documentsData.items.map((doc: any) => {
                 const statusStyle = PILL[doc.status] || PILL.draft;
                 return (
-                  <div key={doc.id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div key={doc.id} style={{ background: "#f9f9ff", border: "1px solid #c8c5cd", borderRadius: 8, padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
                     <div>
-                      <p style={{ margin: 0, fontWeight: 600, color: "#1f2937", fontSize: 14 }}>{doc.title}</p>
-                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.download_count || 0} downloads</p>
+                      <p style={{ margin: 0, fontWeight: 600, color: "#141b2b", fontSize: 14 }}>{doc.title}</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "#78767d" }}>{doc.download_count || 0} downloads</p>
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontWeight: 500, color: "#374151", fontSize: 12 }}>{typeof doc.authors === "string" ? doc.authors : Array.isArray(doc.authors) ? doc.authors.join(", ") : "—"}</p>
-                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.department}</p>
+                      <p style={{ margin: 0, fontWeight: 500, color: "#47464c", fontSize: 12 }}>{typeof doc.authors === "string" ? doc.authors : Array.isArray(doc.authors) ? doc.authors.join(", ") : "—"}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "#78767d" }}>{doc.department}</p>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
                       <span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 5, fontSize: 11, fontWeight: 700, textTransform: "uppercase", background: statusStyle.bg, color: statusStyle.color }}>{doc.status}</span>
-                      <span style={{ fontSize: 12, color: "#6b7280", textTransform: "capitalize" }}>{doc.access}</span>
+                      <span style={{ fontSize: 12, color: "#555f6d", textTransform: "capitalize" }}>{doc.access}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#6b7280" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#555f6d" }}>
                       <span>{doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : "—"}</span>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => toast.success("Access level updated")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#f3f4f6", cursor: "pointer", display: "flex", alignItems: "center" }}><Eye size={16} color="#6b7280" /></button>
+                        <button onClick={() => toast.success("Access level updated")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#f1f3ff", cursor: "pointer", display: "flex", alignItems: "center" }}><Eye size={16} color="#555f6d" /></button>
                         <button onClick={() => toast.success("Document removed")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#fde8e8", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={16} color="#dc2626" /></button>
                       </div>
                     </div>
@@ -2443,7 +2443,7 @@ function AdminPageInner() {
             </div>
           ) : (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: user?.role === "archivist" ? "0.3fr 2fr 1.5fr 1fr 1fr 1fr 0.8fr" : "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: user?.role === "archivist" ? "0.3fr 2fr 1.5fr 1fr 1fr 1fr 0.8fr" : "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, background: "#f9f9ff", borderBottom: "1px solid #c8c5cd", padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px" }}>
                 {user?.role === "archivist" && (
                   <input
                     type="checkbox"
@@ -2463,7 +2463,7 @@ function AdminPageInner() {
               {documentsData.items.map((doc: any) => {
                 const statusStyle = PILL[doc.status] || PILL.draft;
                 return (
-                  <div key={doc.id} style={{ display: "grid", gridTemplateColumns: user?.role === "archivist" ? "0.3fr 2fr 1.5fr 1fr 1fr 1fr 0.8fr" : "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb", fontSize: 13 }}>
+                  <div key={doc.id} style={{ display: "grid", gridTemplateColumns: user?.role === "archivist" ? "0.3fr 2fr 1.5fr 1fr 1fr 1fr 0.8fr" : "2fr 1.5fr 1fr 1fr 1fr 0.8fr", gap: 16, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #c8c5cd", fontSize: 13 }}>
                     {user?.role === "archivist" && (
                       <input
                         type="checkbox"
@@ -2478,13 +2478,13 @@ function AdminPageInner() {
                         style={{ cursor: "pointer" }}
                       />
                     )}
-                    <div><p style={{ margin: 0, fontWeight: 600, color: "#1f2937" }}>{doc.title}</p><p style={{ margin: "4px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.download_count || 0} downloads</p></div>
-                    <div><p style={{ margin: 0, fontWeight: 500, color: "#374151" }}>{typeof doc.authors === "string" ? doc.authors : Array.isArray(doc.authors) ? doc.authors.join(", ") : "—"}</p><p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>{doc.department}</p></div>
+                    <div><p style={{ margin: 0, fontWeight: 600, color: "#141b2b" }}>{doc.title}</p><p style={{ margin: "4px 0 0", fontSize: 12, color: "#78767d" }}>{doc.download_count || 0} downloads</p></div>
+                    <div><p style={{ margin: 0, fontWeight: 500, color: "#47464c" }}>{typeof doc.authors === "string" ? doc.authors : Array.isArray(doc.authors) ? doc.authors.join(", ") : "—"}</p><p style={{ margin: "2px 0 0", fontSize: 12, color: "#78767d" }}>{doc.department}</p></div>
                     <div><span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 5, fontSize: 11, fontWeight: 700, textTransform: "uppercase", background: statusStyle.bg, color: statusStyle.color }}>{doc.status}</span></div>
-                    <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : "—"}</p>
-                    <p style={{ margin: 0, fontSize: 12, color: "#6b7280", textTransform: "capitalize" }}>{doc.access}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "#555f6d" }}>{doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : "—"}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "#555f6d", textTransform: "capitalize" }}>{doc.access}</p>
                     <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
-                      <button onClick={() => toast.success("Access level updated")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#f3f4f6", cursor: "pointer", display: "flex", alignItems: "center" }}><Eye size={12} color="#6b7280" /></button>
+                      <button onClick={() => toast.success("Access level updated")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#f1f3ff", cursor: "pointer", display: "flex", alignItems: "center" }}><Eye size={12} color="#555f6d" /></button>
                       <button onClick={() => toast.success("Document removed")} style={{ padding: "4px 8px", borderRadius: 4, border: "none", background: "#fde8e8", cursor: "pointer", display: "flex", alignItems: "center" }}><Trash2 size={12} color="#dc2626" /></button>
                     </div>
                   </div>
@@ -2497,10 +2497,10 @@ function AdminPageInner() {
         {/* Pagination for non-student */}
         {!isStudent && documentsData && documentsData.total > 10 && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
-            <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>Page {currentPage} of {Math.ceil(documentsData.total / 10)}</p>
+            <p style={{ fontSize: 12, color: "#555f6d", margin: 0 }}>Page {currentPage} of {Math.ceil(documentsData.total / 10)}</p>
             <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer" }}><ChevronLeft size={13} /></button>
-              <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= Math.ceil(documentsData.total / 10)} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, color: "#374151", cursor: "pointer" }}><ChevronRight size={13} /></button>
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, color: "#47464c", cursor: "pointer" }}><ChevronLeft size={13} /></button>
+              <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= Math.ceil(documentsData.total / 10)} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, color: "#47464c", cursor: "pointer" }}><ChevronRight size={13} /></button>
             </div>
           </div>
         )}

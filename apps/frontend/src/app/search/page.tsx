@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Search, Archive, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
 import { useArchiveSearch } from "@/features/archive/hooks/useArchive";
 import { useCatalogSearch } from "@/features/library/hooks/useLibrary";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS, pagePad, cardStyle, btnPrimary, inputStyle, RADIUS } from "@/components/design/dkpTheme";
 
 function SearchResults({ q }: { q: string }) {
   const archive = useArchiveSearch({ query: q, page: 1, limit: 8 });
@@ -17,47 +19,71 @@ function SearchResults({ q }: { q: string }) {
 
   return (
     <div>
-      <p className="text-sm mb-6 text-on-surface-variant">
+      <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, margin: "0 0 24px" }}>
         {archive.isLoading || library.isLoading
           ? "Searching…"
           : `${totalResults} result${totalResults !== 1 ? "s" : ""} for "${q}"`}
       </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Archive results */}
-        <section
-          className="rounded-lg border border-outline-variant bg-surface-container overflow-hidden"
-          aria-label="Archive search results"
-        >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant bg-surface-container-high">
-            <div className="flex items-center gap-2">
-              <Archive size={14} className="text-on-surface-variant" />
-              <span className="text-sm font-semibold text-on-surface">Archive</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+        <section style={{ ...cardStyle, overflow: "hidden" }} aria-label="Archive search results">
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 16px",
+            borderBottom: `1px solid ${C.lineStrong}`,
+            background: C.surfaceHigh,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Archive size={14} color={C.body} />
+              <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 600, color: C.ink }}>Archive</span>
               {!archive.isLoading && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface-variant border border-outline-variant">
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "2px 8px",
+                  borderRadius: RADIUS.full,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  fontFamily: SANS,
+                  background: C.chip,
+                  color: C.body,
+                  border: `1px solid ${C.outlineVariant}`,
+                }}>
                   {archiveItems.length}
                 </span>
               )}
             </div>
-            <Link href={`/archive?q=${encodeURIComponent(q)}`} className="text-xs text-primary hover:text-primary-fixed">
+            <Link href={`/archive?q=${encodeURIComponent(q)}`} style={{ fontSize: 12, fontFamily: SANS, fontWeight: 600, color: C.accent, textDecoration: "none" }}>
               View all →
             </Link>
           </div>
-          <div className="p-3">
+          <div style={{ padding: 12 }}>
             {archive.isLoading ? (
-              <p className="text-sm py-4 text-center text-on-surface-variant">Searching archive…</p>
+              <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, textAlign: "center", padding: "16px 0", margin: 0 }}>Searching archive…</p>
             ) : archiveItems.length === 0 ? (
-              <p className="text-sm py-4 text-center text-on-surface-variant">No archive matches.</p>
+              <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, textAlign: "center", padding: "16px 0", margin: 0 }}>No archive matches.</p>
             ) : (
-              <ul className="divide-y divide-outline-variant">
-                {archiveItems.map((item: { item_id: string; title_en: string; category?: string }) => (
-                  <li key={item.item_id}>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {archiveItems.map((item: { item_id: string; title_en: string; category?: string }, idx: number) => (
+                  <li key={item.item_id} style={{ borderTop: idx === 0 ? "none" : `1px solid ${C.line}` }}>
                     <Link
                       href={`/archive/${item.item_id}`}
-                      className="flex items-start gap-2 py-2 px-1 rounded-md text-sm text-on-surface hover:bg-surface-container-high transition-colors"
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 8,
+                        padding: "10px 6px",
+                        fontSize: 14,
+                        fontFamily: SANS,
+                        color: C.ink,
+                        textDecoration: "none",
+                        borderRadius: RADIUS.DEFAULT,
+                      }}
                     >
-                      <Archive size={13} className="mt-0.5 shrink-0 text-on-surface-variant" />
-                      <span className="line-clamp-1">{item.title_en}</span>
+                      <Archive size={13} color={C.body} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title_en}</span>
                     </Link>
                   </li>
                 ))}
@@ -66,40 +92,64 @@ function SearchResults({ q }: { q: string }) {
           </div>
         </section>
 
-        {/* Library results */}
-        <section
-          className="rounded-lg border border-outline-variant bg-surface-container overflow-hidden"
-          aria-label="Library search results"
-        >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant bg-surface-container-high">
-            <div className="flex items-center gap-2">
-              <BookOpen size={14} className="text-on-surface-variant" />
-              <span className="text-sm font-semibold text-on-surface">Library</span>
+        <section style={{ ...cardStyle, overflow: "hidden" }} aria-label="Library search results">
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 16px",
+            borderBottom: `1px solid ${C.lineStrong}`,
+            background: C.surfaceHigh,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <BookOpen size={14} color={C.body} />
+              <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 600, color: C.ink }}>Library</span>
               {!library.isLoading && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface-variant border border-outline-variant">
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "2px 8px",
+                  borderRadius: RADIUS.full,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  fontFamily: SANS,
+                  background: C.chip,
+                  color: C.body,
+                  border: `1px solid ${C.outlineVariant}`,
+                }}>
                   {libraryItems.length}
                 </span>
               )}
             </div>
-            <Link href={`/library?q=${encodeURIComponent(q)}`} className="text-xs text-primary hover:text-primary-fixed">
+            <Link href={`/library?q=${encodeURIComponent(q)}`} style={{ fontSize: 12, fontFamily: SANS, fontWeight: 600, color: C.accent, textDecoration: "none" }}>
               View all →
             </Link>
           </div>
-          <div className="p-3">
+          <div style={{ padding: 12 }}>
             {library.isLoading ? (
-              <p className="text-sm py-4 text-center text-on-surface-variant">Searching library…</p>
+              <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, textAlign: "center", padding: "16px 0", margin: 0 }}>Searching library…</p>
             ) : libraryItems.length === 0 ? (
-              <p className="text-sm py-4 text-center text-on-surface-variant">No library matches.</p>
+              <p style={{ fontFamily: SANS, fontSize: 14, color: C.body, textAlign: "center", padding: "16px 0", margin: 0 }}>No library matches.</p>
             ) : (
-              <ul className="divide-y divide-outline-variant">
-                {libraryItems.map((item: { catalog_id: string; title: string; authors?: string[] }) => (
-                  <li key={item.catalog_id}>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {libraryItems.map((item: { catalog_id: string; title: string; authors?: string[] }, idx: number) => (
+                  <li key={item.catalog_id} style={{ borderTop: idx === 0 ? "none" : `1px solid ${C.line}` }}>
                     <Link
                       href={`/library/${item.catalog_id}`}
-                      className="flex items-start gap-2 py-2 px-1 rounded-md text-sm text-on-surface hover:bg-surface-container-high transition-colors"
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 8,
+                        padding: "10px 6px",
+                        fontSize: 14,
+                        fontFamily: SANS,
+                        color: C.ink,
+                        textDecoration: "none",
+                        borderRadius: RADIUS.DEFAULT,
+                      }}
                     >
-                      <BookOpen size={13} className="mt-0.5 shrink-0 text-on-surface-variant" />
-                      <span className="line-clamp-1">{item.title}</span>
+                      <BookOpen size={13} color={C.body} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</span>
                     </Link>
                   </li>
                 ))}
@@ -109,10 +159,11 @@ function SearchResults({ q }: { q: string }) {
         </section>
       </div>
 
-      {/* Quick links to search in specific sections */}
-      <div className="mt-6 rounded-lg border border-outline-variant bg-surface-container p-4">
-        <p className="text-xs font-semibold mb-3 text-on-surface-variant tracking-wide">SEARCH IN SPECIFIC SECTION</p>
-        <div className="flex flex-wrap gap-2">
+      <div style={{ ...cardStyle, marginTop: 24, padding: 20 }}>
+        <p style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.body, margin: "0 0 14px" }}>
+          Search in specific section
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {[
             { href: `/archive?q=${encodeURIComponent(q)}`, icon: Archive, label: "Archive" },
             { href: `/library?q=${encodeURIComponent(q)}`, icon: BookOpen, label: "Library" },
@@ -122,7 +173,20 @@ function SearchResults({ q }: { q: string }) {
             <Link
               key={link.href}
               href={link.href}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border border-outline-variant text-on-surface transition-colors hover:bg-surface-container-high"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                borderRadius: RADIUS.DEFAULT,
+                fontSize: 13,
+                fontFamily: SANS,
+                fontWeight: 600,
+                color: C.ink,
+                background: C.chip,
+                border: `1px solid ${C.lineStrong}`,
+                textDecoration: "none",
+              }}
             >
               <link.icon size={13} />
               {link.label}
@@ -140,7 +204,6 @@ function SearchPageInner() {
   const initialQ = searchParams.get("q") ?? "";
   const [input, setInput] = useState(initialQ);
 
-  // Sync input when URL param changes
   useEffect(() => {
     setInput(searchParams.get("q") ?? "");
   }, [searchParams]);
@@ -152,30 +215,35 @@ function SearchPageInner() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="page-container py-8">
-        <div className="mb-6">
-          <h1 className="font-display text-xl font-medium text-on-surface tracking-tight">Search</h1>
-          <p className="text-sm mt-1 text-on-surface-variant">Search across archive, library, research, and showcase</p>
+    <CollectionShell>
+      <div style={pagePad}>
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 3.5vw, 36px)", fontWeight: 700, color: C.ink, margin: "0 0 8px", letterSpacing: "-0.02em" }}>
+            Search
+          </h1>
+          <p style={{ fontFamily: SANS, fontSize: 15, color: C.body, margin: 0 }}>
+            Search across archive, library, research, and showcase
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={15} />
+        <form onSubmit={handleSubmit} style={{ display: "flex", gap: 10, marginBottom: 32, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 240px", position: "relative" }}>
+            <Search
+              size={16}
+              color={C.body}
+              style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+            />
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Search documents, books, research…"
-              className="w-full pl-9 pr-4 py-2 rounded-md border border-outline-variant bg-surface-container text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               aria-label="Search"
               autoFocus
+              style={{ ...inputStyle(), paddingLeft: 40 }}
             />
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-on-primary transition-colors hover:opacity-90"
-          >
+          <button type="submit" style={{ ...btnPrimary, flexShrink: 0 }}>
             Search
           </button>
         </form>
@@ -183,11 +251,19 @@ function SearchPageInner() {
         {initialQ ? (
           <SearchResults q={initialQ} />
         ) : (
-          <div className="text-center py-16">
-            <Search size={32} className="mx-auto mb-3 text-on-surface-variant/50" />
-            <p className="text-sm text-on-surface-variant">
+          <div style={{ textAlign: "center", padding: "64px 16px" }}>
+            <Search size={36} color={C.outlineVariant} style={{ margin: "0 auto 14px" }} />
+            <p style={{ fontFamily: SANS, fontSize: 15, color: C.body, margin: 0 }}>
               Type something above or use{" "}
-              <kbd className="px-1.5 py-0.5 rounded border border-outline-variant text-xs font-mono bg-surface-container-high">
+              <kbd style={{
+                padding: "2px 8px",
+                borderRadius: RADIUS.DEFAULT,
+                border: `1px solid ${C.lineStrong}`,
+                fontSize: 12,
+                fontFamily: "ui-monospace, monospace",
+                background: C.chip,
+                color: C.ink,
+              }}>
                 ⌘K
               </kbd>{" "}
               from anywhere
@@ -195,13 +271,19 @@ function SearchPageInner() {
           </div>
         )}
       </div>
-    </div>
+    </CollectionShell>
   );
 }
 
 export default function SearchPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <CollectionShell>
+          <div style={{ ...pagePad, color: C.body, fontFamily: SANS }}>Loading…</div>
+        </CollectionShell>
+      }
+    >
       <SearchPageInner />
     </Suspense>
   );

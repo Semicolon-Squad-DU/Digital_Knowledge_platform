@@ -1,5 +1,5 @@
 const TIER_STYLES: Record<string, { label: string; bg: string; color: string }> = {
-  public:      { label: "PUBLIC",     bg: "#111827", color: "#fff" },
+  public:      { label: "PUBLIC",     bg: "#141b2b", color: "#fff" },
   member:      { label: "MEMBERS",    bg: "#1e3a5f", color: "#fff" },
   staff:       { label: "STAFF",      bg: "#4338ca", color: "#fff" },
   restricted:  { label: "RESTRICTED", bg: "#7f1d1d", color: "#fff" },

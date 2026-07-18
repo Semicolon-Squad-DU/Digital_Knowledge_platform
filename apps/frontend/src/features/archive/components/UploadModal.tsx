@@ -587,9 +587,9 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             disabled={!file || uploading}
             style={{
               background: (!file || uploading)
-                ? "linear-gradient(135deg, #cbd5e1 0%, #e2e8f0 100%)"
+                ? "linear-gradient(135deg, #cbd5e1 0%, #c8c5cd 100%)"
                 : "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
-              color: (!file || uploading) ? "#94a3b8" : "#ffffff",
+              color: (!file || uploading) ? "#78767d" : "#ffffff",
               border: "none",
               borderRadius: "8px",
               boxShadow: (!file || uploading) ? "none" : "0 4px 14px rgba(26, 26, 46, 0.2)",

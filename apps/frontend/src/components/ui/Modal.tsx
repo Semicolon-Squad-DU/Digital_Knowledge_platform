@@ -50,7 +50,7 @@ export function Modal({ isOpen, onClose, title, description, children, size = "m
       <div
         className={cn("w-full rounded-md border animate-scale-in overflow-hidden flex flex-col", sizes[size])}
         style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
           borderColor: "var(--color-border-default)",
           boxShadow: "0 1px 3px rgba(31,35,40,0.12), 0 8px 24px rgba(66,74,83,0.12)",
           margin: "auto",
@@ -109,7 +109,7 @@ export function ConfirmDialog({
             background: variant === "danger" ? "rgba(220, 38, 38, 0.1)" : "rgba(37, 99, 235, 0.1)",
           }}
         >
-          <Icon size={22} color={variant === "danger" ? "#dc2626" : "#2563eb"} />
+          <Icon size={22} color={variant === "danger" ? "#dc2626" : "#0D47A1"} />
         </div>
         <div className="flex-1 min-w-0 pt-0.5">
           <h3 className="text-base font-bold" style={{ color: "var(--color-fg-default)" }}>{title}</h3>

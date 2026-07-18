@@ -88,7 +88,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 padding: 0,
                 display: "flex",
                 alignItems: "center",
-                color: "#94a3b8",
+                color: "#78767d",
                 lineHeight: 1,
               }}
             >

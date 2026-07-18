@@ -37,7 +37,7 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
     <div
       style={{
         position: "relative",
-        background: "#fff", border: "1px solid #eef0f3", borderRadius: 14,
+        background: "#fff", border: "1px solid #f1f3ff", borderRadius: 14,
         padding: "16px 20px 16px 18px", display: "flex", alignItems: "flex-start", gap: 14,
         boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
         transition: "box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease",
@@ -50,7 +50,7 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
       onMouseLeave={e => {
         e.currentTarget.style.boxShadow = "0 1px 2px rgba(16,24,40,0.04)";
         e.currentTarget.style.transform = "none";
-        e.currentTarget.style.borderColor = "#eef0f3";
+        e.currentTarget.style.borderColor = "#f1f3ff";
       }}
     >
       {/* Status accent bar */}
@@ -74,7 +74,7 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
           {item.category && (
             <span style={{
               fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
-              padding: "2px 8px", borderRadius: 20, background: "#f3f4f6", color: "#6b7280",
+              padding: "2px 8px", borderRadius: 20, background: "#f1f3ff", color: "#555f6d",
             }}>
               {item.category}
             </span>
@@ -89,7 +89,7 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
         </div>
 
         <Link href={`/library/${item.catalog_id}`} style={{ textDecoration: "none" }}>
-          <h3 style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", margin: "0 0 3px", lineHeight: 1.35 }}>
+          <h3 style={{ fontSize: 14.5, fontWeight: 700, color: "#141b2b", margin: "0 0 3px", lineHeight: 1.35 }}>
             {item.title}
           </h3>
         </Link>
@@ -100,7 +100,7 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
           {item.year ? ` · ${item.year}` : ""}
         </p>
 
-        <span style={{ fontSize: 11.5, color: "#9ca3af", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <span style={{ fontSize: 11.5, color: "#78767d", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
           <Heart size={10} fill="#dc2626" color="#dc2626" /> Saved {timeAgo(item.added_at)}
         </span>
       </div>
@@ -111,11 +111,11 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
           <Link href={`/library/${item.catalog_id}`} title="View book">
             <button style={{
               width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer",
+              borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", color: "#47464c", cursor: "pointer",
               transition: "all 0.15s",
             }}
-              onMouseOver={(e) => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+              onMouseOver={(e) => { e.currentTarget.style.background = "#f9f9ff"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
             >
               <ArrowUpRight size={14} />
             </button>
@@ -127,11 +127,11 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
             disabled={isHolding}
             style={{
               width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151",
+              borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", color: "#47464c",
               cursor: isHolding ? "not-allowed" : "pointer", opacity: isHolding ? 0.6 : 1, transition: "all 0.15s",
             }}
-            onMouseOver={(e) => { if (!isHolding) { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; } }}
-            onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+            onMouseOver={(e) => { if (!isHolding) { e.currentTarget.style.background = "#f9f9ff"; e.currentTarget.style.borderColor = "#c8c5cd"; } }}
+            onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
           >
             <BookMarked size={14} />
           </button>
@@ -142,11 +142,11 @@ function WishlistCard({ item, onRemove, onHold, isRemoving, isHolding }: {
           disabled={isRemoving}
           style={{
             width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
-            borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#9ca3af",
+            borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", color: "#78767d",
             cursor: isRemoving ? "not-allowed" : "pointer", opacity: isRemoving ? 0.5 : 1, transition: "all 0.15s",
           }}
           onMouseOver={(e) => { if (!isRemoving) { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; } }}
-          onMouseOut={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
+          onMouseOut={(e) => { e.currentTarget.style.color = "#78767d"; e.currentTarget.style.borderColor = "#c8c5cd"; e.currentTarget.style.background = "#fff"; }}
         >
           <Trash2 size={14} />
         </button>
@@ -189,12 +189,12 @@ export default function WishlistPage() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f7f8fa", minHeight: "100%" }}>
+      <div style={{ background: "#f1f3ff", minHeight: "100%" }}>
 
         {/* ── Hero banner ─────────────────────────────────────────────────────── */}
         <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
+          borderBottom: "1px solid #c8c5cd",
           padding: "36px 40px 28px",
         }}>
           <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -208,18 +208,18 @@ export default function WishlistPage() {
                 }}>
                   <Heart size={18} color="#fff" />
                 </div>
-                <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.03em" }}>
+                <h1 style={{ fontSize: 28, fontWeight: 800, color: "#141b2b", margin: 0, letterSpacing: "-0.03em" }}>
                   My Wishlist
                 </h1>
               </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>
                 {wishlist?.length ?? 0} book{wishlist?.length !== 1 ? "s" : ""} saved for later
               </p>
             </div>
             <Link href="/library" style={{
               display: "inline-flex", alignItems: "center", gap: 7,
               padding: "9px 16px", borderRadius: 9, fontSize: 13, fontWeight: 600,
-              color: "#fff", background: "var(--avatar-theme-color, #111827)", textDecoration: "none",
+              color: "#fff", background: "var(--avatar-theme-color, #141b2b)", textDecoration: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.12)", transition: "opacity 0.15s",
             }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
@@ -236,7 +236,7 @@ export default function WishlistPage() {
         {isLoading && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ background: "#fff", border: "1px solid #eef0f3", borderRadius: 14, padding: "16px 20px", display: "flex", gap: 14, alignItems: "center" }}>
+              <div key={i} style={{ background: "#fff", border: "1px solid #f1f3ff", borderRadius: 14, padding: "16px 20px", display: "flex", gap: 14, alignItems: "center" }}>
                 <Skeleton className="w-[42px] h-[42px] rounded-xl shrink-0" />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
                   <Skeleton className="h-4 w-48" />
@@ -250,16 +250,16 @@ export default function WishlistPage() {
 
         {/* Empty */}
         {!isLoading && (!wishlist || wishlist.length === 0) && (
-          <div style={{ background: "#fff", border: "1px solid #eef0f3", borderRadius: 16, padding: "64px 32px", textAlign: "center" }}>
+          <div style={{ background: "#fff", border: "1px solid #f1f3ff", borderRadius: 16, padding: "64px 32px", textAlign: "center" }}>
             <div style={{
               width: 60, height: 60, borderRadius: "50%",
-              background: "linear-gradient(135deg, #f4f6ff 0%, #eef1ff 100%)",
+              background: "linear-gradient(135deg, #f1f3ff 0%, #f1f3ff 100%)",
               display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px",
             }}>
-              <Heart size={24} color="#9ca3af" />
+              <Heart size={24} color="#78767d" />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>Your wishlist is empty</h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 auto 20px", maxWidth: 320 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#141b2b", margin: "0 0 6px" }}>Your wishlist is empty</h3>
+            <p style={{ fontSize: 13, color: "#555f6d", margin: "0 auto 20px", maxWidth: 320 }}>
               Browse the library catalog and click the heart icon to save books for later.
             </p>
             <Link href="/library" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#fff", background: "var(--theme-gradient-160)", textDecoration: "none" }}>

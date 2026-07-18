@@ -48,7 +48,7 @@ export function DashboardSidebar() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid #c8c5cd",
         }}
       >
         <p style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>

@@ -60,7 +60,7 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
 
   return (
     <div style={{
-      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+      background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8,
       padding: "20px 24px", position: "relative",
     }}>
       {/* Top row: badge + type/date + actions */}
@@ -68,7 +68,7 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <AccessTierBadge tier={item.access_tier} />
           <LoanStatusBadge copies={item.available_copies} />
-          <span style={{ fontSize: 13, color: "#6b7280" }}>
+          <span style={{ fontSize: 13, color: "#555f6d" }}>
             {typeLabel} • {dateStr}
           </span>
         </div>
@@ -80,11 +80,11 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
             style={{
               background: "none", border: "none", cursor: "pointer",
               padding: 4, display: "flex", alignItems: "center",
-              color: wishlisted ? "#ef4444" : "#9ca3af",
+              color: wishlisted ? "#ef4444" : "#78767d",
               transition: "color 0.15s",
             }}
             onMouseEnter={e => { if (!wishlisted) e.currentTarget.style.color = "#ef4444"; }}
-            onMouseLeave={e => { if (!wishlisted) e.currentTarget.style.color = "#9ca3af"; }}
+            onMouseLeave={e => { if (!wishlisted) e.currentTarget.style.color = "#78767d"; }}
           >
             <Heart size={16} fill={wishlisted ? "#ef4444" : "none"} />
           </button>
@@ -93,9 +93,9 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
             <button
               onClick={onDelete}
               title="Remove from catalog"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#9ca3af" }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#78767d" }}
               onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#9ca3af")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#78767d")}
             >
               <Trash2 size={14} />
             </button>
@@ -106,7 +106,7 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
       {/* Title */}
       <Link href={`/library/${item.catalog_id}`} style={{ textDecoration: "none" }}>
         <h3 style={{
-          fontSize: 15, fontWeight: 700, color: "#111827",
+          fontSize: 15, fontWeight: 700, color: "#141b2b",
           lineHeight: 1.4, marginBottom: 6,
           cursor: "pointer",
         }}
@@ -119,7 +119,7 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
 
       {/* Authors */}
       {item.authors?.length > 0 && (
-        <p style={{ fontSize: 13, color: "#2563eb", marginBottom: 8 }}>
+        <p style={{ fontSize: 13, color: "#0D47A1", marginBottom: 8 }}>
           {item.authors.join(", ")}
         </p>
       )}
@@ -127,7 +127,7 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
       {/* Abstract excerpt */}
       {item.description && (
         <p style={{
-          fontSize: 13, color: "#374151", fontStyle: "italic",
+          fontSize: 13, color: "#47464c", fontStyle: "italic",
           lineHeight: 1.6, marginBottom: 12,
           display: "-webkit-box", WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical", overflow: "hidden",
@@ -138,10 +138,10 @@ export function ResultCard({ item, onDelete, onWishlist, isLibrarian, isAuthenti
 
       {/* Footer: citations + views */}
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#555f6d" }}>
           <Quote size={12} /> {citations} Citations
         </span>
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#555f6d" }}>
           <Eye size={12} /> {views.toLocaleString()} Views
         </span>
       </div>

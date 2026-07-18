@@ -726,11 +726,11 @@ function LibrarianDashboardPageInner() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+      <div style={{ background: "#f9f9ff", minHeight: "100%" }}>
         {/* ── Hero banner ─────────────────────────────────────────────────────── */}
         <div className="px-4 py-8 md:px-10 md:py-9" style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
+          borderBottom: "1px solid #c8c5cd",
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div>
@@ -742,7 +742,7 @@ function LibrarianDashboardPageInner() {
                   Librarian Desk
                 </h1>
               </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>
                 Manage lending, returns, and catalog operations
               </p>
             </div>
@@ -815,7 +815,7 @@ function LibrarianDashboardPageInner() {
                     <div
                       style={{
                         position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20,
-                        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                        background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8,
                         boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 160, overflow: "hidden",
                       }}
                     >
@@ -826,9 +826,9 @@ function LibrarianDashboardPageInner() {
                           onClick={() => { exportCatalog(format); setExportMenuOpen(false); }}
                           style={{
                             display: "block", width: "100%", textAlign: "left", padding: "9px 14px",
-                            fontSize: 13, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer",
+                            fontSize: 13, fontWeight: 600, color: "#47464c", background: "none", border: "none", cursor: "pointer",
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#f9f9ff"; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
                         >
                           {format === "csv" ? "Export as CSV" : "Export as Excel (.xlsx)"}

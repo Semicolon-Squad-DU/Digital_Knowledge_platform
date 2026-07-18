@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Noto_Sans_Bengali, Libre_Caslon_Text, Hanken_Grotesk } from "next/font/google";
+import { Noto_Sans_Bengali, Libre_Caslon_Text, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "react-hot-toast";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
-});
 const notoSansBengali = Noto_Sans_Bengali({
   subsets: ["bengali"],
   weight: ["400", "500", "600"],
@@ -37,7 +32,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${plusJakartaSans.className} ${notoSansBengali.className} ${libreCaslon.variable} ${hankenGrotesk.variable} min-h-screen`}>
+      <body className={`${hankenGrotesk.className} ${notoSansBengali.className} ${libreCaslon.variable} ${hankenGrotesk.variable} min-h-screen`}>
         <Providers>
           <div className="flex flex-col min-h-screen">
             <main className="flex-1">

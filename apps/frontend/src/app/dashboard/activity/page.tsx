@@ -20,16 +20,16 @@ const PILL: Record<string, { bg: string; color: string }> = {
   published:      { bg: "#dcfce7", color: "#15803d" },
   active:         { bg: "#dcfce7", color: "#15803d" },
   approved:       { bg: "#dcfce7", color: "#15803d" },
-  pending:        { bg: "#dbeafe", color: "#1d4ed8" },
-  pending_review: { bg: "#dbeafe", color: "#1d4ed8" },
-  review:         { bg: "#dbeafe", color: "#1d4ed8" },
+  pending:        { bg: "#dbeafe", color: "#0D47A1" },
+  pending_review: { bg: "#dbeafe", color: "#0D47A1" },
+  review:         { bg: "#dbeafe", color: "#0D47A1" },
   error:          { bg: "#fee2e2", color: "#dc2626" },
   overdue:        { bg: "#fee2e2", color: "#dc2626" },
-  draft:          { bg: "#f3f4f6", color: "#6b7280" },
+  draft:          { bg: "#f1f3ff", color: "#555f6d" },
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = PILL[status.toLowerCase()] ?? { bg: "#f3f4f6", color: "#6b7280" };
+  const s = PILL[status.toLowerCase()] ?? { bg: "#f1f3ff", color: "#555f6d" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 4, fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: s.bg, color: s.color }}>
       {status.replace("_", " ")}
@@ -44,7 +44,7 @@ function AIcon({ type }: { type: string }) {
     showcase: { icon: PenLine,       bg: "#fdf4ff", color: "#a855f7" },
     overdue:  { icon: AlertTriangle, bg: "#fef2f2", color: "#ef4444" },
   };
-  const m = map[type] ?? { icon: FileText, bg: "#f3f4f6", color: "#6b7280" };
+  const m = map[type] ?? { icon: FileText, bg: "#f1f3ff", color: "#555f6d" };
   const Icon = m.icon;
   return (
     <div style={{ width: 36, height: 36, borderRadius: 9, background: m.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -98,28 +98,28 @@ export default function DashboardActivityPage() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
-        <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "24px 32px" }}>
-          <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#6b7280", textDecoration: "none", marginBottom: 10 }}>
+      <div style={{ background: "#f9f9ff", minHeight: "100%" }}>
+        <div style={{ background: "#fff", borderBottom: "1px solid #c8c5cd", padding: "24px 32px" }}>
+          <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#555f6d", textDecoration: "none", marginBottom: 10 }}>
             <ArrowLeft size={13} /> Back to Dashboard
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Activity size={17} color="var(--avatar-theme-color, #111827)" />
+              <Activity size={17} color="var(--avatar-theme-color, #141b2b)" />
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>Recent Activity</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#141b2b", margin: 0, letterSpacing: "-0.02em" }}>Recent Activity</h1>
           </div>
-          <p style={{ fontSize: 13, color: "#9ca3af", margin: "6px 0 0 46px" }}>
+          <p style={{ fontSize: 13, color: "#78767d", margin: "6px 0 0 46px" }}>
             Recently uploaded archive documents, published research, showcase submissions, and overdue-loan flags.
           </p>
         </div>
 
         <div style={{ padding: "24px 32px", maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 14, overflow: "hidden" }}>
             {isLoading ? (
               <div style={{ padding: "0 20px" }}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} style={{ display: "flex", gap: 12, padding: "14px 0", borderBottom: i < 7 ? "1px solid #f9fafb" : "none" }}>
+                  <div key={i} style={{ display: "flex", gap: 12, padding: "14px 0", borderBottom: i < 7 ? "1px solid #f9f9ff" : "none" }}>
                     <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                       <Skeleton className="h-3.5 w-3/4" />
@@ -131,27 +131,27 @@ export default function DashboardActivityPage() {
               </div>
             ) : feed.length === 0 ? (
               <div style={{ padding: "52px 20px", textAlign: "center" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                  <Activity size={20} color="#9ca3af" />
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#f1f3ff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                  <Activity size={20} color="#78767d" />
                 </div>
-                <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No recent activity to display.</p>
+                <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>No recent activity to display.</p>
               </div>
             ) : (
               feed.map((entry, i) => (
                 <div
                   key={entry.id}
-                  style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 20px", borderBottom: i < feed.length - 1 ? "1px solid #f9fafb" : "none", transition: "background 0.1s" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#fafafa")}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 20px", borderBottom: i < feed.length - 1 ? "1px solid #f9f9ff" : "none", transition: "background 0.1s" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#f9f9ff")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <AIcon type={entry.type} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, color: "#111827", margin: "0 0 5px", lineHeight: 1.45 }}>
+                    <p style={{ fontSize: 13, color: "#141b2b", margin: "0 0 5px", lineHeight: 1.45 }}>
                       <strong>{entry.actor}</strong> {entry.action} {entry.subject}.
                     </p>
                     <StatusPill status={entry.status} />
                   </div>
-                  <span style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", marginTop: 2, flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, color: "#78767d", whiteSpace: "nowrap", marginTop: 2, flexShrink: 0 }}>
                     {timeAgo(entry.time)}
                   </span>
                 </div>

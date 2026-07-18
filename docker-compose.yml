@@ -39,25 +39,6 @@ services:
       timeout: 10s
       retries: 5
 
-  minio:
-    image: minio/minio:latest
-    container_name: dkp_minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: dkp_minio_user
-      MINIO_ROOT_PASSWORD: dkp_minio_password
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
   redis:
     image: redis:7-alpine
     container_name: dkp_redis
@@ -101,6 +82,5 @@ services:
 volumes:
   postgres_data:
   es_data:
-  minio_data:
   redis_data:
   clamav_data:

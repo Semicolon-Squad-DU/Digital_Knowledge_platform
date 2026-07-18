@@ -52,16 +52,16 @@ const PILL: Record<string, { bg: string; color: string }> = {
   success:        { bg: "#dcfce7", color: "#15803d" },
   active:         { bg: "#dcfce7", color: "#15803d" },
   approved:       { bg: "#dcfce7", color: "#15803d" },
-  pending:        { bg: "#dbeafe", color: "#1d4ed8" },
-  pending_review: { bg: "#dbeafe", color: "#1d4ed8" },
-  review:         { bg: "#dbeafe", color: "#1d4ed8" },
+  pending:        { bg: "#dbeafe", color: "#0D47A1" },
+  pending_review: { bg: "#dbeafe", color: "#0D47A1" },
+  review:         { bg: "#dbeafe", color: "#0D47A1" },
   error:          { bg: "#fee2e2", color: "#dc2626" },
   overdue:        { bg: "#fee2e2", color: "#dc2626" },
-  draft:          { bg: "#f3f4f6", color: "#6b7280" },
+  draft:          { bg: "#f1f3ff", color: "#555f6d" },
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = PILL[status.toLowerCase()] ?? { bg: "#f3f4f6", color: "#6b7280" };
+  const s = PILL[status.toLowerCase()] ?? { bg: "#f1f3ff", color: "#555f6d" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 4, fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: s.bg, color: s.color }}>
       {status.replace("_", " ")}
@@ -77,7 +77,7 @@ function AIcon({ type }: { type: string }) {
     overdue:  { icon: AlertTriangle, bg: "#fef2f2", color: "#ef4444" },
     loan:     { icon: FolderOpen,    bg: "#fff7ed", color: "#f97316" },
   };
-  const m = map[type] ?? { icon: FileText, bg: "#f3f4f6", color: "#6b7280" };
+  const m = map[type] ?? { icon: FileText, bg: "#f1f3ff", color: "#555f6d" };
   const Icon = m.icon;
   return (
     <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: m.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -94,7 +94,7 @@ function StatCard({ label, value, sub, subIcon, subColor, loading, icon: CardIco
   const SubIcon = subIcon;
   return (
     <div style={{
-      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
+      background: "#fff", border: "1px solid #c8c5cd", borderRadius: 14,
       padding: "20px 22px", position: "relative", overflow: "hidden",
     }}>
       {accent && (
@@ -109,20 +109,20 @@ function StatCard({ label, value, sub, subIcon, subColor, loading, icon: CardIco
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", margin: 0 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#78767d", margin: 0 }}>
               {label}
             </p>
             {CardIcon && (
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: iconBg ?? "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <CardIcon size={16} color={iconColor ?? "#6b7280"} />
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: iconBg ?? "#f1f3ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <CardIcon size={16} color={iconColor ?? "#555f6d"} />
               </div>
             )}
           </div>
-          <p style={{ fontSize: 34, fontWeight: 800, color: "#111827", lineHeight: 1, margin: "0 0 10px" }}>
+          <p style={{ fontSize: 34, fontWeight: 800, color: "#141b2b", lineHeight: 1, margin: "0 0 10px" }}>
             {value}
           </p>
           {sub && (
-            <p style={{ fontSize: 12, color: subColor ?? "#6b7280", display: "flex", alignItems: "center", gap: 4, margin: 0 }}>
+            <p style={{ fontSize: 12, color: subColor ?? "#555f6d", display: "flex", alignItems: "center", gap: 4, margin: 0 }}>
               {SubIcon && <SubIcon size={12} />}
               {sub}
             </p>
@@ -201,12 +201,12 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+      <div style={{ background: "#f9f9ff", minHeight: "100%" }}>
 
         {/* ── Hero banner ──────────────────────────────────────────────────────── */}
         <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
+          borderBottom: "1px solid #c8c5cd",
           padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -226,7 +226,7 @@ export default function DashboardPage() {
                   {getGreeting()}, {firstName}.
                 </h1>
               </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>
                 {todayLabel()}
               </p>
             </div>
@@ -242,8 +242,8 @@ export default function DashboardPage() {
                     padding: "10px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600,
                     textDecoration: "none", transition: "all 0.15s",
                     ...(primary
-                      ? { background: "var(--avatar-theme-color, #111827)", color: "#fff", border: "1px solid transparent", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }
-                      : { background: "#fff", color: "#374151", border: "1px solid #d1d5db" }),
+                      ? { background: "var(--avatar-theme-color, #141b2b)", color: "#fff", border: "1px solid transparent", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }
+                      : { background: "#fff", color: "#47464c", border: "1px solid #c8c5cd" }),
                   }}
                 >
                   <Icon size={14} /> {label}
@@ -279,7 +279,7 @@ export default function DashboardPage() {
                 />
                 <StatCard
                   label="Overdue Books" icon={AlertTriangle} iconBg="#fef2f2" iconColor="#ef4444"
-                  accent={overdueLoans.length > 0 ? "#ef4444" : "#e5e7eb"}
+                  accent={overdueLoans.length > 0 ? "#ef4444" : "#c8c5cd"}
                   value={overdueLoans.length}
                   sub={overdueLoans.length > 0 ? "Fines accumulating" : "All returned on time"}
                   subColor={overdueLoans.length > 0 ? "#ef4444" : "#16a34a"} loading={histLoading}
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                   label="Outstanding Fines" icon={Clock} iconBg="#fff7ed" iconColor="#f97316" accent="#f97316"
                   value={`BDT ${fineData?.total_pending ?? 0}`}
                   sub="Due to late returns"
-                  subColor={fineData?.total_pending > 0 ? "#ef4444" : "#6b7280"} loading={histLoading}
+                  subColor={fineData?.total_pending > 0 ? "#ef4444" : "#555f6d"} loading={histLoading}
                 />
                 <StatCard
                   label="Wishlist Saved" icon={Heart} iconBg="#fdf4ff" iconColor="#a855f7" accent="#a855f7"
@@ -311,10 +311,10 @@ export default function DashboardPage() {
                 />
                 <StatCard
                   label="Pending Review" icon={Clock} iconBg="#fff7ed" iconColor="#f97316"
-                  accent={myPendingSubmissions > 0 ? "#f97316" : "#e5e7eb"}
+                  accent={myPendingSubmissions > 0 ? "#f97316" : "#c8c5cd"}
                   value={myPendingSubmissions}
                   sub={myPendingSubmissions > 0 ? `${myPendingSubmissions} awaiting advisor` : "No pending reviews"}
-                  subColor={myPendingSubmissions > 0 ? "#f97316" : "#6b7280"} loading={mySubmissionsLoading}
+                  subColor={myPendingSubmissions > 0 ? "#f97316" : "#555f6d"} loading={mySubmissionsLoading}
                 />
               </>
             ) : (
@@ -333,10 +333,10 @@ export default function DashboardPage() {
                 />
                 <StatCard
                   label="Pending Reviews" icon={Clock} iconBg="#fff7ed" iconColor="#f97316"
-                  accent={pendingReviews > 0 ? "#f97316" : "#e5e7eb"}
+                  accent={pendingReviews > 0 ? "#f97316" : "#c8c5cd"}
                   value={pendingReviews}
                   sub={pendingReviews > 0 ? `${pendingReviews} need attention` : "No pending reviews"}
-                  subColor={pendingReviews > 0 ? "#f97316" : "#6b7280"} loading={isAdvisorRole && pendingLoading}
+                  subColor={pendingReviews > 0 ? "#f97316" : "#555f6d"} loading={isAdvisorRole && pendingLoading}
                 />
                 <StatCard
                   label="Archive Items" icon={Archive} iconBg="#f5f3ff" iconColor="#8b5cf6" accent="#8b5cf6"
@@ -351,22 +351,22 @@ export default function DashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 290px", gap: 18, marginBottom: 18 }}>
 
             {/* Recent Activity */}
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 14, overflow: "hidden" }}>
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid #f3f4f6",
+                padding: "16px 20px", borderBottom: "1px solid #f1f3ff",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Activity size={15} color="var(--avatar-theme-color, #111827)" />
+                    <Activity size={15} color="var(--avatar-theme-color, #141b2b)" />
                   </div>
-                  <h2 style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", margin: 0 }}>Recent Activity</h2>
+                  <h2 style={{ fontSize: 14.5, fontWeight: 700, color: "#141b2b", margin: 0 }}>Recent Activity</h2>
                 </div>
                 <Link
                   href="/dashboard/activity"
-                  style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #111827)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "#6b7280")}
+                  style={{ fontSize: 12, fontWeight: 600, color: "#555f6d", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "var(--avatar-theme-color, #141b2b)")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#555f6d")}
                 >
                   View all <ArrowRight size={12} />
                 </Link>
@@ -375,7 +375,7 @@ export default function DashboardPage() {
               {actLoading ? (
                 <div style={{ padding: "0 20px" }}>
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12, padding: "14px 0", borderBottom: i < 4 ? "1px solid #f9fafb" : "none" }}>
+                    <div key={i} style={{ display: "flex", gap: 12, padding: "14px 0", borderBottom: i < 4 ? "1px solid #f9f9ff" : "none" }}>
                       <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                         <Skeleton className="h-3.5 w-3/4" />
@@ -387,27 +387,27 @@ export default function DashboardPage() {
                 </div>
               ) : feed.length === 0 ? (
                 <div style={{ padding: "52px 20px", textAlign: "center" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                    <Activity size={20} color="#9ca3af" />
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: "#f1f3ff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                    <Activity size={20} color="#78767d" />
                   </div>
-                  <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No recent activity to display.</p>
+                  <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>No recent activity to display.</p>
                 </div>
               ) : (
                 feed.map((entry, i) => (
                   <div
                     key={entry.id}
-                    style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 20px", borderBottom: i < feed.length - 1 ? "1px solid #f9fafb" : "none", transition: "background 0.1s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#fafafa")}
+                    style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 20px", borderBottom: i < feed.length - 1 ? "1px solid #f9f9ff" : "none", transition: "background 0.1s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#f9f9ff")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
                     <AIcon type={entry.type} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, color: "#111827", margin: "0 0 5px", lineHeight: 1.45 }}>
+                      <p style={{ fontSize: 13, color: "#141b2b", margin: "0 0 5px", lineHeight: 1.45 }}>
                         <strong>{entry.actor}</strong> {entry.action} {entry.subject}.
                       </p>
                       <StatusPill status={entry.status} />
                     </div>
-                    <span style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", marginTop: 2, flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: "#78767d", whiteSpace: "nowrap", marginTop: 2, flexShrink: 0 }}>
                       {timeAgo(entry.time)}
                     </span>
                   </div>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
             {/* Right: Feature cards */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Library card */}
-              <div style={{ flex: 1, borderRadius: 14, overflow: "hidden", position: "relative", background: "#0f172a", minHeight: 185, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 20 }}>
+              <div style={{ flex: 1, borderRadius: 14, overflow: "hidden", position: "relative", background: "#141b2b", minHeight: 185, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 20 }}>
                 <div style={{ position: "absolute", inset: 0, background: "var(--theme-gradient-160)", opacity: 0.85 }} />
                 <div style={{ position: "relative", zIndex: 1 }}>
                   <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(255,255,255,0.45)", margin: "0 0 5px" }}>Quick Access</p>
@@ -460,7 +460,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ── System status bar ── */}
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)" }}>
+          <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 14, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)" }}>
             {[
               {
                 icon: HardDrive, iconBg: "#eff6ff", iconColor: "#3b82f6",
@@ -482,18 +482,18 @@ export default function DashboardPage() {
                 key={item.label}
                 style={{
                   display: "flex", alignItems: "center", gap: 14, padding: "18px 24px",
-                  borderRight: !isMobile && i < 2 ? "1px solid #e5e7eb" : "none",
-                  borderBottom: isMobile && i < 2 ? "1px solid #e5e7eb" : "none",
+                  borderRight: !isMobile && i < 2 ? "1px solid #c8c5cd" : "none",
+                  borderBottom: isMobile && i < 2 ? "1px solid #c8c5cd" : "none",
                 }}
               >
                 <div style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, background: item.iconBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <item.icon size={17} color={item.iconColor} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", margin: "0 0 3px" }}>
+                  <p style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#78767d", margin: "0 0 3px" }}>
                     {item.label}
                   </p>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                     {item.value}
                   </p>
                 </div>

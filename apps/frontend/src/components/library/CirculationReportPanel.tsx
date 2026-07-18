@@ -92,7 +92,7 @@ export function CirculationReportPanel() {
               <div
                 style={{
                   position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20,
-                  background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                  background: "#fff", border: "1px solid #c8c5cd", borderRadius: 8,
                   boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 140, overflow: "hidden",
                 }}
               >
@@ -101,9 +101,9 @@ export function CirculationReportPanel() {
                   onClick={() => { handleExportCsv(); setExportMenuOpen(false); }}
                   style={{
                     display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
-                    fontSize: 12.5, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer",
+                    fontSize: 12.5, fontWeight: 600, color: "#47464c", background: "none", border: "none", cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9f9ff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
                 >
                   Export as CSV
@@ -113,9 +113,9 @@ export function CirculationReportPanel() {
                   onClick={() => { handleExportPdf(); setExportMenuOpen(false); }}
                   style={{
                     display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
-                    fontSize: 12.5, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer",
+                    fontSize: 12.5, fontWeight: 600, color: "#47464c", background: "none", border: "none", cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9f9ff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
                 >
                   Export as PDF

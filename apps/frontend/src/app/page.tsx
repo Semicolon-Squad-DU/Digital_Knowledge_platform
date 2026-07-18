@@ -459,7 +459,7 @@ export default function HomePage() {
              into every other section and give flat role cards a colored edge
              instead of a hairline. */
           .home-stats-section {
-            background: linear-gradient(180deg, #eef1ff 0%, #ffffff 55%) !important;
+            background: linear-gradient(180deg, #f1f3ff 0%, #ffffff 55%) !important;
             padding: 36px 24px !important;
           }
           .home-explore-section {
@@ -467,7 +467,7 @@ export default function HomePage() {
             padding: 32px 24px !important;
           }
           .home-roles-section {
-            background: linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%) !important;
+            background: linear-gradient(180deg, #ffffff 0%, #f1f3ff 100%) !important;
             padding: 36px 24px !important;
           }
           .home-role-card {
@@ -518,7 +518,7 @@ export default function HomePage() {
 
       <div style={{ background: "#f8f9fa", minHeight: "100vh" }}>
 
-        <header style={{ background: "#eaecef", borderBottom: "1px solid #d1d5db", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: isMobile ? "relative" : "sticky", top: 0, zIndex: 50, transform: !isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
+        <header style={{ background: "#eaecef", borderBottom: "1px solid #c8c5cd", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", position: isMobile ? "relative" : "sticky", top: 0, zIndex: 50, transform: !isMobile && !headerVisible ? "translateY(-100%)" : "translateY(0)", transition: "transform 0.35s ease" }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "48px" }}>
 
             {/* ΓöÇΓöÇ MOBILE & DESKTOP: Left brand/group layout ΓöÇΓöÇ */}
@@ -527,7 +527,7 @@ export default function HomePage() {
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="flex md:hidden"
-                style={{ alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#111827", borderRadius: "6px", marginLeft: "-8px" }}
+                style={{ alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", padding: "8px", color: "#141b2b", borderRadius: "6px", marginLeft: "-8px" }}
                 aria-label="Open menu"
               >
                 <Menu size={24} />
@@ -535,10 +535,10 @@ export default function HomePage() {
 
               {/* Logo (always on left) */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "var(--avatar-theme-color, #141b2b)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <GraduationCap size={16} color="#ffffff" />
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", letterSpacing: "-0.02em" }}>DKP</span>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--avatar-theme-color, #141b2b)", letterSpacing: "-0.02em" }}>DKP</span>
               </div>
             </div>
 
@@ -555,7 +555,7 @@ export default function HomePage() {
                   key={item.label}
                   href={item.href}
                   style={{ padding: "6px 14px", fontSize: "13.5px", fontWeight: 500, color: "#4b5563", textDecoration: "none", borderRadius: "6px", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#d1d5db"; e.currentTarget.style.color = "#111827"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#c8c5cd"; e.currentTarget.style.color = "#141b2b"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; }}
                 >{item.label}</Link>
               ))}
@@ -564,9 +564,9 @@ export default function HomePage() {
               {isAuthenticated && (
                 <button
                   onClick={handleLogout}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #d1d5db", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #c8c5cd", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
                 >
                   <LogOut size={13} /> Sign Out
                 </button>
@@ -625,10 +625,10 @@ export default function HomePage() {
               {isAuthenticated ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
                   <Link href="/profile" onClick={handleCloseSidebar} style={{ position: "relative", textDecoration: "none", display: "block", cursor: "pointer" }}>
-                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 700, color: "var(--avatar-theme-color, #141b2b)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
                       {user?.name?.[0]?.toUpperCase() ?? "U"}
                     </div>
-                    <div style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderRadius: "50%", background: "var(--avatar-theme-color, #111827)", border: "2px solid #111116", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
+                    <div style={{ position: "absolute", bottom: "-2px", right: "-2px", width: "22px", height: "22px", borderRadius: "50%", background: "var(--avatar-theme-color, #141b2b)", border: "2px solid #111116", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }}>
                       <Camera size={11} color="#ffffff" strokeWidth={2.5} />
                     </div>
                   </Link>
@@ -639,7 +639,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "20px 16px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #111827)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--avatar-theme-color, #141b2b)", boxShadow: "0 4px 12px rgba(0,0,0,0.24)" }}>
                     <UserRound size={32} />
                   </div>
                   <div>
@@ -726,7 +726,7 @@ export default function HomePage() {
                         padding: "10.5px",
                         fontSize: "13.5px",
                         fontWeight: 700,
-                        color: "#111827",
+                        color: "#141b2b",
                         background: "#ffffff",
                         borderRadius: "8px",
                         textDecoration: "none",
@@ -905,7 +905,7 @@ export default function HomePage() {
 
         {/* ΓöÇΓöÇ AUTH CARD - Sign In & Register (For Guests) ΓöÇΓöÇ */}
         {!isAuthenticated && (
-          <section style={{ background: "linear-gradient(160deg, #f4f6ff 0%, #ffffff 60%)", padding: isMobile ? "32px 16px" : "72px 32px", borderTop: "1px solid #e5e7eb" }}>
+          <section style={{ background: "linear-gradient(160deg, #f1f3ff 0%, #ffffff 60%)", padding: isMobile ? "32px 16px" : "72px 32px", borderTop: "1px solid #c8c5cd" }}>
             <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "36px" }}>
                 <div style={{ textAlign: "center", maxWidth: "560px" }}>
@@ -924,7 +924,7 @@ export default function HomePage() {
                   </h2>
                   <p style={{
                     fontSize: "clamp(0.95rem, 1.5vw, 1.05rem)",
-                    color: "#6b7280",
+                    color: "#555f6d",
                     lineHeight: 1.7,
                     margin: 0,
                     fontWeight: 400,
@@ -952,9 +952,9 @@ export default function HomePage() {
                       padding: "13px 36px",
                       fontSize: "14.5px",
                       fontWeight: 600,
-                      color: "var(--avatar-theme-color, #1a56db)",
+                      color: "var(--avatar-theme-color, #0D47A1)",
                       background: "#ffffff",
-                      border: "2px solid var(--avatar-theme-color, #1a56db)",
+                      border: "2px solid var(--avatar-theme-color, #0D47A1)",
                       borderRadius: "12px",
                       textDecoration: "none",
                       transition: "all 0.25s ease",
@@ -963,14 +963,14 @@ export default function HomePage() {
                       letterSpacing: "0.01em",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--avatar-theme-color, #1a56db)";
+                      e.currentTarget.style.background = "var(--avatar-theme-color, #0D47A1)";
                       e.currentTarget.style.color = "#ffffff";
                       e.currentTarget.style.transform = "translateY(-2px)";
                       e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "#ffffff";
-                      e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)";
+                      e.currentTarget.style.color = "var(--avatar-theme-color, #0D47A1)";
                       e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)";
                     }}
@@ -990,8 +990,8 @@ export default function HomePage() {
                       fontSize: "14.5px",
                       fontWeight: 700,
                       color: "#ffffff",
-                      background: "var(--avatar-theme-color, #1a56db)",
-                      border: "2px solid var(--avatar-theme-color, #1a56db)",
+                      background: "var(--avatar-theme-color, #0D47A1)",
+                      border: "2px solid var(--avatar-theme-color, #0D47A1)",
                       borderRadius: "12px",
                       textDecoration: "none",
                       transition: "all 0.25s ease",
@@ -1020,7 +1020,7 @@ export default function HomePage() {
         )}
 
         {/* ΓöÇΓöÇ LIVE PLATFORM STATS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
-        <section className="home-stats-section" style={{ background: "linear-gradient(180deg, #eef1ff 0%, #ffffff 55%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        <section className="home-stats-section" style={{ background: "linear-gradient(180deg, #f1f3ff 0%, #ffffff 55%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
               <div className="home-stats-heading" style={{ textAlign: "center", marginBottom: "52px" }}>
@@ -1093,7 +1093,7 @@ export default function HomePage() {
         </section>
 
         {/* ΓöÇΓöÇ BUILT FOR EVERY ROLE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
-        <section className="home-roles-section" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
+        <section className="home-roles-section" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f1f3ff 100%)", padding: "clamp(76px, 9vw, 112px) 32px", borderTop: "1px solid #e4e4e7" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Reveal>
               <div style={{ textAlign: "center", marginBottom: "52px" }}>
@@ -1291,7 +1291,7 @@ export default function HomePage() {
         </section>
 
         {/* ΓöÇΓöÇ FOOTER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
-        <footer style={{ background: "#f0f2f5", borderTop: "1px solid #dde0e6", position: "relative" }}>
+        <footer style={{ background: "#f9f9ff", borderTop: "1px solid #dde0e6", position: "relative" }}>
 
           {/* Footer body ΓÇö 4 columns */}
           <div style={{
@@ -1306,7 +1306,7 @@ export default function HomePage() {
             {/* Brand column */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: isMobile ? "0px" : "14px" }}>
-                <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "var(--avatar-theme-color, #111827)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "var(--avatar-theme-color, #141b2b)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <GraduationCap size={14} color="#ffffff" />
                 </div>
                 <span style={{ fontSize: "15.5px", fontWeight: 800, color: "var(--avatar-theme-color)", letterSpacing: "-0.025em" }}>
@@ -1318,8 +1318,8 @@ export default function HomePage() {
                   <p className="home-footer-desc" style={{ fontSize: "13.5px", color: "#4b5563", margin: "0 0 16px 0", lineHeight: 1.7, maxWidth: "280px" }}>
                     A unified academic knowledge system for archives, research, and library resources at the University of Dhaka.
                   </p>
-                  <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>
-                    Built by <strong style={{ color: "#374151" }}>Semicolon-Squad-DU</strong>
+                  <p style={{ fontSize: "12.5px", color: "#555f6d", margin: 0 }}>
+                    Built by <strong style={{ color: "#47464c" }}>Semicolon-Squad-DU</strong>
                   </p>
                 </>
               )}
@@ -1327,7 +1327,7 @@ export default function HomePage() {
 
             {/* Legal column */}
             <div>
-              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }} className="footer-header-text">
+              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #141b2b)", margin: "0 0 16px 0" }} className="footer-header-text">
                 Legal
               </p>
               <div className="home-footer-legal-links" style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
@@ -1339,7 +1339,7 @@ export default function HomePage() {
                   <Link key={l.label} href={l.href}
                     style={{ fontSize: "13.5px", color: "#4b5563", textDecoration: "none", fontWeight: 400, transition: "color 0.18s", lineHeight: 1.6 }}
                     className="footer-link-text"
-                    onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #1a56db)"}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--avatar-theme-color, #0D47A1)"}
                     onMouseLeave={e => e.currentTarget.style.color = "#4b5563"}
                   >{l.label}</Link>
                 ))}
@@ -1348,10 +1348,10 @@ export default function HomePage() {
 
             {/* Team column */}
             <div>
-              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #111827)", margin: "0 0 16px 0" }} className="footer-header-text">
+              <p style={{ fontSize: "13.5px", fontWeight: 800, letterSpacing: "-0.025em", color: "var(--avatar-theme-color, #141b2b)", margin: "0 0 16px 0" }} className="footer-header-text">
                 Team
               </p>
-              <p style={{ fontSize: "13.5px", color: "#1f2937", margin: "0 0 10px 0", fontWeight: 700 }} className="footer-link-text">Semicolon-Squad-DU</p>
+              <p style={{ fontSize: "13.5px", color: "#141b2b", margin: "0 0 10px 0", fontWeight: 700 }} className="footer-link-text">Semicolon-Squad-DU</p>
             </div>
           </div>
 
@@ -1367,7 +1367,7 @@ export default function HomePage() {
               flexWrap: "wrap",
               gap: "16px",
             }}>
-              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>
+              <p style={{ fontSize: "13px", color: "#555f6d", margin: 0 }}>
                 ┬⌐ 2026 Digital Knowledge Platform. All rights reserved.
               </p>
             </div>
@@ -1385,15 +1385,15 @@ export default function HomePage() {
                 justifyContent: "center",
                 width: "42px",
                 height: "42px",
-                color: "var(--avatar-theme-color, #374151)",
+                color: "var(--avatar-theme-color, #47464c)",
                 background: "transparent",
-                border: "1.5px solid #d1d5db",
+                border: "1.5px solid #c8c5cd",
                 borderRadius: "50%",
                 cursor: "pointer",
                 transition: "all 0.2s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--avatar-theme-color)"; e.currentTarget.style.background = "#ffffff"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "transparent"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#c8c5cd"; e.currentTarget.style.background = "transparent"; }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: "20px", fontWeight: "bold" }}>arrow_upward</span>
             </button>

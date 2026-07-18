@@ -65,35 +65,35 @@ export function EventCalendar({ onSelectEvent }: { onSelectEvent: (event: Academ
   const todayKey = dateKey(today);
 
   return (
-    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #c8c5cd", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #f1f5f9" }}>
-        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", margin: 0 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#141b2b", margin: 0 }}>
           {MONTH_NAMES[month - 1]} {year}
         </h3>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={goToToday} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}>
+          <button onClick={goToToday} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", fontSize: 12, fontWeight: 600, color: "#47464c", cursor: "pointer" }}>
             Today
           </button>
-          <button onClick={goToPreviousMonth} aria-label="Previous month" style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <ChevronLeft size={14} color="#475569" />
+          <button onClick={goToPreviousMonth} aria-label="Previous month" style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <ChevronLeft size={14} color="#47464c" />
           </button>
-          <button onClick={goToNextMonth} aria-label="Next month" style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <ChevronRight size={14} color="#475569" />
+          <button onClick={goToNextMonth} aria-label="Next month" style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #c8c5cd", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <ChevronRight size={14} color="#47464c" />
           </button>
         </div>
       </div>
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
-          <Loader2 className="animate-spin" size={24} color="var(--avatar-theme-color, #2563eb)" />
+          <Loader2 className="animate-spin" size={24} color="var(--avatar-theme-color, #0D47A1)" />
         </div>
       ) : (
         <>
           {/* Weekday header */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: "1px solid #f1f5f9" }}>
             {WEEKDAYS.map(d => (
-              <div key={d} style={{ padding: "8px 4px", textAlign: "center", fontSize: 10.5, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div key={d} style={{ padding: "8px 4px", textAlign: "center", fontSize: 10.5, fontWeight: 700, color: "#78767d", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 {isMobile ? d.slice(0, 1) : d}
               </div>
             ))}
@@ -114,7 +114,7 @@ export function EventCalendar({ onSelectEvent }: { onSelectEvent: (event: Academ
                   style={{
                     aspectRatio: "1", minHeight: isMobile ? 40 : 64,
                     border: "none", borderRight: "1px solid #f8fafc", borderBottom: "1px solid #f8fafc",
-                    background: isSelected ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 10%, #fff)" : "#fff",
+                    background: isSelected ? "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 10%, #fff)" : "#fff",
                     cursor: "pointer", display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "flex-start", padding: "6px 2px", gap: 3,
                     opacity: inMonth ? 1 : 0.35,
@@ -122,17 +122,17 @@ export function EventCalendar({ onSelectEvent }: { onSelectEvent: (event: Academ
                 >
                   <span style={{
                     fontSize: 12, fontWeight: isToday ? 800 : 600,
-                    color: isToday ? "var(--avatar-theme-color, #2563eb)" : "#334155",
+                    color: isToday ? "var(--avatar-theme-color, #0D47A1)" : "#334155",
                     width: 20, height: 20, borderRadius: "50%",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    background: isToday ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 14%, transparent)" : "transparent",
+                    background: isToday ? "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 14%, transparent)" : "transparent",
                   }}>
                     {d.getDate()}
                   </span>
                   {dayEvents.length > 0 && (
                     <span style={{ display: "flex", gap: 2 }}>
                       {dayEvents.slice(0, 3).map((_, i) => (
-                        <span key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--avatar-theme-color, #2563eb)" }} />
+                        <span key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--avatar-theme-color, #0D47A1)" }} />
                       ))}
                     </span>
                   )}
@@ -145,11 +145,11 @@ export function EventCalendar({ onSelectEvent }: { onSelectEvent: (event: Academ
 
       {/* Selected day's events */}
       <div style={{ padding: "16px 20px", borderTop: "1px solid #f1f5f9" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#78767d", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>
           {new Date(selectedDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
         </p>
         {selectedEvents.length === 0 ? (
-          <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>No events on this day.</p>
+          <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>No events on this day.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {selectedEvents.map(event => (
@@ -158,13 +158,13 @@ export function EventCalendar({ onSelectEvent }: { onSelectEvent: (event: Academ
                 onClick={() => onSelectEvent(event)}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-                  padding: "10px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
-                  background: "#f9fafb", cursor: "pointer", textAlign: "left",
+                  padding: "10px 12px", borderRadius: 8, border: "1px solid #c8c5cd",
+                  background: "#f9f9ff", cursor: "pointer", textAlign: "left",
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.title}</p>
-                  <p style={{ margin: "2px 0 0", fontSize: 11.5, color: "#64748b" }}>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#141b2b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.title}</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 11.5, color: "#555f6d" }}>
                     {new Date(event.scheduled_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {event.location}
                   </p>
                 </div>

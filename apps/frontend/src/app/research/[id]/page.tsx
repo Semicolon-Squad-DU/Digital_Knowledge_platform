@@ -14,7 +14,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { cn, getAccessTierBadge } from "@/lib/utils";
 import { DiscussionSection } from "@/components/community/DiscussionSection";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS } from "@/components/design/dkpTheme";
 import { useRetractResearchOutput } from "@/features/research/hooks/useResearch";
 
 import Link from "next/link";
@@ -49,7 +50,7 @@ function OpenFileButton({ outputId }: { outputId: string }) {
       loading={loading}
       icon={<ExternalLink size={13} />}
       style={{
-        background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+        background: C.ink,
         color: "#ffffff",
         border: "none",
         boxShadow: "0 2px 6px rgba(26, 26, 46, 0.15)",
@@ -237,22 +238,22 @@ export default function ResearchDetailPage() {
 
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="page-container py-8 max-w-4xl">
+      <CollectionShell active="Research">
+        <div className="page-container py-8 max-w-4xl" style={{ fontFamily: SANS }}>
           <SkeletonCard />
         </div>
-      </AppLayout>
+      </CollectionShell>
     );
   }
 
   if (!output) {
     return (
-      <AppLayout>
-        <div className="page-container py-16 text-center">
+      <CollectionShell active="Research">
+        <div className="page-container py-16 text-center" style={{ fontFamily: SANS }}>
           <FileText size={36} className="mx-auto mb-3 text-[var(--color-fg-muted)]" />
           <p className="font-semibold text-[var(--color-fg-default)]">Research output not found.</p>
         </div>
-      </AppLayout>
+      </CollectionShell>
     );
   }
 
@@ -278,11 +279,11 @@ export default function ResearchDetailPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="page-container py-8 max-w-4xl">
+    <CollectionShell active="Research">
+      <div className="page-container py-8 max-w-4xl" style={{ fontFamily: SANS }}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <PageHeader
-          title={output.title}
+          title={<span style={{ fontFamily: SERIF, color: C.ink }}>{output.title}</span>}
           breadcrumb={[
             { label: "Home", href: "/" },
             { label: "Research", href: "/research" },
@@ -295,7 +296,7 @@ export default function ResearchDetailPage() {
               href={`/research/${outputId}/edit`}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white transition-all shadow-sm hover:opacity-90"
               style={{
-                background: "var(--theme-gradient-160, linear-gradient(135deg, var(--avatar-theme-color, #1a1a2e), #3b82f6))",
+                background: C.accent,
               }}
             >
               <Pencil size={13} />
@@ -435,7 +436,7 @@ export default function ResearchDetailPage() {
                   onClick={() => setShowPdf(v => !v)}
                   icon={showPdf ? <Check size={13} /> : <BookOpen size={13} />}
                   style={{
-                    background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                    background: C.ink,
                     color: "#ffffff",
                     border: "none",
                     boxShadow: "0 2px 8px rgba(26, 26, 46, 0.15)",
@@ -470,7 +471,7 @@ export default function ResearchDetailPage() {
                     size="sm"
                     onClick={() => setShowPdf(true)}
                     style={{
-                      background: "var(--theme-gradient-135, linear-gradient(135deg, #1a1a2e 0%, #111116 100%))",
+                      background: C.ink,
                       color: "#ffffff",
                       border: "none",
                       boxShadow: "0 2px 8px rgba(26, 26, 46, 0.15)",
@@ -558,6 +559,6 @@ export default function ResearchDetailPage() {
 
       <DiscussionSection entityType="research" entityId={output.output_id} />
     </div>
-    </AppLayout>
+    </CollectionShell>
   );
 }

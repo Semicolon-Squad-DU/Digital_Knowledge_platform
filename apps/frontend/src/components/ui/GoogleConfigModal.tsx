@@ -45,7 +45,7 @@ export function GoogleConfigModal({ isOpen, onClose, onUseMock }: GoogleConfigMo
             <li>Set the Authorized JavaScript Origins to: <code style={{ background: "rgba(0,0,0,0.05)", padding: "2px 4px", borderRadius: "4px" }}>http://localhost:3000</code></li>
             <li>Add this variable to your local environment file at <code style={{ background: "rgba(0,0,0,0.05)", padding: "2px 4px", borderRadius: "4px" }}>apps/frontend/.env.local</code>:
               <pre style={{
-                background: "#0f172a", color: "#38bdf8", padding: "10px", borderRadius: "6px",
+                background: "#141b2b", color: "#38bdf8", padding: "10px", borderRadius: "6px",
                 fontSize: "11px", margin: "8px 0 0 0", overflowX: "auto"
               }}>
                 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_client_id_here
@@ -86,7 +86,7 @@ export function GoogleConfigModal({ isOpen, onClose, onUseMock }: GoogleConfigMo
               padding: "8px 16px",
               fontSize: "12px",
               fontWeight: 600,
-              background: "var(--avatar-theme-color, #111827)",
+              background: "var(--avatar-theme-color, #141b2b)",
               color: "#ffffff",
               border: "none",
               borderRadius: "6px",

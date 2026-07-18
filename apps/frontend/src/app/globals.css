@@ -57,44 +57,59 @@ input[type="password"]::-moz-reveal {
 /* ── GitHub-style design tokens ─────────────────────────── */
 @layer base {
   :root {
-    /* Canvas */
+    /* Modern Academic — Digital Knowledge Platform */
+    --ma-university-blue: #1A1A2E;
+    --ma-institutional-accent: #0D47A1;
+    --ma-slate-gray: #4B5563;
+    --ma-canvas-white: #FFFFFF;
+    --ma-background: #f9f9ff;
+    --ma-on-background: #141b2b;
+    --ma-surface: #f9f9ff;
+    --ma-surface-low: #f1f3ff;
+    --ma-surface-high: #e1e8fd;
+    --ma-surface-highest: #dce2f7;
+    --ma-secondary: #555f6d;
+    --ma-outline: #78767d;
+    --ma-outline-variant: #c8c5cd;
+    --ma-shadow: 0 4px 24px rgba(26, 26, 46, 0.05);
+
+    /* Canvas — aligned to Modern Academic */
     --color-canvas-default:    #ffffff;
-    --color-canvas-subtle:     #f6f8fa;
-    --color-canvas-inset:      #f6f8fa;
+    --color-canvas-subtle:     #f9f9ff;
+    --color-canvas-inset:      #f1f3ff;
 
     /* Avatar Theme Variables */
     --avatar-theme-color: #1a1a2e;
-    --theme-gradient-135: linear-gradient(135deg, var(--avatar-theme-color) 0%, #111116 100%);
-    --theme-gradient-160: linear-gradient(160deg, rgba(30, 40, 60, 0.9) 0%, rgba(10, 15, 25, 1) 100%);
-    --theme-sidebar-gradient: linear-gradient(135deg, #000000 0%, #2d2533 100%);
+    --theme-gradient-135: linear-gradient(135deg, #1A1A2E 0%, #12121f 100%);
+    --theme-gradient-160: linear-gradient(160deg, rgba(26, 26, 46, 0.95) 0%, rgba(18, 18, 31, 1) 100%);
+    --theme-sidebar-gradient: linear-gradient(180deg, #1A1A2E 0%, #12121f 100%);
 
-    /* Gradient tokens — light */
+    /* Gradient tokens — light, Modern Academic institutional wash */
     --gradient-bg:
-      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(9,105,218,0.07) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(130,80,223,0.06) 0%, transparent 55%),
-      radial-gradient(ellipse 50% 30% at 50% 50%, rgba(26,127,55,0.03) 0%, transparent 70%),
-      #ffffff;
-    --gradient-surface:        linear-gradient(135deg, #ffffff 0%, #f6f8fa 100%);
-    --gradient-surface-hover:  linear-gradient(135deg, #f6f8fa 0%, #eef1f4 100%);
-    --gradient-header:         linear-gradient(180deg, #f6f8fa 0%, #ffffff 100%);
-    --gradient-accent:         linear-gradient(135deg, #0969da 0%, #1a56db 50%, #6941c6 100%);
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(13,71,161,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(26,26,46,0.04) 0%, transparent 55%),
+      #f9f9ff;
+    --gradient-surface:        linear-gradient(135deg, #ffffff 0%, #f1f3ff 100%);
+    --gradient-surface-hover:  linear-gradient(135deg, #f1f3ff 0%, #e9edff 100%);
+    --gradient-header:         linear-gradient(180deg, #f1f3ff 0%, #ffffff 100%);
+    --gradient-accent:         linear-gradient(135deg, #0D47A1 0%, #1A1A2E 100%);
     --gradient-success:        linear-gradient(135deg, #1a7f37 0%, #1f883d 100%);
     --gradient-danger:         linear-gradient(135deg, #cf222e 0%, #d1242f 100%);
     --gradient-navbar:         linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
     --gradient-hero:
       linear-gradient(135deg, rgba(9,105,218,0.08) 0%, rgba(130,80,223,0.06) 50%, rgba(26,127,55,0.04) 100%);
-    /* Border */
-    --color-border-default:    #d0d7de;
-    --color-border-muted:      #d8dee4;
-    /* Foreground */
-    --color-fg-default:        #1f2328;
-    --color-fg-muted:          #636c76;
-    --color-fg-subtle:         #6e7781;
+    /* Border — Modern Academic slate-gray outline */
+    --color-border-default:    var(--ma-outline-variant);
+    --color-border-muted:      #dce2f7;
+    /* Foreground — Modern Academic on-surface / secondary */
+    --color-fg-default:        var(--ma-on-background);
+    --color-fg-muted:          var(--ma-secondary);
+    --color-fg-subtle:         var(--ma-outline);
     --color-fg-on-emphasis:    #ffffff;
-    /* Accent */
-    --color-accent-fg:         #0969da;
-    --color-accent-emphasis:   #0969da;
-    --color-accent-subtle:     #ddf4ff;
+    /* Accent — Modern Academic institutional accent */
+    --color-accent-fg:         var(--ma-institutional-accent);
+    --color-accent-emphasis:   var(--ma-institutional-accent);
+    --color-accent-subtle:     #dbe7fa;
     /* Success */
     --color-success-fg:        #1a7f37;
     --color-success-emphasis:  #1f883d;

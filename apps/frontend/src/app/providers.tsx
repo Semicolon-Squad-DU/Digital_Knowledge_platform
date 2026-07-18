@@ -9,7 +9,7 @@ const THEME_MAP: Record<string, { primary: string; gradient135: string; gradient
     primary: "#1a1a2e",
     gradient135: "linear-gradient(135deg, #1a1a2e 0%, #111116 100%)",
     gradient160: "linear-gradient(160deg, rgba(30, 40, 60, 0.9) 0%, rgba(10, 15, 25, 1) 100%)",
-    sidebar: "linear-gradient(135deg, #000000 0%, #2d2533 100%)",
+    sidebar: "linear-gradient(180deg, #1A1A2E 0%, #12121f 100%)",
   },
   "#312e81": {
     primary: "#312e81",

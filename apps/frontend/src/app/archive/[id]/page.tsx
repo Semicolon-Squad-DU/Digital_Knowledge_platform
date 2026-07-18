@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle, LogIn } from "lucide-react";
 import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUpdateArchiveItem, useUploadArchiveVersion, useDeleteArchiveItem } from "@/features/archive/hooks/useArchive";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS } from "@/components/design/dkpTheme";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { formatDate, formatFileSize, getStatusBadge } from "@/lib/utils";
@@ -93,8 +94,8 @@ export default function ArchiveItemPage() {
     const statusText = restrictedData.request_status;
 
     return (
-      <AppLayout>
-        <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
+      <CollectionShell active="Archive">
+        <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto", fontFamily: SANS }}>
           {/* Back button */}
           <button
             onClick={() => router.back()}
@@ -104,7 +105,7 @@ export default function ArchiveItemPage() {
               gap: 8,
               border: "none",
               background: "none",
-              color: "#6b7280",
+              color: "#555f6d",
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
@@ -117,7 +118,7 @@ export default function ArchiveItemPage() {
           <div
             style={{
               background: "#fff",
-              border: "1px solid #e5e7eb",
+              border: "1px solid #c8c5cd",
               borderRadius: 16,
               boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
               overflow: "hidden",
@@ -129,7 +130,7 @@ export default function ArchiveItemPage() {
                 <AccessTierBadge tier="restricted" />
               </div>
 
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: "0 0 6px", lineHeight: 1.3 }}>
+              <h1 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: C.ink, margin: "0 0 6px", lineHeight: 1.3 }}>
                 {restrictedData.title_en}
               </h1>
               {restrictedData.title_bn && (
@@ -137,7 +138,7 @@ export default function ArchiveItemPage() {
                   {restrictedData.title_bn}
                 </p>
               )}
-              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 auto 24px", maxWidth: 460, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13, color: "#555f6d", margin: "0 auto 24px", maxWidth: 460, lineHeight: 1.5 }}>
                 This document is restricted. Sign in and request access to view or download it.
               </p>
 
@@ -147,8 +148,8 @@ export default function ArchiveItemPage() {
                   style={{
                     maxWidth: 500,
                     margin: "0 auto",
-                    background: "#f9fafb",
-                    border: "1px solid #e5e7eb",
+                    background: "#f9f9ff",
+                    border: "1px solid #c8c5cd",
                     borderRadius: 12,
                     padding: "20px 24px",
                     display: "flex",
@@ -157,12 +158,12 @@ export default function ArchiveItemPage() {
                     textAlign: "left",
                   }}
                 >
-                  <LogIn size={36} color="#374151" style={{ flexShrink: 0 }} />
+                  <LogIn size={36} color="#47464c" style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#141b2b", margin: 0 }}>
                       Sign in to request access
                     </h4>
-                    <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 12px", lineHeight: 1.4 }}>
+                    <p style={{ fontSize: 13, color: "#555f6d", margin: "4px 0 12px", lineHeight: 1.4 }}>
                       This document requires an account. Sign in and you&apos;ll be able to submit an access request.
                     </p>
                     <Link
@@ -173,7 +174,7 @@ export default function ArchiveItemPage() {
                         gap: 6,
                         padding: "9px 16px",
                         borderRadius: 8,
-                        background: "var(--theme-gradient-160)",
+                        background: C.ink,
                         color: "#fff",
                         fontSize: 13,
                         fontWeight: 600,
@@ -191,8 +192,8 @@ export default function ArchiveItemPage() {
                     maxWidth: 500,
                     margin: "0 auto",
                     textAlign: "left",
-                    background: "#f9fafb",
-                    border: "1px solid #e5e7eb",
+                    background: "#f9f9ff",
+                    border: "1px solid #c8c5cd",
                     borderRadius: 12,
                     padding: 20,
                   }}
@@ -202,7 +203,7 @@ export default function ArchiveItemPage() {
                       display: "block",
                       fontSize: 13,
                       fontWeight: 700,
-                      color: "#374151",
+                      color: "#47464c",
                       marginBottom: 8,
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
@@ -220,7 +221,7 @@ export default function ArchiveItemPage() {
                       width: "100%",
                       padding: "10px 12px",
                       borderRadius: 8,
-                      border: "1px solid #d1d5db",
+                      border: "1px solid #c8c5cd",
                       fontSize: 13,
                       fontFamily: "inherit",
                       resize: "none",
@@ -238,7 +239,7 @@ export default function ArchiveItemPage() {
                       padding: "11px 16px",
                       borderRadius: 8,
                       border: "none",
-                      background: "var(--theme-gradient-160)",
+                      background: C.ink,
                       color: "#fff",
                       fontSize: 13,
                       fontWeight: 600,
@@ -266,7 +267,7 @@ export default function ArchiveItemPage() {
                     textAlign: "left",
                   }}
                 >
-                  <Clock size={36} color="#1d4ed8" style={{ flexShrink: 0 }} />
+                  <Clock size={36} color="#0D47A1" style={{ flexShrink: 0 }} />
                   <div>
                     <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a", margin: 0 }}>
                       Access Request Pending
@@ -307,8 +308,8 @@ export default function ArchiveItemPage() {
                   <form
                     onSubmit={handleRequestAccess}
                     style={{
-                      background: "#f9fafb",
-                      border: "1px solid #e5e7eb",
+                      background: "#f9f9ff",
+                      border: "1px solid #c8c5cd",
                       borderRadius: 12,
                       padding: 20,
                     }}
@@ -318,7 +319,7 @@ export default function ArchiveItemPage() {
                         display: "block",
                         fontSize: 13,
                         fontWeight: 700,
-                        color: "#374151",
+                        color: "#47464c",
                         marginBottom: 8,
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
@@ -336,7 +337,7 @@ export default function ArchiveItemPage() {
                         width: "100%",
                         padding: "10px 12px",
                         borderRadius: 8,
-                        border: "1px solid #d1d5db",
+                        border: "1px solid #c8c5cd",
                         fontSize: 13,
                         fontFamily: "inherit",
                         resize: "none",
@@ -354,7 +355,7 @@ export default function ArchiveItemPage() {
                         padding: "11px 16px",
                         borderRadius: 8,
                         border: "none",
-                        background: "var(--theme-gradient-160)",
+                        background: C.ink,
                         color: "#fff",
                         fontSize: 13,
                         fontWeight: 600,
@@ -372,19 +373,19 @@ export default function ArchiveItemPage() {
             </div>
           </div>
         </div>
-      </AppLayout>
+      </CollectionShell>
     );
   }
 
   // ─────────── Loading State ───────────
   if (isLoading) {
     return (
-      <AppLayout>
-        <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto" }}>
-          <div style={{ height: 16, width: 120, background: "#f3f4f6", borderRadius: 4, marginBottom: 20 }} />
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, height: 260 }} />
+      <CollectionShell active="Archive">
+        <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto", fontFamily: SANS }}>
+          <div style={{ height: 16, width: 120, background: "#f1f3ff", borderRadius: 4, marginBottom: 20 }} />
+          <div style={{ background: "#fff", border: "1px solid #c8c5cd", borderRadius: 12, padding: 24, height: 260 }} />
         </div>
-      </AppLayout>
+      </CollectionShell>
     );
   }
 
@@ -396,9 +397,9 @@ export default function ArchiveItemPage() {
   // ─────────── Not Found Fallback ───────────
   if (!item) {
     return (
-      <AppLayout>
-        <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto", textAlign: "center" }}>
-          <p style={{ fontSize: 15, color: "#6b7280" }}>
+      <CollectionShell active="Archive">
+        <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto", textAlign: "center", fontFamily: SANS }}>
+          <p style={{ fontSize: 15, color: "#555f6d" }}>
             {isNetworkFailure ? "We couldn't reach the server. Check your connection and try again." : "Archive item not found."}
           </p>
           {isNetworkFailure && (
@@ -406,15 +407,15 @@ export default function ArchiveItemPage() {
               onClick={() => refetch()}
               style={{
                 marginTop: 16, display: "inline-flex", alignItems: "center",
-                padding: "8px 16px", borderRadius: 8, border: "1px solid #e5e7eb",
-                background: "#fff", fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer",
+                padding: "8px 16px", borderRadius: 8, border: "1px solid #c8c5cd",
+                background: "#fff", fontSize: 13, fontWeight: 600, color: "#47464c", cursor: "pointer",
               }}
             >
               Retry
             </button>
           )}
         </div>
-      </AppLayout>
+      </CollectionShell>
     );
   }
 
@@ -422,8 +423,8 @@ export default function ArchiveItemPage() {
 
   // ─────────── Normal Details Render ───────────
   return (
-    <AppLayout>
-      <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto" }}>
+    <CollectionShell active="Archive">
+      <div style={{ padding: "28px 32px", maxWidth: "900px", margin: "0 auto", fontFamily: SANS }}>
         
         {/* Back button */}
         <button
@@ -434,7 +435,7 @@ export default function ArchiveItemPage() {
             gap: 8,
             border: "none",
             background: "none",
-            color: "#6b7280",
+            color: "#555f6d",
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
@@ -448,7 +449,7 @@ export default function ArchiveItemPage() {
         <div
           style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 16,
             padding: 28,
             marginBottom: 24,
@@ -457,7 +458,7 @@ export default function ArchiveItemPage() {
         >
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
             <div style={{ minWidth: 0, flex: "1 1 240px" }}>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: 0, lineHeight: 1.3 }}>
+              <h1 style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 800, color: C.ink, margin: 0, lineHeight: 1.3 }}>
                 {item.title_en}
               </h1>
               {item.title_bn && (
@@ -485,7 +486,7 @@ export default function ArchiveItemPage() {
           </div>
 
           {item.description && (
-            <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 20px" }}>
+            <p style={{ fontSize: 14, color: "#47464c", lineHeight: 1.6, margin: "0 0 20px" }}>
               {item.description}
             </p>
           )}
@@ -496,43 +497,43 @@ export default function ArchiveItemPage() {
               gridTemplateColumns: "repeat(2, 1fr)",
               gap: "14px 24px",
               fontSize: 13,
-              borderTop: "1px solid #f3f4f6",
+              borderTop: "1px solid #f1f3ff",
               paddingTop: 18,
               marginBottom: 24,
             }}
           >
             <div>
-              <span style={{ color: "#9ca3af", fontWeight: 500 }}>Authors</span>
-              <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>
+              <span style={{ color: "#78767d", fontWeight: 500 }}>Authors</span>
+              <p style={{ margin: "4px 0 0", color: "#141b2b", fontWeight: 600 }}>
                 {item.authors?.join(", ") || "No authors specified"}
               </p>
             </div>
             <div>
-              <span style={{ color: "#9ca3af", fontWeight: 500 }}>Category</span>
-              <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>{item.category}</p>
+              <span style={{ color: "#78767d", fontWeight: 500 }}>Category</span>
+              <p style={{ margin: "4px 0 0", color: "#141b2b", fontWeight: 600 }}>{item.category}</p>
             </div>
             <div>
-              <span style={{ color: "#9ca3af", fontWeight: 500 }}>Language</span>
-              <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600, textTransform: "uppercase" }}>
+              <span style={{ color: "#78767d", fontWeight: 500 }}>Language</span>
+              <p style={{ margin: "4px 0 0", color: "#141b2b", fontWeight: 600, textTransform: "uppercase" }}>
                 {item.language}
               </p>
             </div>
             <div>
-              <span style={{ color: "#9ca3af", fontWeight: 500 }}>File Size</span>
-              <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>
+              <span style={{ color: "#78767d", fontWeight: 500 }}>File Size</span>
+              <p style={{ margin: "4px 0 0", color: "#141b2b", fontWeight: 600 }}>
                 {formatFileSize(item.file_size)}
               </p>
             </div>
             <div>
-              <span style={{ color: "#9ca3af", fontWeight: 500 }}>Uploaded Date</span>
-              <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>
+              <span style={{ color: "#78767d", fontWeight: 500 }}>Uploaded Date</span>
+              <p style={{ margin: "4px 0 0", color: "#141b2b", fontWeight: 600 }}>
                 {formatDate(item.created_at)}
               </p>
             </div>
             {item.custom_metadata && Object.entries(item.custom_metadata).map(([key, val]) => (
               <div key={key}>
-                <span style={{ color: "#9ca3af", fontWeight: 500 }}>{key}</span>
-                <p style={{ margin: "4px 0 0", color: "#111827", fontWeight: 600 }}>
+                <span style={{ color: "#78767d", fontWeight: 500 }}>{key}</span>
+                <p style={{ margin: "4px 0 0", color: "#141b2b", fontWeight: 600 }}>
                   {String(val)}
                 </p>
               </div>
@@ -551,7 +552,7 @@ export default function ArchiveItemPage() {
               fontSize: 13,
               fontWeight: 600,
               border: "none",
-              background: "var(--theme-gradient-160)",
+              background: C.ink,
               color: "#fff",
               cursor: "pointer",
               boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
@@ -568,7 +569,7 @@ export default function ArchiveItemPage() {
           <div
             style={{
               background: "#ffffff",
-              border: "1px solid #e5e7eb",
+              border: "1px solid #c8c5cd",
               borderRadius: 16,
               padding: 28,
               marginBottom: 24,
@@ -578,12 +579,12 @@ export default function ArchiveItemPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
               <span style={{
                 width: "36px", height: "36px", borderRadius: "8px",
-                background: "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 10%, transparent)",
+                background: "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 10%, transparent)",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
               }}>
-                <FileText size={18} color="var(--avatar-theme-color, #1a56db)" style={{ marginTop: 9 }} />
+                <FileText size={18} color="var(--avatar-theme-color, #0D47A1)" style={{ marginTop: 9 }} />
               </span>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800, color: C.ink, margin: 0 }}>
                 Archivist Document Controls
               </h2>
             </div>
@@ -591,7 +592,7 @@ export default function ArchiveItemPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
               {/* Lifecycle State Management */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#555f6d" }}>
                   Document Lifecycle State
                 </span>
                 <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
@@ -600,8 +601,8 @@ export default function ArchiveItemPage() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {["draft", "review", "published", "archived"].map((state) => {
                     const isActive = item.status === state;
-                    let stateColor = "var(--avatar-theme-color, #1a56db)";
-                    if (state === "draft") stateColor = "#6b7280";
+                    let stateColor = "var(--avatar-theme-color, #0D47A1)";
+                    if (state === "draft") stateColor = "#555f6d";
                     if (state === "review") stateColor = "#d97706";
                     if (state === "published") stateColor = "#059669";
                     if (state === "archived") stateColor = "#dc2626";
@@ -626,7 +627,7 @@ export default function ArchiveItemPage() {
                           fontWeight: 600,
                           cursor: "pointer",
                           transition: "all 0.2s ease",
-                          border: isActive ? `1.5px solid ${stateColor}` : "1px solid #d1d5db",
+                          border: isActive ? `1.5px solid ${stateColor}` : "1px solid #c8c5cd",
                           background: isActive ? `color-mix(in srgb, ${stateColor} 10%, #ffffff)` : "#ffffff",
                           color: isActive ? stateColor : "#4b5563"
                         }}
@@ -640,7 +641,7 @@ export default function ArchiveItemPage() {
 
               {/* Version Upload Management */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#555f6d" }}>
                   Upload New Revision / Version
                 </span>
                 <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
@@ -652,12 +653,12 @@ export default function ArchiveItemPage() {
                     <label
                       style={{
                         padding: "8px 14px",
-                        background: "#f3f4f6",
+                        background: "#f1f3ff",
                         border: "1px solid #cbd5e1",
                         borderRadius: 8,
                         fontSize: 12,
                         fontWeight: 600,
-                        color: "#374151",
+                        color: "#47464c",
                         cursor: "pointer",
                         display: "inline-flex",
                         alignItems: "center",
@@ -676,7 +677,7 @@ export default function ArchiveItemPage() {
                         }}
                       />
                     </label>
-                    <span style={{ fontSize: 12, color: selectedFile ? "#111827" : "#9ca3af", fontStyle: selectedFile ? "normal" : "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>
+                    <span style={{ fontSize: 12, color: selectedFile ? "#141b2b" : "#78767d", fontStyle: selectedFile ? "normal" : "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>
                       {selectedFile ? selectedFile.name : "No file selected"}
                     </span>
                   </div>
@@ -698,7 +699,7 @@ export default function ArchiveItemPage() {
                       disabled={isUploadingVersion}
                       style={{
                         padding: "9px 16px",
-                        background: "var(--avatar-theme-color, var(--theme-gradient-160))",
+                        background: C.accent,
                         color: "#ffffff",
                         border: "none",
                         borderRadius: 8,
@@ -721,8 +722,8 @@ export default function ArchiveItemPage() {
             </div>
 
             {/* Access Tier Management */}
-            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #f3f4f6", display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #f1f3ff", display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#555f6d" }}>
                 Access Tier
               </span>
               <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
@@ -731,9 +732,9 @@ export default function ArchiveItemPage() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {(["public", "member", "staff", "restricted"] as const).map((tierOption) => {
                   const isActive = item.access_tier === tierOption;
-                  let tierColor = "var(--avatar-theme-color, #1a56db)";
+                  let tierColor = "var(--avatar-theme-color, #0D47A1)";
                   if (tierOption === "public") tierColor = "#059669";
-                  if (tierOption === "member") tierColor = "#1a56db";
+                  if (tierOption === "member") tierColor = "#0D47A1";
                   if (tierOption === "staff") tierColor = "#7c3aed";
                   if (tierOption === "restricted") tierColor = "#dc2626";
 
@@ -757,7 +758,7 @@ export default function ArchiveItemPage() {
                         fontWeight: 600,
                         cursor: isActive ? "default" : "pointer",
                         transition: "all 0.2s ease",
-                        border: isActive ? `1.5px solid ${tierColor}` : "1px solid #d1d5db",
+                        border: isActive ? `1.5px solid ${tierColor}` : "1px solid #c8c5cd",
                         background: isActive ? `color-mix(in srgb, ${tierColor} 10%, #ffffff)` : "#ffffff",
                         color: isActive ? tierColor : "#4b5563",
                         opacity: isUpdatingTier && !isActive ? 0.6 : 1,
@@ -814,17 +815,17 @@ export default function ArchiveItemPage() {
         <div
           style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 16,
             padding: 24,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
           }}
         >
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 16px" }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800, color: C.ink, margin: "0 0 16px" }}>
             Revision History
           </h2>
           {!versions?.length ? (
-            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No version history available.</p>
+            <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>No version history available.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {versions.map((version: { version_id: string; version_number: number; created_at: string }) => (
@@ -835,14 +836,14 @@ export default function ArchiveItemPage() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     fontSize: 13,
-                    borderBottom: "1px solid #f3f4f6",
+                    borderBottom: "1px solid #f1f3ff",
                     paddingBottom: 10,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#374151", fontWeight: 600 }}>
-                    <FileText size={14} color="#9ca3af" /> Version {version.version_number}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#47464c", fontWeight: 600 }}>
+                    <FileText size={14} color="#78767d" /> Version {version.version_number}
                   </div>
-                  <span style={{ color: "#6b7280" }}>{formatDate(version.created_at)}</span>
+                  <span style={{ color: "#555f6d" }}>{formatDate(version.created_at)}</span>
                 </div>
               ))}
             </div>
@@ -862,6 +863,6 @@ export default function ArchiveItemPage() {
         loading={isDeleting}
         variant="danger"
       />
-    </AppLayout>
+    </CollectionShell>
   );
 }

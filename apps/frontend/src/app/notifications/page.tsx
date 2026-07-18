@@ -47,12 +47,12 @@ export default function NotificationsPage() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f7f8fa", minHeight: "100%" }}>
+      <div style={{ background: "#f1f3ff", minHeight: "100%" }}>
 
         {/* ── Hero banner ─────────────────────────────────────────────────────── */}
         <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
+          borderBottom: "1px solid #c8c5cd",
           padding: "36px 40px 28px",
         }}>
           <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -67,12 +67,12 @@ export default function NotificationsPage() {
                   }}>
                     <Bell size={18} color="#fff" />
                   </div>
-                  <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.03em" }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 800, color: "#141b2b", margin: 0, letterSpacing: "-0.03em" }}>
                     Notifications
                   </h1>
                 </div>
                 {(data?.unread_count ?? 0) > 0 && (
-                  <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+                  <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>
                     {`You have ${data.unread_count} unread notification${data.unread_count === 1 ? "" : "s"}.`}
                   </p>
                 )}
@@ -86,7 +86,7 @@ export default function NotificationsPage() {
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px",
                       borderRadius: 9, fontSize: 13, fontWeight: 600, border: "1px solid transparent",
-                      background: "var(--avatar-theme-color, #111827)", color: "#fff",
+                      background: "var(--avatar-theme-color, #141b2b)", color: "#fff",
                       cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1,
                       boxShadow: "0 2px 8px rgba(0,0,0,0.12)", transition: "all 0.15s",
                     }}
@@ -101,11 +101,11 @@ export default function NotificationsPage() {
                     onClick={() => setConfirmDeleteAll(true)}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px",
-                      borderRadius: 9, fontSize: 13, fontWeight: 600, border: "1px solid #d1d5db",
-                      background: "#fff", color: "#374151", cursor: "pointer", transition: "all 0.15s",
+                      borderRadius: 9, fontSize: 13, fontWeight: 600, border: "1px solid #c8c5cd",
+                      background: "#fff", color: "#47464c", cursor: "pointer", transition: "all 0.15s",
                     }}
                     onMouseOver={(e) => { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; }}
-                    onMouseOut={(e) => { e.currentTarget.style.color = "#374151"; e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#fff"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.color = "#47464c"; e.currentTarget.style.borderColor = "#c8c5cd"; e.currentTarget.style.background = "#fff"; }}
                   >
                     <Trash2 size={14} /> Delete all
                   </button>
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Filter tabs */}
-            <div style={{ display: "inline-flex", padding: 3, borderRadius: 10, background: "#eef0f4", gap: 2 }}>
+            <div style={{ display: "inline-flex", padding: 3, borderRadius: 10, background: "#f1f3ff", gap: 2 }}>
               {(["all", "unread"] as const).map((f) => (
                 <button
                   key={f}
@@ -123,7 +123,7 @@ export default function NotificationsPage() {
                     padding: "7px 16px", borderRadius: 8, border: "none", fontSize: 12.5, fontWeight: 700,
                     cursor: "pointer", transition: "all 0.15s",
                     background: filter === f ? "#fff" : "transparent",
-                    color: filter === f ? "var(--avatar-theme-color, #111827)" : "#8b93a1",
+                    color: filter === f ? "var(--avatar-theme-color, #141b2b)" : "#8b93a1",
                     boxShadow: filter === f ? "0 1px 3px rgba(16,24,40,0.1)" : "none",
                   }}
                 >
@@ -151,7 +151,7 @@ export default function NotificationsPage() {
         {isLoading && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ background: "#fff", border: "1px solid #eef0f3", borderRadius: 14, padding: "16px 20px", display: "flex", gap: 14, alignItems: "center" }}>
+              <div key={i} style={{ background: "#fff", border: "1px solid #f1f3ff", borderRadius: 14, padding: "16px 20px", display: "flex", gap: 14, alignItems: "center" }}>
                 <Skeleton className="w-[42px] h-[42px] rounded-xl shrink-0" />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
                   <Skeleton className="h-4 w-48" />
@@ -165,18 +165,18 @@ export default function NotificationsPage() {
 
         {/* Empty */}
         {!isLoading && (!data?.notifications || data.notifications.length === 0) && (
-          <div style={{ background: "#fff", border: "1px solid #eef0f3", borderRadius: 16, padding: "64px 32px", textAlign: "center" }}>
+          <div style={{ background: "#fff", border: "1px solid #f1f3ff", borderRadius: 16, padding: "64px 32px", textAlign: "center" }}>
             <div style={{
               width: 60, height: 60, borderRadius: "50%",
-              background: "linear-gradient(135deg, #f4f6ff 0%, #eef1ff 100%)",
+              background: "linear-gradient(135deg, #f1f3ff 0%, #f1f3ff 100%)",
               display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px",
             }}>
-              <Bell size={24} color="#9ca3af" />
+              <Bell size={24} color="#78767d" />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#141b2b", margin: "0 0 6px" }}>
               {filter === "unread" ? "No unread notifications" : "All caught up"}
             </h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+            <p style={{ fontSize: 13, color: "#555f6d", margin: 0 }}>
               {filter === "unread" ? "Nothing new to review right now." : "Nothing here yet — check back later."}
             </p>
           </div>
@@ -186,7 +186,7 @@ export default function NotificationsPage() {
         {!isLoading && groups.map((group) => (
           <div key={group.label} style={{ marginBottom: 22 }}>
             <h2 style={{
-              fontSize: 11.5, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase",
+              fontSize: 11.5, fontWeight: 700, color: "#78767d", textTransform: "uppercase",
               letterSpacing: "0.08em", margin: "0 0 10px 2px",
             }}>
               {group.label}

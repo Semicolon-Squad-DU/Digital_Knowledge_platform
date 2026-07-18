@@ -189,9 +189,9 @@ export default function SubmitProjectPage() {
     return (
       <AppLayout>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
-          <GraduationCap size={40} style={{ margin: "0 auto 16px", color: "#6b7280" }} />
-          <p style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Access Restricted</p>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
+          <GraduationCap size={40} style={{ margin: "0 auto 16px", color: "#555f6d" }} />
+          <p style={{ fontSize: 18, fontWeight: 600, color: "#141b2b", margin: 0 }}>Access Restricted</p>
+          <p style={{ fontSize: 13, color: "#555f6d", marginTop: 6 }}>
             Only student authors can submit projects.
           </p>
         </div>
@@ -205,12 +205,12 @@ export default function SubmitProjectPage() {
         
         {/* Breadcrumb Row */}
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
+          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#555f6d" }}>
             <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
             <span>/</span>
             <span style={{ cursor: "pointer" }} onClick={() => router.push("/showcase")}>Showcase</span>
             <span>/</span>
-            <span style={{ color: "#111827", fontWeight: 500 }}>Submit</span>
+            <span style={{ color: "#141b2b", fontWeight: 500 }}>Submit</span>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export default function SubmitProjectPage() {
           }}>
             Submit Project
           </h1>
-          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+          <p style={{ fontSize: 13, color: "#555f6d", margin: 0 }}>
             Submit your project for advisor review and showcase publication.
           </p>
         </div>
@@ -236,7 +236,7 @@ export default function SubmitProjectPage() {
           {/* ── Basic Info ─────────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -244,13 +244,13 @@ export default function SubmitProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Project Details</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Project Details</h2>
             </div>
             <div style={{ padding: 20 }} className="space-y-4">
               <Input
@@ -262,7 +262,7 @@ export default function SubmitProjectPage() {
               />
               {/* Abstract with live character counter */}
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "#47464c", display: "block", marginBottom: 6 }}>
                   Project Description <span style={{ color: "#dc2626" }}>*</span>
                 </label>
                 <textarea
@@ -271,19 +271,19 @@ export default function SubmitProjectPage() {
                   {...register("abstract")}
                   style={{
                     width: "100%", padding: "11px 14px", borderRadius: 8,
-                    border: `1.5px solid ${errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#d1d5db"}`,
+                    border: `1.5px solid ${errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#c8c5cd"}`,
                     fontSize: 14, fontFamily: "inherit", lineHeight: 1.7,
                     resize: "vertical", outline: "none", boxSizing: "border-box",
-                    color: "#111827", background: "#fff",
+                    color: "#141b2b", background: "#fff",
                     transition: "border-color 0.15s",
                   }}
-                  onFocus={e => { e.target.style.borderColor = abstractLen >= ABSTRACT_MIN ? "#16a34a" : "var(--avatar-theme-color, #2563eb)"; }}
-                  onBlur={e  => { e.target.style.borderColor = errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#d1d5db"; }}
+                  onFocus={e => { e.target.style.borderColor = abstractLen >= ABSTRACT_MIN ? "#16a34a" : "var(--avatar-theme-color, #0D47A1)"; }}
+                  onBlur={e  => { e.target.style.borderColor = errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#c8c5cd"; }}
                 />
 
                 {/* Counter row */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#6b7280" }}>
+                  <span style={{ fontSize: 12, color: errors.abstract ? "#dc2626" : abstractLen >= ABSTRACT_MIN ? "#16a34a" : "#555f6d" }}>
                     {errors.abstract
                       ? errors.abstract.message
                       : abstractLen >= ABSTRACT_MIN
@@ -292,15 +292,15 @@ export default function SubmitProjectPage() {
                   </span>
                   <span style={{
                     fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums",
-                    color: abstractLen === 0 ? "#9ca3af" : abstractLen < ABSTRACT_MIN ? "#dc2626" : "#16a34a",
+                    color: abstractLen === 0 ? "#78767d" : abstractLen < ABSTRACT_MIN ? "#dc2626" : "#16a34a",
                   }}>
                     {abstractLen}
-                    <span style={{ fontWeight: 400, color: "#9ca3af" }}> / {ABSTRACT_MIN}</span>
+                    <span style={{ fontWeight: 400, color: "#78767d" }}> / {ABSTRACT_MIN}</span>
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div style={{ height: 3, background: "#f3f4f6", borderRadius: 2, marginTop: 5, overflow: "hidden" }}>
+                <div style={{ height: 3, background: "#f1f3ff", borderRadius: 2, marginTop: 5, overflow: "hidden" }}>
                   <div style={{
                     height: "100%", borderRadius: 2,
                     width: `${Math.min((abstractLen / ABSTRACT_MIN) * 100, 100)}%`,
@@ -336,7 +336,7 @@ export default function SubmitProjectPage() {
                 {...register("advisor_id")}
               />
               {advisors.length === 0 && (
-                <p style={{ fontSize: 12, color: "#9ca3af", marginTop: -8 }}>
+                <p style={{ fontSize: 12, color: "#78767d", marginTop: -8 }}>
                   No advisors on file yet.
                 </p>
               )}
@@ -359,7 +359,7 @@ export default function SubmitProjectPage() {
           {/* ── Team Members ───────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -367,15 +367,15 @@ export default function SubmitProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                 Team Members
-                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#555f6d", marginLeft: 6 }}>
                   ({fields.length})
                 </span>
               </h2>
@@ -419,14 +419,14 @@ export default function SubmitProjectPage() {
                   style={{
                     position: "relative",
                     borderRadius: 8,
-                    border: "1px solid #e5e7eb",
+                    border: "1px solid #c8c5cd",
                     padding: 16,
-                    background: "#f9fafb",
+                    background: "#f9f9ff",
                     marginBottom: idx === fields.length - 1 ? 0 : 16,
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#555f6d", letterSpacing: "0.5px", textTransform: "uppercase" }}>
                       Member {idx + 1}
                     </span>
                     {fields.length > 1 && (
@@ -487,7 +487,7 @@ export default function SubmitProjectPage() {
           {/* ── PDF Upload ─────────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -495,15 +495,15 @@ export default function SubmitProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                 Project Report
-                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#555f6d", marginLeft: 6 }}>(optional)</span>
               </h2>
             </div>
             <div style={{ padding: 20 }}>
@@ -514,15 +514,15 @@ export default function SubmitProjectPage() {
                   gap: 12,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  border: "1px solid #e5e7eb",
-                  background: "#f9fafb",
+                  border: "1px solid #c8c5cd",
+                  background: "#f9f9ff",
                 }}>
-                  <FileText size={20} color="var(--avatar-theme-color, #2563eb)" style={{ flexShrink: 0 }} />
+                  <FileText size={20} color="var(--avatar-theme-color, #0D47A1)" style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {pdfFile.name}
                     </p>
-                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                    <p style={{ fontSize: 11, color: "#555f6d", margin: "2px 0 0" }}>
                       {formatFileSize(pdfFile.size)}
                     </p>
                   </div>
@@ -535,7 +535,7 @@ export default function SubmitProjectPage() {
                       border: "none",
                       background: "transparent",
                       cursor: "pointer",
-                      color: "#6b7280",
+                      color: "#555f6d",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -547,7 +547,7 @@ export default function SubmitProjectPage() {
                     }}
                     onMouseOut={(e) => {
                       e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#6b7280";
+                      e.currentTarget.style.color = "#555f6d";
                     }}
                     aria-label="Remove file"
                   >
@@ -558,24 +558,24 @@ export default function SubmitProjectPage() {
                 <div
                   {...getRootProps()}
                   style={{
-                    border: "2px dashed #d1d5db",
+                    border: "2px dashed #c8c5cd",
                     borderRadius: 8,
                     padding: "32px 20px",
                     textAlign: "center",
                     cursor: "pointer",
-                    background: isDragActive ? "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 8%, transparent)" : "#fff",
-                    borderColor: isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#d1d5db",
+                    background: isDragActive ? "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 8%, transparent)" : "#fff",
+                    borderColor: isDragActive ? "var(--avatar-theme-color, #0D47A1)" : "#c8c5cd",
                     transition: "all 0.2s",
                   }}
                   onMouseOver={(e) => {
                     if (!isDragActive) {
-                      e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)";
-                      e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)";
+                      e.currentTarget.style.borderColor = "var(--avatar-theme-color, #0D47A1)";
+                      e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 4%, transparent)";
                     }
                   }}
                   onMouseOut={(e) => {
                     if (!isDragActive) {
-                      e.currentTarget.style.borderColor = "#d1d5db";
+                      e.currentTarget.style.borderColor = "#c8c5cd";
                       e.currentTarget.style.background = "#fff";
                     }
                   }}
@@ -583,14 +583,14 @@ export default function SubmitProjectPage() {
                   <input {...getInputProps()} aria-label="Upload PDF report" />
                   <Upload
                     size={24}
-                    color={isDragActive ? "var(--avatar-theme-color, #2563eb)" : "#6b7280"}
+                    color={isDragActive ? "var(--avatar-theme-color, #0D47A1)" : "#555f6d"}
                     style={{ margin: "0 auto 12px" }}
                   />
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", margin: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                     {isDragActive ? "Drop your PDF here" : "Drag & drop your report PDF"}
                   </p>
-                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
-                    or <span style={{ color: "var(--avatar-theme-color, #2563eb)", fontWeight: 500 }}>browse to upload</span> · PDF only · max {MAX_PDF_MB} MB
+                  <p style={{ fontSize: 12, color: "#555f6d", marginTop: 4, marginBottom: 0 }}>
+                    or <span style={{ color: "var(--avatar-theme-color, #0D47A1)", fontWeight: 500 }}>browse to upload</span> · PDF only · max {MAX_PDF_MB} MB
                   </p>
                 </div>
               )}
@@ -601,7 +601,7 @@ export default function SubmitProjectPage() {
           {/* ── Gallery Thumbnail ─────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -609,19 +609,19 @@ export default function SubmitProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                 Gallery Thumbnail
-                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#555f6d", marginLeft: 6 }}>(optional)</span>
               </h2>
             </div>
             <div style={{ padding: 20 }}>
-              <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 12px" }}>
+              <p style={{ fontSize: 12, color: "#555f6d", margin: "0 0 12px" }}>
                 Shown on the public showcase gallery card for this project.
               </p>
               {thumbnailFile ? (
@@ -631,8 +631,8 @@ export default function SubmitProjectPage() {
                   gap: 12,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  border: "1px solid #e5e7eb",
-                  background: "#f9fafb",
+                  border: "1px solid #c8c5cd",
+                  background: "#f9f9ff",
                 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -641,10 +641,10 @@ export default function SubmitProjectPage() {
                     style={{ width: 56, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {thumbnailFile.name}
                     </p>
-                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                    <p style={{ fontSize: 11, color: "#555f6d", margin: "2px 0 0" }}>
                       {formatFileSize(thumbnailFile.size)}
                     </p>
                   </div>
@@ -653,11 +653,11 @@ export default function SubmitProjectPage() {
                     onClick={removeThumbnail}
                     style={{
                       padding: 4, borderRadius: 4, border: "none", background: "transparent",
-                      cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center",
+                      cursor: "pointer", color: "#555f6d", display: "flex", alignItems: "center",
                       justifyContent: "center", transition: "all 0.2s",
                     }}
                     onMouseOver={(e) => { e.currentTarget.style.background = "#fee2e2"; e.currentTarget.style.color = "#dc2626"; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#555f6d"; }}
                     aria-label="Remove thumbnail"
                   >
                     <X size={15} />
@@ -667,7 +667,7 @@ export default function SubmitProjectPage() {
                 <label
                   style={{
                     display: "block",
-                    border: "2px dashed #d1d5db",
+                    border: "2px dashed #c8c5cd",
                     borderRadius: 8,
                     padding: "24px 20px",
                     textAlign: "center",
@@ -675,15 +675,15 @@ export default function SubmitProjectPage() {
                     background: "#fff",
                     transition: "all 0.2s",
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)"; e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#fff"; }}
+                  onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #0D47A1)"; e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 4%, transparent)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.borderColor = "#c8c5cd"; e.currentTarget.style.background = "#fff"; }}
                 >
                   <input type="file" accept="image/*" onChange={handleThumbnailChange} style={{ display: "none" }} aria-label="Upload gallery thumbnail" />
-                  <ImageIcon size={22} color="#6b7280" style={{ margin: "0 auto 10px" }} />
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0 }}>
+                  <ImageIcon size={22} color="#555f6d" style={{ margin: "0 auto 10px" }} />
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                     Choose an image
                   </p>
-                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
+                  <p style={{ fontSize: 12, color: "#555f6d", marginTop: 4, marginBottom: 0 }}>
                     JPEG, PNG, or WebP · max {MAX_THUMBNAIL_MB} MB
                   </p>
                 </label>
@@ -695,7 +695,7 @@ export default function SubmitProjectPage() {
           {/* ── Demo Video ────────────────────────────────────── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -703,15 +703,15 @@ export default function SubmitProjectPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                 Demo Video
-                <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>(optional)</span>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "#555f6d", marginLeft: 6 }}>(optional)</span>
               </h2>
             </div>
             <div style={{ padding: 20 }}>
@@ -722,15 +722,15 @@ export default function SubmitProjectPage() {
                   gap: 12,
                   padding: "12px 16px",
                   borderRadius: 8,
-                  border: "1px solid #e5e7eb",
-                  background: "#f9fafb",
+                  border: "1px solid #c8c5cd",
+                  background: "#f9f9ff",
                 }}>
-                  <Video size={20} color="var(--avatar-theme-color, #2563eb)" style={{ flexShrink: 0 }} />
+                  <Video size={20} color="var(--avatar-theme-color, #0D47A1)" style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {videoFile.name}
                     </p>
-                    <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                    <p style={{ fontSize: 11, color: "#555f6d", margin: "2px 0 0" }}>
                       {formatFileSize(videoFile.size)}
                     </p>
                   </div>
@@ -739,11 +739,11 @@ export default function SubmitProjectPage() {
                     onClick={removeVideo}
                     style={{
                       padding: 4, borderRadius: 4, border: "none", background: "transparent",
-                      cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center",
+                      cursor: "pointer", color: "#555f6d", display: "flex", alignItems: "center",
                       justifyContent: "center", transition: "all 0.2s",
                     }}
                     onMouseOver={(e) => { e.currentTarget.style.background = "#fee2e2"; e.currentTarget.style.color = "#dc2626"; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#555f6d"; }}
                     aria-label="Remove video"
                   >
                     <X size={15} />
@@ -753,7 +753,7 @@ export default function SubmitProjectPage() {
                 <label
                   style={{
                     display: "block",
-                    border: "2px dashed #d1d5db",
+                    border: "2px dashed #c8c5cd",
                     borderRadius: 8,
                     padding: "24px 20px",
                     textAlign: "center",
@@ -761,15 +761,15 @@ export default function SubmitProjectPage() {
                     background: "#fff",
                     transition: "all 0.2s",
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #2563eb)"; e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #2563eb) 4%, transparent)"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#fff"; }}
+                  onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--avatar-theme-color, #0D47A1)"; e.currentTarget.style.background = "color-mix(in srgb, var(--avatar-theme-color, #0D47A1) 4%, transparent)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.borderColor = "#c8c5cd"; e.currentTarget.style.background = "#fff"; }}
                 >
                   <input type="file" accept="video/*" onChange={handleVideoChange} style={{ display: "none" }} aria-label="Upload demo video" />
-                  <Video size={22} color="#6b7280" style={{ margin: "0 auto 10px" }} />
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1f2937", margin: 0 }}>
+                  <Video size={22} color="#555f6d" style={{ margin: "0 auto 10px" }} />
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#141b2b", margin: 0 }}>
                     Choose a video
                   </p>
-                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, marginBottom: 0 }}>
+                  <p style={{ fontSize: 12, color: "#555f6d", marginTop: 4, marginBottom: 0 }}>
                     MP4 recommended · max {MAX_VIDEO_MB} MB
                   </p>
                 </label>
@@ -789,21 +789,21 @@ export default function SubmitProjectPage() {
                 gap: 6,
                 padding: "10px 18px",
                 background: "#fff",
-                border: "1px solid #e5e7eb",
+                border: "1px solid #c8c5cd",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#6b7280",
+                color: "#555f6d",
                 transition: "all 0.2s",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "#f9fafb";
-                e.currentTarget.style.borderColor = "#d1d5db";
+                e.currentTarget.style.background = "#f9f9ff";
+                e.currentTarget.style.borderColor = "#c8c5cd";
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.borderColor = "#e5e7eb";
+                e.currentTarget.style.borderColor = "#c8c5cd";
               }}
             >
               Cancel

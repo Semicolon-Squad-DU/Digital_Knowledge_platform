@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function RepositoryVault() {
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-[#09090b] text-[#fafafa] font-sans">
+        <div className="flex flex-col h-screen overflow-hidden bg-[#09090b] text-[#f9f9ff] font-sans">
             
 {/* TopNavBar */}
 <nav className="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-6 h-16 max-w-full z-10 shrink-0">

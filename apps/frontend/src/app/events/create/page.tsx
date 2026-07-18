@@ -77,9 +77,9 @@ export default function CreateEventPage() {
     return (
       <AppLayout>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
-          <Calendar size={40} style={{ margin: "0 auto 16px", color: "#6b7280" }} />
-          <p style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Access Restricted</p>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
+          <Calendar size={40} style={{ margin: "0 auto 16px", color: "#555f6d" }} />
+          <p style={{ fontSize: 18, fontWeight: 600, color: "#141b2b", margin: 0 }}>Access Restricted</p>
+          <p style={{ fontSize: 13, color: "#555f6d", marginTop: 6 }}>
             Only administrators or archivists can schedule events.
           </p>
         </div>
@@ -104,18 +104,18 @@ export default function CreateEventPage() {
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              color: "#475569",
+              color: "#47464c",
               padding: 0
             }}
           >
             <ArrowLeft size={14} /> Back to Events
           </button>
-          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#6b7280" }}>
+          <div style={{ display: "flex", gap: 6, fontSize: 12, color: "#555f6d" }}>
             <span style={{ cursor: "pointer" }} onClick={() => router.push("/")}>Home</span>
             <span>/</span>
             <span style={{ cursor: "pointer" }} onClick={() => router.push("/events")}>Events</span>
             <span>/</span>
-            <span style={{ color: "#111827", fontWeight: 500 }}>Create</span>
+            <span style={{ color: "#141b2b", fontWeight: 500 }}>Create</span>
           </div>
         </div>
 
@@ -131,7 +131,7 @@ export default function CreateEventPage() {
           }}>
             Schedule Event
           </h1>
-          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+          <p style={{ fontSize: 13, color: "#555f6d", margin: 0 }}>
             Create and publish an upcoming academic seminar, talk, or workshop.
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function CreateEventPage() {
           {/* ── Event Info ── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -149,13 +149,13 @@ export default function CreateEventPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Event Details</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Event Details</h2>
             </div>
             
             <div style={{ padding: 20 }} className="space-y-4">
@@ -214,7 +214,7 @@ export default function CreateEventPage() {
           {/* ── Description / Abstract ── */}
           <section style={{
             background: "#fff",
-            border: "1px solid #e5e7eb",
+            border: "1px solid #c8c5cd",
             borderRadius: 12,
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             marginBottom: 24,
@@ -222,15 +222,15 @@ export default function CreateEventPage() {
           }}>
             <div style={{
               padding: "16px 20px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "#f9f9ff",
+              borderBottom: "1px solid #c8c5cd",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>Event Abstract / Description</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "#141b2b", margin: 0 }}>Event Abstract / Description</h2>
             </div>
             
             <div style={{ padding: 20 }}>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "#47464c", display: "block", marginBottom: 6 }}>
                   Detailed Description <span style={{ color: "#dc2626" }}>*</span>
                 </label>
                 <textarea
@@ -239,19 +239,19 @@ export default function CreateEventPage() {
                   {...register("description")}
                   style={{
                     width: "100%", padding: "11px 14px", borderRadius: 8,
-                    border: `1.5px solid ${errors.description ? "#dc2626" : descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "#d1d5db"}`,
+                    border: `1.5px solid ${errors.description ? "#dc2626" : descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "#c8c5cd"}`,
                     fontSize: 14, fontFamily: "inherit", lineHeight: 1.7,
                     resize: "vertical", outline: "none", boxSizing: "border-box",
-                    color: "#111827", background: "#fff",
+                    color: "#141b2b", background: "#fff",
                     transition: "border-color 0.15s",
                   }}
-                  onFocus={e => { e.target.style.borderColor = descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "var(--avatar-theme-color, #2563eb)"; }}
-                  onBlur={e  => { e.target.style.borderColor = errors.description ? "#dc2626" : descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "#d1d5db"; }}
+                  onFocus={e => { e.target.style.borderColor = descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "var(--avatar-theme-color, #0D47A1)"; }}
+                  onBlur={e  => { e.target.style.borderColor = errors.description ? "#dc2626" : descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "#c8c5cd"; }}
                 />
 
                 {/* Counter row */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: errors.description ? "#dc2626" : descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "#6b7280" }}>
+                  <span style={{ fontSize: 12, color: errors.description ? "#dc2626" : descriptionLen >= DESCRIPTION_MIN ? "#16a34a" : "#555f6d" }}>
                     {errors.description
                       ? errors.description.message
                       : descriptionLen >= DESCRIPTION_MIN
@@ -260,15 +260,15 @@ export default function CreateEventPage() {
                   </span>
                   <span style={{
                     fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums",
-                    color: descriptionLen === 0 ? "#9ca3af" : descriptionLen < DESCRIPTION_MIN ? "#dc2626" : "#16a34a",
+                    color: descriptionLen === 0 ? "#78767d" : descriptionLen < DESCRIPTION_MIN ? "#dc2626" : "#16a34a",
                   }}>
                     {descriptionLen}
-                    <span style={{ fontWeight: 400, color: "#9ca3af" }}> / {DESCRIPTION_MIN}</span>
+                    <span style={{ fontWeight: 400, color: "#78767d" }}> / {DESCRIPTION_MIN}</span>
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div style={{ height: 3, background: "#f3f4f6", borderRadius: 2, marginTop: 5, overflow: "hidden" }}>
+                <div style={{ height: 3, background: "#f1f3ff", borderRadius: 2, marginTop: 5, overflow: "hidden" }}>
                   <div style={{
                     height: "100%", borderRadius: 2,
                     width: `${Math.min((descriptionLen / DESCRIPTION_MIN) * 100, 100)}%`,
@@ -291,21 +291,21 @@ export default function CreateEventPage() {
                 gap: 6,
                 padding: "10px 18px",
                 background: "#fff",
-                border: "1px solid #e5e7eb",
+                border: "1px solid #c8c5cd",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#6b7280",
+                color: "#555f6d",
                 transition: "all 0.2s",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "#f9fafb";
-                e.currentTarget.style.borderColor = "#d1d5db";
+                e.currentTarget.style.background = "#f9f9ff";
+                e.currentTarget.style.borderColor = "#c8c5cd";
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.borderColor = "#e5e7eb";
+                e.currentTarget.style.borderColor = "#c8c5cd";
               }}
             >
               Cancel

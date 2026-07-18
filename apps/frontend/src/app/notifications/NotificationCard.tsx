@@ -18,18 +18,18 @@ export interface NotificationItem {
 export const TYPE_STYLE: Record<string, { icon: typeof Bell; color: string }> = {
   due_date_reminder:          { icon: Clock,         color: "#d97706" }, // amber
   overdue_alert:               { icon: AlertTriangle, color: "#dc2626" }, // red
-  hold_available:              { icon: BookOpen,      color: "#2563eb" }, // blue
+  hold_available:              { icon: BookOpen,      color: "#0D47A1" }, // blue
   project_approved:            { icon: CheckCircle2,  color: "#059669" }, // green
   project_changes_requested:   { icon: FileEdit,      color: "#d97706" }, // amber
   access_request_approved:     { icon: CheckCircle2,  color: "#059669" }, // green
   access_request_denied:       { icon: XCircle,       color: "#dc2626" }, // red
   announcement:                { icon: Megaphone,     color: "#7c3aed" }, // purple
-  new_upload:                  { icon: Upload,        color: "#2563eb" }, // blue
-  system:                      { icon: Settings,      color: "#6b7280" }, // gray
+  new_upload:                  { icon: Upload,        color: "#0D47A1" }, // blue
+  system:                      { icon: Settings,      color: "#555f6d" }, // gray
   new_event:                   { icon: CalendarClock, color: "#0891b2" }, // teal
   pending_approval:            { icon: UserCheck,     color: "#4f46e5" }, // indigo
 };
-export const DEFAULT_STYLE = { icon: Bell, color: "#6b7280" };
+export const DEFAULT_STYLE = { icon: Bell, color: "#555f6d" };
 
 function isToday(d: Date) {
   const now = new Date();
@@ -76,7 +76,7 @@ export function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, dele
       style={{
         position: "relative",
         background: isUnread ? `color-mix(in srgb, ${style.color} 4%, #fff)` : "#fff",
-        border: "1px solid #eef0f3",
+        border: "1px solid #f1f3ff",
         borderRadius: 14,
         padding: "16px 20px 16px 18px",
         display: "flex",
@@ -94,7 +94,7 @@ export function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, dele
       onMouseLeave={e => {
         e.currentTarget.style.boxShadow = "0 1px 2px rgba(16,24,40,0.04)";
         e.currentTarget.style.transform = "none";
-        e.currentTarget.style.borderColor = "#eef0f3";
+        e.currentTarget.style.borderColor = "#f1f3ff";
       }}
     >
       {/* Unread accent bar */}
@@ -117,7 +117,7 @@ export function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, dele
       {/* Body */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-          <h3 style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", margin: 0, lineHeight: 1.35 }}>
+          <h3 style={{ fontSize: 14.5, fontWeight: 700, color: "#141b2b", margin: 0, lineHeight: 1.35 }}>
             {notif.title}
           </h3>
           {isUnread && (
@@ -127,7 +127,7 @@ export function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, dele
         <p style={{ fontSize: 13, color: "#5b6371", margin: "0 0 8px", lineHeight: 1.5 }}>
           {notif.message}
         </p>
-        <span style={{ fontSize: 11.5, color: "#9ca3af", fontWeight: 500 }}>
+        <span style={{ fontSize: 11.5, color: "#78767d", fontWeight: 500 }}>
           {timeAgo(notif.created_at)}
         </span>
       </div>
@@ -139,11 +139,11 @@ export function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, dele
             title="View"
             style={{
               width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer",
+              borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", color: "#47464c", cursor: "pointer",
               transition: "all 0.15s",
             }}
-            onMouseOver={(e) => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+            onMouseOver={(e) => { e.currentTarget.style.background = "#f9f9ff"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
           >
             <ArrowUpRight size={14} />
           </button>
@@ -154,11 +154,11 @@ export function NotificationCard({ notif, onMarkRead, onNavigate, onDelete, dele
           onClick={(e) => { e.stopPropagation(); onDelete(notif.notification_id); }}
           style={{
             width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center",
-            borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#9ca3af",
+            borderRadius: 8, border: "1px solid #c8c5cd", background: "#fff", color: "#78767d",
             cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.5 : 1, transition: "all 0.15s",
           }}
           onMouseOver={(e) => { if (!deleting) { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; } }}
-          onMouseOut={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
+          onMouseOut={(e) => { e.currentTarget.style.color = "#78767d"; e.currentTarget.style.borderColor = "#c8c5cd"; e.currentTarget.style.background = "#fff"; }}
         >
           <Trash2 size={14} />
         </button>

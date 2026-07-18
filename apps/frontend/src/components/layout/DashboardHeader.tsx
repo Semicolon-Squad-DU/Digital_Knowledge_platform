@@ -34,7 +34,7 @@ export function DashboardHeader({
       style={{
         height: 60,
         background: "#ffffff",
-        borderBottom: "1px solid #e5e7eb",
+        borderBottom: "1px solid #c8c5cd",
         display: "flex",
         alignItems: "center",
         padding: "0 28px",
@@ -47,7 +47,7 @@ export function DashboardHeader({
     >
       {/* Title */}
       {title && !showSearch && (
-        <h1 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
+        <h1 style={{ fontSize: 16, fontWeight: 700, color: "#141b2b", margin: 0 }}>
           {title}
         </h1>
       )}
@@ -60,15 +60,15 @@ export function DashboardHeader({
             display: "flex",
             alignItems: "center",
             gap: 8,
-            background: "#f9fafb",
-            border: "1px solid #e5e7eb",
+            background: "#f9f9ff",
+            border: "1px solid #c8c5cd",
             borderRadius: 8,
             padding: "7px 14px",
             flex: 1,
             maxWidth: 340,
           }}
         >
-          <Search size={14} color="#9ca3af" />
+          <Search size={14} color="#78767d" />
           <input
             type="text"
             value={searchInput}
@@ -78,7 +78,7 @@ export function DashboardHeader({
               border: "none",
               background: "transparent",
               fontSize: 16,
-              color: "#6b7280",
+              color: "#555f6d",
               width: "100%",
               outline: "none",
             }}
@@ -104,7 +104,7 @@ export function DashboardHeader({
             textDecoration: "none",
           }}
         >
-          <Bell size={18} color="#6b7280" />
+          <Bell size={18} color="#555f6d" />
           {unreadCount > 0 && (
             <span
               style={{
@@ -132,7 +132,7 @@ export function DashboardHeader({
             textDecoration: "none",
           }}
         >
-          <Heart size={18} color="#6b7280" />
+          <Heart size={18} color="#555f6d" />
         </Link>
         {/* Avatar */}
         <Link

@@ -84,7 +84,7 @@ export default function PublicProfilePage() {
         <div className="gh-box overflow-hidden mb-6">
           <div className="bg-[var(--theme-gradient-135,linear-gradient(135deg,#1a1a2e_0%,#111116_100%))] p-8 text-center relative">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-white mx-auto mb-4 border-4 border-white/20 flex items-center justify-center shadow-lg">
-              <span className="text-4xl font-extrabold text-[#111827] select-none">
+              <span className="text-4xl font-extrabold text-[#141b2b] select-none">
                 {profile.name[0]?.toUpperCase()}
               </span>
             </div>

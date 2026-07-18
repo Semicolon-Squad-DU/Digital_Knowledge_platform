@@ -156,12 +156,12 @@ export default function EventsPage() {
 
   return (
     <AppLayout>
-      <div style={{ background: "#f0f2f5", minHeight: "100%", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ background: "#f9f9ff", minHeight: "100%", fontFamily: "'Inter', sans-serif" }}>
 
         {/* ── Hero banner ─────────────────────────────────────────────────────── */}
         <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
+          background: "linear-gradient(135deg, #ffffff 0%, #f1f3ff 60%, #f1f3ff 100%)",
+          borderBottom: "1px solid #c8c5cd",
           padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -174,7 +174,7 @@ export default function EventsPage() {
                   Events
                 </h1>
               </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "#78767d", margin: 0 }}>
                 Academic seminars &amp; talks — RSVP to book your seat
               </p>
             </div>
@@ -199,7 +199,7 @@ export default function EventsPage() {
           {/* ── EVENT LISTINGS ── */}
           {eventsLoading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-              <Loader2 className="animate-spin" size={32} color="var(--avatar-theme-color, #2563eb)" />
+              <Loader2 className="animate-spin" size={32} color="var(--avatar-theme-color, #0D47A1)" />
             </div>
           ) : events.length === 0 ? (
             <div style={{
@@ -207,14 +207,14 @@ export default function EventsPage() {
               padding: "60px 24px",
               background: "#ffffff",
               borderRadius: "12px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid #c8c5cd",
               boxShadow: "0 4px 6px rgba(0,0,0,0.02)"
             }}>
-              <Calendar size={48} color="#94a3b8" style={{ margin: "0 auto 16px", display: "block" }} />
+              <Calendar size={48} color="#78767d" style={{ margin: "0 auto 16px", display: "block" }} />
               <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", margin: "0 0 8px" }}>
                 No seminars scheduled
               </h3>
-              <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+              <p style={{ fontSize: "13px", color: "#555f6d", margin: 0 }}>
                 Check back later for upcoming university academic discussions and event listings!
               </p>
             </div>
@@ -241,7 +241,7 @@ export default function EventsPage() {
                     style={{
                       background: "#ffffff",
                       borderRadius: "12px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid #c8c5cd",
                       padding: "24px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
                       display: "flex",
@@ -254,7 +254,7 @@ export default function EventsPage() {
                     <div>
                       {/* Top Row: Date & RSVP status badge */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--avatar-theme-color, #2563eb)", background: "rgba(37, 99, 235, 0.06)", padding: "4px 10px", borderRadius: "100px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--avatar-theme-color, #0D47A1)", background: "rgba(37, 99, 235, 0.06)", padding: "4px 10px", borderRadius: "100px" }}>
                           {dateStr}
                         </span>
 
@@ -266,7 +266,7 @@ export default function EventsPage() {
                               gap: "4px",
                               fontSize: "11px",
                               fontWeight: 700,
-                              color: "#64748b",
+                              color: "#555f6d",
                               background: "#f1f5f9",
                               padding: "4px 10px",
                               borderRadius: "100px"
@@ -295,27 +295,27 @@ export default function EventsPage() {
                       </div>
 
                       {/* Title & Speaker */}
-                      <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0f172a", margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+                      <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#141b2b", margin: "0 0 4px", letterSpacing: "-0.01em" }}>
                         {event.title}
                       </h3>
-                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#475569", margin: "0 0 12px" }}>
-                        Presented by: <span style={{ color: "#0f172a" }}>{event.speaker}</span>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#47464c", margin: "0 0 12px" }}>
+                        Presented by: <span style={{ color: "#141b2b" }}>{event.speaker}</span>
                       </p>
 
                       {/* Description */}
-                      <p style={{ fontSize: "13.5px", color: "#64748b", margin: "0 0 20px", lineHeight: 1.6 }}>
+                      <p style={{ fontSize: "13.5px", color: "#555f6d", margin: "0 0 20px", lineHeight: 1.6 }}>
                         {event.description}
                       </p>
 
                       {/* Metadata row */}
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", fontSize: "13px", color: "#475569" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", fontSize: "13px", color: "#47464c" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <MapPin size={15} color="#94a3b8" />
+                          <MapPin size={15} color="#78767d" />
                           <strong>Location:</strong> {event.location}
                         </span>
                         
                         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Users size={15} color="#94a3b8" />
+                          <Users size={15} color="#78767d" />
                           <strong>Seats Available:</strong> {event.available_seats} / {event.total_seats} 
                           {isSoldOut && <span style={{ color: "#ef4444", fontWeight: 700, marginLeft: 4 }}>(Sold Out)</span>}
                         </span>
@@ -343,7 +343,7 @@ export default function EventsPage() {
                               gap: "6px",
                               fontSize: "13px",
                               fontWeight: 600,
-                              color: "var(--avatar-theme-color, #2563eb)",
+                              color: "var(--avatar-theme-color, #0D47A1)",
                               textDecoration: "underline",
                               cursor: materialsLoading === event.event_id ? "wait" : "pointer",
                               background: "none",
@@ -357,12 +357,12 @@ export default function EventsPage() {
                               <Download size={14} />
                             )}
                             Download Event Materials
-                            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", textDecoration: "none" }}>
+                            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#78767d", textTransform: "uppercase", textDecoration: "none" }}>
                               ({event.materials_access_tier})
                             </span>
                           </button>
                         ) : (
-                          <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
+                          <span style={{ fontSize: "12px", color: "#78767d", fontStyle: "italic" }}>
                             No materials uploaded yet
                           </span>
                         )}
@@ -387,7 +387,7 @@ export default function EventsPage() {
                                 padding: "8px 14px",
                                 fontSize: "12px",
                                 fontWeight: 700,
-                                color: "#475569",
+                                color: "#47464c",
                                 background: "#f1f5f9",
                                 border: "none",
                                 borderRadius: "6px",
@@ -425,7 +425,7 @@ export default function EventsPage() {
                             manage the event via RSVPs/Delete above instead of attending through this button. */}
                         {!canCreate && (
                           rsvpState === "ended-attended" || rsvpState === "ended-not-attended" ? (
-                            <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
+                            <span style={{ fontSize: "12px", color: "#78767d", fontStyle: "italic" }}>
                               {rsvpState === "ended-attended" ? "You attended this event" : "This event has ended"}
                             </span>
                           ) : (
@@ -447,7 +447,7 @@ export default function EventsPage() {
                                 cursor: rsvpLoading === event.event_id ? "not-allowed" : "pointer",
                                 transition: "all 0.2s",
                                 border: rsvpState === "cancel"
-                                  ? "1px solid #d1d5db"
+                                  ? "1px solid #c8c5cd"
                                   : rsvpState === "waitlist"
                                     ? "1px solid #fde68a"
                                     : "none",
@@ -457,7 +457,7 @@ export default function EventsPage() {
                                     ? "#fffbeb"
                                     : "var(--theme-gradient-160)",
                                 color: rsvpState === "cancel"
-                                  ? "#475569"
+                                  ? "#47464c"
                                   : rsvpState === "waitlist"
                                     ? "#b45309"
                                     : "#ffffff",
@@ -505,7 +505,7 @@ export default function EventsPage() {
           <form onSubmit={handleCreateSubmit} style={{ display: "flex", flexDirection: "column", gap: 18, fontFamily: "'Inter', -apple-system, sans-serif", padding: "12px 0 6px" }}>
             
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Seminar Title *</label>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Seminar Title *</label>
               <input
                 id="event-form-title"
                 type="text"
@@ -516,7 +516,7 @@ export default function EventsPage() {
                 style={{
                   padding: "11px 14px",
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid #c8c5cd",
                   fontSize: "13px",
                   outline: "none",
                   boxSizing: "border-box",
@@ -528,14 +528,14 @@ export default function EventsPage() {
                   e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Presented Speaker *</label>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Presented Speaker *</label>
               <input
                 id="event-form-speaker"
                 type="text"
@@ -546,7 +546,7 @@ export default function EventsPage() {
                 style={{
                   padding: "11px 14px",
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid #c8c5cd",
                   fontSize: "13px",
                   outline: "none",
                   boxSizing: "border-box",
@@ -558,14 +558,14 @@ export default function EventsPage() {
                   e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Scheduled Date & Time *</label>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Scheduled Date & Time *</label>
               <input
                 id="event-form-date"
                 type="datetime-local"
@@ -575,7 +575,7 @@ export default function EventsPage() {
                 style={{
                   padding: "11px 14px",
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid #c8c5cd",
                   fontSize: "13px",
                   outline: "none",
                   boxSizing: "border-box",
@@ -587,14 +587,14 @@ export default function EventsPage() {
                   e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Location/Venue *</label>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Location/Venue *</label>
               <input
                 id="event-form-location"
                 type="text"
@@ -605,7 +605,7 @@ export default function EventsPage() {
                 style={{
                   padding: "11px 14px",
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid #c8c5cd",
                   fontSize: "13px",
                   outline: "none",
                   boxSizing: "border-box",
@@ -617,7 +617,7 @@ export default function EventsPage() {
                   e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               />
@@ -625,7 +625,7 @@ export default function EventsPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Total Seats *</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Total Seats *</label>
                 <input
                   id="event-form-seats"
                   type="number"
@@ -636,7 +636,7 @@ export default function EventsPage() {
                   style={{
                     padding: "11px 14px",
                     borderRadius: "8px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     fontSize: "16px",
                     outline: "none",
                     boxSizing: "border-box",
@@ -648,14 +648,14 @@ export default function EventsPage() {
                     e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.borderColor = "#c8c5cd";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Materials URL (optional)</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Materials URL (optional)</label>
                 <input
                   id="event-form-materials"
                   type="text"
@@ -665,7 +665,7 @@ export default function EventsPage() {
                   style={{
                     padding: "11px 14px",
                     borderRadius: "8px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     fontSize: "16px",
                     outline: "none",
                     boxSizing: "border-box",
@@ -677,7 +677,7 @@ export default function EventsPage() {
                     e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.borderColor = "#c8c5cd";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -686,7 +686,7 @@ export default function EventsPage() {
 
             {formData.materialsUrl && (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>
                   Materials Access Tier
                 </label>
                 <select
@@ -696,7 +696,7 @@ export default function EventsPage() {
                   style={{
                     padding: "11px 14px",
                     borderRadius: "8px",
-                    border: "1px solid #d1d5db",
+                    border: "1px solid #c8c5cd",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box",
@@ -710,14 +710,14 @@ export default function EventsPage() {
                   <option value="staff">Staff — archivists, librarians, researchers, admins</option>
                   <option value="restricted">Restricted — archivists and admins only</option>
                 </select>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>
+                <p style={{ fontSize: "11px", color: "#78767d", margin: 0 }}>
                   Controls who can download the slides/recording. Doesn&apos;t affect who can see or RSVP to the event.
                 </p>
               </div>
             )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #111827)" }}>Event Abstract/Description *</label>
+              <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--avatar-theme-color, #141b2b)" }}>Event Abstract/Description *</label>
               <textarea
                 id="event-form-description"
                 required
@@ -728,7 +728,7 @@ export default function EventsPage() {
                 style={{
                   padding: "11px 14px",
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid #c8c5cd",
                   fontSize: "13px",
                   fontFamily: "inherit",
                   outline: "none",
@@ -743,7 +743,7 @@ export default function EventsPage() {
                   e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--avatar-theme-color) 15%, transparent)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#d1d5db";
+                  e.currentTarget.style.borderColor = "#c8c5cd";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               />
@@ -756,21 +756,21 @@ export default function EventsPage() {
                 style={{
                   padding: "9px 18px",
                   borderRadius: "8px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid #c8c5cd",
                   background: "#ffffff",
-                  color: "#475569",
+                  color: "#47464c",
                   fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.2s"
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = "#f3f4f6";
+                  e.currentTarget.style.background = "#f1f3ff";
                   e.currentTarget.style.color = "#1e293b";
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.color = "#475569";
+                  e.currentTarget.style.color = "#47464c";
                 }}
               >
                 Cancel
@@ -814,16 +814,16 @@ export default function EventsPage() {
                 <Loader2 className="animate-spin" size={24} color="var(--avatar-theme-color)" />
               </div>
             ) : participants.length === 0 ? (
-              <p style={{ textAlign: "center", color: "#64748b", fontSize: "13px", padding: "20px 0" }}>No participants registered yet.</p>
+              <p style={{ textAlign: "center", color: "#555f6d", fontSize: "13px", padding: "20px 0" }}>No participants registered yet.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {participants.map((p: any) => (
-                  <div key={p.rsvp_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
+                  <div key={p.rsvp_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #c8c5cd", borderRadius: "8px" }}>
                     <div>
-                      <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#0f172a" }}>{p.name}</p>
-                      <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{p.email} · <span style={{ fontWeight: 600 }}>{p.department || "No Dept"}</span></p>
+                      <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#141b2b" }}>{p.name}</p>
+                      <p style={{ margin: 0, fontSize: "12px", color: "#555f6d" }}>{p.email} · <span style={{ fontWeight: 600 }}>{p.department || "No Dept"}</span></p>
                     </div>
-                    <span style={{ fontSize: "11px", color: "#94a3b8" }}>Registered: {new Date(p.rsvp_at).toLocaleDateString()}</span>
+                    <span style={{ fontSize: "11px", color: "#78767d" }}>Registered: {new Date(p.rsvp_at).toLocaleDateString()}</span>
                   </div>
                 ))}
               </div>
