@@ -1,442 +1,530 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import React, { useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
-  Search, BookOpen,
-  ChevronDown, X, Plus,
-  FileText, Upload, Filter,
+  Search, BookOpen, ChevronLeft, ChevronRight, Plus, Heart,
+  FlaskConical, Building2, ArrowUpRight, ExternalLink,
 } from "lucide-react";
-import { useDropzone } from "react-dropzone";
-import { useCatalogSearch, useCreateCatalogItem, useDeleteCatalogItem, useAddToWishlist } from "@/features/library/hooks/useLibrary";
+import { useCatalogSearch, useDeleteCatalogItem, useAddToWishlist } from "@/features/library/hooks/useLibrary";
 import { useAuthStore } from "@/store/auth.store";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { Modal, ConfirmDialog } from "@/components/ui/Modal";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS } from "@/components/design/dkpTheme";
+import { ConfirmDialog } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { cn, formatFileSize } from "@/lib/utils";
+import api from "@/lib/api";
 import toast from "react-hot-toast";
-import { ResultCard, type CatalogItem } from "./ResultCard";
+import { type CatalogItem } from "./ResultCard";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const CATEGORIES = [
-  { value: "",              label: "All" },
-  { value: "Textbook",      label: "Textbooks" },
-  { value: "Reference",     label: "Reference" },
-  { value: "Science",       label: "Science" },
-  { value: "Technology",    label: "Technology" },
-  { value: "Humanities",    label: "Humanities" },
-  { value: "Social Sciences", label: "Social Sciences" },
-  { value: "Novel",         label: "Novels" },
-  { value: "Journal",       label: "Journals" },
-  { value: "Magazine",      label: "Magazines" },
+const TRENDING = ["Bangladesh History", "Quantum Mechanics", "Economic Policy"];
+
+/** Faculty tiles map to real catalog categories present in the seed/DB. */
+const FACULTIES = [
+  {
+    key: "arts",
+    title: "Arts & Humanities",
+    desc: "Literature, History, Philosophy, and Linguistics.",
+    category: "Novel",
+    span: "large" as const,
+    image: "/library-arts.png",
+  },
+  {
+    key: "science",
+    title: "Science",
+    desc: "Physics, Chemistry, Math",
+    category: "Textbook",
+    span: "small" as const,
+    icon: FlaskConical,
+  },
+  {
+    key: "social",
+    title: "Social Sciences",
+    desc: "Economics, Sociology, Politics",
+    category: "Reference",
+    span: "small" as const,
+    icon: Building2,
+  },
+  {
+    key: "business",
+    title: "Business Studies",
+    desc: "Management, Accounting, Finance, and Marketing resources.",
+    category: "Journal",
+    span: "wide" as const,
+    image: "/library-business.png",
+  },
 ];
 
-const SORT_OPTIONS = [
-  { value: "relevance", label: "Relevance" },
-  { value: "date_desc", label: "Newest First" },
-  { value: "date_asc",  label: "Oldest First" },
-  { value: "title_asc", label: "Title A–Z" },
-];
-
-const BOOK_CATEGORIES = ["General","Textbook","Fiction","Non-Fiction","Novel","Magazine","Science","Technology","Mathematics","History","Social Sciences","Humanities","Other"];
-
-// ── Pagination ────────────────────────────────────────────────────────────────
-function Pager({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
-  if (totalPages <= 1) return null;
-  const pages: (number | "...")[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (page > 3) pages.push("...");
-    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
-    if (page < totalPages - 2) pages.push("...");
-    pages.push(totalPages);
+function statusFor(item: CatalogItem): { label: string; tone: "ok" | "muted" | "accent" } {
+  if ((item.available_copies ?? 0) <= 0) return { label: "Borrowed", tone: "muted" };
+  if (String(item.category || "").toLowerCase().includes("journal") || String(item.category || "").toLowerCase().includes("e-book")) {
+    return { label: "E-Book", tone: "accent" };
   }
-  const btn = (content: React.ReactNode, active: boolean, disabled: boolean, onClick: () => void, key: string | number) => (
-    <button key={key} onClick={onClick} disabled={disabled} style={{
-      width: 36, height: 36, borderRadius: 6, border: "1px solid",
-      borderColor: active ? "var(--avatar-theme-color)" : "#e5e7eb",
-      background: active ? "var(--avatar-theme-color)" : "#fff",
-      color: active ? "#fff" : disabled ? "#d1d5db" : "#374151",
-      fontSize: 13, fontWeight: active ? 700 : 500,
-      cursor: disabled ? "not-allowed" : "pointer",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      {content}
-    </button>
-  );
+  return { label: "In Library", tone: "ok" };
+}
+
+function ArrivalCard({
+  item,
+  isAuthenticated,
+  isLibrarian,
+  onWishlist,
+  onDelete,
+}: {
+  item: CatalogItem;
+  isAuthenticated: boolean;
+  isLibrarian: boolean;
+  onWishlist: () => void;
+  onDelete?: () => void;
+}) {
+  const status = statusFor(item);
+  const authors = (item.authors || []).join(", ") || "Unknown author";
+  const tone =
+    status.tone === "ok" ? { dot: "#0D47A1", bg: "#e1e8fd", color: C.accent }
+      : status.tone === "accent" ? { dot: "#0D47A1", bg: "#e1e8fd", color: C.accent }
+        : { dot: "#9ca3af", bg: "#f3f4f6", color: "#6b7280" };
+
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 32 }}>
-      {btn("‹", false, page === 1, () => onChange(page - 1), "prev")}
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`dot-${i}`} style={{ width: 36, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>…</span>
-        ) : (
-          btn(p, p === page, false, () => onChange(p as number), p)
-        )
-      )}
-      {btn("›", false, page === totalPages, () => onChange(page + 1), "next")}
-    </div>
+    <article
+      className="dkp-coll-card"
+      style={{
+        minWidth: 240, maxWidth: 280, width: "100%", flex: "0 0 auto",
+        background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12,
+        overflow: "hidden", display: "flex", flexDirection: "column",
+        boxShadow: "0 4px 16px rgba(26,26,46,0.05)",
+      }}
+    >
+      <Link href={`/library/${item.catalog_id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        <div style={{ position: "relative", height: 160, background: `linear-gradient(145deg, ${C.band} 0%, ${C.chip} 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <BookOpen size={40} color={C.accent} style={{ opacity: 0.45 }} />
+          <span style={{
+            position: "absolute", top: 12, left: 12, display: "inline-flex", alignItems: "center", gap: 6,
+            fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
+            background: tone.bg, color: tone.color,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: tone.dot }} />
+            {status.label}
+          </span>
+        </div>
+        <div style={{ padding: "16px 16px 8px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: C.accent, marginBottom: 6 }}>
+            {item.category || "General"}
+          </div>
+          <h3 style={{
+            fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: C.ink, margin: "0 0 6px", lineHeight: 1.3,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
+          }}>
+            {item.title}
+          </h3>
+          <p style={{ fontSize: 13, color: C.body, margin: 0, lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {authors}
+          </p>
+        </div>
+      </Link>
+      <div style={{
+        marginTop: "auto", padding: "12px 16px", borderTop: `1px solid ${C.line}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+      }}>
+        <Link
+          href={`/library/${item.catalog_id}`}
+          style={{ fontSize: 12, fontWeight: 700, color: C.body, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+        >
+          {status.label === "E-Book" ? "Online Access" : "View details"} <ExternalLink size={12} />
+        </Link>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button
+            type="button"
+            aria-label="Add to wishlist"
+            onClick={() => {
+              if (!isAuthenticated) { toast.error("Sign in to add to wishlist"); return; }
+              onWishlist();
+            }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: C.body, padding: 4, display: "inline-flex" }}
+          >
+            <Heart size={16} />
+          </button>
+          {isLibrarian && onDelete && (
+            <button
+              type="button"
+              aria-label="Remove book"
+              onClick={onDelete}
+              style={{ background: "none", border: "none", cursor: "pointer", color: C.body, padding: 4, fontSize: 12, fontWeight: 700 }}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function LibraryPage() {
-  // Public catalog page — guests can browse, login is only required for
-  // wishlist/librarian actions. Don't redirect unauthenticated visitors away.
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const isMobile = useMediaQuery("(max-width: 767px)");
   const router = useRouter();
   const isLibrarian = isAuthenticated && user?.role === "librarian";
 
-  const [searchInput, setSearchInput]   = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
-  const [yearInput, setYearInput]       = useState("");
-  const [yearFilter, setYearFilter]     = useState("");
-  const [sortBy, setSortBy]             = useState("relevance");
-
-  // Advanced Search Filters state
-  const [authorInput, setAuthorInput]   = useState("");
-  const [isbnInput, setIsbnInput]       = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const [params, setParams] = useState<{
-    query: string; category: string;
-    availability: "all" | "available" | "on_loan";
-    author?: string; isbn?: string;
-    year_from?: number; year_to?: number;
-    page: number; limit: number;
-  }>({
-    query: "", category: "", availability: "all",
-    page: 1, limit: 10,
+  const [searchInput, setSearchInput] = useState("");
+  const [params, setParams] = useState({
+    query: "", category: "", page: 1, limit: 12,
   });
-
-  // Add modal state
-  const [addModal, setAddModal]   = useState(false);
-  const [pdfFile, setPdfFile]     = useState<File | null>(null);
-  const [deleteId, setDeleteId]   = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteTitle, setDeleteTitle] = useState("");
-  const [bookForm, setBookForm] = useState({
-    title: "", isbn: "", authors: "", publisher: "",
-    edition: "", year: "", category: "General",
-    total_copies: "1", shelf_location: "", description: "",
-  });
+  const railRef = useRef<HTMLDivElement>(null);
 
-  const onDrop = useCallback((accepted: File[]) => { if (accepted[0]) setPdfFile(accepted[0]); }, []);
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop, accept: { "application/pdf": [".pdf"] }, maxFiles: 1, maxSize: 500 * 1024 * 1024,
+  const { data, isLoading, isError, refetch } = useCatalogSearch({
+    ...params,
+    availability: "all" as const,
   });
-
-  const { data, isLoading, isError, refetch } = useCatalogSearch(params);
-  const { mutateAsync: addBook, isPending: isAdding }      = useCreateCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
-  const { mutateAsync: addToWishlist }                     = useAddToWishlist();
+  const { mutateAsync: addToWishlist } = useAddToWishlist();
+
+  const { data: facultyCounts } = useQuery({
+    queryKey: ["library-faculty-counts"],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        FACULTIES.map(async (f) => {
+          const { data: res } = await api.get("/library/catalog/search", {
+            params: { category: f.category, limit: 1 },
+          });
+          return [f.key, res.data?.total ?? 0] as const;
+        })
+      );
+      return Object.fromEntries(entries) as Record<string, number>;
+    },
+    staleTime: 60_000,
+  });
 
   if (!hasHydrated) return null;
 
-  const applyYear = (val: string) => {
-    const y = parseInt(val);
-    if (!val || isNaN(y)) return;
-    setYearFilter(val);
-    setYearInput(val);
-    setParams(p => ({ ...p, year_from: y, year_to: y, page: 1 }));
+  const handleSearch = (e?: React.FormEvent, q?: string) => {
+    e?.preventDefault();
+    const query = (q ?? searchInput).trim();
+    setSearchInput(query);
+    setParams((p) => ({ ...p, query, category: "", page: 1 }));
   };
 
-  const clearYear = () => {
-    setYearFilter("");
-    setYearInput("");
-    setParams(p => { const { year_from, year_to, ...rest } = p; void year_from; void year_to; return { ...rest, page: 1 }; });
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setActiveSearch(searchInput);
-    setParams(p => ({ ...p, query: searchInput, page: 1 }));
-  };
-
-  const handleAddBook = async () => {
-    if (!bookForm.title.trim()) { toast.error("Title is required"); return; }
-    try {
-      const fd = new FormData();
-      Object.entries(bookForm).forEach(([k, v]) => {
-        if (k === "authors") fd.append(k, JSON.stringify(v ? v.split(",").map((a: string) => a.trim()).filter(Boolean) : []));
-        else fd.append(k, v);
-      });
-      if (pdfFile) fd.append("file", pdfFile);
-      await addBook(fd);
-      toast.success("Book added!");
-      setAddModal(false); setPdfFile(null);
-      setBookForm({ title:"",isbn:"",authors:"",publisher:"",edition:"",year:"",category:"General",total_copies:"1",shelf_location:"",description:"" });
-      refetch();
-    } catch (err: unknown) {
-      toast.error((err as {response?:{data?:{message?:string}}})?.response?.data?.message || "Failed to add book");
-    }
+  const selectFaculty = (f: (typeof FACULTIES)[number]) => {
+    setSearchInput("");
+    setParams({
+      query: "",
+      category: f.category,
+      page: 1,
+      limit: 12,
+    });
+    document.getElementById("dkp-library-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    try { await deleteBook(deleteId); toast.success("Removed"); setDeleteId(null); refetch(); }
-    catch { toast.error("Failed to remove"); }
+    try {
+      await deleteBook(deleteId);
+      toast.success("Removed");
+      setDeleteId(null);
+      refetch();
+    } catch {
+      toast.error("Failed to remove");
+    }
+  };
+
+  const scrollRail = (dir: -1 | 1) => {
+    railRef.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
   };
 
   const total = data?.total ?? 0;
-  const totalPages = data?.total_pages ?? 1;
-  const rawItems = (data?.items ?? []) as CatalogItem[];
-
-  // Client-side sort (backend only supports title ASC)
-  const items = [...rawItems].sort((a, b) => {
-    switch (sortBy) {
-      case "date_desc": return (b.year ?? 0) - (a.year ?? 0);
-      case "date_asc":  return (a.year ?? 0) - (b.year ?? 0);
-      case "title_asc": return a.title.localeCompare(b.title);
-      default:          return 0; // relevance — keep API order
-    }
-  });
-
-  const topbarActions = null;
+  const items = (data?.items ?? []) as CatalogItem[];
+  const hasActiveFilter = Boolean(params.query || params.category);
+  const resultsTitle = hasActiveFilter ? "Catalog Results" : "New Arrivals";
 
   return (
-    <AppLayout topbarActions={topbarActions}>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+    <CollectionShell active="Library">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 900px) {
+          .dkp-lib-faculties { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 140px !important; }
+          .dkp-lib-fac-large, .dkp-lib-fac-wide { grid-column: span 2 !important; grid-row: span 1 !important; }
+        }
+        @media (max-width: 560px) {
+          .dkp-lib-faculties { grid-template-columns: 1fr !important; }
+          .dkp-lib-fac-large, .dkp-lib-fac-wide { grid-column: span 1 !important; }
+        }
+        .dkp-lib-rail { scrollbar-width: none; }
+        .dkp-lib-rail::-webkit-scrollbar { display: none; }
+        .dkp-lib-trend:hover { background: ${C.band} !important; border-color: ${C.accent} !important; }
+      `}} />
 
-        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
-        <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
-          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <BookOpen size={19} color="var(--avatar-theme-color, #6366f1)" />
-                </div>
-                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
-                  Library
-                </h1>
-              </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
-                Browse and reserve academic textbooks, journals &amp; articles
-              </p>
-            </div>
-            {isLibrarian && (
-              <button
-                onClick={() => router.push("/librarian/book/add")}
-                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0 }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                <Plus size={14} /> Add Book
-              </button>
-            )}
-          </div>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(40px, 6vw, 72px) clamp(16px, 4vw, 64px) 72px" }}>
+        {/* Hero */}
+        <header style={{ textAlign: "center", maxWidth: 820, margin: "0 auto 56px", position: "relative" }}>
+          {isLibrarian && (
+            <button
+              type="button"
+              onClick={() => router.push("/librarian/book/add")}
+              style={{
+                position: "absolute", top: 0, right: 0, display: "inline-flex", alignItems: "center", gap: 6,
+                background: C.ink, color: C.white, border: "none", borderRadius: 6,
+                padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              <Plus size={14} /> Add Book
+            </button>
+          )}
+          <h1 style={{
+            fontFamily: SERIF, fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 700, color: C.ink,
+            margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-0.02em",
+          }}>
+            Explore the Library Catalog
+          </h1>
+          <p style={{ fontSize: 17, color: C.body, margin: "0 0 28px", lineHeight: 1.6 }}>
+            Access millions of books, journals, and special collections housed within the University of Dhaka.
+          </p>
 
-          {/* Integrated search */}
-          <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center", background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.07)", border: "1.5px solid #dde2ff" }}>
-            <Search size={16} color="#9ca3af" style={{ marginLeft: 16, flexShrink: 0 }} />
+          <form
+            onSubmit={(e) => handleSearch(e)}
+            style={{
+              display: "flex", alignItems: "center", gap: 0, background: C.white,
+              border: `1.5px solid ${C.lineStrong}`, borderRadius: 10, overflow: "hidden",
+              boxShadow: "0 4px 24px rgba(26,26,46,0.06)", maxWidth: 640, margin: "0 auto",
+            }}
+          >
+            <Search size={18} color={C.body} style={{ marginLeft: 16, flexShrink: 0 }} />
             <input
-              type="text" value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              placeholder="Search by title, author, or ISBN…"
-              style={{ flex: 1, border: "none", outline: "none", fontSize: 16, padding: "13px 12px", color: "#1f2937", background: "transparent" }}
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by title, author, keyword, or ISBN..."
+              style={{
+                flex: 1, border: "none", outline: "none", fontSize: 15, padding: "14px 12px",
+                color: C.ink, background: "transparent", fontFamily: SANS,
+              }}
             />
-            <button type="submit" style={{ margin: 5, padding: "9px 20px", background: "var(--avatar-theme-color, #1a1a2e)", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", transition: "opacity 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            <button
+              type="submit"
+              style={{
+                margin: 6, padding: "10px 22px", background: C.accent, color: C.white, border: "none",
+                borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", letterSpacing: "0.02em",
+              }}
             >
               Search
             </button>
           </form>
-        </div>
 
-        {/* ── Content ─────────────────────────────────────────────────────────── */}
-        <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
-
-          {/* Category pills + year filter */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "14px 16px", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginBottom: isMobile ? 4 : 0 }}>Category</span>
-              <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
-                {CATEGORIES.map(cat => (
-                  <button key={cat.value} onClick={() => setParams(p => ({ ...p, category: cat.value, page: 1 }))}
-                    style={{
-                      padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: params.category === cat.value ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-                      border: params.category === cat.value ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-                      background: params.category === cat.value ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-                      color: params.category === cat.value ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
-                    }}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginTop: isMobile ? 12 : 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>Years:</span>
-                {yearFilter ? (
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, color: "#374151", background: "#fff" }}>
-                    {yearFilter}
-                    <button onClick={clearYear} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af", display: "flex" }}><X size={12} /></button>
-                  </span>
-                ) : (
-                  <input
-                    type="number"
-                    placeholder="e.g. 2024"
-                    min="1900" max="2099"
-                    value={yearInput}
-                    onChange={e => setYearInput(e.target.value)}
-                    onBlur={e => applyYear(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); applyYear(yearInput); } }}
-                    style={{ width: 90, padding: "5px 10px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, outline: "none" }}
-                  />
-                )}
-              </div>
-
-              {/* Advanced Search Toggle */}
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 18 }}>
+            <span style={{ fontSize: 13, color: C.body, fontWeight: 600 }}>Trending:</span>
+            {TRENDING.map((t) => (
               <button
+                key={t}
                 type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="dkp-lib-trend"
+                onClick={() => handleSearch(undefined, t)}
                 style={{
-                  padding: "5px 14px", borderRadius: 20, fontSize: 12.5, fontWeight: showAdvanced ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                  border: showAdvanced ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-                  background: showAdvanced ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-                  color: showAdvanced ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280", transition: "all 0.15s",
+                  padding: "6px 14px", borderRadius: 999, border: `1px solid ${C.lineStrong}`,
+                  background: C.chip, color: C.ink, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  transition: "background .15s, border-color .15s",
                 }}
               >
-                <Filter size={12} />
-                {showAdvanced ? "Hide" : "Advanced"}
+                {t}
               </button>
-            </div>
-          </div>{/* closes outer pill card */}
+            ))}
+          </div>
+        </header>
 
-          {/* Advanced Search Expandable Panel */}
-          {showAdvanced && (
-            <div style={{
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              padding: "16px 20px",
-              marginBottom: 20,
+        {/* Browse by Faculty */}
+        <section style={{ marginBottom: 64 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 12 }}>
+            <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: C.ink, margin: 0 }}>Browse by Faculty</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+                setParams({ query: "", category: "", page: 1, limit: 12 });
+              }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none",
+                color: C.accent, fontSize: 14, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              View All <ArrowUpRight size={16} />
+            </button>
+          </div>
+
+          <div
+            className="dkp-lib-faculties"
+            style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gridAutoRows: "150px",
               gap: 16,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-            }} className="library-advanced-panel">
-              {/* Author Filter */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
-                  Author Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Jiawei Han"
-                  value={authorInput}
-                  onChange={e => setAuthorInput(e.target.value)}
-                  onBlur={() => setParams(p => ({ ...p, author: authorInput || undefined, page: 1 }))}
-                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); setParams(p => ({ ...p, author: authorInput || undefined, page: 1 })); } }}
-                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, outline: "none" }}
-                />
-              </div>
-
-              {/* ISBN Filter */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
-                  ISBN Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 978-012"
-                  value={isbnInput}
-                  onChange={e => setIsbnInput(e.target.value)}
-                  onBlur={() => setParams(p => ({ ...p, isbn: isbnInput || undefined, page: 1 }))}
-                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); setParams(p => ({ ...p, isbn: isbnInput || undefined, page: 1 })); } }}
-                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, outline: "none" }}
-                />
-              </div>
-
-              {/* Availability Filter */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
-                  Availability Status
-                </label>
-                <select
-                  value={params.availability}
-                  onChange={e => setParams(p => ({ ...p, availability: e.target.value as any, page: 1 }))}
-                  style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 16, color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}
+            }}
+          >
+            {FACULTIES.map((f) => {
+              const count = facultyCounts?.[f.key];
+              const selected = params.category === f.category;
+              if (f.span === "large") {
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    className="dkp-lib-fac-large dkp-coll-card"
+                    onClick={() => selectFaculty(f)}
+                    style={{
+                      gridColumn: "span 2", gridRow: "span 2", position: "relative", borderRadius: 12,
+                      overflow: "hidden", border: selected ? `2px solid ${C.accent}` : `1px solid ${C.lineStrong}`,
+                      cursor: "pointer", padding: 0, textAlign: "left",
+                    }}
+                  >
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${f.image})`, backgroundSize: "cover", backgroundPosition: "center",
+                    }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(26,26,46,0.92) 0%, rgba(26,26,46,0.35) 55%, transparent 100%)" }} />
+                    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 24 }}>
+                      <h3 style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: C.white, margin: "0 0 8px" }}>{f.title}</h3>
+                      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)", margin: "0 0 14px", lineHeight: 1.45 }}>{f.desc}</p>
+                      <span style={{
+                        display: "inline-block", padding: "5px 10px", borderRadius: 6,
+                        background: "rgba(255,255,255,0.18)", color: C.white, fontSize: 12, fontWeight: 700,
+                      }}>
+                        {(count ?? 0).toLocaleString()} Items
+                      </span>
+                    </div>
+                  </button>
+                );
+              }
+              if (f.span === "wide") {
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    className="dkp-lib-fac-wide dkp-coll-card"
+                    onClick={() => selectFaculty(f)}
+                    style={{
+                      gridColumn: "span 2", position: "relative", borderRadius: 12, overflow: "hidden",
+                      border: selected ? `2px solid ${C.accent}` : `1px solid ${C.lineStrong}`,
+                      cursor: "pointer", padding: 0, textAlign: "left",
+                    }}
+                  >
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${f.image})`, backgroundSize: "cover", backgroundPosition: "center",
+                      filter: "brightness(0.55)",
+                    }} />
+                    <div style={{ position: "relative", zIndex: 1, padding: 22, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                      <h3 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: C.white, margin: "0 0 6px" }}>{f.title}</h3>
+                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", margin: 0, lineHeight: 1.4 }}>{f.desc}</p>
+                    </div>
+                  </button>
+                );
+              }
+              const Icon = f.icon!;
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  className="dkp-coll-card"
+                  onClick={() => selectFaculty(f)}
+                  style={{
+                    background: C.white, border: selected ? `2px solid ${C.accent}` : `1px solid ${C.lineStrong}`,
+                    borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "left",
+                    display: "flex", flexDirection: "column", gap: 10,
+                  }}
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="available">Available in Library</option>
-                  <option value="on_loan">Currently On Loan</option>
-                </select>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 8, background: C.chip, color: C.accent,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Icon size={20} />
+                    </div>
+                    <ArrowUpRight size={16} color={C.body} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: C.ink, margin: "0 0 4px" }}>{f.title}</h3>
+                    <p style={{ fontSize: 13, color: C.body, margin: 0, lineHeight: 1.4 }}>{f.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* New Arrivals / Results */}
+        <section id="dkp-library-results">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 12 }}>
+            <div>
+              <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: C.ink, margin: 0 }}>{resultsTitle}</h2>
+              <p style={{ fontSize: 14, color: C.body, margin: "6px 0 0" }}>
+                {isLoading ? "Loading…" : `${total.toLocaleString()} titles`}
+                {params.query ? ` for “${params.query}”` : ""}
+                {params.category ? ` · ${params.category}` : ""}
+              </p>
+            </div>
+            {!hasActiveFilter && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  aria-label="Scroll left"
+                  onClick={() => scrollRail(-1)}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8, border: `1px solid ${C.lineStrong}`,
+                    background: C.white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Scroll right"
+                  onClick={() => scrollRail(1)}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8, border: `1px solid ${C.lineStrong}`,
+                    background: C.white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
+            )}
+          </div>
+
+          {isError && (
+            <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 14 }}>
+              Failed to load catalog. Please try again.
             </div>
           )}
 
-          {/* Results header */}
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-            <p style={{ fontSize:14, color:"#374151" }}>
-              {isLoading ? "Searching…" : (
-                <>Showing <strong>{total.toLocaleString()}</strong> results{activeSearch ? ` for "${activeSearch}"` : ""}</>
-              )}
-            </p>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:12, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.08em" }}>Sort by:</span>
-              <div style={{ position:"relative" }}>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  style={{ padding:"6px 32px 6px 12px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:16, color:"#374151", background:"#fff", appearance:"none", cursor:"pointer", outline:"none" }}>
-                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-                <ChevronDown size={13} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", color:"#9ca3af", pointerEvents:"none" }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Error */}
-          {isError && <div style={{ padding:"12px 16px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:16 }}>Failed to load catalog. Please try again.</div>}
-
-          {/* Loading skeletons */}
           {isLoading && (
-            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-              {Array.from({length:4}).map((_,i) => (
-                <div key={i} style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:8, padding:"20px 24px" }}>
-                  <div style={{ display:"flex", gap:10, marginBottom:10 }}>
-                    <Skeleton className="h-5 w-24" /><Skeleton className="h-4 w-32" />
-                  </div>
-                  <Skeleton className="h-5 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/3 mb-3" />
-                  <Skeleton className="h-3 w-full mb-1" />
-                  <Skeleton className="h-3 w-5/6" />
-                </div>
+            <div style={{ display: "flex", gap: 16, overflow: "hidden" }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-72 w-60 rounded-xl flex-shrink-0" />
               ))}
             </div>
           )}
 
-          {/* Empty */}
           {!isLoading && !isError && items.length === 0 && (
-            <div style={{ textAlign:"center", padding:"64px 0" }}>
-              <BookOpen size={32} style={{ color:"#d1d5db", margin:"0 auto 12px" }} />
-              <p style={{ fontSize:15, fontWeight:600, color:"#374151" }}>No books found</p>
-              <p style={{ fontSize:13, color:"#9ca3af", marginTop:4 }}>Try different search terms or clear the filters.</p>
+            <div style={{ textAlign: "center", padding: "56px 24px", background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12 }}>
+              <BookOpen size={28} color={C.body} style={{ margin: "0 auto 12px" }} />
+              <p style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>No books found</p>
+              <p style={{ fontSize: 14, color: C.body, margin: 0 }}>Try a different search or browse by faculty.</p>
             </div>
           )}
 
-          {/* Results */}
           {!isLoading && items.length > 0 && (
-            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-              {items.map(item => (
-                <ResultCard
+            <div
+              ref={railRef}
+              className="dkp-lib-rail"
+              style={{
+                display: "flex", gap: 16, overflowX: hasActiveFilter ? "visible" : "auto",
+                flexWrap: hasActiveFilter ? "wrap" : "nowrap", paddingBottom: 8,
+              }}
+            >
+              {items.map((item) => (
+                <ArrivalCard
                   key={item.catalog_id}
                   item={item}
-                  isLibrarian={isLibrarian}
                   isAuthenticated={isAuthenticated}
+                  isLibrarian={!!isLibrarian}
                   onWishlist={async () => {
                     try {
                       await addToWishlist(item.catalog_id);
@@ -445,24 +533,57 @@ export default function LibraryPage() {
                       toast.error("Already in wishlist");
                     }
                   }}
-                  onDelete={() => { setDeleteId(item.catalog_id); setDeleteTitle(item.title); }}
+                  onDelete={isLibrarian ? () => { setDeleteId(item.catalog_id); setDeleteTitle(item.title); } : undefined}
                 />
               ))}
             </div>
           )}
 
-          {/* Pagination */}
-          {!isLoading && totalPages > 1 && (
-            <Pager page={params.page} totalPages={totalPages} onChange={p => setParams(prev => ({ ...prev, page: p }))} />
+          {!isLoading && (data?.total_pages ?? 1) > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 28 }}>
+              <button
+                type="button"
+                disabled={params.page <= 1}
+                onClick={() => setParams((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
+                style={{
+                  width: 40, height: 40, borderRadius: 6, border: `1px solid ${C.lineStrong}`, background: C.white,
+                  cursor: params.page <= 1 ? "not-allowed" : "pointer", opacity: params.page <= 1 ? 0.4 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span style={{ fontSize: 14, color: C.body, fontWeight: 600 }}>
+                Page {params.page} of {data?.total_pages}
+              </span>
+              <button
+                type="button"
+                disabled={params.page >= (data?.total_pages ?? 1)}
+                onClick={() => setParams((p) => ({ ...p, page: Math.min(data?.total_pages ?? 1, p.page + 1) }))}
+                style={{
+                  width: 40, height: 40, borderRadius: 6, border: `1px solid ${C.lineStrong}`, background: C.white,
+                  cursor: params.page >= (data?.total_pages ?? 1) ? "not-allowed" : "pointer",
+                  opacity: params.page >= (data?.total_pages ?? 1) ? 0.4 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           )}
-        </div>
+        </section>
       </div>
 
-
-
-      <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete}
-        title="Remove Book" description={`Remove "${deleteTitle}" from the catalog?`}
-        confirmLabel="Remove" loading={isDeleting} variant="danger" />
-    </AppLayout>
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Remove Book"
+        description={`Remove "${deleteTitle}" from the catalog?`}
+        confirmLabel="Remove"
+        loading={isDeleting}
+        variant="danger"
+      />
+    </CollectionShell>
   );
 }

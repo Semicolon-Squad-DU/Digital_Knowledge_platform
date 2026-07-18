@@ -1,370 +1,459 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, GraduationCap, Users, Calendar, Send, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search, ArrowRight, Users, FlaskConical, LayoutGrid,
+  GraduationCap, BarChart3, Building2, X,
+} from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS } from "@/components/design/dkpTheme";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-const DEPARTMENTS = ["CSE", "EEE", "ME", "CE", "BBA", "English", "Physics"];
-
-const TECH_COLORS: Record<string, string> = {
-  React:      "#3b82f6",
-  "Node.js":  "#10b981",
-  Python:     "#f59e0b",
-  Django:     "#059669",
-  Flutter:    "#06b6d4",
-  Arduino:    "#f97316",
+type ShowcaseProject = {
+  project_id: string;
+  title: string;
+  abstract: string;
+  department: string;
+  semester: string;
+  thumbnail_url?: string | null;
+  technologies: string[];
+  team_members: Array<{ name: string }>;
+  advisor_name?: string;
 };
 
-function ProjectCard({ project, onClick }: {
-  project: {
-    project_id: string; title: string; abstract: string;
-    department: string; semester: string; thumbnail_url?: string | null;
-    technologies: string[]; team_members: Array<{ name: string }>;
-  };
-  onClick: (id: string) => void;
+/** Stitch discipline tabs mapped to real catalog departments. */
+const DISCIPLINES = [
+  { label: "All Disciplines", department: "" },
+  { label: "Engineering", department: "EEE" },
+  { label: "Computer Science", department: "CSE" },
+  { label: "Sciences", department: "Physics" },
+  { label: "Business", department: "BBA" },
+] as const;
+
+function teamLabel(project: ShowcaseProject) {
+  const names = (project.team_members || []).map((m) => m.name).filter(Boolean);
+  if (names.length === 0) return "Student team";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names[0]} & ${names.length - 1} others`;
+}
+
+function disciplineLabel(department?: string) {
+  const d = (department || "").toUpperCase();
+  if (d === "CSE") return "Computer Science";
+  if (d === "EEE" || d === "ME" || d === "CE") return "Engineering";
+  if (d === "PHYSICS" || d === "PHY") return "Sciences";
+  if (d === "BBA") return "Business & Economics";
+  if (d === "ENGLISH") return "Arts & Humanities";
+  return department || "Showcase";
+}
+
+function PlaceholderIcon({ department }: { department?: string }) {
+  const d = (department || "").toUpperCase();
+  if (d === "PHYSICS" || d === "PHY") return <FlaskConical size={28} color={C.accent} />;
+  if (d === "BBA") return <BarChart3 size={28} color={C.accent} />;
+  if (d === "EEE" || d === "ME" || d === "CE") return <Building2 size={28} color={C.accent} />;
+  return <GraduationCap size={28} color={C.accent} />;
+}
+
+function ProjectCard({
+  project,
+  onOpen,
+}: {
+  project: ShowcaseProject;
+  onOpen: (id: string) => void;
 }) {
+  const hasThumb = Boolean(project.thumbnail_url);
+
   return (
-    <div
-      onClick={() => onClick(project.project_id)}
+    <article
+      className="dkp-coll-card"
+      onClick={() => onOpen(project.project_id)}
       style={{
-        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14,
-        padding: 0, cursor: "pointer", transition: "all 0.18s",
-        display: "flex", flexDirection: "column", overflow: "hidden",
+        background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12,
+        overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column",
+        boxShadow: "0 4px 16px rgba(26,26,46,0.05)", minHeight: 280,
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.09)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
     >
-      {/* Thumbnail */}
-      {project.thumbnail_url ? (
+      {hasThumb ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={project.thumbnail_url}
+          src={project.thumbnail_url!}
           alt=""
-          style={{ height: 110, width: "100%", objectFit: "cover", borderBottom: "1px solid #f0f0f8" }}
+          style={{ width: "100%", height: 160, objectFit: "cover", display: "block", background: C.chip }}
         />
       ) : (
         <div style={{
-          height: 110, background: "linear-gradient(135deg, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff) 0%, color-mix(in srgb, var(--avatar-theme-color, #6366f1) 6%, #f8f9ff) 100%)",
+          height: 160, background: `linear-gradient(145deg, ${C.band} 0%, ${C.chip} 100%)`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          borderBottom: "1px solid #f0f0f8",
         }}>
           <div style={{
-            width: 48, height: 48, borderRadius: 12,
-            background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 15%, #fff)",
+            width: 56, height: 56, borderRadius: 12, background: C.white,
             display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 2px 8px rgba(26,26,46,0.06)",
           }}>
-            <GraduationCap size={24} color="var(--avatar-theme-color, #6366f1)" />
+            <PlaceholderIcon department={project.department} />
           </div>
         </div>
       )}
 
-      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-        <p style={{
-          fontSize: 14, fontWeight: 700, color: "#111827", margin: 0, lineHeight: 1.4,
-          overflow: "hidden", textOverflow: "ellipsis",
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+        <span style={{
+          alignSelf: "flex-start", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+          textTransform: "uppercase", color: C.accent, background: C.chip,
+          padding: "4px 10px", borderRadius: 999,
+        }}>
+          {disciplineLabel(project.department)}
+        </span>
+
+        <h3 style={{
+          fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.3,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
         }}>
           {project.title}
-        </p>
+        </h3>
+
         <p style={{
-          fontSize: 12, color: "#9ca3af", margin: 0, lineHeight: 1.5,
-          overflow: "hidden", textOverflow: "ellipsis",
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
+          fontSize: 14, color: C.body, margin: 0, lineHeight: 1.55,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
         }}>
-          {project.abstract}
+          {project.abstract || "Student project from the University of Dhaka showcase."}
         </p>
 
-        {/* Tech tags */}
-        {project.technologies?.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {project.technologies.slice(0, 3).map(tech => (
-              <span key={tech} style={{
-                fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
-                background: (TECH_COLORS[tech] ?? "#6b7280") + "18",
-                color: TECH_COLORS[tech] ?? "#6b7280",
-              }}>
-                {tech}
-              </span>
-            ))}
-            {project.technologies.length > 3 && (
-              <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "#f3f4f6", color: "#9ca3af" }}>
-                +{project.technologies.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Footer */}
         <div style={{
-          borderTop: "1px solid #f3f4f6", paddingTop: 10, marginTop: "auto",
-          display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "#9ca3af",
+          marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${C.line}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Calendar size={11} /> {project.semester}
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Users size={11} /> {project.team_members?.length ?? 0}
-          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {teamLabel(project)}
+            </div>
+            <div style={{ fontSize: 12, color: C.body, marginTop: 2 }}>
+              {project.department}{project.semester ? ` · ${project.semester}` : ""}
+            </div>
+          </div>
           <span style={{
-            marginLeft: "auto", fontSize: 11, fontWeight: 700,
-            color: "var(--avatar-theme-color, #6366f1)",
-            background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)",
-            padding: "2px 8px", borderRadius: 4,
+            display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0,
+            fontSize: 13, fontWeight: 700, color: C.accent,
           }}>
-            {project.department}
+            View <ArrowRight size={14} />
           </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function ShowcasePage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const [params, setParams]           = useState({ department: "", q: "", page: 1, limit: 12 });
+  const [params, setParams] = useState({ department: "", q: "", page: 1, limit: 8 });
   const [searchInput, setSearchInput] = useState("");
+  const [accumulated, setAccumulated] = useState<ShowcaseProject[]>([]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ["showcase", params],
     queryFn: async () => {
       const { data } = await api.get("/showcase", { params });
-      return data.data;
+      return data.data as {
+        items: ShowcaseProject[];
+        total: number;
+        page: number;
+        total_pages: number;
+      };
     },
   });
 
-  const isMobile  = useMediaQuery("(max-width: 767px)");
+  useEffect(() => {
+    if (!data?.items) return;
+    setAccumulated((prev) => {
+      if (params.page === 1) return data.items;
+      const seen = new Set(prev.map((p) => p.project_id));
+      return [...prev, ...data.items.filter((p) => !seen.has(p.project_id))];
+    });
+  }, [data, params.page]);
+
+  const setDiscipline = (department: string) => {
+    setAccumulated([]);
+    setParams({ department, q: params.q, page: 1, limit: 8 });
+  };
+
+  const handleSearch = () => {
+    setAccumulated([]);
+    setParams((p) => ({ ...p, q: searchInput.trim(), page: 1 }));
+  };
+  const clearSearch = () => {
+    setSearchInput("");
+    setAccumulated([]);
+    setParams((p) => ({ ...p, q: "", page: 1 }));
+  };
+
   const canSubmit = isAuthenticated && user?.role === "student_author";
+  const items = accumulated;
 
-  const handleSearch = () => setParams(p => ({ ...p, q: searchInput, page: 1 }));
-  const clearSearch  = () => { setSearchInput(""); setParams(p => ({ ...p, q: "", page: 1 })); };
-  const clearAll     = () => { setSearchInput(""); setParams({ department: "", q: "", page: 1, limit: 12 }); };
+  const featured = useMemo(() => {
+    if (!items.length) return null;
+    return items.find((p) => p.thumbnail_url) || items[0];
+  }, [items]);
 
-  const hasFilters = !!(params.department || params.q);
+  const gridItems = useMemo(() => {
+    if (!featured) return items;
+    const rest = items.filter((p) => p.project_id !== featured.project_id);
+    return rest.length >= 4 ? rest : items;
+  }, [items, featured]);
 
-  const Pill = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
-    <button
-      type="button" onClick={onClick}
-      style={{
-        padding: "5px 14px", borderRadius: 20, fontSize: 12.5,
-        fontWeight: active ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap",
-        border: active ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-        background: active ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-        color: active ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280",
-        transition: "all 0.15s",
-      }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#374151"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; } }}
-    >
-      {label}
-    </button>
-  );
+  const submitHref = canSubmit ? "/showcase/submit" : isAuthenticated ? "/showcase/submit" : "/login";
 
   return (
-    <AppLayout topbarSearch={<div />}>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+    <CollectionShell active="Showcase">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 900px) {
+          .dkp-show-featured { grid-template-columns: 1fr !important; }
+          .dkp-show-featured-img { min-height: 220px !important; height: 220px !important; }
+          .dkp-show-grid { grid-template-columns: 1fr !important; }
+          .dkp-show-search { width: 100% !important; }
+        }
+        @media (min-width: 901px) and (max-width: 1100px) {
+          .dkp-show-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+      `}} />
 
-        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
-        <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
-          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Send size={17} color="var(--avatar-theme-color, #6366f1)" />
-                </div>
-                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
-                  Showcase
-                </h1>
-              </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
-                Explore student projects from all departments &amp; semesters
-              </p>
-            </div>
-
-            {canSubmit && (
-              <Link
-                href="/showcase/submit"
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(40px, 6vw, 72px) clamp(16px, 4vw, 64px) 0" }}>
+        {/* Hero */}
+        <header style={{ maxWidth: 780, marginBottom: 48 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 18 }}>
+            <h1 style={{
+              fontFamily: SERIF, fontSize: "clamp(34px, 5vw, 48px)", fontWeight: 700, color: C.ink,
+              margin: 0, lineHeight: 1.15, letterSpacing: "-0.02em",
+            }}>
+              Student Showcase
+            </h1>
+            <div className="dkp-show-search" style={{ position: "relative", width: 260 }}>
+              <Search size={15} color={C.body} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Search projects…"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 7,
-                  padding: "9px 16px", borderRadius: 9,
-                  background: "var(--avatar-theme-color, #1a1a2e)", border: "none",
-                  fontSize: 13, fontWeight: 600, color: "#fff", textDecoration: "none",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s", flexShrink: 0,
+                  width: "100%", boxSizing: "border-box", padding: "10px 36px 10px 36px",
+                  border: `1px solid ${C.lineStrong}`, borderRadius: 8, background: C.white,
+                  fontSize: 14, color: C.ink, outline: "none", fontFamily: SANS,
                 }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                <Plus size={14} /> Submit Project
-              </Link>
-            )}
-          </div>
-
-          {/* Integrated search */}
-          <div style={{
-            display: "flex", alignItems: "center", background: "#fff",
-            borderRadius: 12, overflow: "hidden",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.07)", border: "1.5px solid #dde2ff",
-          }}>
-            <Search size={16} color="#9ca3af" style={{ marginLeft: 16, flexShrink: 0 }} />
-            <input
-              type="text"
-              placeholder="Search projects by title or technology…"
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSearch()}
-              style={{ flex: 1, border: "none", outline: "none", fontSize: 16, padding: "13px 12px", color: "#1f2937", background: "transparent" }}
-            />
-            {searchInput && (
-              <button type="button" onClick={clearSearch} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 8px", color: "#9ca3af", display: "flex" }}>
-                <X size={15} />
-              </button>
-            )}
-            <button
-              onClick={handleSearch}
-              style={{
-                margin: 5, padding: "9px 20px", background: "var(--avatar-theme-color, #1a1a2e)",
-                border: "none", borderRadius: 8, cursor: "pointer",
-                fontSize: 13, fontWeight: 700, color: "#fff", transition: "opacity 0.15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Search
-            </button>
-          </div>
-        </div>
-
-        {/* ── Content ─────────────────────────────────────────────────────────── */}
-        <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
-
-          {/* Department filter pills */}
-          <div style={{
-            background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb",
-            padding: "14px 16px", marginBottom: 20,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
-                Dept
-              </span>
-              <Pill label="All" active={!params.department} onClick={() => setParams(p => ({ ...p, department: "", page: 1 }))} />
-              {DEPARTMENTS.map(dept => (
-                <Pill key={dept} label={dept} active={params.department === dept} onClick={() => setParams(p => ({ ...p, department: dept, page: 1 }))} />
-              ))}
-              {hasFilters && (
+              />
+              {searchInput && (
                 <button
-                  type="button" onClick={clearAll}
-                  style={{
-                    marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
-                    padding: "5px 12px", borderRadius: 20,
-                    border: "1px solid #fecaca", background: "#fef2f2",
-                    color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-                  }}
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={clearSearch}
+                  style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.body, display: "flex", padding: 0 }}
                 >
-                  <X size={11} /> Clear
+                  <X size={14} />
                 </button>
               )}
             </div>
           </div>
+          <p style={{ fontSize: 17, color: C.body, margin: 0, lineHeight: 1.65, maxWidth: 720 }}>
+            Celebrating the intellectual rigor and innovative breakthroughs of our student body.
+            Explore a curated selection of exceptional projects, research papers, and creative works
+            from across the university&apos;s diverse disciplines.
+          </p>
+        </header>
 
-          {/* Result count */}
-          {!isLoading && data && (
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 16 }}>
-              <FileText size={13} color="#9ca3af" />
-              <span style={{ fontSize: 12.5, color: "#6b7280" }}>
-                <strong style={{ color: "#374151" }}>{data.total}</strong>{" "}
-                project{data.total !== 1 ? "s" : ""} found
-                {params.q && <span style={{ color: "#9ca3af" }}> for &ldquo;{params.q}&rdquo;</span>}
+        {/* Featured */}
+        {isLoading && (
+          <Skeleton className="h-72 w-full rounded-xl mb-16" />
+        )}
+
+        {!isLoading && featured && (
+          <section
+            className="dkp-show-featured dkp-coll-card"
+            style={{
+              display: "grid", gridTemplateColumns: "1.05fr 1fr", gap: 0, marginBottom: 64,
+              background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 14,
+              overflow: "hidden", boxShadow: "0 8px 32px rgba(26,26,46,0.07)",
+            }}
+          >
+            <div className="dkp-show-featured-img" style={{ minHeight: 340, position: "relative", background: C.band }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={featured.thumbnail_url || "/showcase-featured.png"}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", position: "absolute", inset: 0 }}
+              />
+            </div>
+            <div style={{ padding: "clamp(24px, 4vw, 40px)", display: "flex", flexDirection: "column" }}>
+              <span style={{
+                alignSelf: "flex-start", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em",
+                textTransform: "uppercase", color: C.accent, background: C.chip,
+                padding: "5px 12px", borderRadius: 999, marginBottom: 16,
+              }}>
+                Featured Project
               </span>
+              <h2 style={{
+                fontFamily: SERIF, fontSize: "clamp(24px, 3vw, 30px)", fontWeight: 700, color: C.ink,
+                margin: "0 0 14px", lineHeight: 1.25,
+              }}>
+                {featured.title}
+              </h2>
+              <p style={{
+                fontSize: 15, color: C.body, margin: "0 0 20px", lineHeight: 1.6,
+                display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
+              }}>
+                {featured.abstract || "An outstanding student project from the University of Dhaka."}
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%", background: C.band, color: C.ink,
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <Users size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{teamLabel(featured)}</div>
+                  <div style={{ fontSize: 13, color: C.body }}>
+                    Department of {featured.department}
+                    {featured.advisor_name ? ` · Advisor: ${featured.advisor_name}` : ""}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push(`/showcase/${featured.project_id}`)}
+                style={{
+                  marginTop: "auto", alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "transparent", color: C.ink, border: `1.5px solid ${C.ink}`,
+                  padding: "11px 18px", borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                View Project <ArrowRight size={16} />
+              </button>
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Loading */}
+        {/* Explore */}
+        <section style={{ marginBottom: 72 }}>
+          <div style={{
+            display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between",
+            gap: 16, marginBottom: 24,
+          }}>
+            <h2 style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 700, color: C.ink, margin: 0 }}>
+              Explore Projects
+            </h2>
+            {!isLoading && data && (
+              <span style={{ fontSize: 14, color: C.body }}>
+                {data.total.toLocaleString()} project{data.total === 1 ? "" : "s"}
+                {params.q ? ` for “${params.q}”` : ""}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 28 }}>
+            {DISCIPLINES.map((d) => {
+              const active = params.department === d.department;
+              return (
+                <button
+                  key={d.label}
+                  type="button"
+                  onClick={() => setDiscipline(d.department)}
+                  style={{
+                    padding: "9px 16px", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    border: active ? "none" : `1px solid ${C.lineStrong}`,
+                    background: active ? C.ink : C.white,
+                    color: active ? C.white : C.body,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {d.label}
+                </button>
+              );
+            })}
+          </div>
+
           {isLoading && (
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(270px, 1fr))", gap: 16 }}>
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+            <div className="dkp-show-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-80 w-full rounded-xl" />)}
             </div>
           )}
 
-          {/* Error */}
           {isError && (
-            <div style={{ padding: "16px 20px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, color: "#991b1b", fontSize: 13 }}>
+            <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 14 }}>
               Failed to load projects. Please try again.
             </div>
           )}
 
-          {/* Empty */}
-          {!isLoading && !isError && (!data?.items || data.items.length === 0) && (
-            <div style={{ textAlign: "center", padding: "60px 24px", background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb" }}>
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <GraduationCap size={26} color="#9ca3af" />
-              </div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>No projects found</p>
-              <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
-                {hasFilters ? "Try adjusting your filters or search terms." : "No projects have been published yet."}
-              </p>
-              {hasFilters && (
-                <button type="button" onClick={clearAll} style={{ marginTop: 16, padding: "8px 20px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff" }}>
-                  Clear filters
-                </button>
-              )}
+          {!isLoading && !isError && gridItems.length === 0 && (
+            <div style={{ textAlign: "center", padding: "56px 24px", background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12 }}>
+              <LayoutGrid size={28} color={C.body} style={{ margin: "0 auto 12px" }} />
+              <p style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>No projects found</p>
+              <p style={{ fontSize: 14, color: C.body, margin: 0 }}>Try another discipline or clear your search.</p>
             </div>
           )}
 
-          {/* Results grid */}
-          {!isLoading && data?.items && data.items.length > 0 && (
+          {!isLoading && gridItems.length > 0 && (
             <>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(270px, 1fr))",
-                gap: 16, marginBottom: 28,
-              }}>
-                {data.items.map((project: any) => (
-                  <ProjectCard key={project.project_id} project={project} onClick={id => router.push(`/showcase/${id}`)} />
+              <div className="dkp-show-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
+                {gridItems.map((project) => (
+                  <ProjectCard
+                    key={project.project_id}
+                    project={project}
+                    onOpen={(id) => router.push(`/showcase/${id}`)}
+                  />
                 ))}
               </div>
 
-              {/* Pagination */}
-              {data.total_pages > 1 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingBottom: 16 }}>
+              {data && data.total_pages > 1 && params.page < data.total_pages && (
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
                   <button
-                    onClick={() => setParams(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
-                    disabled={params.page === 1}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: params.page === 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: params.page === 1 ? 0.4 : 1 }}
+                    type="button"
+                    disabled={isFetching}
+                    onClick={() => setParams((p) => ({ ...p, page: p.page + 1 }))}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 8, background: "transparent",
+                      border: `1.5px solid ${C.ink}`, color: C.ink, padding: "12px 22px", borderRadius: 6,
+                      fontSize: 14, fontWeight: 700, cursor: isFetching ? "wait" : "pointer",
+                      opacity: isFetching ? 0.6 : 1,
+                    }}
                   >
-                    <ChevronLeft size={14} color="#6b7280" />
-                  </button>
-                  <span style={{ fontSize: 13, color: "#6b7280", padding: "0 8px" }}>
-                    Page {params.page} of {data.total_pages}
-                  </span>
-                  <button
-                    onClick={() => setParams(p => ({ ...p, page: Math.min(data.total_pages, p.page + 1) }))}
-                    disabled={params.page === data.total_pages}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: params.page === data.total_pages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: params.page === data.total_pages ? 0.4 : 1 }}
-                  >
-                    <ChevronRight size={14} color="#6b7280" />
+                    {isFetching ? "Loading…" : "Load More Projects"} <ArrowRight size={16} />
                   </button>
                 </div>
               )}
             </>
           )}
-        </div>
+        </section>
       </div>
-    </AppLayout>
+
+      {/* CTA */}
+      <section style={{ background: C.ink, color: C.white, padding: "clamp(48px, 7vw, 72px) clamp(16px, 4vw, 64px)", textAlign: "center" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <h2 style={{
+            fontFamily: SERIF, fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 700,
+            margin: "0 0 14px", letterSpacing: "-0.01em",
+          }}>
+            Contribute to the Archive
+          </h2>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.78)", margin: "0 0 28px", lineHeight: 1.6 }}>
+            Share your course project with the university community. Student authors can submit work for advisor review and publication in the showcase.
+          </p>
+          <Link
+            href={submitHref}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8, background: C.white, color: C.ink,
+              padding: "13px 26px", borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: "none",
+            }}
+          >
+            Submit Your Project
+          </Link>
+        </div>
+      </section>
+    </CollectionShell>
   );
 }

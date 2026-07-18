@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DU Digital Knowledge Platform - Library Catalog</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-secondary-container": "#596372",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d3daef",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#293040",
+                        "on-error-container": "#93000a",
+                        "primary": "#00000b",
+                        "surface-container-high": "#e1e8fd",
+                        "surface-variant": "#dce2f7",
+                        "surface-container-highest": "#dce2f7",
+                        "background": "#f9f9ff",
+                        "on-tertiary-container": "#828485",
+                        "surface-bright": "#f9f9ff",
+                        "slate-gray": "#4B5563",
+                        "primary-fixed-dim": "#c6c4df",
+                        "on-surface-variant": "#47464c",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f1f3ff",
+                        "canvas-white": "#FFFFFF",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container": "#e9edff",
+                        "on-secondary-fixed-variant": "#3e4755",
+                        "secondary": "#555f6d",
+                        "institutional-accent": "#0D47A1",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#bdc7d8",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-primary-fixed-variant": "#45455b",
+                        "secondary-container": "#d6e0f1",
+                        "surface": "#f9f9ff",
+                        "inverse-primary": "#c6c4df",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "secondary-fixed": "#d9e3f4",
+                        "on-background": "#141b2b",
+                        "on-primary-container": "#83829b",
+                        "on-secondary-fixed": "#121c28",
+                        "university-blue": "#1A1A2E",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#191c1d",
+                        "inverse-on-surface": "#edf0ff",
+                        "surface-tint": "#5d5c74",
+                        "outline-variant": "#c8c5cd",
+                        "on-surface": "#141b2b",
+                        "on-primary-fixed": "#1a1a2e",
+                        "tertiary": "#000001",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#e2e0fc",
+                        "outline": "#78767d",
+                        "primary-container": "#1a1a2e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "16px",
+                        "max-width": "1280px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "display-lg-mobile": ["Libre Caslon Text"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "display-lg": ["Libre Caslon Text"],
+                        "headline-sm": ["Libre Caslon Text"],
+                        "headline-md": ["Libre Caslon Text"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "fontWeight": "700"}],
+                        "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .ambient-shadow { box-shadow: 0 4px 20px rgba(26, 26, 46, 0.05); }
+        .ambient-shadow-hover:hover { box-shadow: 0 8px 30px rgba(26, 26, 46, 0.08); transform: translateY(-2px); transition: all 0.3s ease; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased pt-20">
+<!-- TopNavBar Shared Component -->
+<nav class="fixed top-0 w-full z-50 border-b border-slate-gray/20 bg-canvas-white dark:bg-university-blue shadow-sm transition-all duration-300 ease-in-out">
+<div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto">
+<div class="flex items-center gap-4">
+<div class="font-headline-sm text-headline-sm font-bold text-university-blue dark:text-on-primary">
+<span class="mr-2">||/</span> DU Digital Knowledge Platform
+                </div>
+</div>
+<div class="hidden md:flex items-center gap-8 font-body-md text-body-md">
+<a class="text-secondary dark:text-surface-variant hover:text-institutional-accent transition-colors duration-200" href="#">Archive</a>
+<a class="text-institutional-accent border-b-2 border-institutional-accent pb-1 font-bold" href="#">Library</a>
+<a class="text-secondary dark:text-surface-variant hover:text-institutional-accent transition-colors duration-200" href="#">Research</a>
+<a class="text-secondary dark:text-surface-variant hover:text-institutional-accent transition-colors duration-200" href="#">Showcase</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex relative group">
+<input class="w-64 px-4 py-2 bg-surface-container-lowest border border-slate-gray/20 rounded font-body-md focus:outline-none focus:border-institutional-accent focus:ring-1 focus:ring-institutional-accent/20 transition-all text-on-surface placeholder-on-surface-variant/50" placeholder="Search resources..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-slate-gray/50 group-focus-within:text-institutional-accent" data-icon="search">search</span>
+</div>
+<button class="bg-university-blue text-canvas-white px-6 py-2 rounded font-label-md text-label-md hover:bg-university-blue/90 transition-colors">Sign In</button>
+</div>
+</div>
+</nav>
+<main class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop pb-24">
+<!-- Hero Section -->
+<section class="py-16 md:py-24 text-center max-w-3xl mx-auto">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-university-blue mb-6">Explore the Library Catalog</h1>
+<p class="font-body-lg text-body-lg text-secondary mb-10">Access millions of books, journals, and special collections housed within the University of Dhaka.</p>
+<div class="relative w-full max-w-2xl mx-auto">
+<input class="w-full pl-12 pr-4 py-4 text-body-lg bg-canvas-white border border-slate-gray/30 rounded-lg ambient-shadow focus:outline-none focus:border-institutional-accent focus:ring-2 focus:ring-institutional-accent/10 transition-all" placeholder="Search by title, author, keyword, or ISBN..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-4 text-slate-gray/50 text-2xl" data-icon="search">search</span>
+<button class="absolute right-2 top-2 bottom-2 bg-institutional-accent text-canvas-white px-6 rounded font-label-md text-label-md hover:bg-institutional-accent/90 transition-colors">Search</button>
+</div>
+<div class="flex flex-wrap justify-center gap-3 mt-6">
+<span class="font-label-sm text-label-sm text-secondary py-1">Trending:</span>
+<button class="px-3 py-1 bg-surface-container rounded border border-slate-gray/10 font-label-sm text-label-sm text-on-surface-variant hover:border-institutional-accent/30 transition-colors">Bangladesh History</button>
+<button class="px-3 py-1 bg-surface-container rounded border border-slate-gray/10 font-label-sm text-label-sm text-on-surface-variant hover:border-institutional-accent/30 transition-colors">Quantum Mechanics</button>
+<button class="px-3 py-1 bg-surface-container rounded border border-slate-gray/10 font-label-sm text-label-sm text-on-surface-variant hover:border-institutional-accent/30 transition-colors">Economic Policy</button>
+</div>
+</section>
+<!-- Categories Bento Grid -->
+<section class="mb-24">
+<div class="flex justify-between items-end mb-8">
+<h2 class="font-headline-md text-headline-md text-university-blue">Browse by Faculty</h2>
+<a class="font-label-md text-label-md text-institutional-accent hover:underline flex items-center gap-1" href="#">View All <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span></a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 auto-rows-[160px]">
+<div class="md:col-span-2 md:row-span-2 relative rounded-xl overflow-hidden group ambient-shadow-hover cursor-pointer border border-slate-gray/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A brightly lit, modern academic library interior focusing on the Arts and Humanities section. Soft sunlight filters through tall arched windows onto rows of wooden bookshelves filled with leather-bound books. The color palette is warm, featuring rich mahogany woods, cream-colored walls, and subtle gold accents. The atmosphere is quiet, intellectual, and inviting, embodying a modern academic aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDDKAiPAoLoZRpXEa4xQYMq_mmzWEZKhDO2wClFPcDBJSskacInUQk5gKdDeGPUWonLU8k--rv7Y7mXtEFUkr2AwoP0h19yFomdUH7G7xECbNr3sLD7B0zVNE2fu7zLo5eVLqzKBdpx9_UAotVbdMFlNasAaPde3dikmIpLOMzFure077RG6UtMTY4tnhfjvL3vLrbLkyPaqK2cp4eSo7T11IlFgZ-35GTjJUkaXhLK4WisDH9fomWv')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-university-blue/90 via-university-blue/40 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6 w-full">
+<h3 class="font-headline-sm text-headline-sm text-canvas-white mb-2">Arts &amp; Humanities</h3>
+<p class="font-body-md text-body-md text-canvas-white/80">Literature, History, Philosophy, and Linguistics.</p>
+<div class="mt-4 flex items-center gap-2">
+<span class="px-2 py-1 bg-canvas-white/20 backdrop-blur-sm rounded font-label-sm text-label-sm text-canvas-white">12,450 Items</span>
+</div>
+</div>
+</div>
+<div class="md:col-span-1 md:row-span-1 bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-5 flex flex-col justify-between ambient-shadow-hover cursor-pointer group">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-institutional-accent/10 transition-colors">
+<span class="material-symbols-outlined text-university-blue group-hover:text-institutional-accent" data-icon="science">science</span>
+</div>
+<span class="material-symbols-outlined text-slate-gray/30 group-hover:text-institutional-accent/50" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-university-blue mb-1">Science</h3>
+<p class="font-label-sm text-label-sm text-secondary">Physics, Chemistry, Math</p>
+</div>
+</div>
+<div class="md:col-span-1 md:row-span-1 bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-5 flex flex-col justify-between ambient-shadow-hover cursor-pointer group">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-institutional-accent/10 transition-colors">
+<span class="material-symbols-outlined text-university-blue group-hover:text-institutional-accent" data-icon="account_balance">account_balance</span>
+</div>
+<span class="material-symbols-outlined text-slate-gray/30 group-hover:text-institutional-accent/50" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-university-blue mb-1">Social Sciences</h3>
+<p class="font-label-sm text-label-sm text-secondary">Economics, Sociology, Politics</p>
+</div>
+</div>
+<div class="md:col-span-2 md:row-span-1 relative rounded-xl overflow-hidden group ambient-shadow-hover cursor-pointer border border-slate-gray/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A close-up view of a modern data center server rack combined with business charts on a transparent digital overlay. The scene is lit with cool blue and crisp white LED lights, reflecting a high-tech, corporate academic environment. The style is sleek, minimalist, and information-dense, conveying themes of business analytics and modern commerce." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPSjF-zg7ozCAt8vCa_mEJvLQtHBtAcSzUGi_7NdJLwo-niAowYi_hyGWCQJmLgFvoCiWVyJJT5SVyIznl7fGrWo7WTG5Ufs2cxeeAD1unzmxE9_AkFAz8QNLFeGCb857Fx4GiBMRbiTP57AkVpKKzytwrsUx3bVVDISbjEresa_dDr9fDuhol57epD0f8jBGTf4VA8rXgCUi1ruwO_QvDnGFQwKuABng_VUzvqbPtA65ZNiodZttm')"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-university-blue/90 via-university-blue/70 to-transparent"></div>
+<div class="absolute inset-0 p-6 flex flex-col justify-center w-2/3">
+<h3 class="font-headline-sm text-headline-sm text-canvas-white mb-1">Business Studies</h3>
+<p class="font-body-md text-body-md text-canvas-white/80 line-clamp-2">Management, Accounting, Finance, and Marketing resources.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- New Arrivals Carousel -->
+<section class="mb-24">
+<div class="flex justify-between items-end mb-8 border-b border-slate-gray/20 pb-4">
+<h2 class="font-headline-md text-headline-md text-university-blue">New Arrivals</h2>
+<div class="flex gap-2">
+<button class="w-8 h-8 rounded border border-slate-gray/20 flex items-center justify-center text-slate-gray hover:bg-surface-container hover:text-university-blue transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded border border-slate-gray/20 flex items-center justify-center text-slate-gray hover:bg-surface-container hover:text-university-blue transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex gap-6 overflow-x-auto hide-scrollbar pb-4 snap-x">
+<!-- Book Card 1 -->
+<div class="min-w-[240px] w-[240px] flex-shrink-0 snap-start bg-canvas-white border border-slate-gray/20 rounded-lg p-4 ambient-shadow-hover flex flex-col h-full group">
+<div class="relative h-64 mb-4 rounded bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A minimalist, modern book cover design for an academic text on 'Contemporary Bengal History'. The cover features a stark, high-contrast abstract architectural motif with deep university blue and subtle gold accents against a crisp white background. The typography is elegant and serif-based, conveying institutional authority and scholarly rigor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBJ57VNEKtbR3RPHxGmgHHqXia7EMBpSohzz1s6GZdALozQDyFQ2dYGEgOhniKHu5Re5h6j-ASK_SZZPlXn2lTCwRT_0riXg622ocHJvdhUF8UUaaqHsoWtDFw54EVZRZ2DCYJT9W5JCADO_s72lpNf92eZjZOyh3E3hKu0_2dD7425LmpOHrg43LA0NJAdn8K_g38NHVZV5LMfqCPmfOcxh7ylTgtYp0uAwc-MAuIJssHfLtx3IQF"/>
+<div class="absolute top-2 left-2 px-2 py-1 bg-canvas-white/90 backdrop-blur text-institutional-accent font-label-sm text-label-sm rounded shadow-sm flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-institutional-accent"></span> In Library
+                        </div>
+</div>
+<div class="flex-grow">
+<span class="font-label-sm text-label-sm text-secondary mb-1 block">History</span>
+<h3 class="font-label-md text-label-md text-university-blue leading-tight mb-1 line-clamp-2">The Architectural Heritage of Dhaka: A Modern Perspective</h3>
+<p class="font-label-sm text-label-sm text-slate-gray line-clamp-1">Dr. S. Rahman</p>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-gray/10 flex justify-between items-center">
+<span class="font-label-sm text-label-sm text-secondary">Central Lib.</span>
+<button class="text-institutional-accent hover:text-university-blue transition-colors" title="Place Hold">
+<span class="material-symbols-outlined" data-icon="bookmark_add">bookmark_add</span>
+</button>
+</div>
+</div>
+<!-- Book Card 2 -->
+<div class="min-w-[240px] w-[240px] flex-shrink-0 snap-start bg-canvas-white border border-slate-gray/20 rounded-lg p-4 ambient-shadow-hover flex flex-col h-full group">
+<div class="relative h-64 mb-4 rounded bg-surface-container overflow-hidden">
+<div class="absolute inset-0 bg-surface-dim flex items-center justify-center">
+<span class="material-symbols-outlined text-4xl text-slate-gray/30" data-icon="menu_book">menu_book</span>
+</div>
+<div class="absolute top-2 left-2 px-2 py-1 bg-canvas-white/90 backdrop-blur text-slate-gray font-label-sm text-label-sm rounded shadow-sm flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-slate-gray"></span> Borrowed
+                        </div>
+<div class="absolute bottom-2 right-2 px-2 py-1 bg-surface-container/90 backdrop-blur text-secondary font-label-sm text-label-sm rounded shadow-sm">
+                            Due: Oct 15
+                        </div>
+</div>
+<div class="flex-grow">
+<span class="font-label-sm text-label-sm text-secondary mb-1 block">Economics</span>
+<h3 class="font-label-md text-label-md text-university-blue leading-tight mb-1 line-clamp-2">Microeconomic Theory: Advanced Applications</h3>
+<p class="font-label-sm text-label-sm text-slate-gray line-clamp-1">A. K. Sen, M. Yunus</p>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-gray/10 flex justify-between items-center">
+<span class="font-label-sm text-label-sm text-secondary">Science Lib.</span>
+<button class="text-institutional-accent hover:text-university-blue transition-colors" title="Add to Wishlist">
+<span class="material-symbols-outlined" data-icon="favorite_border">favorite_border</span>
+</button>
+</div>
+</div>
+<!-- Book Card 3 -->
+<div class="min-w-[240px] w-[240px] flex-shrink-0 snap-start bg-canvas-white border border-slate-gray/20 rounded-lg p-4 ambient-shadow-hover flex flex-col h-full group">
+<div class="relative h-64 mb-4 rounded bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A clean, abstract cover for an academic journal on 'Data Science Quarterly'. The cover utilizes a crisp white background with a minimalist geometric grid pattern in slate gray and bold institutional accent blue data points. The aesthetic is highly structured, modern, and conveys precise analytical rigor suitable for a top-tier university publication." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyzWAaO2nJcPlvvQErkfbHQGlKQjHJchRELxnkEYrWlCZ33ywmwgNdI_uTcl93NHk-GF1-p-CVdvJTJhD4mSJPkwZM-Z4odFvTfJiXFKk4-VX24nC5i3bSr67HgE4nL4clW5zTGkdheqkKSxVkf3wLhkydlY-hnEFgsDD6MSLU0pjLF2vjAbv4gG6GJRel7lgjceN_FG4pxXrxne-Zit90Fzfq9hZy2u0C37D1jVVUjR1VwEB0v2cq"/>
+<div class="absolute top-2 left-2 px-2 py-1 bg-canvas-white/90 backdrop-blur text-institutional-accent font-label-sm text-label-sm rounded shadow-sm flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-institutional-accent"></span> In Library
+                        </div>
+</div>
+<div class="flex-grow">
+<span class="font-label-sm text-label-sm text-secondary mb-1 block">Computer Science</span>
+<h3 class="font-label-md text-label-md text-university-blue leading-tight mb-1 line-clamp-2">Algorithms for Data Science</h3>
+<p class="font-label-sm text-label-sm text-slate-gray line-clamp-1">Prof. N. Islam</p>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-gray/10 flex justify-between items-center">
+<span class="font-label-sm text-label-sm text-secondary">Science Lib.</span>
+<button class="text-institutional-accent hover:text-university-blue transition-colors" title="Place Hold">
+<span class="material-symbols-outlined" data-icon="bookmark_add">bookmark_add</span>
+</button>
+</div>
+</div>
+<!-- Book Card 4 -->
+<div class="min-w-[240px] w-[240px] flex-shrink-0 snap-start bg-canvas-white border border-slate-gray/20 rounded-lg p-4 ambient-shadow-hover flex flex-col h-full group">
+<div class="relative h-64 mb-4 rounded bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="An elegant book cover for a collection of Bengali Poetry. The design features a delicate, minimalist line-art illustration of a traditional banyan tree in deep slate gray against an off-white, slightly textured paper background. Subtle typography in university blue completes the serene, academic look, avoiding any clutter." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrsCXIxOGYP3ijk-DInE-gQXzWLT-6MwRakXBh_zzfKTEfYSE2zYjYSoK54EZtBdypbSUTsHSMh2WOIKA_ZnkCzBwcjmsbcE5ipKMs0QTk8__LaXTUvIy0E1GK7EDOJ4yIiPsWFPwX6YfwQDORVLwQc9jQmsFenhZQd50S6c4eM0hpdxlTF9lfyNJNaI7rjPopNC4gaboGJsc8u4kQLxodsF-D6Gkdp_Izf1cmWc2fC-KZgPvr-uA7"/>
+<div class="absolute top-2 left-2 px-2 py-1 bg-canvas-white/90 backdrop-blur text-institutional-accent font-label-sm text-label-sm rounded shadow-sm flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-institutional-accent"></span> E-Book
+                        </div>
+</div>
+<div class="flex-grow">
+<span class="font-label-sm text-label-sm text-secondary mb-1 block">Literature</span>
+<h3 class="font-label-md text-label-md text-university-blue leading-tight mb-1 line-clamp-2">Selected Poems of the Delta</h3>
+<p class="font-label-sm text-label-sm text-slate-gray line-clamp-1">Translated Works</p>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-gray/10 flex justify-between items-center">
+<span class="font-label-sm text-label-sm text-secondary">Online Access</span>
+<button class="text-institutional-accent hover:text-university-blue transition-colors" title="Read Online">
+<span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shared Component -->
+<footer class="bg-surface-container-lowest dark:bg-university-blue w-full mt-auto border-t border-slate-gray/20 py-12">
+<div class="px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto flex flex-col md:flex-row justify-between items-center gap-base">
+<div class="font-headline-sm text-headline-sm text-university-blue dark:text-on-primary mb-4 md:mb-0">
+<span class="mr-2">||/</span> DU Digital Knowledge Platform
+            </div>
+<div class="flex flex-wrap justify-center gap-6 font-label-md text-label-md text-on-surface-variant dark:text-surface-variant">
+<a class="hover:underline decoration-institutional-accent text-on-surface-variant dark:text-surface-variant" href="#">Partnerships</a>
+<a class="hover:underline decoration-institutional-accent text-on-surface-variant dark:text-surface-variant" href="#">Institutional Repository Policy</a>
+<a class="hover:underline decoration-institutional-accent text-on-surface-variant dark:text-surface-variant" href="#">Legal Notice</a>
+<a class="hover:underline decoration-institutional-accent text-on-surface-variant dark:text-surface-variant" href="#">Accessibility</a>
+</div>
+<div class="font-label-md text-label-md text-on-surface dark:text-on-primary mt-4 md:mt-0">
+                © 2024 University of Dhaka. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

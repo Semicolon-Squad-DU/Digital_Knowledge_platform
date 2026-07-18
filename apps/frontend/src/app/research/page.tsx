@@ -1,357 +1,329 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useState } from "react";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, FlaskConical, ExternalLink, Calendar, FileText, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search, Upload, FileText, FlaskConical, ExternalLink, Calendar,
+  ChevronDown, Database, Users, Quote, TrendingUp, Filter,
+} from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS, accessVisual } from "@/components/design/dkpTheme";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { formatDate, getAccessTierBadge } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 const TYPE_FILTERS = [
-  { value: "", label: "All" },
-  { value: "journal",    label: "Journal" },
+  { value: "", label: "All Types" },
+  { value: "journal", label: "Journal" },
   { value: "conference", label: "Conference" },
-  { value: "thesis",     label: "Thesis" },
-  { value: "dataset",    label: "Dataset" },
-  { value: "report",     label: "Report" },
+  { value: "thesis", label: "Thesis" },
+  { value: "dataset", label: "Dataset" },
+  { value: "report", label: "Report" },
 ];
-
-const PILL: Record<string, { bg: string; color: string }> = {
-  published:       { bg: "#e6f4ea", color: "#1e7e34" },
-  journal:         { bg: "#e8f0fe", color: "#1a56db" },
-  journal_article: { bg: "#e8f0fe", color: "#1a56db" },
-  conference:      { bg: "#e8f0fe", color: "#1a56db" },
-  conference_paper:{ bg: "#e8f0fe", color: "#1a56db" },
-  thesis:          { bg: "#f3f4f6", color: "#6b7280" },
-  dataset:         { bg: "#e6f4ea", color: "#1e7e34" },
-  report:          { bg: "#f3f4f6", color: "#6b7280" },
-};
-
-function ResearchCard({ item, onView }: {
-  item: {
-    output_id: string; title: string; abstract?: string;
-    authors?: Array<{ name: string }>; output_type: string;
-    published_date: string; journal_name?: string; doi?: string;
-    dkp_identifier: string; access_tier?: string;
-    uploaded_by?: string; uploader_name?: string;
-  };
-  onView: (id: string) => void;
-}) {
-  const typePill = PILL[item.output_type] ?? { bg: "#f3f4f6", color: "#6b7280" };
-  const tierBadge = item.access_tier ? getAccessTierBadge(item.access_tier) : null;
-  return (
-    <div
-      onClick={() => onView(item.output_id)}
-      style={{
-        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12,
-        padding: 18, cursor: "pointer", transition: "all 0.18s",
-        display: "flex", gap: 14,
-      }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
-    >
-      <div style={{
-        width: 44, height: 44, borderRadius: 10, background: typePill.bg,
-        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-      }}>
-        <FlaskConical size={20} color={typePill.color} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-          <span style={{
-            display: "inline-block", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-            padding: "2px 8px", borderRadius: 4, background: typePill.bg, color: typePill.color,
-          }}>
-            {item.output_type}
-          </span>
-          {tierBadge && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${tierBadge.color}`}>
-              {tierBadge.label}
-            </span>
-          )}
-          {item.published_date && (
-            <span style={{ fontSize: 11.5, color: "#9ca3af", display: "flex", alignItems: "center", gap: 4 }}>
-              <Calendar size={11} /> {formatDate(item.published_date)}
-            </span>
-          )}
-        </div>
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 4px", lineHeight: 1.4 }}>
-          {item.title}
-        </p>
-        {item.authors && (
-          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 6px" }}>
-            {item.authors.map(a => a.name).join(", ")}
-          </p>
-        )}
-        {item.abstract && (
-          <p style={{
-            fontSize: 12, color: "#9ca3af", margin: 0, lineHeight: 1.5,
-            overflow: "hidden", textOverflow: "ellipsis",
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
-          }}>
-            {item.abstract}
-          </p>
-        )}
-      </div>
-      {item.doi && (
-        <a
-          href={`https://doi.org/${item.doi}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          style={{
-            display: "flex", alignItems: "center", gap: 4, fontSize: 12,
-            color: "#1a56db", textDecoration: "none", fontWeight: 600, flexShrink: 0, alignSelf: "flex-start",
-          }}
-        >
-          DOI <ExternalLink size={11} />
-        </a>
-      )}
-    </div>
-  );
-}
 
 export default function ResearchPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const [params, setParams]       = useState({ q: "", output_type: "", page: 1, limit: 20 });
+  const [params, setParams] = useState({ q: "", output_type: "", year: "", page: 1, limit: 10 });
   const [searchInput, setSearchInput] = useState("");
+  const [yearFrom, setYearFrom] = useState("");
+  const [yearTo, setYearTo] = useState("");
+  const [sortNewest, setSortNewest] = useState(true);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["research", params],
     queryFn: async () => {
-      const { data } = await api.get("/research", { params });
+      const { data } = await api.get("/research", {
+        params: {
+          q: params.q || undefined,
+          output_type: params.output_type || undefined,
+          year: params.year || undefined,
+          page: params.page,
+          limit: params.limit,
+        },
+      });
       return data.data;
     },
   });
 
-  const isMobile  = useMediaQuery("(max-width: 767px)");
   const canUpload = isAuthenticated && user?.role === "researcher";
+  const total = data?.total ?? 0;
+  const datasets = (data?.items ?? []).filter((i: any) => i.output_type === "dataset").length;
 
-  const handleSearch = () => setParams(p => ({ ...p, q: searchInput, page: 1 }));
-  const clearSearch  = () => { setSearchInput(""); setParams(p => ({ ...p, q: "", page: 1 })); };
+  const applyFilters = () => {
+    const year = yearFrom && yearTo && yearFrom === yearTo
+      ? yearFrom
+      : yearFrom && !yearTo
+        ? yearFrom
+        : yearTo && !yearFrom
+          ? yearTo
+          : "";
+    setParams((p) => ({ ...p, q: searchInput, year, page: 1 }));
+  };
 
-  const Pill = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
-    <button
-      type="button" onClick={onClick}
-      style={{
-        padding: "5px 14px", borderRadius: 20, fontSize: 12.5,
-        fontWeight: active ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap",
-        border: active ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-        background: active ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-        color: active ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280",
-        transition: "all 0.15s",
-      }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#374151"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#6b7280"; } }}
-    >
-      {label}
-    </button>
-  );
+  const items = [...(data?.items ?? [])].sort((a: any, b: any) => {
+    const da = new Date(a.published_date || a.created_at || 0).getTime();
+    const db = new Date(b.published_date || b.created_at || 0).getTime();
+    return sortNewest ? db - da : da - db;
+  });
+
+  const metrics = [
+    { icon: FileText, label: "Total Publications", value: total.toLocaleString(), hint: "In this repository" },
+    { icon: Quote, label: "Open Outputs", value: String(Math.max(total, 0)), hint: "Discoverable records" },
+    { icon: Database, label: "Open Datasets", value: String(datasets || "—"), hint: "On this page" },
+    { icon: Users, label: "Active Faculty", value: "—", hint: "Contributing researchers" },
+  ];
 
   return (
-    <AppLayout topbarSearch={<div />}>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+    <CollectionShell active="Research">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 900px) {
+          .dkp-res-hero { grid-template-columns: 1fr !important; }
+          .dkp-res-hero-img { display: none !important; }
+          .dkp-res-body { grid-template-columns: 1fr !important; }
+          .dkp-res-metrics { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+      `}} />
 
-        {/* ── Hero banner ─────────────────────────────────────────────────────── */}
-        <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
-          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22, flexWrap: isMobile ? "wrap" : "nowrap", gap: isMobile ? 12 : 0 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <FlaskConical size={19} color="var(--avatar-theme-color, #6366f1)" />
-                </div>
-                <h1 style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)", margin: 0, letterSpacing: "-0.03em" }}>
-                  Research
-                </h1>
-              </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
-                Discover faculty publications, papers &amp; datasets
-              </p>
-            </div>
-
-            <div style={{ display: "flex", gap: isMobile ? 6 : 8, flexShrink: 0, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
-              {canUpload && (
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(36px, 5vw, 64px) clamp(16px, 4vw, 64px) 64px" }}>
+        {/* Hero */}
+        <header className="dkp-res-hero" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 40, alignItems: "center", marginBottom: 56 }}>
+          <div>
+            <h1 style={{ fontFamily: SERIF, fontSize: "clamp(32px, 4.5vw, 48px)", fontWeight: 700, color: C.ink, margin: "0 0 18px", lineHeight: 1.15, letterSpacing: "-0.02em" }}>
+              Research Repository
+            </h1>
+            <p style={{ fontSize: 18, color: C.body, margin: "0 0 28px", lineHeight: 1.6, maxWidth: 560 }}>
+              Discover, access, and contribute to the university&apos;s growing collection of faculty publications, datasets, and high-impact research.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              {canUpload ? (
                 <Link
                   href="/research/upload"
                   style={{
-                    display: "inline-flex", alignItems: "center", gap: isMobile ? 5 : 7,
-                    padding: isMobile ? "7px 11px" : "9px 16px", borderRadius: isMobile ? 7 : 9,
-                    background: "var(--avatar-theme-color, #1a1a2e)", border: "none",
-                    fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "#fff", textDecoration: "none",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "opacity 0.2s",
-                    flex: isMobile ? "1 1 100%" : "0 0 auto", justifyContent: "center",
+                    display: "inline-flex", alignItems: "center", gap: 8, background: C.accent, color: C.white,
+                    padding: "12px 22px", borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: "none", letterSpacing: "0.03em",
                   }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                 >
-                  <Plus size={isMobile ? 12 : 14} /> Upload
+                  <Upload size={16} /> Submit Publication
+                </Link>
+              ) : (
+                <Link
+                  href={isAuthenticated ? "/research/upload" : "/login"}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8, background: C.accent, color: C.white,
+                    padding: "12px 22px", borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: "none", letterSpacing: "0.03em",
+                  }}
+                >
+                  <Upload size={16} /> Submit Publication
                 </Link>
               )}
+              <Link
+                href="/about"
+                style={{
+                  display: "inline-flex", alignItems: "center", border: `1.5px solid ${C.ink}`, color: C.ink,
+                  padding: "11px 22px", borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: "none",
+                }}
+              >
+                Browse Guidelines
+              </Link>
             </div>
           </div>
-
-          {/* Integrated search */}
-          <div style={{
-            display: "flex", alignItems: "center", background: "#fff",
-            borderRadius: 12, overflow: "hidden",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.07)", border: "1.5px solid #dde2ff",
-          }}>
-            <Search size={16} color="#9ca3af" style={{ marginLeft: 16, flexShrink: 0 }} />
-            <input
-              type="text"
-              placeholder="Search by title, author, or keyword…"
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSearch()}
-              style={{ flex: 1, border: "none", outline: "none", fontSize: 16, padding: "13px 12px", color: "#1f2937", background: "transparent" }}
+          <div className="dkp-res-hero-img">
+            <img
+              src="/research-hero.png"
+              alt="University research library interior"
+              style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: 12, boxShadow: "0 4px 24px rgba(26,26,46,0.1)", display: "block" }}
             />
-            {searchInput && (
-              <button type="button" onClick={clearSearch} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 8px", color: "#9ca3af", display: "flex" }}>
-                <X size={15} />
+          </div>
+        </header>
+
+        {/* Metrics */}
+        <section style={{ marginBottom: 56 }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: C.ink, margin: "0 0 20px", paddingBottom: 14, borderBottom: `1px solid ${C.line}` }}>
+            Impact Metrics
+          </h2>
+          <div className="dkp-res-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+            {metrics.map(({ icon: Icon, label, value, hint }) => (
+              <div key={label} className="dkp-coll-card" style={{ background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12, padding: 22, boxShadow: "0 4px 12px rgba(26,26,46,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, color: C.body, marginBottom: 12 }}>
+                  <Icon size={18} />
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</span>
+                </div>
+                <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 700, color: C.ink }}>{isLoading ? "…" : value}</div>
+                <div style={{ fontSize: 13, color: "#15803d", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                  <TrendingUp size={14} /> {hint}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Filters + list */}
+        <div className="dkp-res-body" style={{ display: "grid", gridTemplateColumns: "280px minmax(0, 1fr)", gap: 28 }}>
+          <aside style={{ background: C.sidebar, border: `1px solid ${C.lineStrong}`, borderRadius: 10, padding: 22, height: "fit-content", position: "sticky", top: 88 }}>
+            <h2 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.body, margin: "0 0 18px" }}>
+              <Filter size={14} /> Filter Research
+            </h2>
+
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 8 }}>Search Term</label>
+            <div style={{ position: "relative", marginBottom: 16 }}>
+              <Search size={14} color={C.body} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+              <input
+                type="text"
+                placeholder="Title, author, keywords..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+                style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px 10px 34px", border: `1px solid ${C.lineStrong}`, borderRadius: 6, fontSize: 14, outline: "none", background: C.white }}
+              />
+            </div>
+
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 8 }}>Output Type</label>
+            <select
+              value={params.output_type}
+              onChange={(e) => setParams((p) => ({ ...p, output_type: e.target.value, page: 1 }))}
+              style={{ width: "100%", padding: "10px 12px", border: `1px solid ${C.lineStrong}`, borderRadius: 6, fontSize: 14, marginBottom: 16, background: C.white, color: C.ink }}
+            >
+              {TYPE_FILTERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+
+            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 8 }}>Publication Year</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+              <input type="number" placeholder="From" value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} style={{ width: "100%", padding: "10px 12px", border: `1px solid ${C.lineStrong}`, borderRadius: 6, fontSize: 14, background: C.white }} />
+              <input type="number" placeholder="To" value={yearTo} onChange={(e) => setYearTo(e.target.value)} style={{ width: "100%", padding: "10px 12px", border: `1px solid ${C.lineStrong}`, borderRadius: 6, fontSize: 14, background: C.white }} />
+            </div>
+
+            <button
+              type="button"
+              onClick={applyFilters}
+              style={{ width: "100%", padding: "11px 14px", background: C.band, color: C.ink, border: "none", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+            >
+              Apply Filters
+            </button>
+            {(params.q || params.output_type || params.year) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput(""); setYearFrom(""); setYearTo("");
+                  setParams({ q: "", output_type: "", year: "", page: 1, limit: 10 });
+                }}
+                style={{ width: "100%", marginTop: 10, padding: "10px 14px", background: "transparent", color: C.body, border: `1px solid ${C.lineStrong}`, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Clear
               </button>
             )}
-            <button
-              onClick={handleSearch}
-              style={{
-                margin: 5, padding: "9px 20px", background: "var(--avatar-theme-color, #1a1a2e)",
-                border: "none", borderRadius: 8, cursor: "pointer",
-                fontSize: 13, fontWeight: 700, color: "#fff", transition: "opacity 0.15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Search
-            </button>
-          </div>
-        </div>
+          </aside>
 
-        {/* ── Content ─────────────────────────────────────────────────────────── */}
-        <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
+          <section>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 12, flexWrap: "wrap" }}>
+              <h2 style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: C.ink, margin: 0 }}>Latest Publications</h2>
+              <button
+                type="button"
+                onClick={() => setSortNewest((v) => !v)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "none", color: C.accent, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+              >
+                {sortNewest ? "Newest First" : "Oldest First"} <ChevronDown size={14} />
+              </button>
+            </div>
 
-          {/* Type filter pills */}
-          <div style={{
-            background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb",
-            padding: "14px 16px", marginBottom: 20,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-          }}>
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginBottom: isMobile ? 4 : 0 }}>
-                Type
-              </span>
-              <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
-                {TYPE_FILTERS.map(t => (
-                  <Pill
-                    key={t.value}
-                    label={t.label}
-                    active={params.output_type === t.value}
-                    onClick={() => setParams(p => ({ ...p, output_type: t.value, page: 1 }))}
-                  />
-                ))}
+            {isLoading && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
               </div>
-              {(params.output_type || params.q) && (
-                <button
-                  type="button"
-                  onClick={() => { setSearchInput(""); setParams({ q: "", output_type: "", page: 1, limit: 20 }); }}
-                  style={{
-                    marginLeft: isMobile ? "0" : "auto", marginTop: isMobile ? 12 : 0, display: "flex", alignItems: "center", gap: 5,
-                    padding: "5px 12px", borderRadius: 20,
-                    border: "1px solid #fecaca", background: "#fef2f2",
-                    color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-                    width: isMobile ? "100%" : "auto", justifyContent: "center"
-                  }}
-                >
-                  <X size={11} /> Clear Filters
-                </button>
-              )}
-            </div>
-          </div>
+            )}
 
-          {/* Result count */}
-          {!isLoading && data && (
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 16 }}>
-              <FileText size={13} color="#9ca3af" />
-              <span style={{ fontSize: 12.5, color: "#6b7280" }}>
-                <strong style={{ color: "#374151" }}>{data.total}</strong>{" "}
-                output{data.total !== 1 ? "s" : ""} found
-                {params.q && <span style={{ color: "#9ca3af" }}> for &ldquo;{params.q}&rdquo;</span>}
-              </span>
-            </div>
-          )}
-
-          {/* Loading */}
-          {isLoading && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
-            </div>
-          )}
-
-          {/* Error */}
-          {isError && (
-            <div style={{ padding: "16px 20px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, color: "#991b1b", fontSize: 13 }}>
-              Failed to load research outputs. Please try again.
-            </div>
-          )}
-
-          {/* Empty */}
-          {!isLoading && !isError && (!data?.items || data.items.length === 0) && (
-            <div style={{ textAlign: "center", padding: "60px 24px", background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb" }}>
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <FlaskConical size={26} color="#9ca3af" />
+            {isError && (
+              <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 14 }}>
+                Failed to load research outputs. Please try again.
               </div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>No outputs found</p>
-              <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>Try different search terms or clear the type filter.</p>
-            </div>
-          )}
+            )}
 
-          {/* Results */}
-          {!isLoading && data?.items && data.items.length > 0 && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-                {data.items.map((item: any) => (
-                  <ResearchCard key={item.output_id} item={item} onView={id => router.push(`/research/${id}`)} />
-                ))}
+            {!isLoading && !isError && items.length === 0 && (
+              <div style={{ textAlign: "center", padding: 48, background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12 }}>
+                <FlaskConical size={28} color={C.body} style={{ margin: "0 auto 12px" }} />
+                <p style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>No outputs found</p>
+                <p style={{ fontSize: 14, color: C.body, margin: 0 }}>Try different search terms or clear filters.</p>
               </div>
+            )}
 
-              {/* Pagination */}
-              {data.total_pages > 1 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingBottom: 16 }}>
+            {!isLoading && items.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {items.map((item: any) => {
+                  const tier = item.access_tier ? accessVisual(item.access_tier) : null;
+                  return (
+                    <article
+                      key={item.output_id}
+                      onClick={() => router.push(`/research/${item.output_id}`)}
+                      className="dkp-coll-card"
+                      style={{
+                        background: C.white, border: `1px solid ${C.lineStrong}`, borderRadius: 12, padding: 22,
+                        cursor: "pointer", boxShadow: "0 4px 12px rgba(26,26,46,0.04)",
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 4, background: C.chip, color: C.accent }}>
+                          {item.output_type}
+                        </span>
+                        {tier && (
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 4, background: tier.bg, color: tier.color, border: `1px solid ${tier.border}` }}>
+                            {tier.label}
+                          </span>
+                        )}
+                      </div>
+                      <h3 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: C.ink, margin: "0 0 8px", lineHeight: 1.3 }}>
+                        {item.title}
+                      </h3>
+                      <p style={{ fontSize: 14, color: C.body, margin: "0 0 10px" }}>
+                        {(item.authors || []).map((a: any) => a.name).filter(Boolean).join(", ") || item.uploader_name || "Unknown author"}
+                        {item.journal_name ? ` | ${item.journal_name}` : ""}
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", fontSize: 13, color: C.body }}>
+                        {item.published_date && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <Calendar size={13} /> {formatDate(item.published_date)}
+                          </span>
+                        )}
+                        {item.doi && (
+                          <a
+                            href={`https://doi.org/${item.doi}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, color: C.accent, fontWeight: 600, textDecoration: "none" }}
+                          >
+                            DOI <ExternalLink size={12} />
+                          </a>
+                        )}
+                        <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: C.ink, background: C.chip, padding: "6px 10px", borderRadius: 6 }}>
+                          {item.output_type === "dataset" ? "Data" : "PDF"}
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })}
+
+                {data?.total_pages > 1 && (
                   <button
-                    onClick={() => setParams(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
-                    disabled={params.page === 1}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: params.page === 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: params.page === 1 ? 0.4 : 1 }}
+                    type="button"
+                    onClick={() => setParams((p) => ({ ...p, page: Math.min(data.total_pages, p.page + 1) }))}
+                    disabled={params.page >= data.total_pages}
+                    style={{
+                      marginTop: 8, alignSelf: "center", background: "transparent", border: "none",
+                      color: C.accent, fontSize: 14, fontWeight: 700, cursor: params.page >= data.total_pages ? "not-allowed" : "pointer",
+                      opacity: params.page >= data.total_pages ? 0.4 : 1, display: "inline-flex", alignItems: "center", gap: 6,
+                    }}
                   >
-                    <ChevronLeft size={14} color="#6b7280" />
+                    Load More Publications <ChevronDown size={16} />
                   </button>
-                  <span style={{ fontSize: 13, color: "#6b7280", padding: "0 8px" }}>
-                    Page {params.page} of {data.total_pages}
-                  </span>
-                  <button
-                    onClick={() => setParams(p => ({ ...p, page: Math.min(data.total_pages, p.page + 1) }))}
-                    disabled={params.page === data.total_pages}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: params.page === data.total_pages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: params.page === data.total_pages ? 0.4 : 1 }}
-                  >
-                    <ChevronRight size={14} color="#6b7280" />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </div>
+            )}
+          </section>
         </div>
       </div>
-    </AppLayout>
+    </CollectionShell>
   );
 }

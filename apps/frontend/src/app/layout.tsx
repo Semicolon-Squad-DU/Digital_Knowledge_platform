@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Noto_Sans_Bengali } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Bengali, Libre_Caslon_Text, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "react-hot-toast";
@@ -14,6 +14,20 @@ const notoSansBengali = Noto_Sans_Bengali({
   weight: ["400", "500", "600"],
   display: "swap",
 });
+// Institutional landing-page pairing (exposed as CSS vars, used on the homepage):
+// Libre Caslon Text for serif display headings, Hanken Grotesk for body.
+const libreCaslon = Libre_Caslon_Text({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-serif",
+});
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-hanken",
+});
 
 export const metadata: Metadata = {
   title: "DKP — Digital Knowledge Platform",
@@ -23,7 +37,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${plusJakartaSans.className} ${notoSansBengali.className} min-h-screen`}>
+      <body className={`${plusJakartaSans.className} ${notoSansBengali.className} ${libreCaslon.variable} ${hankenGrotesk.variable} min-h-screen`}>
         <Providers>
           <div className="flex flex-col min-h-screen">
             <main className="flex-1">

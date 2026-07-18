@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Research Repository - Digital Knowledge Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Libre+Caslon+Text:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-secondary-container": "#596372",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d3daef",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#293040",
+                        "on-error-container": "#93000a",
+                        "primary": "#00000b",
+                        "surface-container-high": "#e1e8fd",
+                        "surface-variant": "#dce2f7",
+                        "surface-container-highest": "#dce2f7",
+                        "background": "#f9f9ff",
+                        "on-tertiary-container": "#828485",
+                        "surface-bright": "#f9f9ff",
+                        "slate-gray": "#4B5563",
+                        "primary-fixed-dim": "#c6c4df",
+                        "on-surface-variant": "#47464c",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f1f3ff",
+                        "canvas-white": "#FFFFFF",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container": "#e9edff",
+                        "on-secondary-fixed-variant": "#3e4755",
+                        "secondary": "#555f6d",
+                        "institutional-accent": "#0D47A1",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#bdc7d8",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-primary-fixed-variant": "#45455b",
+                        "secondary-container": "#d6e0f1",
+                        "surface": "#f9f9ff",
+                        "inverse-primary": "#c6c4df",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "secondary-fixed": "#d9e3f4",
+                        "on-background": "#141b2b",
+                        "on-primary-container": "#83829b",
+                        "on-secondary-fixed": "#121c28",
+                        "university-blue": "#1A1A2E",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#191c1d",
+                        "inverse-on-surface": "#edf0ff",
+                        "surface-tint": "#5d5c74",
+                        "outline-variant": "#c8c5cd",
+                        "on-surface": "#141b2b",
+                        "on-primary-fixed": "#1a1a2e",
+                        "tertiary": "#000001",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#e2e0fc",
+                        "outline": "#78767d",
+                        "primary-container": "#1a1a2e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "16px",
+                        "max-width": "1280px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "display-lg-mobile": ["Libre Caslon Text"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "display-lg": ["Libre Caslon Text"],
+                        "headline-sm": ["Libre Caslon Text"],
+                        "headline-md": ["Libre Caslon Text"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "fontWeight": "700" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ambient-shadow {
+            box-shadow: 0 4px 12px rgba(26, 26, 46, 0.05);
+        }
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26, 26, 46, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased font-body-md text-body-md min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 border-b border-slate-gray/20 bg-canvas-white shadow-sm transition-all duration-300 ease-in-out hidden md:block">
+<div class="flex justify-between items-center h-20 px-margin-desktop max-w-max-width mx-auto">
+<a class="font-headline-sm text-headline-sm font-bold text-university-blue flex items-center gap-2" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+                DU Digital Knowledge Platform
+            </a>
+<div class="flex gap-8 items-center">
+<a class="text-secondary hover:text-institutional-accent transition-colors duration-200" href="#">Archive</a>
+<a class="text-secondary hover:text-institutional-accent transition-colors duration-200" href="#">Library</a>
+<a class="text-institutional-accent border-b-2 border-institutional-accent pb-1 font-bold" href="#">Research</a>
+<a class="text-secondary hover:text-institutional-accent transition-colors duration-200" href="#">Showcase</a>
+</div>
+<div class="flex items-center gap-4">
+<button aria-label="Search" class="text-university-blue hover:bg-surface-container-low p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<a class="bg-university-blue text-on-primary px-6 py-2 rounded font-label-md text-label-md hover:bg-institutional-accent transition-colors" href="#">Sign In</a>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-28 md:pt-36 pb-20 px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto w-full">
+<!-- Header Section -->
+<header class="mb-16 md:mb-20 text-center md:text-left grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">
+<div class="md:col-span-7">
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-university-blue mb-6">
+                    Research Repository
+                </h1>
+<p class="font-body-lg text-body-lg text-secondary mb-8 max-w-2xl">
+                    Discover, access, and contribute to the university's growing collection of faculty publications, datasets, and high-impact research.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+<button class="bg-institutional-accent text-on-primary px-8 py-3 rounded font-label-md text-label-md hover:bg-university-blue transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+                        Submit Publication
+                    </button>
+<button class="border border-university-blue text-university-blue px-8 py-3 rounded font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+                        Browse Guidelines
+                    </button>
+</div>
+</div>
+<div class="md:col-span-5 mt-10 md:mt-0 hidden md:block">
+<div class="bg-cover bg-center w-full h-80 rounded-xl ambient-shadow" data-alt="A bright, modern architectural rendering of a high-tech university research library interior. Sunlight streams through large windows, casting geometric shadows on minimalist white and deep blue furnishings. Students and researchers are quietly studying in a serene, intellectually rigorous environment. The style is hyper-realistic and academic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCDNTpbSvaZ8mkiKTUnXPSLpdFTYtoVBmFVQ2CvfpqfC5smC947zuF6_WdZQWsa1HJ1zxqFtBvvja-w37aF5c1qds-2n8R1QnJP8rBdTtA7G3wYtkh4WvdDsSqNx3G5VK6zvU_oFbTxZXYG0HNL8N8cJ4c-aNtLlqWTkCuLQBvSniaK_rEz-g1SXxEO3JdONDfnN9ax70Egvgx8jv8Yq_UP3dYt1Yuica8nMZpDjAL_lMJU3MbLWRIo')"></div>
+</div>
+</header>
+<!-- Dashboard / Metrics Snippet -->
+<section class="mb-20">
+<h2 class="font-headline-sm text-headline-sm text-university-blue mb-8 border-b border-slate-gray/20 pb-4">Impact Metrics</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Metric Card -->
+<div class="bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-6 ambient-shadow hover-lift">
+<div class="flex items-center gap-3 text-secondary mb-4">
+<span class="material-symbols-outlined" data-icon="article">article</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Total Publications</span>
+</div>
+<div class="font-headline-md text-headline-md text-university-blue">14,285</div>
+<div class="text-sm text-green-600 mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span>
+                        +12% this year
+                    </div>
+</div>
+<div class="bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-6 ambient-shadow hover-lift">
+<div class="flex items-center gap-3 text-secondary mb-4">
+<span class="material-symbols-outlined" data-icon="format_quote">format_quote</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Citations</span>
+</div>
+<div class="font-headline-md text-headline-md text-university-blue">342.5k</div>
+<div class="text-sm text-green-600 mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span>
+                        +8% this year
+                    </div>
+</div>
+<div class="bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-6 ambient-shadow hover-lift">
+<div class="flex items-center gap-3 text-secondary mb-4">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Open Datasets</span>
+</div>
+<div class="font-headline-md text-headline-md text-university-blue">1,842</div>
+<div class="text-sm text-secondary mt-2">Available for public use</div>
+</div>
+<div class="bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-6 ambient-shadow hover-lift">
+<div class="flex items-center gap-3 text-secondary mb-4">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Active Faculty</span>
+</div>
+<div class="font-headline-md text-headline-md text-university-blue">894</div>
+<div class="text-sm text-secondary mt-2">Contributing researchers</div>
+</div>
+</div>
+</section>
+<!-- Latest Publications & Filters -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Filters Sidebar -->
+<aside class="lg:col-span-3">
+<div class="bg-tertiary-fixed border border-slate-gray/20 rounded-xl p-6 sticky top-28">
+<h3 class="font-label-md text-label-md text-university-blue uppercase tracking-wider mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+                        Filter Research
+                    </h3>
+<div class="space-y-6">
+<!-- Search Input -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Search Term</label>
+<input class="w-full border border-slate-gray/20 rounded p-2 focus:border-institutional-accent focus:ring-1 focus:ring-institutional-accent outline-none bg-canvas-white text-body-md transition-all" placeholder="Title, author, keywords..." type="text"/>
+</div>
+<!-- Department Filter -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Department / Lab</label>
+<select class="w-full border border-slate-gray/20 rounded p-2 bg-canvas-white text-body-md focus:border-institutional-accent focus:ring-1 focus:ring-institutional-accent outline-none appearance-none">
+<option>All Departments</option>
+<option>Computer Science</option>
+<option>Physics</option>
+<option>Economics</option>
+<option>Life Sciences</option>
+</select>
+</div>
+<!-- Year Range -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Publication Year</label>
+<div class="flex gap-2">
+<input class="w-full border border-slate-gray/20 rounded p-2 focus:border-institutional-accent focus:ring-1 focus:ring-institutional-accent outline-none bg-canvas-white text-body-md" placeholder="From" type="number"/>
+<input class="w-full border border-slate-gray/20 rounded p-2 focus:border-institutional-accent focus:ring-1 focus:ring-institutional-accent outline-none bg-canvas-white text-body-md" placeholder="To" type="number"/>
+</div>
+</div>
+<button class="w-full bg-surface-variant text-university-blue border border-slate-gray/20 py-2 rounded font-label-md hover:bg-tertiary-fixed transition-colors">
+                            Apply Filters
+                        </button>
+</div>
+</div>
+</aside>
+<!-- Publication List -->
+<div class="lg:col-span-9 space-y-6">
+<div class="flex justify-between items-center mb-6 border-b border-slate-gray/20 pb-4">
+<h2 class="font-headline-sm text-headline-sm text-university-blue">Latest Publications</h2>
+<div class="flex gap-4">
+<button class="text-secondary hover:text-institutional-accent flex items-center gap-1 font-label-sm transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="sort">sort</span>
+                            Newest First
+                        </button>
+</div>
+</div>
+<!-- Pub Item 1 -->
+<article class="bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-6 ambient-shadow hover-lift flex flex-col md:flex-row gap-6">
+<div class="flex-grow">
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="bg-tertiary-fixed text-slate-gray px-2 py-1 rounded text-[11px] font-semibold tracking-wider uppercase">Article</span>
+<span class="bg-surface-container-low text-institutional-accent px-2 py-1 rounded text-[11px] font-semibold tracking-wider uppercase border border-institutional-accent/20">Peer Reviewed</span>
+</div>
+<h3 class="font-headline-sm text-[20px] leading-tight text-university-blue mb-2 hover:text-institutional-accent cursor-pointer transition-colors">
+                            Quantum Entanglement in Macroscopic Systems: A New Framework
+                        </h3>
+<p class="text-secondary text-sm mb-4">
+                            Dr. A. Rahman, Prof. S. Ahmed | <span class="italic">Journal of Advanced Physics, Vol 42.</span>
+</p>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="inline-flex items-center gap-1 bg-tertiary-fixed text-slate-gray px-3 py-1 rounded-md text-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="science">science</span>
+                                Quantum Lab
+                            </span>
+<span class="inline-flex items-center gap-1 bg-tertiary-fixed text-slate-gray px-3 py-1 rounded-md text-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="school">school</span>
+                                Dept. of Physics
+                            </span>
+</div>
+<div class="flex flex-wrap items-center gap-4 text-sm text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span> Oct 2024</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" data-icon="format_quote">format_quote</span> 12 Citations</span>
+<a class="text-institutional-accent hover:underline flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+                                DOI: 10.1234/jap.2024.42.1
+                            </a>
+</div>
+</div>
+<div class="md:w-32 flex-shrink-0 flex flex-col justify-between items-end border-t md:border-t-0 md:border-l border-slate-gray/20 pt-4 md:pt-0 md:pl-6">
+<button aria-label="Bookmark" class="text-university-blue hover:text-institutional-accent transition-colors">
+<span class="material-symbols-outlined" data-icon="bookmark_border">bookmark_border</span>
+</button>
+<button class="bg-surface-variant text-university-blue w-full py-2 rounded text-sm font-semibold hover:bg-tertiary-fixed transition-colors mt-auto flex justify-center items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="picture_as_pdf">picture_as_pdf</span>
+                            PDF
+                        </button>
+</div>
+</article>
+<!-- Pub Item 2 -->
+<article class="bg-surface-container-lowest border border-slate-gray/20 rounded-xl p-6 ambient-shadow hover-lift flex flex-col md:flex-row gap-6">
+<div class="flex-grow">
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="bg-tertiary-fixed text-slate-gray px-2 py-1 rounded text-[11px] font-semibold tracking-wider uppercase">Dataset</span>
+<span class="bg-surface-container-low text-green-700 px-2 py-1 rounded text-[11px] font-semibold tracking-wider uppercase border border-green-700/20">Open Access</span>
+</div>
+<h3 class="font-headline-sm text-[20px] leading-tight text-university-blue mb-2 hover:text-institutional-accent cursor-pointer transition-colors">
+                            Longitudinal Climate Data for the Bengal Delta Region (2010-2023)
+                        </h3>
+<p class="text-secondary text-sm mb-4">
+                            Prof. M. Hasan, Environmental Research Group
+                        </p>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="inline-flex items-center gap-1 bg-tertiary-fixed text-slate-gray px-3 py-1 rounded-md text-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="public">public</span>
+                                Institute of Env. Science
+                            </span>
+</div>
+<div class="flex flex-wrap items-center gap-4 text-sm text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span> Sep 2024</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" data-icon="download">download</span> 450 Downloads</span>
+<a class="text-institutional-accent hover:underline flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="link">link</span>
+                                DOI: 10.1234/dataset.bdr.2024
+                            </a>
+</div>
+</div>
+<div class="md:w-32 flex-shrink-0 flex flex-col justify-between items-end border-t md:border-t-0 md:border-l border-slate-gray/20 pt-4 md:pt-0 md:pl-6">
+<button aria-label="Bookmark" class="text-university-blue hover:text-institutional-accent transition-colors">
+<span class="material-symbols-outlined" data-icon="bookmark_border">bookmark_border</span>
+</button>
+<button class="border border-university-blue text-university-blue w-full py-2 rounded text-sm font-semibold hover:bg-surface-container-low transition-colors mt-auto flex justify-center items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="folder_zip">folder_zip</span>
+                            Data (ZIP)
+                        </button>
+</div>
+</article>
+<!-- Pagination (Simple) -->
+<div class="flex justify-center mt-10">
+<button class="text-institutional-accent font-label-md hover:underline hover:text-university-blue transition-colors flex items-center gap-1">
+                        Load More Publications
+                        <span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-auto border-t border-slate-gray/20 bg-surface-container-lowest font-label-md text-label-md text-on-surface">
+<div class="py-12 px-margin-desktop max-w-max-width mx-auto flex flex-col md:flex-row justify-between items-center gap-base">
+<div class="font-headline-sm text-headline-sm text-university-blue">
+<span class="material-symbols-outlined align-middle" data-icon="menu_book">menu_book</span>
+</div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="text-on-surface-variant hover:underline decoration-institutional-accent" href="#">Partnerships</a>
+<a class="text-on-surface-variant hover:underline decoration-institutional-accent" href="#">Institutional Repository Policy</a>
+<a class="text-on-surface-variant hover:underline decoration-institutional-accent" href="#">Legal Notice</a>
+<a class="text-on-surface-variant hover:underline decoration-institutional-accent" href="#">Accessibility</a>
+</div>
+<div class="text-on-surface-variant text-sm">
+                © 2024 University of Dhaka. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

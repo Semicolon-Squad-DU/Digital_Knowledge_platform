@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
-  Search, Upload, X, ChevronLeft, ChevronRight,
-  Archive as ArchiveIcon, FileText,
+  Search, Upload, ChevronLeft, ChevronRight, FileText,
+  Calendar, Building2, Lock, Globe, KeyRound,
 } from "lucide-react";
 import { useArchiveSearch, useDownloadArchiveItem } from "@/features/archive/hooks/useArchive";
 import { useAuthStore } from "@/store/auth.store";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { ArchiveCard } from "@/features/archive/components/ArchiveCard";
+import { CollectionShell } from "@/components/design/CollectionShell";
+import { C, SERIF, SANS, accessVisual } from "@/components/design/dkpTheme";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 const CATEGORY_OPTIONS = [
@@ -23,405 +24,396 @@ const LANGUAGE_OPTIONS = [
 ];
 const FILE_TYPE_OPTIONS = [
   { value: "application/pdf", label: "PDF" },
-  { value: "image/jpeg",      label: "Image" },
-  { value: "audio/mpeg",      label: "Audio" },
-  { value: "video/mp4",       label: "Video" },
+  { value: "image/jpeg", label: "Image" },
+  { value: "audio/mpeg", label: "Audio" },
+  { value: "video/mp4", label: "Video" },
 ];
+
+function TierBadge({ tier }: { tier?: string }) {
+  const v = accessVisual(tier);
+  const Icon = tier === "restricted" ? Lock : tier === "public" ? Globe : KeyRound;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+      padding: "4px 8px", borderRadius: 4, background: v.bg, color: v.color, border: `1px solid ${v.border}`,
+    }}>
+      <Icon size={12} /> {v.label}
+    </span>
+  );
+}
 
 export default function ArchivePage() {
   const router = useRouter();
   const { user, isAuthenticated, _hasHydrated } = useAuthStore();
-  const [searchInput,    setSearchInput]    = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterLanguage, setFilterLanguage] = useState("");
   const [filterFileType, setFilterFileType] = useState("");
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo,   setFilterDateTo]   = useState("");
-  const [tagsInput,      setTagsInput]      = useState("");
-  const [currentPage,    setCurrentPage]    = useState(1);
-  // NOTE: tags is a comma-separated string on the wire — the backend does
-  // `tags.split(",")` on a single query param, not a repeated array param.
-  const [params, setParams] = useState<{
-    query: string; category: string; language: string; file_type: string;
-    date_from: string; date_to: string; tags: string; page: number; limit: number;
-  }>({
+  const [yearFrom, setYearFrom] = useState("");
+  const [yearTo, setYearTo] = useState("");
+  const [sortBy, setSortBy] = useState("date_desc");
+  const [params, setParams] = useState({
     query: "", category: "", language: "", file_type: "",
-    date_from: "", date_to: "", tags: "", page: 1, limit: 20,
+    date_from: "", date_to: "", tags: "", page: 1, limit: 12,
   });
 
   const { data, isLoading, isError } = useArchiveSearch(params);
-  const { mutateAsync: download }    = useDownloadArchiveItem();
-  const isMobile  = useMediaQuery("(max-width: 767px)");
+  const { mutateAsync: download } = useDownloadArchiveItem();
   const canUpload = _hasHydrated && isAuthenticated && user?.role === "archivist";
 
-  const handleSearch = () => {
-    setParams((p) => ({ ...p, query: searchInput, page: 1 }));
-    setCurrentPage(1);
-  };
-  const applyCategory = (cat: string) => { setFilterCategory(cat); setParams(p => ({ ...p, category: cat, page: 1 })); setCurrentPage(1); };
-  const applyLanguage = (lang: string) => { setFilterLanguage(lang); setParams(p => ({ ...p, language: lang, page: 1 })); setCurrentPage(1); };
-  const applyFileType = (type: string) => { setFilterFileType(type); setParams(p => ({ ...p, file_type: type, page: 1 })); setCurrentPage(1); };
-  const applyDateFrom = (date: string) => { setFilterDateFrom(date); setParams(p => ({ ...p, date_from: date, page: 1 })); setCurrentPage(1); };
-  const applyDateTo   = (date: string) => { setFilterDateTo(date); setParams(p => ({ ...p, date_to: date, page: 1 })); setCurrentPage(1); };
-  const applyTags     = () => {
-    const tags = tagsInput.split(",").map(t => t.trim()).filter(Boolean).join(",");
-    setParams(p => ({ ...p, tags, page: 1 })); setCurrentPage(1);
-  };
-  const handleClear   = () => {
-    setSearchInput(""); setFilterCategory(""); setFilterLanguage(""); setFilterFileType("");
-    setFilterDateFrom(""); setFilterDateTo(""); setTagsInput("");
-    setParams({ query: "", category: "", language: "", file_type: "", date_from: "", date_to: "", tags: "", page: 1, limit: 20 });
-    setCurrentPage(1);
-  };
-  const handleDownload = async (id: string) => {
-    if (!isAuthenticated) { toast.error("Please sign in to download documents."); return; }
-    try { const url = await download(id); window.open(url, "_blank"); }
-    catch { toast.error("Download failed or access denied"); }
+  const applySearch = (q: string) => {
+    setSearchInput(q);
+    setParams((p) => ({ ...p, query: q, page: 1 }));
   };
 
-  const hasFilters = !!(filterCategory || filterLanguage || filterFileType || filterDateFrom || filterDateTo || params.tags || params.query);
+  const applyCategory = (cat: string) => {
+    const next = filterCategory === cat ? "" : cat;
+    setFilterCategory(next);
+    setParams((p) => ({ ...p, category: next, page: 1 }));
+  };
+
+  const applyLanguage = (lang: string) => {
+    const next = filterLanguage === lang ? "" : lang;
+    setFilterLanguage(next);
+    setParams((p) => ({ ...p, language: next, page: 1 }));
+  };
+
+  const applyFileType = (type: string) => {
+    const next = filterFileType === type ? "" : type;
+    setFilterFileType(next);
+    setParams((p) => ({ ...p, file_type: next, page: 1 }));
+  };
+
+  const applyYears = (from: string, to: string) => {
+    setYearFrom(from);
+    setYearTo(to);
+    setParams((p) => ({
+      ...p,
+      date_from: from ? `${from}-01-01` : "",
+      date_to: to ? `${to}-12-31` : "",
+      page: 1,
+    }));
+  };
+
+  const handleClear = () => {
+    setSearchInput("");
+    setFilterCategory("");
+    setFilterLanguage("");
+    setFilterFileType("");
+    setYearFrom("");
+    setYearTo("");
+    setParams({
+      query: "", category: "", language: "", file_type: "",
+      date_from: "", date_to: "", tags: "", page: 1, limit: 12,
+    });
+  };
+
+  const handleDownload = async (id: string) => {
+    if (!isAuthenticated) { toast.error("Please sign in to download documents."); return; }
+    try {
+      const url = await download(id);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Download failed or access denied");
+    }
+  };
+
   const totalPages = data?.total_pages || 1;
+  const total = data?.total ?? 0;
+  const page = params.page;
+  const limit = params.limit;
+  const from = total === 0 ? 0 : (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
+
+  const items = [...(data?.items ?? [])].sort((a: any, b: any) => {
+    if (sortBy === "title_asc") return String(a.title_en || "").localeCompare(String(b.title_en || ""));
+    if (sortBy === "date_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   if (!_hasHydrated) return null;
 
-  // Pill button
-  const Pill = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: "5px 14px", borderRadius: 20, fontSize: 12.5,
-        fontWeight: active ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-        border: active ? "1.5px solid color-mix(in srgb, var(--avatar-theme-color, #6366f1) 35%, transparent)" : "1px solid #e5e7eb",
-        background: active ? "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 10%, #fff)" : "#fff",
-        color: active ? "var(--avatar-theme-color, #4f46e5)" : "#6b7280",
-        transition: "all 0.15s",
-      }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#374151"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#e5e7eb";  e.currentTarget.style.color = "#6b7280"; } }}
-    >
-      {label}
-    </button>
+  const inputStyle: CSSProperties = {
+    width: "100%", padding: "9px 12px 9px 36px", border: `1px solid ${C.lineStrong}`,
+    borderRadius: 6, background: C.white, fontSize: 14, color: C.ink, outline: "none", boxSizing: "border-box",
+  };
+
+  const navSearch = (
+    <div style={{ position: "relative" }}>
+      <Search size={16} color={C.body} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+      <input
+        type="text"
+        placeholder="Search archive..."
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && applySearch(searchInput)}
+        style={{
+          width: 220, padding: "8px 12px 8px 34px", border: `1px solid ${C.lineStrong}`,
+          borderRadius: 6, background: C.white, fontSize: 13, color: C.ink, outline: "none",
+        }}
+      />
+    </div>
   );
 
   return (
-    <AppLayout topbarSearch={<div />}>
-      <div style={{ background: "#f0f2f5", minHeight: "100%" }}>
+    <CollectionShell active="Archive" navSearch={navSearch}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(28px, 4vw, 48px) clamp(16px, 4vw, 64px)", display: "grid", gridTemplateColumns: "minmax(0, 280px) minmax(0, 1fr)", gap: 24 }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media (max-width: 900px) {
+            .dkp-archive-grid { grid-template-columns: 1fr !important; }
+            .dkp-archive-cards { grid-template-columns: 1fr !important; }
+          }
+        `}} />
 
-        {/* ── Hero banner with search ────────────────────────────────────────── */}
-        <div style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f4f6ff 60%, #eef1ff 100%)",
-          borderBottom: "1px solid #e5e7eb",
-          padding: isMobile ? "28px 18px 26px" : "36px 40px 34px",
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: "color-mix(in srgb, var(--avatar-theme-color, #6366f1) 12%, #fff)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <ArchiveIcon size={19} color="var(--avatar-theme-color, #6366f1)" />
-                </div>
-                <h1 style={{
-                  fontSize: isMobile ? 24 : 30, fontWeight: 800, color: "var(--avatar-theme-color, #1a1a2e)",
-                  margin: 0, letterSpacing: "-0.03em",
-                }}>
-                  Archive
-                </h1>
-              </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
-                Browse institutional documents, reports &amp; media
-              </p>
-            </div>
-
-            {canUpload && (
-              <button
-                onClick={() => router.push("/archive/upload")}
-                style={{
-                  display: "flex", alignItems: "center", gap: 7,
-                  padding: "9px 16px",
-                  background: "var(--avatar-theme-color, #1a1a2e)",
-                  border: "none",
-                  borderRadius: 9, cursor: "pointer",
-                  fontSize: 13, fontWeight: 600, color: "#fff",
-                  transition: "opacity 0.2s", flexShrink: 0,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                <Upload size={14} /> Upload
-              </button>
-            )}
-          </div>
-
-          {/* Integrated search bar */}
-          <div style={{
-            display: "flex", alignItems: "center",
-            background: "#fff", borderRadius: 12, overflow: "hidden",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
-            border: "1.5px solid #dde2ff",
-          }}>
-            <Search size={16} color="#9ca3af" style={{ marginLeft: 16, flexShrink: 0 }} />
+        {/* Sidebar */}
+        <aside style={{ background: C.sidebar, padding: 24, borderRadius: 10, border: `1px solid ${C.lineStrong}`, height: "fit-content", position: "sticky", top: 88 }}>
+          <h2 style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.body, margin: "0 0 16px" }}>
+            Search &amp; Filter
+          </h2>
+          <div style={{ position: "relative", marginBottom: 24 }}>
+            <Search size={15} color={C.body} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
             <input
               type="text"
-              placeholder="Search by title, category, or keyword…"
+              placeholder="Refine search..."
               value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSearch()}
-              style={{
-                flex: 1, border: "none", outline: "none",
-                fontSize: 16, padding: "13px 12px",
-                color: "#1f2937", background: "transparent",
-              }}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applySearch(searchInput)}
+              style={inputStyle}
             />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={() => { setSearchInput(""); setParams(p => ({ ...p, query: "", page: 1 })); setCurrentPage(1); }}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 8px", color: "#9ca3af", display: "flex" }}
-              >
-                <X size={15} />
-              </button>
-            )}
-            <button
-              onClick={handleSearch}
-              style={{
-                margin: 5, padding: "9px 20px",
-                background: "var(--avatar-theme-color, #1a1a2e)",
-                border: "none", borderRadius: 8, cursor: "pointer",
-                fontSize: 13, fontWeight: 700, color: "#fff",
-                transition: "opacity 0.15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Search
-            </button>
-          </div>
-        </div>
-
-        {/* ── Filter + results ───────────────────────────────────────────────── */}
-        <div style={{ padding: isMobile ? "18px 16px" : "24px 40px" }}>
-
-          {/* Filter pill card */}
-          <div style={{
-            background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb",
-            padding: "14px 16px", marginBottom: 20,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-          }}>
-             {/* Category */}
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, marginBottom: isMobile ? 12 : 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : 42, marginBottom: isMobile ? 2 : 0 }}>
-                Type
-              </span>
-              <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
-                <Pill label="All" active={filterCategory === ""} onClick={() => applyCategory("")} />
-                {CATEGORY_OPTIONS.map(c => (
-                  <Pill key={c} label={c} active={filterCategory === c} onClick={() => applyCategory(c)} />
-                ))}
-              </div>
-            </div>
-
-            {/* Language + Format */}
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
-              {/* Lang */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : 42, marginBottom: isMobile ? 2 : 0 }}>
-                  Lang
-                </span>
-                <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
-                  <Pill label="All" active={filterLanguage === ""} onClick={() => applyLanguage("")} />
-                  {LANGUAGE_OPTIONS.map(l => (
-                    <Pill key={l.value} label={l.label} active={filterLanguage === l.value} onClick={() => applyLanguage(l.value)} />
-                  ))}
-                </div>
-              </div>
-
-              {!isMobile && <span style={{ width: 1, height: 20, background: "#e5e7eb", flexShrink: 0, margin: "0 4px" }} />}
-
-              {/* Format */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto", marginTop: isMobile ? 12 : 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : "auto", marginBottom: isMobile ? 2 : 0 }}>
-                  Format
-                </span>
-                <div style={{ display: "flex", gap: 6, overflowX: isMobile ? "auto" : "visible", width: "100%", paddingBottom: isMobile ? 6 : 0, WebkitOverflowScrolling: "touch", flexWrap: isMobile ? "nowrap" : "wrap" }} className="scrollbar-none">
-                  <Pill label="All" active={filterFileType === ""} onClick={() => applyFileType("")} />
-                  {FILE_TYPE_OPTIONS.map(t => (
-                    <Pill key={t.value} label={t.label} active={filterFileType === t.value} onClick={() => applyFileType(t.value)} />
-                  ))}
-                </div>
-              </div>
-
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  style={{
-                    marginLeft: isMobile ? "0" : "auto", marginTop: isMobile ? 12 : 0, display: "flex", alignItems: "center", gap: 5,
-                    padding: "5px 12px", borderRadius: 20,
-                    border: "1px solid #fecaca", background: "#fef2f2",
-                    color: "#dc2626", fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", flexShrink: 0, width: isMobile ? "100%" : "auto", justifyContent: "center"
-                  }}
-                >
-                  <X size={11} /> Clear Filters
-                </button>
-              )}
-            </div>
-
-            {/* Date range + Tags */}
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: "1px solid #f3f4f6" }}>
-              {/* Date range */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, width: isMobile ? "auto" : 42, marginBottom: isMobile ? 2 : 0 }}>
-                  Date
-                </span>
-                <div style={{ display: "flex", gap: 6, alignItems: "center", width: isMobile ? "100%" : "auto" }}>
-                  <input
-                    type="date"
-                    value={filterDateFrom}
-                    onChange={e => applyDateFrom(e.target.value)}
-                    max={filterDateTo || undefined}
-                    style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12, color: "#374151", background: "#fff", flex: isMobile ? 1 : "none" }}
-                  />
-                  <span style={{ fontSize: 12, color: "#9ca3af" }}>–</span>
-                  <input
-                    type="date"
-                    value={filterDateTo}
-                    onChange={e => applyDateTo(e.target.value)}
-                    min={filterDateFrom || undefined}
-                    style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12, color: "#374151", background: "#fff", flex: isMobile ? 1 : "none" }}
-                  />
-                </div>
-              </div>
-
-              {!isMobile && <span style={{ width: 1, height: 20, background: "#e5e7eb", flexShrink: 0, margin: "0 4px" }} />}
-
-              {/* Tags */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: 8, width: isMobile ? "100%" : "auto", marginTop: isMobile ? 8 : 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
-                  Tags
-                </span>
-                <input
-                  type="text"
-                  placeholder="e.g. machine-learning, thesis"
-                  value={tagsInput}
-                  onChange={e => setTagsInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && applyTags()}
-                  onBlur={applyTags}
-                  style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12, color: "#374151", background: "#fff", width: isMobile ? "100%" : 220 }}
-                />
-              </div>
-            </div>
           </div>
 
-          {/* Result count */}
-          {!isLoading && data && (
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 16 }}>
-              <FileText size={13} color="#9ca3af" />
-              <span style={{ fontSize: 12.5, color: "#6b7280" }}>
-                <strong style={{ color: "#374151" }}>{data.total.toLocaleString()}</strong>{" "}
-                document{data.total !== 1 ? "s" : ""} found
-                {params.query && (
-                  <span style={{ color: "#9ca3af" }}> for &ldquo;{params.query}&rdquo;</span>
-                )}
-              </span>
-            </div>
-          )}
-
-          {/* Loading skeletons */}
-          {isLoading && (
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 20, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: C.ink, margin: "0 0 12px" }}>Document Type</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {CATEGORY_OPTIONS.map((c) => (
+                <label key={c} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: C.body }}>
+                  <input type="checkbox" checked={filterCategory === c} onChange={() => applyCategory(c)} style={{ accentColor: C.accent }} />
+                  {c}
+                </label>
               ))}
             </div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 20, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: C.ink, margin: "0 0 12px" }}>Language</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {LANGUAGE_OPTIONS.map((l) => (
+                <label key={l.value} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: C.body }}>
+                  <input type="checkbox" checked={filterLanguage === l.value} onChange={() => applyLanguage(l.value)} style={{ accentColor: C.accent }} />
+                  {l.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 20, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: C.ink, margin: "0 0 12px" }}>Format</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {FILE_TYPE_OPTIONS.map((t) => (
+                <label key={t.value} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: C.body }}>
+                  <input type="checkbox" checked={filterFileType === t.value} onChange={() => applyFileType(t.value)} style={{ accentColor: C.accent }} />
+                  {t.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 20, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: C.ink, margin: "0 0 12px" }}>Date Range</h3>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="number"
+                placeholder="YYYY"
+                value={yearFrom}
+                onChange={(e) => setYearFrom(e.target.value)}
+                onBlur={() => applyYears(yearFrom, yearTo)}
+                style={{ ...inputStyle, padding: "8px 10px", width: "100%" }}
+              />
+              <span style={{ color: C.body }}>–</span>
+              <input
+                type="number"
+                placeholder="YYYY"
+                value={yearTo}
+                onChange={(e) => setYearTo(e.target.value)}
+                onBlur={() => applyYears(yearFrom, yearTo)}
+                style={{ ...inputStyle, padding: "8px 10px", width: "100%" }}
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClear}
+            style={{
+              width: "100%", padding: "10px 14px", background: C.white, border: `1px solid ${C.ink}`,
+              color: C.ink, borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em",
+            }}
+          >
+            Reset Filters
+          </button>
+
+          {canUpload && (
+            <button
+              type="button"
+              onClick={() => router.push("/archive/upload")}
+              style={{
+                width: "100%", marginTop: 12, padding: "10px 14px", background: C.ink, border: "none",
+                color: C.white, borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <Upload size={14} /> Upload Document
+            </button>
+          )}
+        </aside>
+
+        {/* Results */}
+        <section className="dkp-archive-grid" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap", borderBottom: `1px solid ${C.line}`, paddingBottom: 16 }}>
+            <div>
+              <h1 style={{ fontFamily: SERIF, fontSize: "clamp(26px, 3.2vw, 32px)", fontWeight: 700, color: C.ink, margin: "0 0 8px" }}>
+                Institutional Archives
+              </h1>
+              <p style={{ fontSize: 14, color: C.body, margin: 0 }}>
+                {isLoading ? "Loading documents…" : `Showing ${from} – ${to} of ${total.toLocaleString()} documents`}
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 13, color: C.body }}>Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 700, color: C.ink, cursor: "pointer", outline: "none" }}
+              >
+                <option value="date_desc">Date (Newest First)</option>
+                <option value="date_asc">Date (Oldest First)</option>
+                <option value="title_asc">Title (A-Z)</option>
+              </select>
+            </div>
+          </div>
+
+          {isLoading && (
+            <div className="dkp-archive-cards" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-xl" />)}
+            </div>
           )}
 
-          {/* Error */}
           {isError && (
-            <div style={{ padding: "16px 20px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, color: "#991b1b", fontSize: 13 }}>
+            <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 14 }}>
               Failed to load results. Please try again.
             </div>
           )}
 
-          {/* Empty state */}
-          {!isLoading && !isError && (!data || data.items.length === 0) && (
-            <div style={{
-              textAlign: "center", padding: "60px 24px",
-              background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb",
-            }}>
-              <div style={{
-                width: 58, height: 58, borderRadius: 14, background: "#f3f4f6",
-                display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
-              }}>
-                <ArchiveIcon size={26} color="#9ca3af" />
-              </div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>No documents found</p>
-              <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
-                {hasFilters ? "Try adjusting your filters or search terms." : "No documents have been published yet."}
-              </p>
-              {hasFilters && (
-                <button type="button" onClick={handleClear} style={{ marginTop: 16, padding: "8px 20px", borderRadius: 8, border: "none", background: "var(--theme-gradient-160)", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff" }}>
-                  Clear filters
-                </button>
-              )}
+          {!isLoading && !isError && items.length === 0 && (
+            <div style={{ textAlign: "center", padding: "56px 24px", background: C.white, borderRadius: 12, border: `1px solid ${C.lineStrong}` }}>
+              <FileText size={28} color={C.body} style={{ margin: "0 auto 12px" }} />
+              <p style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>No documents found</p>
+              <p style={{ fontSize: 14, color: C.body, margin: 0 }}>Try adjusting your filters or search terms.</p>
             </div>
           )}
 
-          {/* Results grid */}
-          {!isLoading && data && data.items.length > 0 && (
+          {!isLoading && items.length > 0 && (
             <>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 14, marginBottom: 28,
-              }}>
-                {data.items.map((item: any) => (
-                  <ArchiveCard key={item.item_id} item={item} onDownload={handleDownload} />
+              <div className="dkp-archive-cards" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+                {items.map((item: any) => (
+                  <Link
+                    key={item.item_id}
+                    href={`/archive/${item.item_id}`}
+                    className="dkp-coll-card"
+                    style={{
+                      display: "flex", flexDirection: "column", gap: 14, padding: 22,
+                      background: "rgba(255,255,255,0.9)", border: `1px solid ${C.lineStrong}`,
+                      borderRadius: 10, textDecoration: "none", boxShadow: "0 4px 24px rgba(26,26,46,0.05)",
+                      minHeight: 220,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 6, background: C.band, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <FileText size={18} />
+                      </div>
+                      <TierBadge tier={item.access_tier} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: C.ink, margin: "0 0 8px", lineHeight: 1.3 }}>
+                        {item.title_en}
+                      </h3>
+                      <p style={{
+                        fontSize: 13, color: C.body, margin: 0, lineHeight: 1.5,
+                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
+                      }}>
+                        {item.description || item.title_bn || "Institutional archive document."}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", paddingTop: 12, borderTop: `1px solid ${C.line}`, fontSize: 12, color: C.body }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Calendar size={13} /> {item.created_at ? formatDate(item.created_at) : "—"}
+                      </span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Building2 size={13} /> {item.category || "General"}
+                      </span>
+                      {item.status === "published" && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); handleDownload(item.item_id); }}
+                          style={{ marginLeft: "auto", background: "none", border: "none", color: C.accent, fontWeight: 700, cursor: "pointer", fontSize: 12 }}
+                        >
+                          Download
+                        </button>
+                      )}
+                    </div>
+                  </Link>
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, paddingTop: 24, borderTop: `1px solid ${C.line}` }}>
                   <button
-                    onClick={() => { const p = Math.max(1, currentPage - 1); setCurrentPage(p); setParams(s => ({ ...s, page: p })); }}
-                    disabled={currentPage === 1}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: currentPage === 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: currentPage === 1 ? 0.4 : 1 }}
+                    onClick={() => setParams((s) => ({ ...s, page: Math.max(1, s.page - 1) }))}
+                    disabled={page === 1}
+                    style={{ width: 40, height: 40, borderRadius: 6, border: `1px solid ${C.lineStrong}`, background: C.white, cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}
                   >
-                    <ChevronLeft size={14} color="#6b7280" />
+                    <ChevronLeft size={16} />
                   </button>
-
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    const pg = i + 1;
-                    return (
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((pg) => (
+                    <button
+                      key={pg}
+                      onClick={() => setParams((s) => ({ ...s, page: pg }))}
+                      style={{
+                        width: 40, height: 40, borderRadius: 6,
+                        border: pg === page ? "none" : `1px solid ${C.lineStrong}`,
+                        background: pg === page ? C.ink : C.white,
+                        color: pg === page ? C.white : C.body,
+                        fontWeight: 700, cursor: "pointer",
+                      }}
+                    >
+                      {pg}
+                    </button>
+                  ))}
+                  {totalPages > 5 && (
+                    <>
+                      <span style={{ color: C.body }}>…</span>
                       <button
-                        key={pg}
-                        onClick={() => { setCurrentPage(pg); setParams(s => ({ ...s, page: pg })); }}
-                        style={{ width: 34, height: 34, borderRadius: 8, border: pg === currentPage ? "none" : "1px solid #e5e7eb", background: pg === currentPage ? "var(--avatar-theme-color, #1a1a2e)" : "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: pg === currentPage ? "#fff" : "#6b7280" }}
+                        onClick={() => setParams((s) => ({ ...s, page: totalPages }))}
+                        style={{ width: 40, height: 40, borderRadius: 6, border: `1px solid ${C.lineStrong}`, background: C.white, color: C.body, fontWeight: 700, cursor: "pointer" }}
                       >
-                        {pg}
+                        {totalPages}
                       </button>
-                    );
-                  })}
-
+                    </>
+                  )}
                   <button
-                    onClick={() => { const p = Math.min(totalPages, currentPage + 1); setCurrentPage(p); setParams(s => ({ ...s, page: p })); }}
-                    disabled={currentPage >= totalPages}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: currentPage >= totalPages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: currentPage >= totalPages ? 0.4 : 1 }}
+                    onClick={() => setParams((s) => ({ ...s, page: Math.min(totalPages, s.page + 1) }))}
+                    disabled={page >= totalPages}
+                    style={{ width: 40, height: 40, borderRadius: 6, border: `1px solid ${C.lineStrong}`, background: C.white, cursor: page >= totalPages ? "not-allowed" : "pointer", opacity: page >= totalPages ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}
                   >
-                    <ChevronRight size={14} color="#6b7280" />
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               )}
             </>
           )}
-        </div>
+        </section>
       </div>
-    </AppLayout>
+    </CollectionShell>
   );
 }
