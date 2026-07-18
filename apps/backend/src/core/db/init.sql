@@ -58,6 +58,7 @@ CREATE TABLE users (
   membership_status membership_status NOT NULL DEFAULT 'active',
   oauth_provider VARCHAR(50),
   oauth_id       VARCHAR(255),
+  last_active_at TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at    TIMESTAMPTZ

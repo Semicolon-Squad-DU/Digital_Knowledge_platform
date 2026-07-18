@@ -8,6 +8,12 @@ import { logger } from "../config/logger";
 // ourselves and causing "max clients reached" errors under normal load.
 const isSupabaseSessionPooler = config.db.url.includes("supabase.com") && config.db.url.includes(":5432");
 
+// NFR-009 (encryption): connections use TLS in transit (ssl below, matching
+// the DATABASE_URL's sslmode=require). At-rest encryption of the database
+// itself is provided by the managed Postgres host (Supabase, backed by AWS
+// RDS-class storage, which encrypts all data at rest by default) — this is
+// storage-layer encryption covering every column, not just email/fines/
+// borrowing history, and doesn't require (or allow) app-level opt-in here.
 export const pool = new Pool({
   connectionString: config.db.url,
   max: isSupabaseSessionPooler ? 10 : 20,

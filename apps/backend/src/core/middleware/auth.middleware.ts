@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
-import { queryOne } from "../db/pool";
+import { query, queryOne } from "../db/pool";
 import { AuthTokenPayload, UserRole } from "@dkp/shared";
 
 export interface AuthRequest extends Request {
@@ -20,12 +20,38 @@ export interface AuthRequest extends Request {
 // "pending_approval" while keeping their existing session — they should keep
 // using the app under their current role until an admin reviews the request,
 // not get logged out by their own request.
-async function isAccountActive(user_id: string): Promise<boolean> {
-  const account = await queryOne<{ membership_status: string }>(
-    "SELECT membership_status FROM users WHERE user_id = $1 AND deleted_at IS NULL",
-    [user_id]
+//
+// Also enforces NFR-006's server-side inactivity timeout: last_active_at is
+// compared against the configured window (default 30 min) on every request,
+// independent of the access token's own (longer) cryptographic expiry. A
+// null last_active_at (never set, e.g. right after login) is treated as
+// fresh rather than stale.
+//
+// The idle comparison is done entirely in SQL (NOW() - last_active_at),
+// deliberately not in application code (Date.now() - last_active_at) — the
+// app server's clock and the database server's clock are two different
+// machines and are not guaranteed to agree; comparing across them can
+// produce a negative "idle" duration if they've drifted, silently
+// disabling the timeout. Keeping both sides of the comparison on Postgres's
+// own clock avoids that class of bug entirely.
+async function checkAccountActiveAndFresh(user_id: string): Promise<"ok" | "inactive" | "idle"> {
+  const account = await queryOne<{ membership_status: string; is_idle: boolean }>(
+    `SELECT membership_status,
+            (last_active_at IS NOT NULL AND NOW() - last_active_at > ($2 || ' minutes')::interval) as is_idle
+     FROM users WHERE user_id = $1 AND deleted_at IS NULL`,
+    [user_id, config.jwt.sessionInactivityTimeoutMinutes]
   );
-  return account?.membership_status === "active" || account?.membership_status === "pending_approval";
+  if (!account) return "inactive";
+  if (account.membership_status !== "active" && account.membership_status !== "pending_approval") {
+    return "inactive";
+  }
+  if (account.is_idle) return "idle";
+
+  // Fire-and-forget — this is a liveness heartbeat, not something the
+  // request should ever fail or slow down on.
+  void query("UPDATE users SET last_active_at = NOW() WHERE user_id = $1", [user_id]).catch(() => {});
+
+  return "ok";
 }
 
 export async function authenticate(
@@ -49,8 +75,13 @@ export async function authenticate(
   }
 
   try {
-    if (!(await isAccountActive(payload.user_id))) {
+    const status = await checkAccountActiveAndFresh(payload.user_id);
+    if (status === "inactive") {
       res.status(401).json({ success: false, message: "Account is not active. Contact administrator." });
+      return;
+    }
+    if (status === "idle") {
+      res.status(401).json({ success: false, message: "Session expired due to inactivity. Please sign in again." });
       return;
     }
   } catch (err) {
@@ -72,9 +103,10 @@ export async function optionalAuth(
     const token = authHeader.slice(7);
     try {
       const payload = jwt.verify(token, config.jwt.secret) as AuthTokenPayload;
-      // Best-effort: a suspended account just falls back to anonymous here rather
-      // than blocking the request, matching this middleware's non-blocking intent.
-      if (await isAccountActive(payload.user_id)) {
+      // Best-effort: a suspended/idle account just falls back to anonymous here
+      // rather than blocking the request, matching this middleware's
+      // non-blocking intent.
+      if ((await checkAccountActiveAndFresh(payload.user_id)) === "ok") {
         req.user = payload;
       }
     } catch {

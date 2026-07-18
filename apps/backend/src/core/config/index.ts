@@ -27,6 +27,10 @@ export const config = {
     secret: requireEnv("JWT_SECRET"),
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+    // NFR-006: server-side inactivity timeout, independent of and shorter
+    // than the access token's own TTL — a token that's still cryptographically
+    // valid is rejected once its owner has been idle this long.
+    sessionInactivityTimeoutMinutes: parseInt(process.env.SESSION_INACTIVITY_TIMEOUT_MINUTES || "30", 10),
   },
 
   redis: {
