@@ -21,6 +21,16 @@ const CATEGORIES = [
   "Mathematics", "History", "Social Sciences", "Humanities", "Journal", "Magazine", "Other",
 ];
 
+// Librarians have the same authority over library books that archivists have
+// over archive items — including setting/viewing "restricted", subject to the
+// same request/approve/deny flow for everyone below that tier.
+const ACCESS_TIERS = [
+  { value: "public",     label: "Public — visible to everyone" },
+  { value: "member",     label: "Member — signed-in users" },
+  { value: "staff",      label: "Staff — researchers, librarians, admins" },
+  { value: "restricted", label: "Restricted — approval required" },
+];
+
 const schema = z.object({
   title:          z.string().min(1, "Title is required"),
   isbn:           z.string().optional(),
@@ -32,6 +42,7 @@ const schema = z.object({
   total_copies:   z.string().min(1, "Total copies is required"),
   shelf_location: z.string().optional(),
   description:    z.string().optional(),
+  access_tier:    z.enum(["public", "member", "staff", "restricted"]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -49,6 +60,7 @@ export default function AddBookPage() {
     defaultValues: {
       category: "General",
       total_copies: "1",
+      access_tier: "public",
     },
   });
 
@@ -83,6 +95,7 @@ export default function AddBookPage() {
     if (data.year) fd.append("year", data.year);
     fd.append("category",       data.category);
     fd.append("total_copies",   data.total_copies);
+    fd.append("access_tier",    data.access_tier);
     if (data.shelf_location) fd.append("shelf_location", data.shelf_location.trim());
     if (data.description) fd.append("description", data.description.trim());
     if (pdfFile) fd.append("file", pdfFile);
@@ -210,12 +223,21 @@ export default function AddBookPage() {
                 />
               </div>
 
-              <Input
-                label="Shelf Location"
-                placeholder="e.g. A-12, Floor 2"
-                error={errors.shelf_location?.message}
-                {...register("shelf_location")}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Shelf Location"
+                  placeholder="e.g. A-12, Floor 2"
+                  error={errors.shelf_location?.message}
+                  {...register("shelf_location")}
+                />
+                <Select
+                  label="Access Tier"
+                  required
+                  options={ACCESS_TIERS}
+                  error={errors.access_tier?.message}
+                  {...register("access_tier")}
+                />
+              </div>
             </div>
           </section>
 

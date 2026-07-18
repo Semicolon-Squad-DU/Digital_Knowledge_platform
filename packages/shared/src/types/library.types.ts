@@ -1,3 +1,5 @@
+import { AccessTier } from "./user.types";
+
 export type LendingStatus = "active" | "returned" | "overdue";
 export type HoldStatus = "pending" | "available" | "fulfilled" | "cancelled";
 export type FineStatus = "pending" | "paid" | "waived";
@@ -17,6 +19,7 @@ export interface CatalogItem {
   barcode?: string;
   cover_url?: string;
   description?: string;
+  access_tier: AccessTier;
   created_at: string;
   updated_at: string;
   deleted_at?: string;

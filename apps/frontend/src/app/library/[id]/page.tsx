@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Heart, BookMarked, Pencil, Trash2,
-  FileText, Download, Share2, FileJson, ArrowLeft
+  FileText, Download, Share2, FileJson, ArrowLeft,
+  Lock, Clock, XCircle, LogIn,
 } from "lucide-react";
 import {
   useCatalogItem, useAddToWishlist, useWishlist, useRemoveFromWishlist, usePlaceHold, useCancelHold, useMemberHolds,
-  useUpdateCatalogItem, useDeleteCatalogItem,
+  useUpdateCatalogItem, useDeleteCatalogItem, useRequestCatalogAccess,
 } from "@/features/library/hooks/useLibrary";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -69,13 +71,48 @@ function PdfPreview({ itemId }: { itemId: string }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 const BOOK_CATEGORIES = ["General", "Textbook", "Reference", "Fiction", "Non-Fiction", "Novel", "Journal", "Magazine", "Thesis", "Science", "Technology", "Mathematics", "History", "Other"];
 
+// Librarians have the same authority over library books that archivists have
+// over archive items — including setting/viewing "restricted", subject to the
+// same request/approve/deny flow for everyone below that tier.
+const ACCESS_TIERS = [
+  { value: "public",     label: "Public — visible to everyone" },
+  { value: "member",     label: "Member — signed-in users" },
+  { value: "staff",      label: "Staff — researchers, librarians, admins" },
+  { value: "restricted", label: "Restricted — approval required" },
+];
+
 export default function LibraryItemPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const itemId = params?.id ?? "";
 
   const { user, isAuthenticated } = useAuthStore();
-  const { data: item, isLoading, refetch } = useCatalogItem(itemId);
+  const { data: item, isLoading, error, refetch } = useCatalogItem(itemId);
+  const { mutateAsync: requestAccess, isPending: isSubmittingRequest } = useRequestCatalogAccess();
+  const [accessReason, setAccessReason] = useState("");
+
+  const handleRequestAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessReason.trim()) {
+      toast.error("Please enter a reason for requesting access");
+      return;
+    }
+    try {
+      await requestAccess({ id: itemId, reason: accessReason.trim() });
+      toast.success("Access request submitted successfully!");
+      refetch();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to submit request");
+    }
+  };
+
+  const apiError = error as { response?: { status?: number; data?: { data?: {
+    catalog_id: string; title: string; category: string; access_tier: string;
+    request_status: string | null; rejection_message?: string | null;
+  } } } } | null;
+  const isForbidden = apiError?.response?.status === 403;
+  const restrictedData = apiError?.response?.data?.data;
   const { mutateAsync: addToWishlist, isPending: isAddingToWishlist } = useAddToWishlist();
   const { mutateAsync: removeFromWishlist, isPending: isRemovingFromWishlist } = useRemoveFromWishlist();
   const { data: wishlist } = useWishlist(isAuthenticated);
@@ -98,6 +135,7 @@ export default function LibraryItemPage() {
     title: "", isbn: "", authors: "", publisher: "",
     edition: "", year: "", category: "General",
     total_copies: "1", shelf_location: "", description: "", barcode: "",
+    access_tier: "public",
   });
 
   useEffect(() => {
@@ -114,6 +152,7 @@ export default function LibraryItemPage() {
         shelf_location: item.shelf_location ?? "",
         description: item.description ?? "",
         barcode: item.barcode ?? "",
+        access_tier: item.access_tier ?? "public",
       });
     }
   }, [item]);
@@ -193,6 +232,7 @@ export default function LibraryItemPage() {
         shelf_location: editForm.shelf_location.trim() || undefined,
         description: editForm.description.trim() || undefined,
         barcode: editForm.barcode.trim() || undefined,
+        access_tier: editForm.access_tier as "public" | "member" | "staff" | "restricted",
       });
       toast.success("Book updated successfully");
       setEditModal(false);
@@ -231,6 +271,188 @@ export default function LibraryItemPage() {
       toast.error("Could not open document. Please try again.");
     }
   };
+
+  // ─────────── 403 Forbidden: Restricted Access Screen ───────────
+  if (isForbidden && restrictedData) {
+    const statusText = restrictedData.request_status;
+
+    return (
+      <AppLayout>
+        <div style={{ padding: "28px 32px", maxWidth: "800px", margin: "0 auto" }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              border: "none", background: "none", color: "#6b7280",
+              fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 20,
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Library
+          </button>
+
+          <div style={{
+            background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16,
+            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
+            overflow: "hidden",
+          }}>
+            <div style={{ height: 6, background: "linear-gradient(90deg, #dc2626 0%, #ef4444 100%)" }} />
+
+            <div style={{ padding: 32, textAlign: "center" }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: "50%", background: "#fef2f2",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 16px", border: "1px solid #fee2e2",
+              }}>
+                <Lock size={24} color="#dc2626" />
+              </div>
+
+              <span style={{
+                display: "inline-flex", alignItems: "center", padding: "4px 10px",
+                borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.5px", background: "#fde8e8", color: "#c81e1e", marginBottom: 12,
+              }}>
+                Restricted Book
+              </span>
+
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: "0 0 8px", lineHeight: 1.3 }}>
+                {restrictedData.title}
+              </h1>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 auto 24px", maxWidth: 500 }}>
+                This book belongs to the &quot;{restrictedData.access_tier}&quot; access tier. You do not have permission to view or borrow it directly.
+              </p>
+
+              {!isAuthenticated ? (
+                <div style={{
+                  maxWidth: 500, margin: "0 auto", background: "#f9fafb", border: "1px solid #e5e7eb",
+                  borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, textAlign: "left",
+                }}>
+                  <LogIn size={36} color="#374151" style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>Sign in to request access</h4>
+                    <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 12px", lineHeight: 1.4 }}>
+                      This book requires an account. Sign in and you&apos;ll be able to submit an access request.
+                    </p>
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(`/library/${itemId}`)}`}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px",
+                        borderRadius: 8, background: "var(--theme-gradient-160)", color: "#fff",
+                        fontSize: 13, fontWeight: 600, textDecoration: "none",
+                      }}
+                    >
+                      Sign In
+                    </Link>
+                  </div>
+                </div>
+              ) : !statusText ? (
+                <form onSubmit={handleRequestAccess} style={{
+                  maxWidth: 500, margin: "0 auto", textAlign: "left", background: "#f9fafb",
+                  border: "1px solid #e5e7eb", borderRadius: 12, padding: 20,
+                }}>
+                  <label style={{
+                    display: "block", fontSize: 13, fontWeight: 700, color: "#374151",
+                    marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px",
+                  }}>
+                    Reason for requesting access
+                  </label>
+                  <textarea
+                    required
+                    value={accessReason}
+                    onChange={(e) => setAccessReason(e.target.value)}
+                    placeholder="Provide a valid academic reason (e.g. Course reading, thesis reference)..."
+                    rows={3}
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db",
+                      fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none",
+                      marginBottom: 16, background: "#fff", boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmittingRequest}
+                    style={{
+                      width: "100%", padding: "11px 16px", borderRadius: 8, border: "none",
+                      background: "var(--theme-gradient-160)", color: "#fff", fontSize: 13, fontWeight: 600,
+                      cursor: "pointer", textAlign: "center", opacity: isSubmittingRequest ? 0.7 : 1,
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    {isSubmittingRequest ? "Submitting Request..." : "Submit Access Request"}
+                  </button>
+                </form>
+              ) : statusText === "pending" ? (
+                <div style={{
+                  maxWidth: 500, margin: "0 auto", background: "#eff6ff", border: "1px solid #bfdbfe",
+                  borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, textAlign: "left",
+                }}>
+                  <Clock size={36} color="#1d4ed8" style={{ flexShrink: 0 }} />
+                  <div>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a", margin: 0 }}>Access Request Pending</h4>
+                    <p style={{ fontSize: 13, color: "#1e40af", margin: "4px 0 0", lineHeight: 1.4 }}>
+                      Your access request has been sent to the Librarian and Administrator. You will receive an in-app notification once it&apos;s reviewed.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ maxWidth: 500, margin: "0 auto", textAlign: "left" }}>
+                  <div style={{
+                    background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 12,
+                    padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, marginBottom: 16,
+                  }}>
+                    <XCircle size={36} color="#b91c1c" style={{ flexShrink: 0 }} />
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#7f1d1d", margin: 0 }}>Access Request Denied</h4>
+                      <p style={{ fontSize: 13, color: "#991b1b", margin: "4px 0 0", lineHeight: 1.4 }}>
+                        {restrictedData.rejection_message
+                          ? `Reason: ${restrictedData.rejection_message}`
+                          : "Your request to view this restricted book has been reviewed and declined."}
+                        {" "}You may submit a new request below.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleRequestAccess} style={{
+                    background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20,
+                  }}>
+                    <label style={{
+                      display: "block", fontSize: 13, fontWeight: 700, color: "#374151",
+                      marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px",
+                    }}>
+                      Reason for requesting access again
+                    </label>
+                    <textarea
+                      required
+                      value={accessReason}
+                      onChange={(e) => setAccessReason(e.target.value)}
+                      placeholder="Provide an updated reason for this request..."
+                      rows={3}
+                      style={{
+                        width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db",
+                        fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none",
+                        marginBottom: 16, background: "#fff", boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmittingRequest}
+                      style={{
+                        width: "100%", padding: "11px 16px", borderRadius: 8, border: "none",
+                        background: "var(--theme-gradient-160)", color: "#fff", fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", textAlign: "center", opacity: isSubmittingRequest ? 0.7 : 1,
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                      }}
+                    >
+                      {isSubmittingRequest ? "Submitting Request..." : "Submit New Access Request"}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -353,6 +575,22 @@ export default function LibraryItemPage() {
                   }}>
                     {item.category}
                   </span>
+                  {item.access_tier && item.access_tier !== "public" && (
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      background: "#fef3c7",
+                      color: "#92400e",
+                    }}>
+                      {item.access_tier}
+                    </span>
+                  )}
                 </div>
 
                 {/* Primary Actions */}
@@ -617,6 +855,58 @@ export default function LibraryItemPage() {
                   </div>
                 )}
 
+                {/* Access Tier — directly visible, not buried in the Edit modal */}
+                {canManageCatalog && (
+                  <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>
+                      Access Tier
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 10px" }}>
+                      Controls who can view or borrow this book.
+                    </p>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {ACCESS_TIERS.map((tierOption) => {
+                        const isActive = item.access_tier === tierOption.value;
+                        let tierColor = "#4b5563";
+                        if (tierOption.value === "public") tierColor = "#059669";
+                        if (tierOption.value === "member") tierColor = "#1a56db";
+                        if (tierOption.value === "staff") tierColor = "#7c3aed";
+                        if (tierOption.value === "restricted") tierColor = "#dc2626";
+
+                        return (
+                          <button
+                            key={tierOption.value}
+                            onClick={async () => {
+                              try {
+                                await updateBook({ catalog_id: itemId, access_tier: tierOption.value as "public" | "member" | "staff" | "restricted" });
+                                toast.success(`Access tier updated to ${tierOption.value.toUpperCase()}!`);
+                                refetch();
+                              } catch {
+                                toast.error("Failed to update access tier");
+                              }
+                            }}
+                            disabled={isUpdating || isActive}
+                            style={{
+                              padding: "8px 14px",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: isActive ? "default" : "pointer",
+                              transition: "all 0.2s ease",
+                              border: isActive ? `1.5px solid ${tierColor}` : "1px solid #d1d5db",
+                              background: isActive ? `color-mix(in srgb, ${tierColor} 10%, #ffffff)` : "#ffffff",
+                              color: isActive ? tierColor : "#4b5563",
+                              opacity: isUpdating && !isActive ? 0.6 : 1,
+                            }}
+                          >
+                            {tierOption.value.toUpperCase()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Librarian Actions */}
                 {canManageCatalog && (
                   <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 16, display: "flex", gap: 10 }}>
@@ -696,7 +986,9 @@ export default function LibraryItemPage() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
           }}>
             <p style={{ fontSize: 16, fontWeight: 600, color: "#111827", margin: 0 }}>Book not found</p>
-            <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4, marginBottom: 16 }}>The requested book catalog ID does not exist or has been deleted.</p>
+            <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4, marginBottom: 16 }}>
+              The requested book catalog ID does not exist or has been deleted.
+            </p>
             <button
               onClick={() => router.back()}
               style={{
@@ -744,6 +1036,12 @@ export default function LibraryItemPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <Input label="Shelf Location" value={editForm.shelf_location} onChange={e => setEditForm(f => ({ ...f, shelf_location: e.target.value }))} />
             <Input label="Barcode" value={editForm.barcode} onChange={e => setEditForm(f => ({ ...f, barcode: e.target.value }))} hint="Scannable code printed on the label" />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Access Tier</label>
+            <select value={editForm.access_tier} onChange={e => setEditForm(f => ({ ...f, access_tier: e.target.value }))} style={{ height: 38, padding: "8px 12px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 16, outline: "none", background: "#fff", cursor: "pointer" }}>
+              {ACCESS_TIERS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Description</label>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Download, FileText, Lock, ArrowLeft, Clock, CheckCircle, XCircle, LogIn } from "lucide-react";
-import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUploadArchiveVersion, useDeleteArchiveItem } from "@/features/archive/hooks/useArchive";
+import { useArchiveItem, useArchiveVersions, useDownloadArchiveItem, useRequestAccess, useUpdateArchiveStatus, useUpdateArchiveItem, useUploadArchiveVersion, useDeleteArchiveItem } from "@/features/archive/hooks/useArchive";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Modal";
@@ -32,6 +32,7 @@ export default function ArchiveItemPage() {
 
 
   const { mutateAsync: updateStatus, isPending: isUpdatingStatus } = useUpdateArchiveStatus();
+  const { mutateAsync: updateItem, isPending: isUpdatingTier } = useUpdateArchiveItem();
   const { mutateAsync: uploadVersion, isPending: isUploadingVersion } = useUploadArchiveVersion();
   const { mutateAsync: deleteItem, isPending: isDeleting } = useDeleteArchiveItem();
 
@@ -727,6 +728,56 @@ export default function ArchiveItemPage() {
                     </button>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Access Tier Management */}
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #f3f4f6", display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280" }}>
+                Access Tier
+              </span>
+              <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 10px 0", lineHeight: 1.45 }}>
+                Controls who can view or download this document — Public, Members, Staff, or Restricted (approval required).
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {(["public", "member", "staff", "restricted"] as const).map((tierOption) => {
+                  const isActive = item.access_tier === tierOption;
+                  let tierColor = "var(--avatar-theme-color, #1a56db)";
+                  if (tierOption === "public") tierColor = "#059669";
+                  if (tierOption === "member") tierColor = "#1a56db";
+                  if (tierOption === "staff") tierColor = "#7c3aed";
+                  if (tierOption === "restricted") tierColor = "#dc2626";
+
+                  return (
+                    <button
+                      key={tierOption}
+                      onClick={async () => {
+                        try {
+                          await updateItem({ id: itemId, access_tier: tierOption });
+                          toast.success(`Access tier updated to ${tierOption.toUpperCase()}!`);
+                          refetch();
+                        } catch {
+                          toast.error("Failed to update access tier");
+                        }
+                      }}
+                      disabled={isUpdatingTier || isActive}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: isActive ? "default" : "pointer",
+                        transition: "all 0.2s ease",
+                        border: isActive ? `1.5px solid ${tierColor}` : "1px solid #d1d5db",
+                        background: isActive ? `color-mix(in srgb, ${tierColor} 10%, #ffffff)` : "#ffffff",
+                        color: isActive ? tierColor : "#4b5563",
+                        opacity: isUpdatingTier && !isActive ? 0.6 : 1,
+                      }}
+                    >
+                      {tierOption.toUpperCase()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

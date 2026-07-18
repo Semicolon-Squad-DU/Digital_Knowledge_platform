@@ -94,6 +94,7 @@ async function createCatalogIndex(): Promise<void> {
           category: { type: "keyword" },
           available_copies: { type: "integer" },
           year: { type: "integer" },
+          access_tier: { type: "keyword" },
         },
       },
     },
@@ -342,10 +343,11 @@ export async function searchCatalog(params: {
   availability?: string;
   year_from?: number;
   year_to?: number;
+  allowed_tiers?: string[];
   page?: number;
   limit?: number;
 }): Promise<{ hits: unknown[]; total: number }> {
-  const { query, page = 1, limit = 20 } = params;
+  const { query, page = 1, limit = 20, allowed_tiers = ["public"] } = params;
   const from = (page - 1) * limit;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -354,7 +356,7 @@ export async function searchCatalog(params: {
   // not flagged — ES never indexes explicit nulls by default, so a
   // `term: { deleted_at: null }` filter would never match anything.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filter: any[] = [];
+  const filter: any[] = [{ terms: { access_tier: allowed_tiers } }];
 
   if (query) {
     must.push({
@@ -389,9 +391,9 @@ export async function searchCatalog(params: {
   } catch (err) {
     logger.warn("Catalog search falling back to PostgreSQL", { error: (err as Error).message });
 
-    const where: string[] = ["deleted_at IS NULL"];
-    const values: unknown[] = [];
-    let i = 1;
+    const where: string[] = ["deleted_at IS NULL", `access_tier = ANY($1)`];
+    const values: unknown[] = [allowed_tiers];
+    let i = 2;
 
     if (params.query) {
       where.push(`(

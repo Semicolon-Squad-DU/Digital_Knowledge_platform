@@ -12,8 +12,12 @@ import { BorrowService } from "./borrow.service";
 import { sendEmail, dueDateReminderEmail, holdAvailableEmail, overdueFineReminderEmail } from "../../infrastructure/email.service";
 import { logger } from "../../core/config/logger";
 import { notifyAllUsersExcept } from "../../infrastructure/notification.service";
+import { AccessTier } from "@dkp/shared";
+import { ALLOWED_TIERS_BY_ROLE } from "../../core/access-control";
 
 const router = Router();
+
+const VALID_ACCESS_TIERS: AccessTier[] = ["public", "member", "staff", "restricted"];
 
 // GET /api/library/catalog/search
 router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -22,6 +26,17 @@ router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest
 
   const { page: pageNum, limit: limitNum } = parsePagination(page ?? "1", limit ?? "20");
 
+  const role = req.user?.role ?? "guest";
+  let allowedTiers = ["librarian", "admin"].includes(role)
+    ? VALID_ACCESS_TIERS
+    : (ALLOWED_TIERS_BY_ROLE[role] ?? ["public"]);
+  // Any signed-in user can *see* a restricted book in search results (so they
+  // can discover it and request access) — same carve-out Archive already uses.
+  // The actual gate is on GET /catalog/:id, not here.
+  if (role !== "guest" && !allowedTiers.includes("restricted")) {
+    allowedTiers = [...allowedTiers, "restricted"];
+  }
+
   const result = await searchCatalog({
     query: q, author, isbn, category,
     availability: availability as "available" | "on_loan" | "all",
@@ -29,6 +44,7 @@ router.get("/catalog/search", optionalAuth, asyncHandler(async (req: AuthRequest
     year_to: year_to ? parseInt(year_to) : undefined,
     page: pageNum,
     limit: limitNum,
+    allowed_tiers: allowedTiers,
   });
 
   res.json({
@@ -110,7 +126,7 @@ router.get(
        JOIN catalog_items ci ON b.resource_id = ci.catalog_id
        JOIN users u ON b.user_id = u.user_id
        WHERE b.issue_date BETWEEN $1 AND $2
-         AND ($3::text IS NULL OR b.borrow_status = $3)
+         AND ($3::text IS NULL OR b.borrow_status::text = $3)
        ORDER BY b.issue_date DESC
        LIMIT 5000`,
       [fromDate, toDate, statusFilter]
@@ -129,7 +145,7 @@ router.get(
          COALESCE((SELECT SUM(amount) FROM fines WHERE status = 'pending'), 0) as fines_pending
        FROM borrows
        WHERE issue_date BETWEEN $1 AND $2
-         AND ($3::text IS NULL OR borrow_status = $3)`,
+         AND ($3::text IS NULL OR borrow_status::text = $3)`,
       [fromDate, toDate, statusFilter]
     );
 
@@ -308,8 +324,8 @@ router.post(
   authenticate,
   requireRole("librarian", "admin"),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const hold = await queryOne<{ hold_id: string; catalog_id: string; member_id: string; status: string; created_at: string }>(
-      "SELECT hold_id, catalog_id, member_id, status, created_at FROM hold_requests WHERE hold_id = $1",
+    const hold = await queryOne<{ hold_id: string; catalog_id: string; member_id: string; status: string; request_date: string }>(
+      "SELECT hold_id, catalog_id, member_id, status, request_date FROM hold_requests WHERE hold_id = $1",
       [req.params.id]
     );
     if (!hold) throw new AppError(404, "Hold not found");
@@ -321,9 +337,9 @@ router.post(
     // pending/available hold for the same title is still waiting.
     const earlierHold = await queryOne(
       `SELECT hold_id FROM hold_requests
-       WHERE catalog_id = $1 AND status IN ('pending','available') AND created_at < $2
-       ORDER BY created_at ASC LIMIT 1`,
-      [hold.catalog_id, hold.created_at]
+       WHERE catalog_id = $1 AND status IN ('pending','available') AND request_date < $2
+       ORDER BY request_date ASC LIMIT 1`,
+      [hold.catalog_id, hold.request_date]
     );
     if (earlierHold) {
       throw new AppError(409, "An earlier hold for this title is still waiting and must be fulfilled first");
@@ -371,7 +387,7 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { member_id } = req.body as { member_id: string };
     let { catalog_id } = req.body as { catalog_id?: string };
-    const { barcode } = req.body as { barcode?: string };
+    const { barcode, due_date } = req.body as { barcode?: string; due_date?: string };
     if (!member_id) throw new AppError(400, "member_id required");
     if (!catalog_id && !barcode) throw new AppError(400, "catalog_id or barcode required");
 
@@ -395,7 +411,7 @@ router.post(
       resolvedMemberId = member.user_id;
     }
 
-    const result = await BorrowService.issueResource(catalog_id!, resolvedMemberId, req.user!.user_id, req.ip || '');
+    const result = await BorrowService.issueResource(catalog_id!, resolvedMemberId, req.user!.user_id, req.ip || '', due_date);
 
     // Map borrow to transaction for frontend compatibility
     const transaction = {
@@ -777,15 +793,179 @@ router.post(
   })
 );
 
+// GET /api/library/catalog/access-requests/pending
+// Must be registered before "/catalog/:id" — otherwise Express matches "access-requests" as an :id param.
+router.get(
+  "/catalog/access-requests/pending",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const requests = await query(
+      `SELECT car.*, u.name as user_name, u.email as user_email, ci.title as book_title
+       FROM catalog_access_requests car
+       JOIN users u ON car.user_id = u.user_id
+       JOIN catalog_items ci ON car.catalog_id = ci.catalog_id
+       WHERE car.status = 'pending'
+       ORDER BY car.created_at ASC`
+    );
+    res.json({ success: true, data: requests });
+  })
+);
+
+// PATCH /api/library/catalog/access-requests/:id/review
+router.patch(
+  "/catalog/access-requests/:id/review",
+  authenticate,
+  requireRole("librarian", "admin"),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { status, rejection_message } = req.body as { status: "approved" | "denied"; rejection_message?: string };
+    if (!["approved", "denied"].includes(status)) {
+      throw new AppError(400, "Invalid status (must be approved or denied)");
+    }
+
+    const request = await queryOne<{ user_id: string; catalog_id: string; status: string }>(
+      "SELECT * FROM catalog_access_requests WHERE request_id = $1",
+      [req.params.id]
+    );
+    if (!request) throw new AppError(404, "Access request not found");
+
+    const updated = await queryOne(
+      `UPDATE catalog_access_requests
+       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), rejection_message = $3
+       WHERE request_id = $4
+       RETURNING *`,
+      [status, req.user!.user_id, rejection_message || null, req.params.id]
+    );
+
+    const book = await queryOne<{ title: string }>(
+      "SELECT title FROM catalog_items WHERE catalog_id = $1",
+      [request.catalog_id]
+    );
+
+    if (book) {
+      const type = status === "approved" ? "access_request_approved" : "access_request_denied";
+      const title = status === "approved" ? "Access Request Approved" : "Access Request Denied";
+      const message = status === "approved"
+        ? `Your request to access "${book.title}" has been approved.`
+        : `Your request to access "${book.title}" was denied.${rejection_message ? ` Reason: ${rejection_message}` : ""}`;
+
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, action_url)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [request.user_id, type, title, message, `/library/${request.catalog_id}`]
+      );
+    }
+
+    res.json({ success: true, data: updated });
+  })
+);
+
 // GET /api/library/catalog/:id
 router.get("/catalog/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const existing = await queryOne<{ catalog_id: string; title: string; category: string; access_tier: AccessTier }>(
+    "SELECT catalog_id, title, category, access_tier FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
+    [req.params.id]
+  );
+  if (!existing) throw new AppError(404, "Catalog item not found");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  // Librarians/admins manage the catalog directly (including setting a book to
+  // "restricted" — see POST/PUT /catalog above), so they must always be able to
+  // view what they manage, the same way archivists always see restricted archive
+  // items. ALLOWED_TIERS_BY_ROLE is shared with Archive/Research and deliberately
+  // left untouched here rather than widening it platform-wide.
+  const isCatalogStaff = ["librarian", "admin"].includes(role);
+  if (!isCatalogStaff && !allowedTiers.includes(existing.access_tier)) {
+    if (req.user) {
+      const accessReq = await queryOne<{ request_id: string; status: string; rejection_message: string | null }>(
+        `SELECT request_id, status, rejection_message FROM catalog_access_requests
+         WHERE user_id = $1 AND catalog_id = $2
+         ORDER BY created_at DESC LIMIT 1`,
+        [req.user.user_id, existing.catalog_id]
+      );
+      if (!accessReq || accessReq.status !== "approved") {
+        res.status(403).json({
+          success: false,
+          message: "Access denied. You may request access to this book.",
+          data: {
+            catalog_id: existing.catalog_id,
+            title: existing.title,
+            category: existing.category,
+            access_tier: existing.access_tier,
+            request_status: accessReq ? accessReq.status : null,
+            rejection_message: accessReq?.rejection_message ?? null,
+          },
+        });
+        return;
+      }
+    } else {
+      res.status(403).json({
+        success: false,
+        message: "Sign in to request access to this book.",
+        data: {
+          catalog_id: existing.catalog_id,
+          title: existing.title,
+          category: existing.category,
+          access_tier: existing.access_tier,
+          request_status: null,
+        },
+      });
+      return;
+    }
+  }
+
   const item = await queryOne<{ view_count: number }>(
     "UPDATE catalog_items SET view_count = view_count + 1 WHERE catalog_id = $1 AND deleted_at IS NULL RETURNING *",
     [req.params.id]
   );
-  if (!item) throw new AppError(404, "Catalog item not found");
   res.json({ success: true, data: item });
 }));
+
+// POST /api/library/catalog/:id/access-request
+router.post(
+  "/catalog/:id/access-request",
+  authenticate,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { reason } = req.body as { reason: string };
+    if (!reason?.trim()) throw new AppError(400, "Reason is required");
+
+    const book = await queryOne<{ catalog_id: string; access_tier: AccessTier; title: string }>(
+      "SELECT catalog_id, access_tier, title FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
+      [req.params.id]
+    );
+    if (!book) throw new AppError(404, "Catalog item not found");
+
+    const existing = await queryOne(
+      "SELECT request_id FROM catalog_access_requests WHERE user_id = $1 AND catalog_id = $2 AND status = 'pending'",
+      [req.user!.user_id, req.params.id]
+    );
+    if (existing) throw new AppError(409, "Access request already pending");
+
+    const request = await queryOne(
+      `INSERT INTO catalog_access_requests (user_id, catalog_id, reason) VALUES ($1, $2, $3) RETURNING *`,
+      [req.user!.user_id, req.params.id, reason]
+    );
+
+    // Notify all librarians and admins about the new access request
+    const requester = await queryOne<{ name: string }>(
+      "SELECT name FROM users WHERE user_id = $1",
+      [req.user!.user_id]
+    );
+    const staff = await query<{ user_id: string }>(
+      "SELECT user_id FROM users WHERE role IN ('librarian', 'admin')"
+    );
+    for (const person of staff) {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, action_url)
+         VALUES ($1, 'pending_approval', 'New Book Access Request', $2, '/librarian')`,
+        [person.user_id, `${requester?.name ?? "A user"} has requested access to "${book.title}".`]
+      );
+    }
+
+    res.status(201).json({ success: true, data: request });
+  })
+);
 
 // POST /api/library/catalog
 router.post(
@@ -803,6 +983,15 @@ router.post(
     if (!title) throw new AppError(400, "Title is required");
     if (!totalCopies || totalCopies < 1) throw new AppError(400, "At least 1 copy required");
 
+    // Librarians and admins (the only roles that can reach this route) may set any
+    // tier including "restricted" — same authority archivists have over archive
+    // items. This is a creator privilege, distinct from ALLOWED_TIERS_BY_ROLE
+    // below, which governs what a *viewer* can see without an approved request.
+    const requestedTier = (req.body.access_tier as AccessTier) || "public";
+    if (!VALID_ACCESS_TIERS.includes(requestedTier)) {
+      throw new AppError(400, `Invalid access tier "${requestedTier}"`);
+    }
+
     if (isbn) {
       const duplicate = await queryOne("SELECT catalog_id FROM catalog_items WHERE isbn = $1", [isbn]);
       if (duplicate) throw new AppError(409, "A catalog item with this ISBN already exists");
@@ -817,11 +1006,12 @@ router.post(
 
     const item = await queryOne<{ catalog_id: string }>(
       `INSERT INTO catalog_items
-         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url, barcode)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11,$12)
+         (title, isbn, authors, publisher, edition, year, category, total_copies, available_copies, shelf_location, description, document_url, barcode, access_tier)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$10,$11,$12,$13)
        RETURNING *`,
       [title, isbn || null, authors, publisher || null, edition || null, year ? parseInt(year, 10) : null,
-       category || "General", totalCopies, shelf_location || null, description || null, documentUrl, barcode?.trim() || null]
+       category || "General", totalCopies, shelf_location || null, description || null, documentUrl, barcode?.trim() || null,
+       requestedTier]
     );
 
     // No barcode supplied — a DB trigger (see migration 018) auto-assigns a
@@ -843,12 +1033,25 @@ router.post(
 );
 
 // GET /api/library/catalog/:id/download-url
-router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req, res: Response) => {
-  const item = await queryOne<{ document_url: string | null }>(
-    "SELECT document_url FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
+router.get("/catalog/:id/download-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
+  const item = await queryOne<{ document_url: string | null; access_tier: AccessTier }>(
+    "SELECT document_url, access_tier FROM catalog_items WHERE catalog_id = $1 AND deleted_at IS NULL",
     [req.params.id]
   );
   if (!item || !item.document_url) throw new AppError(404, "No document attached to this catalog item");
+
+  const role = req.user?.role ?? "guest";
+  const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
+  const isCatalogStaff = ["librarian", "admin"].includes(role);
+  if (!isCatalogStaff && !allowedTiers.includes(item.access_tier)) {
+    const approved = req.user && await queryOne(
+      `SELECT request_id FROM catalog_access_requests WHERE user_id = $1 AND catalog_id = $2 AND status = 'approved'`,
+      [req.user.user_id, req.params.id]
+    );
+    if (!approved) {
+      throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
+    }
+  }
 
   const url = await getPresignedUrl(item.document_url);
   res.json({ success: true, data: { url } });
@@ -866,15 +1069,29 @@ router.put(
     );
     if (!existing) throw new AppError(404, "Catalog item not found");
 
-    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode } =
+    const { title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode, access_tier } =
       req.body as Record<string, unknown>;
 
+    // Changing total_copies must keep available_copies in lockstep (copies_check
+    // constraint requires available_copies <= total_copies) — the number of
+    // copies currently on loan doesn't change just because the total did.
+    let newAvailableCopies: number | undefined;
     if (total_copies !== undefined && total_copies !== null) {
       const onLoan = (existing as { total_copies: number; available_copies: number }).total_copies -
         (existing as { total_copies: number; available_copies: number }).available_copies;
       if ((total_copies as number) < onLoan) {
         throw new AppError(400, `Cannot set total copies below ${onLoan} — that many are currently on loan`);
       }
+      newAvailableCopies = (total_copies as number) - onLoan;
+    }
+    const newAvailabilityStatus = newAvailableCopies !== undefined
+      ? (newAvailableCopies === 0 ? "on_loan" : "available")
+      : undefined;
+
+    // Same creator-privilege reasoning as POST /catalog above — any librarian/admin
+    // editing this item may set any tier, including "restricted".
+    if (access_tier !== undefined && access_tier !== null && !VALID_ACCESS_TIERS.includes(access_tier as AccessTier)) {
+      throw new AppError(400, `Invalid access tier "${access_tier}"`);
     }
 
     const item = await queryOne(
@@ -883,9 +1100,11 @@ router.put(
          publisher = COALESCE($4, publisher), edition = COALESCE($5, edition), year = COALESCE($6, year),
          category = COALESCE($7, category), total_copies = COALESCE($8, total_copies),
          shelf_location = COALESCE($9, shelf_location), description = COALESCE($10, description),
-         barcode = COALESCE($11, barcode)
-       WHERE catalog_id = $12 RETURNING *`,
-      [title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode, req.params.id]
+         barcode = COALESCE($11, barcode), access_tier = COALESCE($12, access_tier),
+         available_copies = COALESCE($13, available_copies),
+         availability_status = COALESCE($14, availability_status)
+       WHERE catalog_id = $15 RETURNING *`,
+      [title, isbn, authors, publisher, edition, year, category, total_copies, shelf_location, description, barcode, access_tier, newAvailableCopies, newAvailabilityStatus, req.params.id]
     );
 
     indexCatalogItem(item as Record<string, unknown>).catch((err) =>

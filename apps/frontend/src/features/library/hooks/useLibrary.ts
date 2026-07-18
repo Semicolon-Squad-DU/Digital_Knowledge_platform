@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { CatalogSearchParams } from "@dkp/shared";
+import { CatalogSearchParams, AccessTier } from "@dkp/shared";
 
 export function useCatalogSearch(params: CatalogSearchParams) {
   return useQuery({
@@ -38,7 +38,7 @@ export function useLibrarianDashboard() {
 export function useIssueBook() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { catalog_id?: string; barcode?: string; member_id: string }) => {
+    mutationFn: async (payload: { catalog_id?: string; barcode?: string; member_id: string; due_date?: string }) => {
       const { data } = await api.post("/library/issue", payload);
       return data.data;
     },
@@ -314,6 +314,7 @@ export function useCreateCatalogItem() {
       shelf_location?: string;
       description?: string;
       barcode?: string;
+      access_tier?: AccessTier;
     }) => {
       const isFormData = payload instanceof FormData;
       const { data } = await api.post("/library/catalog", payload, {
@@ -344,6 +345,7 @@ export function useUpdateCatalogItem() {
       shelf_location?: string;
       description?: string;
       barcode?: string;
+      access_tier?: AccessTier;
     }) => {
       const { catalog_id, ...data } = payload;
       const response = await api.put(`/library/catalog/${catalog_id}`, data);
@@ -422,6 +424,38 @@ export function useExportCatalog() {
       a.download = `dkp-catalog-${new Date().toISOString().slice(0, 10)}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
+    },
+  });
+}
+
+export function useRequestCatalogAccess() {
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { data } = await api.post(`/library/catalog/${id}/access-request`, { reason });
+      return data.data;
+    },
+  });
+}
+
+export function usePendingCatalogAccessRequests() {
+  return useQuery({
+    queryKey: ["library", "catalog", "access-requests", "pending"],
+    queryFn: async () => {
+      const { data } = await api.get("/library/catalog/access-requests/pending");
+      return data.data;
+    },
+  });
+}
+
+export function useReviewCatalogAccessRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, status, rejection_message }: { requestId: string; status: "approved" | "denied"; rejection_message?: string }) => {
+      const { data } = await api.patch(`/library/catalog/access-requests/${requestId}/review`, { status, rejection_message });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", "catalog", "access-requests"] });
     },
   });
 }
