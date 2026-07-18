@@ -53,6 +53,13 @@ const researchUpdateSchema = z.object({
   pages: z.string().trim().optional(),
 });
 
+// Builds a human-readable download filename from a title, keeping the
+// original file's extension (S3 keys are UUID-named, e.g. research/<uuid>.pdf).
+function downloadFilename(title: string, key: string): string {
+  const ext = key.includes(".") ? key.slice(key.lastIndexOf(".")) : "";
+  return `${title}${ext}`;
+}
+
 /** Fetches a research output joined with its uploader/lab names — the same
  *  shape GET /:id returns — so Elasticsearch documents carry everything a
  *  result card needs without a follow-up DB round trip per hit. */
@@ -238,8 +245,8 @@ router.get("/:id/cite", optionalAuth, asyncHandler(async (req: AuthRequest, res:
 
 // GET /api/research/:id/download-url
 router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const output = await queryOne<{ file_url: string; access_tier: AccessTier; status: string; uploaded_by: string }>(
-    "SELECT file_url, access_tier, status, uploaded_by FROM research_outputs WHERE output_id = $1",
+  const output = await queryOne<{ file_url: string; access_tier: AccessTier; status: string; uploaded_by: string; title: string }>(
+    "SELECT file_url, access_tier, status, uploaded_by, title FROM research_outputs WHERE output_id = $1",
     [req.params.id]
   );
   if (!output || !output.file_url) throw new AppError(404, "File not found");
@@ -253,7 +260,8 @@ router.get("/:id/download-url", optionalAuth, asyncHandler(async (req: AuthReque
     throw new AppError(403, "Sign in to access this resource, or it may require a higher access tier.");
   }
 
-  const url = await getPresignedUrl(output.file_url);
+  const forceDownload = req.query.download === "true";
+  const url = await getPresignedUrl(output.file_url, 900, forceDownload ? downloadFilename(output.title, output.file_url) : undefined);
   res.json({ success: true, data: { url } });
 }));
 

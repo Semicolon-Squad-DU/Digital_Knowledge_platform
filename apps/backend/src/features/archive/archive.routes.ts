@@ -72,6 +72,13 @@ const bulkMetadataSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+// Builds a human-readable download filename from a title, keeping the
+// original file's extension (S3 keys are UUID-named, e.g. archive/<uuid>.pdf).
+function downloadFilename(title: string, key: string): string {
+  const ext = key.includes(".") ? key.slice(key.lastIndexOf(".")) : "";
+  return `${title}${ext}`;
+}
+
 // GET /api/archive/search
 router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
   const role = req.user?.role ?? "guest";
@@ -121,14 +128,14 @@ router.get("/search", optionalAuth, asyncHandler(async (req: AuthRequest, res: R
 
 // GET /api/archive/download-url?key=... — generate presigned URL, scoped to the caller's access tier
 router.get("/download-url", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { key } = req.query as { key: string };
+  const { key, download } = req.query as { key: string; download?: string };
   if (!key) throw new AppError(400, "key is required");
 
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
 
-  const item = await queryOne<{ item_id: string; access_tier: AccessTier }>(
-    `SELECT item_id, access_tier FROM archive_items WHERE file_url = $1`,
+  const item = await queryOne<{ item_id: string; access_tier: AccessTier; title_en: string }>(
+    `SELECT item_id, access_tier, title_en FROM archive_items WHERE file_url = $1`,
     [key]
   );
   if (!item) throw new AppError(404, "File not found");
@@ -143,7 +150,7 @@ router.get("/download-url", authenticate, asyncHandler(async (req: AuthRequest, 
     }
   }
 
-  const url = await getPresignedUrl(key, 300); // 5 min expiry
+  const url = await getPresignedUrl(key, 300, download === "true" ? downloadFilename(item.title_en, key) : undefined); // 5 min expiry
   res.json({ success: true, data: { url } });
 }));
 
@@ -299,8 +306,8 @@ router.get("/:id/download", optionalAuth, asyncHandler(async (req: AuthRequest, 
   const role = req.user?.role ?? "guest";
   const allowedTiers = ALLOWED_TIERS_BY_ROLE[role] ?? ["public"];
 
-  const item = await queryOne<{ item_id: string; access_tier: AccessTier; file_url: string; status: string }>(
-    "SELECT item_id, access_tier, file_url, status FROM archive_items WHERE item_id = $1",
+  const item = await queryOne<{ item_id: string; access_tier: AccessTier; file_url: string; status: string; title_en: string }>(
+    "SELECT item_id, access_tier, file_url, status, title_en FROM archive_items WHERE item_id = $1",
     [req.params.id]
   );
 
@@ -313,10 +320,17 @@ router.get("/:id/download", optionalAuth, asyncHandler(async (req: AuthRequest, 
   }
 
   if (!allowedTiers.includes(item.access_tier)) {
-    throw new AppError(403, "Access denied");
+    const accessReq = req.user && await queryOne<{ status: string }>(
+      `SELECT status FROM access_requests WHERE user_id = $1 AND item_id = $2`,
+      [req.user.user_id, item.item_id]
+    );
+    if (!accessReq || accessReq.status !== "approved") {
+      throw new AppError(403, "Access denied");
+    }
   }
 
-  const url = await getPresignedUrl(item.file_url);
+  const forceDownload = req.query.download === "true";
+  const url = await getPresignedUrl(item.file_url, 900, forceDownload ? downloadFilename(item.title_en, item.file_url) : undefined);
 
   if (req.user) {
     await query(

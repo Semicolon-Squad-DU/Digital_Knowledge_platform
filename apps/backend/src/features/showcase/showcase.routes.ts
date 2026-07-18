@@ -42,6 +42,13 @@ const showcaseReviewSchema = z.object({
   comments: z.string().optional(),
 });
 
+// Builds a human-readable download filename from a title, keeping the
+// original file's extension (S3 keys are UUID-named, e.g. showcase/<uuid>.pdf).
+function downloadFilename(title: string, key: string): string {
+  const ext = key.includes(".") ? key.slice(key.lastIndexOf(".")) : "";
+  return `${title}${ext}`;
+}
+
 // GET /api/showcase
 router.get("/", optionalAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
   const { department, semester, technology, advisor_id, submitted_by, q, page = "1", limit = "12" } =
@@ -160,13 +167,14 @@ router.get("/:id", optionalAuth, asyncHandler(async (req: AuthRequest, res: Resp
 
 // GET /api/showcase/:id/download-url
 router.get("/:id/download-url", authenticate, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const project = await queryOne<{ report_url: string | null }>(
-    "SELECT report_url FROM student_projects WHERE project_id = $1",
+  const project = await queryOne<{ report_url: string | null; title: string }>(
+    "SELECT report_url, title FROM student_projects WHERE project_id = $1",
     [req.params.id]
   );
   if (!project || !project.report_url) throw new AppError(404, "File not found");
 
-  const url = await getPresignedUrl(project.report_url);
+  const forceDownload = req.query.download === "true";
+  const url = await getPresignedUrl(project.report_url, 900, forceDownload ? downloadFilename(project.title, project.report_url) : undefined);
   res.json({ success: true, data: { url } });
 }));
 

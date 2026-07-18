@@ -214,11 +214,22 @@ export async function retryQueuedUploads(): Promise<void> {
 
 export async function getPresignedUrl(
   key: string,
-  expiresIn = 900 // 15 minutes
+  expiresIn = 900, // 15 minutes
+  // When set, forces the browser to download the file (Content-Disposition:
+  // attachment) instead of rendering it inline — used for document downloads,
+  // left unset for previews like thumbnails and video playback.
+  downloadFilename?: string
 ): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: config.s3.bucket,
     Key: key,
+    // getSignedUrl percent-encodes this as a query value itself, so the raw
+    // header value goes here — only strip characters that would break the
+    // quoted-string syntax or inject extra header content (titles are
+    // user-supplied, e.g. archive item titles).
+    ...(downloadFilename && {
+      ResponseContentDisposition: `attachment; filename="${downloadFilename.replace(/["\\\r\n]/g, "")}"`,
+    }),
   });
   return getSignedUrl(s3Client, command, { expiresIn });
 }
