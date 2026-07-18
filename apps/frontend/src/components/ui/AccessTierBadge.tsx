@@ -12,8 +12,8 @@ export function AccessTierBadge({ tier }: { tier?: string }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center",
-      padding: "2px 8px", borderRadius: 3,
-      fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+      padding: "3px 9px", borderRadius: 6,
+      fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
       background: s.bg, color: s.color,
     }}>
       {s.label}
