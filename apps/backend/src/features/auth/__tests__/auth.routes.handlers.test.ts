@@ -12,8 +12,8 @@ jest.mock("../../../infrastructure/email.service", () => ({
   verificationOtpEmail: jest.fn(() => "<html></html>"),
   accountApprovalEmail: jest.fn(() => "<html></html>"),
 }));
-jest.mock("../../../infrastructure/google-auth.service", () => ({
-  verifyGoogleAccessToken: jest.fn(),
+jest.mock("../../../infrastructure/firebase-auth.service", () => ({
+  verifyFirebaseIdToken: jest.fn(),
 }));
 jest.mock("../../../infrastructure/notification.service", () => ({
   notifyAdmins: jest.fn().mockResolvedValue(undefined),

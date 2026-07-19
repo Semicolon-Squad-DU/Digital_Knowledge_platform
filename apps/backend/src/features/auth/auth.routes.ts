@@ -8,7 +8,7 @@ import { authenticate, AuthRequest } from "../../core/middleware/auth.middleware
 import { AppError, asyncHandler } from "../../core/middleware/error.middleware";
 import { logger } from "../../core/config/logger";
 import { sendEmail, verificationOtpEmail, accountApprovalEmail } from "../../infrastructure/email.service";
-import { verifyGoogleAccessToken } from "../../infrastructure/google-auth.service";
+import { verifyFirebaseIdToken } from "../../infrastructure/firebase-auth.service";
 import { notifyAdmins } from "../../infrastructure/notification.service";
 
 function generateOtp(): string {
@@ -700,7 +700,10 @@ router.post(
     // above isDomainAllowed() for why. Accepting a provider we can't
     // independently verify would defeat the point of this endpoint.
     body("provider").equals("google").withMessage("Unsupported OAuth provider"),
-    body("accessToken").trim().notEmpty().withMessage("Google access token is required"),
+    // Firebase Google sign-in sends the Firebase ID token as `idToken`.
+    // `accessToken` is still accepted as an alias for backward compatibility.
+    body("idToken").optional({ values: "falsy" }).trim().notEmpty(),
+    body("accessToken").optional({ values: "falsy" }).trim().notEmpty(),
     body("role").isIn(SELF_SERVICE_ROLES).withMessage("Invalid role selected").optional({ values: "falsy" }),
   ],
   asyncHandler(async (req: Request, res: Response) => {
@@ -710,22 +713,30 @@ router.post(
       return;
     }
 
-    const { accessToken, role, department } = req.body as {
-      accessToken: string;
+    const { idToken, accessToken, role, department } = req.body as {
+      idToken?: string;
+      accessToken?: string;
       role: string;
       department?: string;
     };
     const provider = "google";
 
+    // The frontend uses Firebase Google sign-in, which yields a Firebase ID
+    // token. Accept it under `idToken`, or `accessToken` as a legacy alias.
+    const firebaseToken = idToken || accessToken;
+    if (!firebaseToken) {
+      throw new AppError(400, "Firebase ID token is required");
+    }
+
     // Never trust client-submitted email/name/providerId for OAuth — verify
-    // the access token with Google and use ITS claims as the source of truth.
-    let verified: { email: string; name: string; googleId: string };
+    // the Firebase ID token and use ITS claims as the source of truth.
+    let verified: { email: string; name: string; firebaseUid: string };
     try {
-      verified = await verifyGoogleAccessToken(accessToken);
+      verified = await verifyFirebaseIdToken(firebaseToken);
     } catch (err) {
       throw new AppError(401, (err as Error).message || "Google sign-in verification failed");
     }
-    const { email, name, googleId: providerId } = verified;
+    const { email, name, firebaseUid: providerId } = verified;
 
     // Check if user already exists
     let user = await queryOne<{

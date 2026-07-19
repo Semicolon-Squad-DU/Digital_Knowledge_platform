@@ -76,9 +76,9 @@ function LoginForm() {
     }
   };
 
-  const attemptOAuthLogin = async (accessToken: string, role?: RoleValue) => {
+  const attemptOAuthLogin = async (idToken: string, role?: RoleValue) => {
     const res = await api.post("/auth/oauth-login", {
-      accessToken, provider: "google",
+      idToken, provider: "google",
       ...(role ? { role, department: "" } : {}),
     });
     return res.data.data;
@@ -93,15 +93,15 @@ function LoginForm() {
   };
 
   const handleGoogleSignIn = async () => {
-    const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
+    const { signInWithPopup } = await import("firebase/auth");
     const { firebaseAuth, googleProvider } = await import("@/lib/firebase");
 
-    let accessToken: string | null = null;
+    let idToken: string | null = null;
     try {
       const result = await signInWithPopup(firebaseAuth, googleProvider());
-      // The Google OAuth access token (not Firebase's ID token) is what the
-      // backend verifies via Google's userinfo endpoint — see oauth-login.
-      accessToken = GoogleAuthProvider.credentialFromResult(result)?.accessToken ?? null;
+      // The backend verifies the Firebase ID token against this project's
+      // public certs (see oauth-login) — no Google Cloud OAuth client needed.
+      idToken = await result.user.getIdToken();
     } catch (err: any) {
       if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
         return; // user dismissed the popup — not an error worth surfacing
@@ -114,18 +114,18 @@ function LoginForm() {
       return;
     }
 
-    if (!accessToken) {
+    if (!idToken) {
       toast.error("Could not retrieve Google credentials. Please try again.");
       return;
     }
 
     const t = toast.loading("Signing you in…");
     try {
-      const data = await attemptOAuthLogin(accessToken);
+      const data = await attemptOAuthLogin(idToken);
       toast.dismiss(t);
       if (data.requiresRole) {
         setGoogleProfile({ email: data.email, name: data.name, sub: "" });
-        setGoogleAccessToken(accessToken);
+        setGoogleAccessToken(idToken);
         setSelectedRole("member");
         setShowRoleModal(true);
       } else {

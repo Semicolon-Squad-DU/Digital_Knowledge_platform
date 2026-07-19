@@ -95,6 +95,11 @@ export const config = {
     // check is skipped with a loud warning — set this in any environment
     // that's reachable outside localhost.
     googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+    // Firebase project ID — the `aud` claim every Firebase ID token carries.
+    // Verifying against this (plus Google's public signing certs) is how the
+    // backend trusts a Firebase Google sign-in without needing a service-account
+    // key or Google Cloud billing. Must match the frontend's Firebase config.
+    firebaseProjectId: process.env.FIREBASE_PROJECT_ID || "",
   },
 
   library: {
