@@ -180,7 +180,7 @@ export default function RegisterPage() {
 
   const handleGoogleSignIn = async () => {
     const { signInWithPopup } = await import("firebase/auth");
-    const { firebaseAuth, googleProvider } = await import("@/lib/firebase");
+    const { firebaseAuth, googleProvider, firebaseAuthErrorMessage } = await import("@/lib/firebase");
 
     let idToken: string | null = null;
     try {
@@ -188,15 +188,10 @@ export default function RegisterPage() {
       // The backend verifies the Firebase ID token (RS256, signed by Google)
       // against the Firebase project — see oauth-login / verifyFirebaseIdToken.
       idToken = await result.user.getIdToken();
-    } catch (err: any) {
-      if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
-        return; // user dismissed the popup — not an error worth surfacing
-      }
-      if (err?.code === "auth/popup-blocked") {
-        toast.error("Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.");
-      } else {
-        toast.error("Google sign-in was cancelled or failed. Please try again.");
-      }
+    } catch (err: unknown) {
+      const { FIREBASE_POPUP_DISMISSED } = await import("@/lib/firebase");
+      const msg = firebaseAuthErrorMessage(err);
+      if (msg !== FIREBASE_POPUP_DISMISSED) toast.error(msg);
       return;
     }
 

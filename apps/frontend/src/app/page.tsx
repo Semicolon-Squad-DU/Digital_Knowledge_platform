@@ -20,6 +20,14 @@ const PARTNERS = [
 
 
 
+// Where a signed-in user's "Dashboard" button should land, by role. Mirrors the
+// same mapping used on the login page so the landing-page shortcut is consistent.
+function roleHome(role?: string): string {
+  if (role === "admin") return "/admin";
+  if (role === "librarian") return "/librarian";
+  return "/dashboard";
+}
+
 const QUICK_LINKS = [
   { label: "Browse Archive", href: "/archive", icon: Archive, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Search institutional documents" },
   { label: "Library Catalog", href: "/library", icon: BookOpen, bg: "linear-gradient(160deg, #1a1a1d 0%, #101013 100%)", color: "#ffffff", desc: "Books, journals & more" },
@@ -560,16 +568,26 @@ export default function HomePage() {
                 >{item.label}</Link>
               ))}
             </nav>
-            <div className="hidden md:flex" style={{ alignItems: "center", justifyContent: "flex-end", minWidth: "170px", flexShrink: 0 }}>
+            <div className="hidden md:flex" style={{ alignItems: "center", justifyContent: "flex-end", gap: 10, minWidth: "170px", flexShrink: 0 }}>
               {isAuthenticated && (
-                <button
-                  onClick={handleLogout}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #c8c5cd", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
-                >
-                  <LogOut size={13} /> Sign Out
-                </button>
+                <>
+                  <Link
+                    href={roleHome(user?.role)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 15px", fontSize: "13px", fontWeight: 600, color: "#ffffff", background: "#141b2b", border: "1.5px solid #141b2b", borderRadius: "8px", textDecoration: "none", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#000000"; e.currentTarget.style.borderColor = "#000000"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#141b2b"; e.currentTarget.style.borderColor = "#141b2b"; }}
+                  >
+                    <LayoutDashboard size={14} /> Dashboard
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", fontSize: "13px", fontWeight: 500, color: "#4b5563", background: "transparent", border: "1.5px solid #c8c5cd", borderRadius: "8px", cursor: "pointer", letterSpacing: "0.01em", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#4b5563"; e.currentTarget.style.borderColor = "#c8c5cd"; }}
+                  >
+                    <LogOut size={13} /> Sign Out
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -683,12 +701,21 @@ export default function HomePage() {
               {/* Drawer Auth Actions Footer */}
               <div style={{ padding: "12px 16px 20px 16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(0,0,0,0.15)" }}>
                 {isAuthenticated ? (
-                  <button
-                    onClick={() => { handleLogout(); handleCloseSidebar(); }}
-                    style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px", fontSize: "13.5px", fontWeight: 600, color: "#fca5a5", background: "rgba(239, 68, 68, 0.15)", border: "1.5px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", cursor: "pointer", transition: "all 0.2s" }}
-                  >
-                    <LogOut size={14} /> Sign Out
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <Link
+                      href={roleHome(user?.role)}
+                      onClick={handleCloseSidebar}
+                      style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10.5px", fontSize: "13.5px", fontWeight: 700, color: "#141b2b", background: "#ffffff", border: "none", borderRadius: "8px", textDecoration: "none", boxSizing: "border-box", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}
+                    >
+                      <LayoutDashboard size={14} /> Go to Dashboard
+                    </Link>
+                    <button
+                      onClick={() => { handleLogout(); handleCloseSidebar(); }}
+                      style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px", fontSize: "13.5px", fontWeight: 600, color: "#fca5a5", background: "rgba(239, 68, 68, 0.15)", border: "1.5px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", cursor: "pointer", transition: "all 0.2s" }}
+                    >
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <Link

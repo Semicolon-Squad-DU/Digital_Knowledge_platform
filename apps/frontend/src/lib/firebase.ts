@@ -30,3 +30,37 @@ export function googleProvider(): GoogleAuthProvider {
   provider.addScope("https://www.googleapis.com/auth/userinfo.email");
   return provider;
 }
+
+// Sentinel returned for popup dismissals — the caller should stay silent rather
+// than show an error toast when the user simply closed the popup.
+export const FIREBASE_POPUP_DISMISSED = "__popup_dismissed__";
+
+// Turns a Firebase Auth error into a human-readable, actionable message.
+// Crucially it names the two failures that only appear once deployed to a real
+// domain — an unauthorized domain or a disabled Google provider — instead of
+// hiding them behind a generic "sign-in failed", so misconfig is diagnosable
+// from the UI. Returns FIREBASE_POPUP_DISMISSED when the user just closed the
+// popup, so the caller can no-op.
+export function firebaseAuthErrorMessage(err: unknown): string {
+  const code = (err as { code?: string })?.code ?? "";
+  switch (code) {
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+    case "auth/user-cancelled":
+      return FIREBASE_POPUP_DISMISSED;
+    case "auth/popup-blocked":
+      return "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.";
+    case "auth/unauthorized-domain":
+      return "This site's domain is not authorized for Google sign-in. Add it under Firebase Console → Authentication → Settings → Authorized domains.";
+    case "auth/operation-not-allowed":
+      return "Google sign-in is not enabled for this project. Enable it under Firebase Console → Authentication → Sign-in method.";
+    case "auth/network-request-failed":
+      return "Network error reaching Google. Check your connection and try again.";
+    default:
+      // Surface the raw code so a misconfiguration is still identifiable in
+      // the wild rather than swallowed by a vague message.
+      return code
+        ? `Google sign-in failed (${code}). Please try again.`
+        : "Google sign-in failed. Please try again.";
+  }
+}
