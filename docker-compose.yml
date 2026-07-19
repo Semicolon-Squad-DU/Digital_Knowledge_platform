@@ -47,6 +47,11 @@ services:
     environment:
       MINIO_ROOT_USER: dkp_minio_user
       MINIO_ROOT_PASSWORD: dkp_minio_password
+      # Static single-key KMS backend — required for MinIO to honor the
+      # ServerSideEncryption: AES256 header the backend sends on every
+      # PutObject (s3.service.ts). Without this, MinIO rejects SSE-S3
+      # requests with "KMS not configured for a server side encrypted objects".
+      MINIO_KMS_SECRET_KEY: dkp-backup-key:RZuvWMpToG8cJeuHlmSxtbiRPjb/zvH5OmxWKZ4t2vc=
     ports:
       - "9000:9000"
       - "9001:9001"
