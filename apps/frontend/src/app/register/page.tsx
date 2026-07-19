@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -179,40 +178,37 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      toast.error("Google Client ID not configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local");
+  const handleGoogleSignIn = async () => {
+    const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
+    const { firebaseAuth, googleProvider } = await import("@/lib/firebase");
+
+    let accessToken: string | null = null;
+    try {
+      const result = await signInWithPopup(firebaseAuth, googleProvider());
+      // The Google OAuth access token (not Firebase's ID token) is what the
+      // backend verifies via Google's userinfo endpoint — see oauth-login.
+      accessToken = GoogleAuthProvider.credentialFromResult(result)?.accessToken ?? null;
+    } catch (err: any) {
+      if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
+        return; // user dismissed the popup — not an error worth surfacing
+      }
+      if (err?.code === "auth/popup-blocked") {
+        toast.error("Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.");
+      } else {
+        toast.error("Google sign-in was cancelled or failed. Please try again.");
+      }
       return;
     }
-    if (typeof window !== "undefined" && (window as any).google) {
-      try {
-        const client = (window as any).google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-          error_callback: (err: any) => {
-            if (err?.type === "popup_failed_to_open" || err?.type === "popup_closed") {
-              toast.error("Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.");
-            } else {
-              toast.error("Google sign-in was cancelled or failed. Please try again.");
-            }
-          },
-          callback: async (tokenResponse: any) => {
-            if (tokenResponse?.access_token) {
-              await handleOAuthAuthorize({
-                accessToken: tokenResponse.access_token,
-                role: selectedRole, provider: "google", department: "",
-              });
-            }
-          },
-        });
-        client.requestAccessToken();
-      } catch {
-        toast.error("Failed to initialize Google Sign-In SDK");
-      }
-    } else {
-      toast.error("Google Sign-In is still loading. Please wait a moment and try again.");
+
+    if (!accessToken) {
+      toast.error("Could not retrieve Google credentials. Please try again.");
+      return;
     }
+
+    await handleOAuthAuthorize({
+      accessToken,
+      role: selectedRole, provider: "google", department: "",
+    });
   };
 
   const inputStyle = (hasError?: boolean): React.CSSProperties => ({
@@ -496,7 +492,6 @@ export default function RegisterPage() {
         </div>
       </main>
 
-      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </div>
   );
 }
