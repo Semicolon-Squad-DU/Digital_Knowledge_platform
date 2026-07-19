@@ -90,14 +90,25 @@ describe("auth.store", () => {
       expect(useAuthStore.getState().isAuthenticated).toBe(true);
     });
 
-    it("drops to guest state when the fetch fails, e.g. an expired session", async () => {
+    it("drops to guest state on an auth rejection, e.g. an expired session", async () => {
       useAuthStore.setState({ user: { id: "stale" } as any, isAuthenticated: true });
-      mockedApi.get.mockRejectedValueOnce(new Error("401"));
+      mockedApi.get.mockRejectedValueOnce({ response: { status: 401 } });
 
       await useAuthStore.getState().fetchMe();
 
       expect(useAuthStore.getState().user).toBeNull();
       expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    });
+
+    it("preserves the session on a non-auth error so a rehydration race can't log the user out", async () => {
+      useAuthStore.setState({ user: { id: "u4" } as any, isAuthenticated: true });
+      // e.g. a network blip or a transient module-load race (api not ready yet)
+      mockedApi.get.mockRejectedValueOnce(new Error("Network Error"));
+
+      await useAuthStore.getState().fetchMe();
+
+      expect(useAuthStore.getState().user).toEqual({ id: "u4" });
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
     });
   });
 

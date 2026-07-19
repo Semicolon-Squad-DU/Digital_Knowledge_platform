@@ -1,7 +1,17 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
-import { useAuthStore } from "@/store/auth.store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+
+// Lazily reach the auth store to drop a dead session. Imported on demand rather
+// than at module top level: the store imports this module for `api`, and a
+// top-level import here closes that cycle. When webpack evaluates lib/api first,
+// the store initializes mid-cycle and its synchronous persist rehydration calls
+// fetchMe() while `api` is still undefined — wiping a valid session to guest.
+async function clearAuthSession() {
+  const { useAuthStore } = await import("@/store/auth.store");
+  useAuthStore.getState().clearSession();
+}
+
 const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"];
 
 export const api = axios.create({
@@ -59,7 +69,7 @@ api.interceptors.response.use(
         isRefreshing = false;
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        useAuthStore.getState().clearSession();
+        void clearAuthSession();
         return Promise.reject(error);
       }
 
@@ -78,7 +88,7 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        useAuthStore.getState().clearSession();
+        void clearAuthSession();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

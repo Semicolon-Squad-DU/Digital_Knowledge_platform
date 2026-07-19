@@ -58,8 +58,14 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await api.get("/auth/me");
           set({ user: data.data, isAuthenticated: true });
-        } catch {
-          set({ user: null, isAuthenticated: false });
+        } catch (err) {
+          // Only downgrade to guest on an actual auth rejection (401/403). A
+          // network error or a transient module-load race must not wipe a valid
+          // session — leave the persisted state intact so a later call recovers.
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          if (status === 401 || status === 403) {
+            set({ user: null, isAuthenticated: false });
+          }
         }
       },
 
