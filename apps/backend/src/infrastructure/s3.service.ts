@@ -255,7 +255,27 @@ export async function fileExistsInS3(key: string): Promise<boolean> {
       new HeadObjectCommand({ Bucket: config.s3.bucket, Key: key })
     );
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    const name = (err as { name?: string } | undefined)?.name;
+    const status = (err as { $metadata?: { httpStatusCode?: number } } | undefined)?.$metadata
+      ?.httpStatusCode;
+    if (name === "NotFound" || name === "NoSuchKey" || status === 404) {
+      return false;
+    }
+    // Anything else — wrong S3_ENDPOINT/credentials/bucket, DNS/connection
+    // failure, etc. — is a storage misconfiguration, not "the file doesn't
+    // exist". Swallowing it to `false` here previously surfaced as a
+    // misleading "This document's file is missing from storage" 404 to
+    // every caller (archive/research/showcase/library download & preview
+    // routes all gate on this), which sends whoever's debugging looking for
+    // a deleted file instead of a broken storage connection. Rethrowing
+    // lets the global error handler log the real cause and return a 500.
+    logger.error("S3 existence check failed for a reason other than NotFound", {
+      key,
+      error: (err as Error)?.message,
+      name,
+      status,
+    });
+    throw err;
   }
 }

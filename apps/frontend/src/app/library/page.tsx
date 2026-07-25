@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn, formatFileSize } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/api";
 import toast from "react-hot-toast";
 import { ResultCard, type CatalogItem } from "./ResultCard";
 
@@ -133,7 +134,7 @@ export default function LibraryPage() {
     onDrop, accept: { "application/pdf": [".pdf"] }, maxFiles: 1, maxSize: 500 * 1024 * 1024,
   });
 
-  const { data, isLoading, isError, refetch } = useCatalogSearch(params);
+  const { data, isLoading, isError, error, refetch } = useCatalogSearch(params);
   const { mutateAsync: addBook, isPending: isAdding }      = useCreateCatalogItem();
   const { mutateAsync: deleteBook, isPending: isDeleting } = useDeleteCatalogItem();
   const { mutateAsync: addToWishlist }                     = useAddToWishlist();
@@ -425,7 +426,7 @@ export default function LibraryPage() {
           </div>
 
           {/* Error */}
-          {isError && <div style={{ padding:"12px 16px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:16 }}>Failed to load catalog. Please try again.</div>}
+          {isError && <div style={{ padding:"12px 16px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:16 }}>{getErrorMessage(error, "Failed to load catalog. Please try again.")}</div>}
 
           {/* Loading skeletons */}
           {isLoading && (

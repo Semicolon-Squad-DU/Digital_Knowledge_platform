@@ -10,6 +10,18 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+/** Every backend error responds `{ success: false, message }` (see
+ * error.middleware.ts) — pull that through instead of a hardcoded string so
+ * things like rate-limit 429s are distinguishable from a generic failure. */
+export function getErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const message = (error.response?.data as { message?: string } | undefined)?.message;
+    if (message) return message;
+    if (error.code === "ERR_NETWORK") return "Can't reach the server. Check your connection and try again.";
+  }
+  return fallback;
+}
+
 // Attach JWT from localStorage
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (typeof window !== "undefined") {

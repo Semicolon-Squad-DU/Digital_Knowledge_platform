@@ -8,6 +8,7 @@ import {
   Archive as ArchiveIcon, FileText,
 } from "lucide-react";
 import { useArchiveSearch, useDownloadArchiveItem } from "@/features/archive/hooks/useArchive";
+import { getErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ArchiveCard } from "@/features/archive/components/ArchiveCard";
@@ -49,7 +50,7 @@ export default function ArchivePage() {
     date_from: "", date_to: "", tags: "", page: 1, limit: 20,
   });
 
-  const { data, isLoading, isError } = useArchiveSearch(params);
+  const { data, isLoading, isError, error } = useArchiveSearch(params);
   const { mutateAsync: download }    = useDownloadArchiveItem();
   const isMobile  = useMediaQuery("(max-width: 767px)");
   const canUpload = _hasHydrated && isAuthenticated && user?.role === "archivist";
@@ -362,7 +363,7 @@ export default function ArchivePage() {
           {/* Error */}
           {isError && (
             <div style={{ padding: "16px 20px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, color: "#991b1b", fontSize: 13 }}>
-              Failed to load results. Please try again.
+              {getErrorMessage(error, "Failed to load results. Please try again.")}
             </div>
           )}
 

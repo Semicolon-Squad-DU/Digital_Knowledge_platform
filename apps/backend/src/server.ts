@@ -64,6 +64,32 @@ app.use(
   })
 );
 
+// ── Health / readiness checks ───────────────────────────────────
+// Registered before the rate limiter: orchestrator healthchecks (Docker's
+// polls /health every 15s — see docker-compose.prod.yml) must never compete
+// with real traffic for the same per-IP budget. When the backend is hit at
+// localhost (e.g. testing docker-compose.prod.yml locally), the healthcheck
+// and the browser's own API calls resolve to the same loopback IP, so an
+// unlimited healthcheck endpoint sitting behind the limiter would silently
+// eat a third of the window's budget before a single user request lands.
+app.get("/health", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: "degraded" });
+  }
+});
+
+let isReady = false;
+app.get("/ready", (_req, res) => {
+  if (isReady) {
+    res.json({ status: "ready" });
+  } else {
+    res.status(503).json({ status: "starting" });
+  }
+});
+
 // ── Rate limiting ─────────────────────────────────────────────
 // These limits are per-IP, and every request from this dev machine — every
 // tab, every background poll, every manual curl/script test — shares the
@@ -72,15 +98,25 @@ app.use(
 // out the very person testing the app. Only enforce in production, where
 // requests actually come from distinct real clients (isProduction declared
 // above, next to the CORS origin allowlist that makes the same distinction).
+//
+// `max` is generous on purpose: this is a shared, site-wide backstop against
+// abuse/scraping, not a per-feature quota. A single archive/library page view
+// alone fires several API calls (search, filters, pagination, item detail),
+// and on a shared/NAT'd IP that's multiplied across every concurrent user —
+// a low ceiling here trips for ordinary browsing long before it catches
+// actual abuse, and masks the auth-specific limiter below (mounted after
+// this one, so it only ever fires if this budget isn't already spent).
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests, please try again later" },
   skip: () => !isProduction,
 });
 
+// Tighter, auth-only budget: brute-force protection on login/register, kept
+// separate from the general browsing budget above.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -104,26 +140,6 @@ app.use(
     skip: (req) => req.path === "/health",
   })
 );
-
-// ── Health check ──────────────────────────────────────────────
-app.get("/health", async (_req, res) => {
-  try {
-    await pool.query("SELECT 1");
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  } catch {
-    res.status(503).json({ status: "degraded" });
-  }
-});
-
-// ── Readiness check (for orchestrators: don't route traffic until bootstrap completes) ──
-let isReady = false;
-app.get("/ready", (_req, res) => {
-  if (isReady) {
-    res.json({ status: "ready" });
-  } else {
-    res.status(503).json({ status: "starting" });
-  }
-});
 
 // ── Resumable uploads (tus protocol) ────────────────────────────
 // Mounted with Express's raw req/res via .handle() — tus's own body handling

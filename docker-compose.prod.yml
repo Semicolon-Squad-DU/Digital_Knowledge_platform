@@ -44,13 +44,32 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       CLAMAV_HOST: clamav
       CLAMAV_PORT: 3310
-      S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-dkp_minio_user}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-dkp_minio_password}
+      # NOTE: this is the endpoint the browser's presigned PDF/download links
+      # point at too (s3.service.ts's getPresignedUrl bakes it straight into
+      # the URL), not just what the backend uses server-to-server. The
+      # bundled `minio` hostname below only resolves inside this Compose
+      # network — fine for a same-box deploy with MinIO's own port exposed
+      # publicly, but if you're using a real S3-compatible provider (e.g.
+      # Supabase Storage) or reverse-proxying MinIO behind a public
+      # subdomain, set S3_ENDPOINT in your root .env to that public HTTPS
+      # URL or PDFs will fail to load for every real user.
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-dkp_minio_user}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-dkp_minio_password}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-dkp-files}
-      S3_FORCE_PATH_STYLE: "true"
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      # Same trap as S3_ENDPOINT above: hardcoding this to the bundled MailHog
+      # container means every verification/notification/digest email in
+      # production silently lands in a fake inbox nobody reads instead of
+      # being delivered. Set SMTP_HOST/PORT (and SMTP_USER/PASS via the
+      # backend's own .env, since those aren't templated here) to a real
+      # provider before relying on email in production.
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@dkp.edu.bd}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "4000:4000"
@@ -77,3 +96,28 @@ services:
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     ports:
       - "3000:3000"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: dkp_caddy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+      - minio
+    environment:
+      CADDY_EMAIL: ${CADDY_EMAIL}
+      FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      STORAGE_DOMAIN: ${STORAGE_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

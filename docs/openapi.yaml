@@ -1,0 +1,401 @@
+openapi: 3.0.3
+info:
+  title: Digital Knowledge Platform API
+  version: "1.0"
+  description: >
+    REST API for the Digital Knowledge Platform (DKP). All routes are prefixed
+    with /api. Authentication is a bearer JWT in the Authorization header
+    unless noted otherwise. This spec documents the endpoint surface described
+    in the project report's Section 3.2; request/response bodies for the
+    less-frequently-used routes are intentionally left light on schema detail
+    and should be filled in from apps/backend/src/features/*/*.routes.ts as
+    the team has time.
+servers:
+  - url: https://semicolon.farefin.com/api
+    description: Production (self-hosted)
+  - url: http://localhost:4000/api
+    description: Local development
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+paths:
+  /health:
+    get:
+      summary: Service health check
+      security: []
+      responses:
+        "200": { description: OK }
+
+  /auth/register:
+    post:
+      summary: Create a new user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                department: { type: string }
+                role: { type: string, enum: [member, student_author, researcher] }
+      responses:
+        "201": { description: Account created, pending verification }
+        "400": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /auth/login:
+    post:
+      summary: Authenticate and receive access/refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200": { description: "Access + refresh token pair, password hash stripped from response" }
+        "401": { description: "Invalid email or password (generic message to avoid account enumeration)" }
+  /auth/refresh:
+    post:
+      summary: Exchange a refresh token for a new access token
+      security: []
+      responses:
+        "200": { description: New access token }
+  /auth/logout:
+    post:
+      summary: Invalidate the current session
+      responses:
+        "204": { description: Logged out }
+  /auth/me:
+    get:
+      summary: Retrieve the current authenticated user
+      responses:
+        "200": { description: Current user profile }
+
+  /archive/search:
+    get:
+      summary: Full-text/tiered search across archive items
+      security: []
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: tags, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Paginated, access-tier-filtered results }
+  /archive/upload:
+    post:
+      summary: Upload a new archive document
+      description: Roles - archivist, admin.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+                title_en: { type: string }
+                title_bn: { type: string }
+                access_tier: { type: string, enum: [public, member, staff, restricted] }
+      responses:
+        "201": { description: Archive item created as Draft }
+  /archive/bulk-upload:
+    post:
+      summary: Upload up to 50 files in one batch
+      responses:
+        "201": { description: Per-file upload results }
+  /archive/{id}:
+    get:
+      summary: Get archive item detail
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Archive item }
+        "404": { description: Not found or not visible to caller's access tier }
+  /archive/{id}/download:
+    get:
+      summary: Get a presigned download/preview URL for the item's file
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: "{ data: { url } }" }
+        "403": { description: Access denied for caller's tier }
+        "404": { description: Item or underlying file not found }
+  /archive/{id}/status:
+    patch:
+      summary: Transition lifecycle status (draft/review/published/archived)
+      description: Roles - archivist, librarian, admin (backward transitions - archivist/admin only).
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Updated item }
+  /archive/{id}/versions:
+    get:
+      summary: List version history for an archive item
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Version list }
+  /archive/{id}/access-request:
+    post:
+      summary: Request access to a restricted-tier item
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { reason: { type: string } }
+      responses:
+        "201": { description: Access request submitted }
+  /archive/tags:
+    get:
+      summary: List archive tags
+      security: []
+      responses:
+        "200": { description: Tag list }
+
+  /library/catalog/search:
+    get:
+      summary: Faceted catalog search
+      security: []
+      responses:
+        "200": { description: Catalog results with availability }
+  /library/catalog:
+    post:
+      summary: Create a catalog item
+      description: Role - librarian, admin. (Verified against apps/backend/src/features/library/library.routes.ts.)
+      responses:
+        "201": { description: Catalog item created }
+  /library/catalog/{id}:
+    get:
+      summary: Get catalog item detail
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Catalog item } }
+  /library/catalog/{id}/download-url:
+    get:
+      summary: Get a presigned URL for the catalog item's attached document, if any
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: "{ data: { url } }" } }
+  /library/catalog/lookup/{barcode}:
+    get:
+      summary: Look up a catalog item by scanned/typed barcode
+      parameters: [{ name: barcode, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Catalog item } }
+  /library/issue:
+    post:
+      summary: Issue a book to a member (manual ID entry)
+      description: Role - librarian.
+      responses:
+        "201": { description: Lending transaction recorded }
+  /library/return:
+    post:
+      summary: Process a book return, calculate fine if overdue
+      description: Role - librarian.
+      responses:
+        "200": { description: Return processed }
+  /library/holds:
+    get:
+      summary: List hold requests (FIFO queue)
+      responses:
+        "200": { description: Hold list }
+  /library/wishlist:
+    get:
+      summary: Get the caller's wishlist
+      responses:
+        "200": { description: Wishlist items }
+  /library/fines:
+    get:
+      summary: Get outstanding fines
+      responses:
+        "200": { description: Fine records }
+  /library/dashboard:
+    get:
+      summary: Librarian operations dashboard summary
+      description: Role - librarian, admin.
+      responses:
+        "200": { description: On-loan/overdue/holds/fines summary }
+  /library/member/{id}/history:
+    get:
+      summary: Full borrowing history for a member
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Borrowing history }
+
+  /research:
+    get:
+      summary: List research outputs
+      security: []
+      responses:
+        "200": { description: Research output list }
+    post:
+      summary: Publish a new research output
+      description: Role - researcher.
+      responses:
+        "201": { description: Output created }
+  /research/{id}:
+    get:
+      summary: Get a research output
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Output detail } }
+    put:
+      summary: Edit own research output
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Updated output } }
+    delete:
+      summary: Retract own research output
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "204": { description: Retracted (soft, preserved for audit) } }
+  /research/{id}/cite:
+    get:
+      summary: Get citation export (BibTeX/APA/MLA)
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: format, in: query, schema: { type: string, enum: [bibtex, apa, mla] } }
+      responses: { "200": { description: Citation text } }
+  /research/labs:
+    get:
+      summary: List research labs
+      security: []
+      responses: { "200": { description: Lab list } }
+    post:
+      summary: Create a research lab
+      description: Role - researcher.
+      responses: { "201": { description: Lab created } }
+
+  /showcase/gallery:
+    get:
+      summary: Public gallery of approved showcase projects
+      security: []
+      responses: { "200": { description: Approved projects } }
+  /showcase/submit:
+    post:
+      summary: Submit a student project for advisor review
+      description: Role - student_author.
+      responses: { "201": { description: Submission created (pending_review) } }
+  /showcase/{id}:
+    get:
+      summary: Get showcase project detail
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Project detail } }
+  /showcase/{id}/review:
+    post:
+      summary: Approve or request changes on a submission
+      description: Only the project's assigned advisor, or an admin.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                decision: { type: string, enum: [approve, request_changes] }
+                comments: { type: string }
+      responses: { "200": { description: Review recorded } }
+  /showcase/pending:
+    get:
+      summary: List submissions pending the caller's review
+      responses: { "200": { description: Pending queue } }
+
+  /notifications:
+    get:
+      summary: Get the caller's notification feed
+      responses: { "200": { description: Notification list } }
+  /notifications/{id}/read:
+    patch:
+      summary: Mark a notification as read
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Updated } }
+  /notifications/announcements:
+    get:
+      summary: List admin-authored announcements
+      responses: { "200": { description: Announcement list } }
+
+  /comments/{entityType}/{entityId}:
+    get:
+      summary: Get threaded comments for an entity
+      security: []
+      parameters:
+        - { name: entityType, in: path, required: true, schema: { type: string, enum: [archive, research, showcase] } }
+        - { name: entityId, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: Comment thread } }
+  /comments:
+    post:
+      summary: Post a comment or reply
+      responses: { "201": { description: Comment created } }
+  /comments/{id}:
+    delete:
+      summary: Delete or moderate a comment
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "204": { description: Deleted } }
+
+  /reactions:
+    post:
+      summary: Add a reaction (toggle)
+      responses: { "201": { description: Reaction added } }
+    delete:
+      summary: Remove a reaction
+      responses: { "204": { description: Reaction removed } }
+  /reactions/{entityType}/{entityId}:
+    get:
+      summary: Get reaction counts for an entity
+      security: []
+      parameters:
+        - { name: entityType, in: path, required: true, schema: { type: string } }
+        - { name: entityId, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: Reaction counts } }
+
+  /events:
+    get:
+      summary: List events
+      security: []
+      responses: { "200": { description: Event list } }
+    post:
+      summary: Create an event
+      description: Role - staff, admin.
+      responses: { "201": { description: Event created } }
+  /events/{id}:
+    get:
+      summary: Get event detail
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Event detail } }
+  /events/{id}/rsvp:
+    post:
+      summary: RSVP to an event (waitlisted automatically once seats are full)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "201": { description: RSVP recorded } }
+    delete:
+      summary: Cancel an RSVP (promotes the next waitlisted attendee)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "204": { description: RSVP cancelled } }
+
+  /admin/users:
+    get:
+      summary: List/manage users
+      description: Role - admin.
+      responses: { "200": { description: User list } }

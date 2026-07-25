@@ -1,0 +1,25 @@
+# Reverse proxy + automatic HTTPS (Let's Encrypt) for the prod stack.
+# Requires each domain below to already have a DNS A/AAAA record pointing at
+# this server, and ports 80/443 reachable from the internet — Caddy uses 80
+# for the ACME HTTP-01 challenge and issues/renews certs on its own, no
+# certbot or manual cert management needed.
+{
+	email {$CADDY_EMAIL}
+}
+
+{$FRONTEND_DOMAIN} {
+	reverse_proxy frontend:3000
+}
+
+{$API_DOMAIN} {
+	reverse_proxy backend:4000
+}
+
+# Proxied 1:1 at the domain root (no path prefix) on purpose: MinIO's presigned
+# URLs are SigV4-signed against the exact path the backend's S3_ENDPOINT
+# constructs. A path prefix (e.g. /storage/*) would have to be stripped before
+# reaching MinIO, which changes the path the signature was computed over and
+# breaks every presigned download/upload URL with SignatureDoesNotMatch.
+{$STORAGE_DOMAIN} {
+	reverse_proxy minio:9000
+}
